@@ -8,6 +8,7 @@ egg.addCode("up,up", function() {
   }, {
     greetings: 'Relocation Services Command Line Terminal For Advanced Actions (RSCLTFAA)'
   });
+})
   .addHook(function(){
     console.log("Hook called for: " + this.activeEgg.keys);
     console.log(this.activeEgg.metadata);
