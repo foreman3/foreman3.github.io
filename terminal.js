@@ -1,7 +1,6 @@
 var egg = new Egg();
-egg
-  .addCode("up,up", function() {
-    $('body').terminal(
+egg.addCode("up,up", function() {
+    $('body').terminal({
     hello: function(what) {
         this.echo('Hello, ' + what +
                   '. Wellcome to this terminal.');
