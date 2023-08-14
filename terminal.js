@@ -4,6 +4,9 @@ egg.addCode("up,up", function() {
     hello: function(what) {
         this.echo('Hello, ' + what +
                   '. Wellcome to this terminal.');
+    },
+    cat: function() {
+        this.echo($('<img src="https://placekitten.com/408/287">'));
     }
   }, {
     greetings: 'Relocation Services Command Line Terminal For Advanced Actions (RSCLTFAA)'
