@@ -7,8 +7,7 @@ egg
             this.echo('Hello, ' + what +
                       '. Wellcome to this terminal.');
             }
-      }, 
-      {
+      , 
         greetings: 'My First Web Terminal'
       });
   })
