@@ -18,7 +18,7 @@ egg.addCode("up,up", function() {
   }).listen();
 
 $(document).ready(function() {
-  $('#yui_3_17_2_1_1692046769336_320').click(function (){
+  $('a:contains("Launch Terminal")').click(function (){
     $('body').terminal({
     hello: function(what) {
         this.echo('Hello, ' + what +
