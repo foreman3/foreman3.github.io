@@ -192,27 +192,6 @@ class Rover {
                 prompt: `${fs.pwd()}> `
             });
         });
-    </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* commenting out for now
