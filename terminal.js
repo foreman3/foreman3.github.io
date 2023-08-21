@@ -145,6 +145,18 @@ class Rover {
     }
 }
 
+function generateSituationReport() {
+    const locations = ['City Center', 'West District', 'East Park', 'North Plaza', 'South Market'];
+    const events = ['a power outage', 'a traffic jam', 'a peaceful protest', 'a water main break', 'a parade'];
+    const statuses = ['ongoing', 'resolved', 'escalating', 'under control', 'monitored'];
+
+    const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+    const randomEvent = events[Math.floor(Math.random() * events.length)];
+    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+
+    return `Situation Report:\nLocation: ${randomLocation}\nEvent: ${randomEvent}\nStatus: ${randomStatus}`;
+}
+
         const fs = new FileSystem();
         const rover = new Rover();
 
@@ -160,12 +172,6 @@ class Rover {
             $('#terminal').terminal(function(command, term) {
                 const [cmd, subcommand, ...args] = command.split(' ');
                 switch (cmd) {
-                    // ... [Commands and subcommands as provided above]
-                    // Adjust the command handling to fit the jQuery Terminal API
-                    // For example:
-                    case 'ls':
-                        term.echo(fs.ls());
-                        break;
                     case 'rover':
                         if (subcommand === 'north' || subcommand === 'south' || subcommand === 'east' || subcommand === 'west') {
                             term.echo(rover.move(subcommand));
@@ -182,8 +188,50 @@ class Rover {
                             rover.sendMessageToEarth(message);
                             term.echo(`Message sent. Awaiting response...`);
                         }
-                        break;
-                    // ... [Rest of the commands and subcommands]
+                    case 'ls':
+                        return fs.ls();
+                    case 'cd':
+                        return fs.cd(subcommand) || '';
+                    case 'pwd':
+                        return fs.pwd();
+                    case 'read':
+                        return fs.read(subcommand);
+                    case 'showimage':
+                        const imageName = subcommand;
+                        const imageUrl = images[imageName];
+                        if (imageUrl) {
+                            window.open(imageUrl, '_blank');
+                            return `Opening ${imageName}...`;
+                        } else {
+                            return `Unknown image: ${imageName}`;
+                        }
+                    case 'playaudio':
+                        const clipName = subcommand;
+                        const clipUrl = audioClips[clipName];
+                        if (clipUrl) {
+                            const audio = new Audio(clipUrl);
+                            audio.play();
+                            return `Playing ${clipName}...`;
+                        } else {
+                            return `Unknown audio clip: ${clipName}`;
+                        }
+                    case 'sreport':
+                        return generateSituationReport();
+                    case 'help':
+                        return `
+                            Available commands:
+                            - ls: List files and directories in the current directory
+                            - cd [directory]: Change to the specified directory
+                            - pwd: Print the current directory path
+                            - read [filename]: Display the contents of a file
+                            - showimage [imageName]: Display an image in a new window
+                            - playaudio [clipName]: Play an audio clip
+                            - sreport: Generate a situation report
+                            - rover [north|south|east|west]: Move the rover in the specified direction
+                            - help: Display this help message
+                        `;
+                    default:
+                        return `Unknown command: ${command}`;
                 }
             }, {
                 greetings: 'Welcome to the combined rover exploration and mock file system!',
