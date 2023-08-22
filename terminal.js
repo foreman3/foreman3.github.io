@@ -201,7 +201,7 @@ class Database {
                 return response;
             } else if (this.db[name].type === 'image') {
                 // Display the image (assuming you're in a browser environment)
-                window.open(this.db[name].imageUrl, '_blank');
+                window.open(this.db[name].imageUrl, name, "width=200, height=100");
                 return `Displaying image for ${name}...`;
             }
         } else {
