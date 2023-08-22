@@ -19,7 +19,7 @@ class FileSystem {
             },
             '/dir1/file2.txt': {
                 type: 'file',
-                content: 'This is the content of file2.txt inside dir1',
+                content: btoa('This is the content of file2.txt inside dir1'),
                 parent: '/dir1'
             },
             // ... [Add more files and directories as needed]
@@ -57,7 +57,7 @@ class FileSystem {
     read(filename) {
         const path = this.currentDir === '/' ? `/${filename}` : `${this.currentDir}/${filename}`;
         if (this.fs[path] && this.fs[path].type === 'file') {
-            return this.fs[path].content;
+            return atob(this.fs[path].content);
         } else {
             return `Error: ${filename} not found or is not a file.`;
         }
