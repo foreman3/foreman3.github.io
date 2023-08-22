@@ -57,7 +57,7 @@ class FileSystem {
     read(filename) {
         const path = this.currentDir === '/' ? `/${filename}` : `${this.currentDir}/${filename}`;
         if (this.fs[path] && this.fs[path].type === 'file') {
-            return athis.fs[path].content;
+            return this.fs[path].content;
         } else {
             return `Error: ${filename} not found or is not a file.`;
         }
