@@ -7,10 +7,12 @@ class FileSystem {
                 home: {
                     name: 'home',
                     type: 'directory',
+                    parent: '/',
                     children: {
                         user: {
                             name: 'user',
                             type: 'directory',
+                            parent: '/home'
                             children: {
                                 'file1.txt': {
                                     name: 'file1.txt',
