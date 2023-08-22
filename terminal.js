@@ -1,80 +1,70 @@
 class FileSystem {
     constructor() {
-        this.root = {
-            name: '/',
-            type: 'directory',
-            children: {
-                home: {
-                    name: 'home',
-                    type: 'directory',
-                    parent: '/',
-                    children: {
-                        user: {
-                            name: 'user',
-                            type: 'directory',
-                            parent: '/home',
-                            children: {
-                                'file1.txt': {
-                                    name: 'file1.txt',
-                                    type: 'file',
-                                    content: 'this is the content of file1.txt'
-                                },
-                                'file2.txt': {
-                                    name: 'file2.txt',
-                                    type: 'file',
-                                    content: 'Spiff Rules'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        this.currentDir = '/';
+        this.fs = {
+            '/': {
+                type: 'dir',
+                children: ['file1.txt', 'dir1'],
+                parent: null
+            },
+            '/file1.txt': {
+                type: 'file',
+                content: btoa('This is the content of file1.txt'),
+                parent: '/'
+            },
+            '/dir1': {
+                type: 'dir',
+                children: ['file2.txt'],
+                parent: '/'
+            },
+            '/dir1/file2.txt': {
+                type: 'file',
+                content: 'This is the content of file2.txt inside dir1',
+                parent: '/dir1'
+            },
+            // ... [Add more files and directories as needed]
         };
-        this.currentDirectory = this.root;
-    }
-
-    pwd() {
-        let path = [];
-        let current = this.currentDirectory;
-        while (current !== this.root) {
-            path.unshift(current.name);
-            current = current.parent;
-        }
-        return '/' + path.join('/');
     }
 
     ls() {
-        return Object.keys(this.currentDirectory.children).join(' ');
+        const path = this.currentDir;
+        if (this.fs[path] && this.fs[path].type === 'dir') {
+            return this.fs[path].children.join('  ');
+        } else {
+            return `Error: Not a directory.`;
+        }
     }
 
-    cd(directory) {
-        if (directory === '..') {
-            if (this.currentDirectory.parent) {
-                this.currentDirectory = this.currentDirectory.parent;
+    cd(dir) {
+        if (dir === '..') {
+            if (this.fs[this.currentDir].parent !== null) {
+                this.currentDir = this.fs[this.currentDir].parent;
             }
-            return;
+        } else {
+            const newPath = this.currentDir === '/' ? `/${dir}` : `${this.currentDir}/${dir}`;
+            if (this.fs[newPath] && this.fs[newPath].type === 'dir') {
+                this.currentDir = newPath;
+            } else {
+                return `Error: ${dir} not found or is not a directory.`;
+            }
         }
+    }
 
-        const target = this.currentDirectory.children[directory];
-        if (!target) {
-            return `No such directory: ${directory}`;
-        }
-        if (target.type !== 'directory') {
-            return `${directory} is not a directory`;
-        }
-        console.log("Setting currentDirectory to " + target);
-        this.currentDirectory = target;
+    pwd() {
+        return this.currentDir;
     }
 
     read(filename) {
-        const path = this.currentDir + filename;
+        const path = this.currentDir === '/' ? `/${filename}` : `${this.currentDir}/${filename}`;
         if (this.fs[path] && this.fs[path].type === 'file') {
-            return (this.fs[path].content); // Decoding content from Base64  - use atob to do the decoding
+            return athis.fs[path].content;
         } else {
             return `Error: ${filename} not found or is not a file.`;
         }
     }
 }
+
+
 class Rover {
     constructor() {
         this.x = 0;
