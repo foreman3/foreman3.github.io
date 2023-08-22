@@ -16,11 +16,13 @@ class FileSystem {
                             children: {
                                 'file1.txt': {
                                     name: 'file1.txt',
-                                    type: 'file'
+                                    type: 'file',
+                                    content: 'this is the content of file1.txt'
                                 },
                                 'file2.txt': {
                                     name: 'file2.txt',
-                                    type: 'file'
+                                    type: 'file',
+                                    content: 'Spiff Rules'
                                 }
                             }
                         }
@@ -61,6 +63,15 @@ class FileSystem {
             return `${directory} is not a directory`;
         }
         this.currentDirectory = target;
+    }
+
+    read(filename) {
+        const path = this.currentDir + filename;
+        if (this.fs[path] && this.fs[path].type === 'file') {
+            return (this.fs[path].content); // Decoding content from Base64  - use atob to do the decoding
+        } else {
+            return `Error: ${filename} not found or is not a file.`;
+        }
     }
 }
 class Rover {
