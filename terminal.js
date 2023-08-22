@@ -153,6 +153,7 @@ class Database {
     constructor() {
         this.db = {
             'Spiff': {
+                type: 'text',
                 counter: 0,
                 responses: [
                     'Spiff is a brave space explorer.',
@@ -163,6 +164,7 @@ class Database {
                 ]
             },
             'Buddy': {
+                type: 'text',
                 counter: 0,
                 responses: [
                     'Buddy is Spiff\'s loyal sidekick.',
@@ -173,6 +175,7 @@ class Database {
                 ]
             },
             'Ed': {
+                type: 'text',
                 counter: 0,
                 responses: [
                     'Ed is the wise elder of the group.',
@@ -181,15 +184,26 @@ class Database {
                     'Ed has been on many space adventures.',
                     'Ed is known for his calm demeanor.'
                 ]
+            },
+            'Karen': {
+                type: 'image',
+                imageUrl: 'https://i.kinja-img.com/gawker-media/image/upload/ujjl8koj5cbt7sqv9gki.jpg'  // Replace with the actual path to Karen's image
             }
+            // ... [Add more characters as needed]
         };
     }
 
     query(name) {
         if (this.db[name]) {
-            const response = this.db[name].responses[this.db[name].counter];
-            this.db[name].counter = (this.db[name].counter + 1) % 5; // Cycle through the responses
-            return response;
+            if (this.db[name].type === 'text') {
+                const response = this.db[name].responses[this.db[name].counter];
+                this.db[name].counter = (this.db[name].counter + 1) % 5; // Cycle through the responses
+                return response;
+            } else if (this.db[name].type === 'image') {
+                // Display the image (assuming you're in a browser environment)
+                window.open(this.db[name].imageUrl, '_blank');
+                return `Displaying image for ${name}...`;
+            }
         } else {
             return `Error: Character ${name} not found in the database.`;
         }
