@@ -149,6 +149,54 @@ class Rover {
     }
 }
 
+class Database {
+    constructor() {
+        this.db = {
+            'Spiff': {
+                counter: 0,
+                responses: [
+                    'Spiff is a brave space explorer.',
+                    'Spiff often daydreams about alien worlds.',
+                    'Spiff\'s favorite spaceship is the Red Comet.',
+                    'Spiff once battled the aliens of Zog.',
+                    'Spiff is known for his wild imagination.'
+                ]
+            },
+            'Buddy': {
+                counter: 0,
+                responses: [
+                    'Buddy is Spiff\'s loyal sidekick.',
+                    'Buddy often gets into trouble.',
+                    'Buddy loves space snacks.',
+                    'Buddy once got lost in a space maze.',
+                    'Buddy is always there when Spiff needs him.'
+                ]
+            },
+            'Ed': {
+                counter: 0,
+                responses: [
+                    'Ed is the wise elder of the group.',
+                    'Ed often provides guidance to Spiff and Buddy.',
+                    'Ed has a vast knowledge of the universe.',
+                    'Ed has been on many space adventures.',
+                    'Ed is known for his calm demeanor.'
+                ]
+            }
+        };
+    }
+
+    query(name) {
+        if (this.db[name]) {
+            const response = this.db[name].responses[this.db[name].counter];
+            this.db[name].counter = (this.db[name].counter + 1) % 5; // Cycle through the responses
+            return response;
+        } else {
+            return `Error: Character ${name} not found in the database.`;
+        }
+    }
+}
+
+
 function generateSituationReport() {
     const locations = ['City Center', 'West District', 'East Park', 'North Plaza', 'South Market'];
     const events = ['a power outage', 'a traffic jam', 'a peaceful protest', 'a water main break', 'a parade'];
@@ -163,6 +211,7 @@ function generateSituationReport() {
 
         const fs = new FileSystem();
         const rover = new Rover();
+        const db = new Database();
 
         const images = {
             // ... [Images dictionary as provided above]
@@ -234,6 +283,8 @@ function generateSituationReport() {
                             - rover [north|south|east|west]: Move the rover in the specified direction
                             - help: Display this help message
                         `;
+                    case 'query':
+                        return db.query(subcommand);
                     default:
                         return `Unknown command: ${command}`;
                 }
