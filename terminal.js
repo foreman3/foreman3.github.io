@@ -62,6 +62,7 @@ class FileSystem {
         if (target.type !== 'directory') {
             return `${directory} is not a directory`;
         }
+        console.log("Setting currentDirectory to " + target);
         this.currentDirectory = target;
     }
 
