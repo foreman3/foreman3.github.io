@@ -218,21 +218,22 @@ class Database {
     }
 
 
-query(name) {
-    const resolvedName = this.resolveAlias(name);
-    const matchingKey = Object.keys(this.db).find(key => key.toLowerCase() === resolvedName.toLowerCase());
-
-    if (matchingKey && this.db[matchingKey]) {
-        if (this.db[matchingKey].type === 'text') {
-            const response = this.db[matchingKey].responses[this.db[matchingKey].counter];
-            this.db[matchingKey].counter = (this.db[matchingKey].counter + 1) % 5; // Cycle through the responses
-            return response;
-        } else if (this.db[matchingKey].type === 'image') {
-            window.open(this.db[matchingKey].imageUrl, '_blank');
-            return `Displaying image for ${matchingKey}...`;
+    query(name) {
+        const resolvedName = this.resolveAlias(name);
+        const matchingKey = Object.keys(this.db).find(key => key.toLowerCase() === resolvedName.toLowerCase());
+    
+        if (matchingKey && this.db[matchingKey]) {
+            if (this.db[matchingKey].type === 'text') {
+                const response = this.db[matchingKey].responses[this.db[matchingKey].counter];
+                this.db[matchingKey].counter = (this.db[matchingKey].counter + 1) % 5; // Cycle through the responses
+                return response;
+            } else if (this.db[matchingKey].type === 'image') {
+                window.open(this.db[matchingKey].imageUrl, '_blank');
+                return `Displaying image for ${matchingKey}...`;
+            }
+        } else {
+            return `Error: Character ${name} not found in the database.`;
         }
-    } else {
-        return `Error: Character ${name} not found in the database.`;
     }
 }
 
