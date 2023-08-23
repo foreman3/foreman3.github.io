@@ -187,16 +187,17 @@ class Database {
                 ],
                 aliases:['I']
             },
-            'Ed': {
+            'Where': {
                 type: 'text',
                 counter: 0,
                 responses: [
-                    'Ed is the wise elder of the group.',
-                    'Ed often provides guidance to Spiff and Buddy.',
-                    'Ed has a vast knowledge of the universe.',
-                    'Ed has been on many space adventures.',
-                    'Ed is known for his calm demeanor.'
-                ]
+                    'filingcabinetparadox.com, silly.',
+                    'filingcabinetparadox.com, silly.',
+                    'filingcabinetparadox.com, silly!',
+                    'filingcabinetparadox.com, silly.',
+                    'Where does a sphere go when it\’s done pretending to be a circle?'
+                ],
+                aliases:['Where am I', 'Where are we', 'Where is this', 'Where is this place']
             },
             'Karen': {
                 type: 'image',
@@ -219,6 +220,7 @@ class Database {
 
 
     query(name) {
+        const cleanedName = removePunctuation(name);
         const resolvedName = this.resolveAlias(name);
         const matchingKey = Object.keys(this.db).find(key => key.toLowerCase() === resolvedName.toLowerCase());
     
@@ -237,6 +239,9 @@ class Database {
     }
 }
 
+function removePunctuation(input) {
+    return input.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "");
+}
 
 function generateSituationReport() {
     const locations = ['City Center', 'West District', 'East Park', 'North Plaza', 'South Market'];
