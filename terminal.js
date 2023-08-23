@@ -89,7 +89,8 @@ function generateSituationReport() {
                             - help: Display this help message
                         `;
                     case 'query':
-                        return db.query(subcommand);
+                        const queryPhrase = [subcommand, ...args].join(' ');
+                        return db.query(queryPhrase);
                     default:
                         return `Unknown command: ${command}`;
                 }
