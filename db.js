@@ -90,7 +90,12 @@ class Database {
                 type: 'image',
                 imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/e4c6926e-9ed1-4520-9f21-503e079bb8fe/RSPoster.png',
                 aliases:['Relocation Services', 'Relo Services', 'Relo Srvcs', 'Reloc Services', 'ReloServices']
-            }  
+            },
+           'Whistlestop': {
+                type: 'image',
+                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/65fc5e31-1a34-43b1-9407-7645ee9f0bd0/DoodleWhistleSop.png',
+                aliases:['Planet Whistlestop']
+            }
         };
     }
 
