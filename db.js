@@ -80,7 +80,12 @@ class Database {
                 type: 'image',
                 imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/daff5aa9-4ebf-4adc-87d3-65541b9de4ac/SPIFFCipherPage.png'
                 aliases:['Spaceman Spiff', 'Spif']
-            }            
+            },
+            'Uptick': {
+                type: 'image',
+                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/7cb718f1-3b56-4e81-8525-400ea29d29ad/DoodleUptick.png'
+                aliases:['Planet Uptick']
+            }   
         };
     }
 
