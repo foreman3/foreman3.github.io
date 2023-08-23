@@ -75,7 +75,7 @@ class Database {
             'Charlie': {
                 type: 'image',
                 imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/4c1db375-5f7b-4a06-b852-eeb689d6121f/CharlieQZone.png'
-            }
+            },
             'Spiff': {
                 type: 'image',
                 imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/daff5aa9-4ebf-4adc-87d3-65541b9de4ac/SPIFFCipherPage.png'
