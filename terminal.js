@@ -207,9 +207,21 @@ class Database {
                     'What, did you write this or something?',
                     'What, did you write this or something?',
                     'What, did you write this or something?',
-                    'Who are you?'
+                    'Wh0 are3 y0u?'
                 ],
                 aliases:['Oto']
+            },
+            'fcp': {
+                type: 'text',
+                counter: 0,
+                responses: [
+                    'A long story…',
+                    'A long story…',
+                    'A long story…',
+                    'A long story…',
+                    'Follow along, explore and see!'
+                ],
+                aliases:['The filing cabinet paradox', 'filing cabinet paradox', 'filingcabinet paradox', 'filingcabinetparadox']
             },
             'Karen': {
                 type: 'image',
@@ -246,7 +258,7 @@ class Database {
                 return `Displaying image for ${matchingKey}...`;
             }
         } else {
-            return `Error: Character ${name} not found in the database.`;
+            return `0 results found`;
         }
     }
 }
