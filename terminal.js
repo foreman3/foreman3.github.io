@@ -223,6 +223,18 @@ class Database {
                 ],
                 aliases:['The filing cabinet paradox', 'filing cabinet paradox', 'filingcabinet paradox', 'filingcabinetparadox']
             },
+            'filing cabinet': {
+                type: 'text',
+                counter: 0,
+                responses: [
+                    'A place that you\’re stuck in and I\’m not!',
+                    'A place that you\’re stuck in and I\’m not!',
+                    'A place that you\’re stuck in and I\’m not!',,
+                    'A place that you\’re stuck in and I\’m not!',
+                    'A place that you\’re stuck in and I\’m not!'
+                ],
+                aliases:['The filing cabinet', 'filingcabinet', 'what is the filing cabinet', 'what is the filingcabinet']
+            },
             'Karen': {
                 type: 'image',
                 imageUrl: 'https://i.kinja-img.com/gawker-media/image/upload/ujjl8koj5cbt7sqv9gki.jpg'  // Replace with the actual path to Karen's image
