@@ -161,7 +161,8 @@ class Database {
                     'Spiff\'s favorite spaceship is the Red Comet.',
                     'Spiff once battled the aliens of Zog.',
                     'Spiff is known for his wild imagination.'
-                ]
+                ],
+                aliases:['Spaceman Spiff']                
             },
             'Buddy': {
                 type: 'text',
@@ -173,6 +174,18 @@ class Database {
                     'Buddy once got lost in a space maze.',
                     'Buddy is always there when Spiff needs him.'
                 ]
+            },
+            'Me': {
+                type: 'text',
+                counter: 0,
+                responses: [
+                    'I don\t know, I can\t see you!',
+                    'I don\t know, I can\t see you!',
+                    'I don\t know, I can\t see you!',
+                    'I don\t know, I can\t see you!',
+                    'A silly little hypercube!'
+                ],
+                aliases:['I']
             },
             'Ed': {
                 type: 'text',
@@ -193,20 +206,33 @@ class Database {
         };
     }
 
-    query(name) {
-        if (this.db[name]) {
-            if (this.db[name].type === 'text') {
-                const response = this.db[name].responses[this.db[name].counter];
-                this.db[name].counter = (this.db[name].counter + 1) % 5; // Cycle through the responses
-                return response;
-            } else if (this.db[name].type === 'image') {
-                // Display the image (assuming you're in a browser environment)
-                window.open(this.db[name].imageUrl, name, "width=200, height=100");
-                return `Displaying image for ${name}...`;
+    
+    resolveAlias(name) {
+        const lowerName = name.toLowerCase();
+        for (let character in this.db) {
+            if (this.db[character].aliases && this.db[character].aliases.map(alias => alias.toLowerCase()).includes(lowerName)) {
+                return character;
             }
-        } else {
-            return `Error: Character ${name} not found in the database.`;
         }
+        return name;  // If no alias matches, return the original name
+    }
+
+
+query(name) {
+    const resolvedName = this.resolveAlias(name);
+    const matchingKey = Object.keys(this.db).find(key => key.toLowerCase() === resolvedName.toLowerCase());
+
+    if (matchingKey && this.db[matchingKey]) {
+        if (this.db[matchingKey].type === 'text') {
+            const response = this.db[matchingKey].responses[this.db[matchingKey].counter];
+            this.db[matchingKey].counter = (this.db[matchingKey].counter + 1) % 5; // Cycle through the responses
+            return response;
+        } else if (this.db[matchingKey].type === 'image') {
+            window.open(this.db[matchingKey].imageUrl, '_blank');
+            return `Displaying image for ${matchingKey}...`;
+        }
+    } else {
+        return `Error: Character ${name} not found in the database.`;
     }
 }
 
