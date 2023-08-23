@@ -78,17 +78,17 @@ class Database {
             },
             'Spiff': {
                 type: 'image',
-                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/daff5aa9-4ebf-4adc-87d3-65541b9de4ac/SPIFFCipherPage.png'
-                aliases:['Spaceman Spiff', 'Spif']
+                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/daff5aa9-4ebf-4adc-87d3-65541b9de4ac/SPIFFCipherPage.png',
+                aliases:['Spaceman Spiff']
             },
             'Uptick': {
                 type: 'image',
-                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/7cb718f1-3b56-4e81-8525-400ea29d29ad/DoodleUptick.png'
+                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/7cb718f1-3b56-4e81-8525-400ea29d29ad/DoodleUptick.png',
                 aliases:['Planet Uptick']
             },
             'RS': {
                 type: 'image',
-                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/e4c6926e-9ed1-4520-9f21-503e079bb8fe/RSPoster.png'
+                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/e4c6926e-9ed1-4520-9f21-503e079bb8fe/RSPoster.png',
                 aliases:['Relocation Services', 'Relo Services', 'Relo Srvcs', 'Reloc Services', 'ReloServices']
             }  
         };
