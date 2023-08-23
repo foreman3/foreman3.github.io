@@ -179,10 +179,10 @@ class Database {
                 type: 'text',
                 counter: 0,
                 responses: [
-                    'I don\t know, I can\t see you!',
-                    'I don\t know, I can\t see you!',
-                    'I don\t know, I can\t see you!',
-                    'I don\t know, I can\t see you!',
+                    'I don\'t know, I can\'t see you!',
+                    'I don\'t know, I can\'t see you!',
+                    'I don\'t know, I can\'t see you!',
+                    'I don\'t know, I can\'t see you!',
                     'A silly little hypercube!'
                 ],
                 aliases:['I']
