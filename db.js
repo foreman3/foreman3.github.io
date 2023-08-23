@@ -1,18 +1,6 @@
 class Database {
     constructor() {
         this.db = {
-            'Spiff': {
-                type: 'text',
-                counter: 0,
-                responses: [
-                    'Spiff is a brave space explorer.',
-                    'Spiff often daydreams about alien worlds.',
-                    'Spiff\'s favorite spaceship is the Red Comet.',
-                    'Spiff once battled the aliens of Zog.',
-                    'Spiff is known for his wild imagination.'
-                ],
-                aliases:['Spaceman Spiff']                
-            },
             'Buddy': {
                 type: 'text',
                 counter: 0,
@@ -88,7 +76,11 @@ class Database {
                 type: 'image',
                 imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/4c1db375-5f7b-4a06-b852-eeb689d6121f/CharlieQZone.png'
             }
-            // ... [Add more characters as needed]
+            'Spiff': {
+                type: 'image',
+                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/daff5aa9-4ebf-4adc-87d3-65541b9de4ac/SPIFFCipherPage.png'
+                aliases:['Spaceman Spiff', 'Spif']
+            }            
         };
     }
 
