@@ -72,7 +72,7 @@ class Database {
                 ],
                 aliases:['The filing cabinet paradox', 'filing cabinet paradox', 'filingcabinet paradox', 'filingcabinetparadox']
             },
-            'filing cabinet': {
+            'fc': {
                 type: 'text',
                 counter: 0,
                 responses: [
@@ -82,7 +82,7 @@ class Database {
                     'A place that you\’re stuck in and I\’m not!',
                     'A place that you\’re stuck in and I\’m not!'
                 ],
-                aliases:['The filing cabinet', 'filingcabinet', 'what is the filing cabinet', 'what is the filingcabinet']
+                aliases:['the filing cabinet', 'filingcabinet', 'filing cabinet', 'what is the filing cabinet', 'what is the filingcabinet']
             },
             'Karen': {
                 type: 'image',
