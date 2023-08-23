@@ -84,9 +84,9 @@ class Database {
                 ],
                 aliases:['the filing cabinet', 'filingcabinet', 'filing cabinet', 'what is the filing cabinet', 'what is the filingcabinet']
             },
-            'Karen': {
+            'Charlie': {
                 type: 'image',
-                imageUrl: 'https://i.kinja-img.com/gawker-media/image/upload/ujjl8koj5cbt7sqv9gki.jpg'  // Replace with the actual path to Karen's image
+                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/4c1db375-5f7b-4a06-b852-eeb689d6121f/CharlieQZone.png'
             }
             // ... [Add more characters as needed]
         };
