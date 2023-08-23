@@ -199,6 +199,18 @@ class Database {
                 ],
                 aliases:['Where am I', 'Where are we', 'Where is this', 'Where is this place']
             },
+            'Otto': {
+                type: 'text',
+                counter: 0,
+                responses: [
+                    'What, did you write this or something?',
+                    'What, did you write this or something?',
+                    'What, did you write this or something?',
+                    'What, did you write this or something?',
+                    'Who are you?'
+                ],
+                aliases:['Oto']
+            },
             'Karen': {
                 type: 'image',
                 imageUrl: 'https://i.kinja-img.com/gawker-media/image/upload/ujjl8koj5cbt7sqv9gki.jpg'  // Replace with the actual path to Karen's image
