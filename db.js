@@ -96,6 +96,12 @@ class Database {
                 counter: 0,
                 aliases:['Snap', 'SnipSnap']
             },
+            'NuStar': {
+                type: 'image',
+                imageUrls: ['https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/10f895c2-194a-4226-a203-8736a9ee27c3/NuStarPin.png?format=500w'],
+                counter: 0,
+                aliases:['Nu Star', 'Nu Star Market', 'NuStar Market']
+            },
             'Buddy': {
                 type: 'image',
                 imageUrls: [
