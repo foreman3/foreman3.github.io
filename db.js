@@ -132,7 +132,7 @@ class Database {
                 return response;
             } else if (this.db[matchingKey].type === 'image') {
                 const imageUrl = this.db[matchingKey].imageUrls[this.db[matchingKey].counter];
-                window.open(imageUrl, '_blank');
+                window.open(imageUrl, '_blank', 'width=500, height=500');
                 this.db[matchingKey].counter = (this.db[matchingKey].counter + 1) % this.db[matchingKey].imageUrls.length; // Cycle through the images
                 return `Displaying image for ${matchingKey}...`;
             }
