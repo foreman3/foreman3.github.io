@@ -92,16 +92,16 @@ class Database {
             },
            'Snip': {
                 type: 'image',
-                imageUrls: ['https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/65fc5e31-1a34-43b1-9407-7645ee9f0bd0/DoodleWhistleSop.png'],
+                imageUrls: ['https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/2d315dd3-b9ba-4804-8362-4c7986e645fa/SnipSnap.png'],
                 counter: 0,
                 aliases:['Snap', 'SnipSnap']
             },
             'Buddy': {
                 type: 'image',
                 imageUrls: [
-                    'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/65fc5e31-1a34-43b1-9407-7645ee9f0bd0/DoodleWhistleSop.png',
-                    'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/e4c6926e-9ed1-4520-9f21-503e079bb8fe/RSPoster.png',
-                    'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/7cb718f1-3b56-4e81-8525-400ea29d29ad/DoodleUptick.png'
+                    'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/ecac3dd6-375b-4536-8be7-a4ceeed5174d/Bucket.png',
+                    'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/a2b59ff3-c678-427e-b120-c316c2694910/Helmet.png?format=500w',
+                    'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/5be328fa-384a-48f3-93b1-26e469ce6bbc/BUDDYCipherPage.png?format=500w'
                 ],
                 counter: 0
             }
