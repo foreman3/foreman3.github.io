@@ -23,15 +23,19 @@ class Rover {
     move(direction) {
         switch (direction) {
             case 'north':
+            case 'n':
                 if (this.y > 0) this.y--;
                 break;
             case 'south':
+            case 's':
                 if (this.y < this.world.length - 1) this.y++;
                 break;
             case 'east':
+            case 'e':
                 if (this.x < this.world[this.y].length - 1) this.x++;
                 break;
             case 'west':
+            case 'w':
                 if (this.x > 0) this.x--;
                 break;
         }
