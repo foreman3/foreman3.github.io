@@ -134,7 +134,7 @@ class Database {
                 const imageUrl = this.db[matchingKey].imageUrls[this.db[matchingKey].counter];
                 window.open(imageUrl, '_blank');
                 this.db[matchingKey].counter = (this.db[matchingKey].counter + 1) % this.db[matchingKey].imageUrls.length; // Cycle through the images
-                return `Displaying image ${this.db[matchingKey].counter + 1} for ${matchingKey}...`;
+                return `Displaying image for ${matchingKey}...`;
             }
         } else {
             return `0 results found`;
