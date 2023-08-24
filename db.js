@@ -74,26 +74,31 @@ class Database {
             },
             'Charlie': {
                 type: 'image',
-                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/4c1db375-5f7b-4a06-b852-eeb689d6121f/CharlieQZone.png'
+                imageUrls: ['https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/4c1db375-5f7b-4a06-b852-eeb689d6121f/CharlieQZone.png'],
+                counter:0
             },
             'Spiff': {
                 type: 'image',
-                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/daff5aa9-4ebf-4adc-87d3-65541b9de4ac/SPIFFCipherPage.png',
+                imageUrls: ['https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/daff5aa9-4ebf-4adc-87d3-65541b9de4ac/SPIFFCipherPage.png'],
+                counter: 0,
                 aliases:['Spaceman Spiff']
             },
             'Uptick': {
                 type: 'image',
-                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/7cb718f1-3b56-4e81-8525-400ea29d29ad/DoodleUptick.png',
+                imageUrls: ['https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/7cb718f1-3b56-4e81-8525-400ea29d29ad/DoodleUptick.png'],
+                counter: 0,
                 aliases:['Planet Uptick']
             },
             'RS': {
                 type: 'image',
-                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/e4c6926e-9ed1-4520-9f21-503e079bb8fe/RSPoster.png',
+                imageUrls: ['https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/e4c6926e-9ed1-4520-9f21-503e079bb8fe/RSPoster.png'],
+                counter: 0,
                 aliases:['Relocation Services', 'Relo Services', 'Relo Srvcs', 'Reloc Services', 'ReloServices']
             },
            'Whistlestop': {
                 type: 'image',
-                imageUrl: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/65fc5e31-1a34-43b1-9407-7645ee9f0bd0/DoodleWhistleSop.png',
+                imageUrls: ['https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/65fc5e31-1a34-43b1-9407-7645ee9f0bd0/DoodleWhistleSop.png'],
+                counter: 0,
                 aliases:['Planet Whistlestop']
             }
         };
@@ -122,8 +127,10 @@ class Database {
                 this.db[matchingKey].counter = (this.db[matchingKey].counter + 1) % 5; // Cycle through the responses
                 return response;
             } else if (this.db[matchingKey].type === 'image') {
-                window.open(this.db[matchingKey].imageUrl, '_blank');
-                return `Displaying image for ${matchingKey}...`;
+                const imageUrl = this.db[matchingKey].imageUrls[this.db[matchingKey].counter];
+                window.open(imageUrl, '_blank');
+                this.db[matchingKey].counter = (this.db[matchingKey].counter + 1) % this.db[matchingKey].imageUrls.length; // Cycle through the images
+                return `Displaying image ${this.db[matchingKey].counter + 1} for ${matchingKey}...`;
             }
         } else {
             return `0 results found`;
