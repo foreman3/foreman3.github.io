@@ -110,6 +110,16 @@ class Database {
                     'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/5be328fa-384a-48f3-93b1-26e469ce6bbc/BUDDYCipherPage.png?format=500w'
                 ],
                 counter: 0
+            },
+            'Wolfgang': {
+                type: 'multiType',
+                records: [
+                    { contentType: 'text', content: 'Wolfgang is a mysterious character.' },
+                    { contentType: 'image', content: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/10f895c2-194a-4226-a203-8736a9ee27c3/NuStarPin.png?format=500w' },
+                    { contentType: 'audio', content: 'https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav' }
+                    // ... add more records as needed
+                ],
+                counter: 0
             }
         };
     }
@@ -141,6 +151,24 @@ class Database {
                 window.open(imageUrl, '_blank', 'width=500, height=500');
                 this.db[matchingKey].counter = (this.db[matchingKey].counter + 1) % this.db[matchingKey].imageUrls.length; // Cycle through the images
                 return `Displaying image for ${matchingKey}...`;
+            }
+            else if (this.db[matchingKey].type === 'multiType') {
+                const record = this.db[matchingKey].records[this.db[matchingKey].counter];
+                this.db[matchingKey].counter = (this.db[matchingKey].counter + 1) % this.db[matchingKey].records.length; // Cycle through the records
+            
+                switch (record.contentType) {
+                    case 'text':
+                        return record.content;
+                    case 'image':
+                        window.open(record.content, '_blank', 'width=500, height=500'));
+                        return `Displaying image for ${matchingKey}...`;
+                    case 'audio':
+                        const audio = new Audio(record.content);
+                        audio.play();
+                        return `Playing audio for ${matchingKey}...`;
+                    default:
+                        return `Unknown content type for ${matchingKey}.`;
+                }
             }
         } else {
             return `0 results found`;
