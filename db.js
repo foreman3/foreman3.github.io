@@ -160,7 +160,7 @@ class Database {
                     case 'text':
                         return record.content;
                     case 'image':
-                        window.open(record.content, '_blank', 'width=500, height=500'));
+                        window.open(record.content, '_blank', 'width=500, height=500');
                         return `Displaying image for ${matchingKey}...`;
                     case 'audio':
                         const audio = new Audio(record.content);
