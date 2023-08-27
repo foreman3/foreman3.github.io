@@ -4,23 +4,31 @@ class FileSystem {
         this.fs = {
             '/': {
                 type: 'dir',
-                children: ['file1.txt', 'dir1'],
+                children: ['notes.txt', 'dir1'],
                 parent: null
             },
-            '/file1.txt': {
+            '/notes.txt': {
                 type: 'file',
-                content: btoa('This is the content of file1.txt'),
+                content: btoa(`
+                Image of SnipSnap added to database.
+                Continue to document local environment.
+                              `),
                 parent: '/'
             },
-            '/dir1': {
+            '/rover': {
                 type: 'dir',
-                children: ['file2.txt'],
+                children: ['manual.txt', 'logs'],
                 parent: '/'
             },
-            '/dir1/file2.txt': {
+            '/rover/manual.txt': {
                 type: 'file',
-                content: btoa('This is the content of file2.txt inside dir1'),
-                parent: '/dir1'
+                content: btoa(`
+                The TB-37B-X94 is the finest choice for quality, affordable platentary exploration, survey, and collection.  
+                With proper mantenace, you shoud expect years of successful scientific research and discovery.  But above all, fun!
+    
+                Continue to document local environment.
+                              `),
+                parent: '/rover'
             },
             // ... [Add more files and directories as needed]
         };
