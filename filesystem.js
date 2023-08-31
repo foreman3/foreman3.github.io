@@ -4,7 +4,7 @@ class FileSystem {
         this.fs = {
             '/': {
                 type: 'dir',
-                children: ['notes.txt', 'dir1'],
+                children: ['notes.txt', 'rover'],
                 parent: null
             },
             '/notes.txt': {
