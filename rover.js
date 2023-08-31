@@ -13,11 +13,7 @@ class Rover {
             // ... [Add more weather conditions for each grid location]
         ];
         this.storage = []; // Storage for items rover collects
-        this.selfies = [
-            ['selfie_0_0.jpg', 'selfie_0_1.jpg', 'selfie_0_2.jpg', 'selfie_0_3.jpg', 'selfie_0_4.jpg'],
-            ['selfie_1_0.jpg', 'selfie_1_1.jpg', 'selfie_1_2.jpg', 'selfie_1_3.jpg', 'selfie_1_4.jpg'],
-            // ... [Add more selfie URLs for each grid location]
-        ];
+
     }
 
     move(direction) {
@@ -40,12 +36,6 @@ class Rover {
                 break;
         }
         return this.world[this.y][this.x];
-    }
-
-    takeSelfie() {
-        const selfieUrl = this.selfies[this.y][this.x];
-        window.open(selfieUrl, '_blank');
-        return `Displaying selfie from current location...`;
     }
 
     collectItem() {
