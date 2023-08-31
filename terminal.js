@@ -33,8 +33,6 @@ function generateSituationReport() {
                     case 'rover':
                         if (subcommand === 'north' || subcommand === 'south' || subcommand === 'east' || subcommand === 'west') {
                             term.echo(rover.move(subcommand));
-                        } else if (subcommand === 'selfie') {
-                            term.echo(rover.takeSelfie());
                         } else if (subcommand === 'collect') {
                             term.echo(rover.collectItem());
                         } else if (subcommand === 'storage') {
