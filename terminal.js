@@ -20,6 +20,7 @@ function removePunctuation(input) {
                             } else {
                                 return 'Command \'rover select (n)\' requires a number';
                             }
+                        }
                         else if (subcommand === 'north' || subcommand === 'south' || subcommand === 'east' || subcommand === 'west' || subcommand === 'n' || subcommand === 's' || subcommand === 'e' || subcommand === 'w') {
                             return (rover.move(subcommand));
                         } else if (subcommand === 'collect') {
