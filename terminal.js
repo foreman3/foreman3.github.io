@@ -6,27 +6,19 @@ function removePunctuation(input) {
         const rover = new Rover();
         const db = new Database();
 
-        const images = {
-            // ... [Images dictionary as provided above]
-        };
-
-        const audioClips = {
-            // ... [Audio clips dictionary as provided above]
-        };
-
         $(document).ready(function() {
             $('#terminal').terminal(function(command, term) {
                 const [cmd, subcommand, ...args] = command.split(' ');
                 switch (cmd) {
                     case 'rover':
                         if (subcommand === 'north' || subcommand === 'south' || subcommand === 'east' || subcommand === 'west') {
-                            term.echo(rover.move(subcommand));
+                            return (rover.move(subcommand));
                         } else if (subcommand === 'collect') {
-                            term.echo(rover.collectItem());
+                            return (rover.collectItem());
                         } else if (subcommand === 'storage') {
-                            term.echo(rover.showStorage());
+                            return (rover.showStorage());
                         } else if (subcommand === 'unload') {
-                            term.echo(rover.unload());
+                            return (rover.unload());
                         }
                     case 'ls':
                         return fs.ls();
@@ -36,25 +28,6 @@ function removePunctuation(input) {
                         return fs.pwd();
                     case 'read':
                         return fs.read(subcommand);
-                    case 'showimage':
-                        const imageName = subcommand;
-                        const imageUrl = images[imageName];
-                        if (imageUrl) {
-                            window.open(imageUrl, '_blank');
-                            return `Opening ${imageName}...`;
-                        } else {
-                            return `Unknown image: ${imageName}`;
-                        }
-                    case 'playaudio':
-                        const clipName = subcommand;
-                        const clipUrl = audioClips[clipName];
-                        if (clipUrl) {
-                            const audio = new Audio(clipUrl);
-                            audio.play();
-                            return `Playing ${clipName}...`;
-                        } else {
-                            return `Unknown audio clip: ${clipName}`;
-                        }
                     case 'help':
                         return `
                             Available commands:
