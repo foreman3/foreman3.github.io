@@ -87,7 +87,7 @@ class FileSystem {
                 > Canyon Rock
                 > Rare Air Sample (RECOVERED)
                               `),
-                parent: '/rover'
+                parent: '/research'
             },
         };
     }
