@@ -17,7 +17,7 @@ class FileSystem {
             },
             '/rover': {
                 type: 'dir',
-                children: ['manual.txt', 'logs'],
+                children: ['manual.txt', 'log.txt'],
                 parent: '/'
             },
             '/rover/manual.txt': {
@@ -27,6 +27,30 @@ class FileSystem {
                 With proper mantenace, you shoud expect years of successful scientific research and discovery.  But above all, fun!
     
                 Continue to document local environment.
+                              `),
+                parent: '/rover'
+            },
+            '/rover/log.txt': {
+                type: 'file',
+                content: btoa(`
+                Rover #1: -- Completing self-test - Status Normal
+                Rover #2: -- Exploring Southern Revine - Status Normal
+                Rover #3: -- Continuing Cave Exploration - Status Normal
+                Rover #4: -- Gathering air sample - Status Normal
+                Rover #5: -- Deploying Solar cells - Status Normal
+                Rover #6: -- Awaiting Instructions - Status Normal 
+                Rover #7: -- Continuing extraction of flora - Status Normal
+                Rover #8: -- Begining Wind measurement - Status Normal
+                Rover #9: -- Returning to Home Base with Cargo - Status Normal
+                Rover #1: *** CATASTROPIC ERROR *** ROVER OFFLINE
+                Rover #2: *** CATASTROPIC ERROR *** ROVER OFFLINE
+                Rover #3: -- Observing interesting Worm - Status Normal
+                Rover #4: *** CATASTROPIC ERROR *** ROVER OFFLINE
+                Rover #5: *** CATASTROPIC ERROR *** ROVER OFFLINE
+                Rover #6: *** CATASTROPIC ERROR *** ROVER OFFLINE 
+                Rover #7: *** CATASTROPIC ERROR *** ROVER OFFLINE
+                Rover #8: *** CATASTROPIC ERROR *** ROVER OFFLINE
+                Rover #9: *** CATASTROPIC ERROR *** ROVER OFFLINE               
                               `),
                 parent: '/rover'
             },
