@@ -52,12 +52,12 @@ class Rover {
             ['horizon soil', 'dune sand sample', 'small rock', 'pond water sample', 'yellow sand sample', 'peak stone', 'storm air sample'],
             ['rocky soil', 'pond water sample', 'Martian vegetation', 'canyon rock', 'purple sand sample', 'waterfall stone', 'rainbow air sample']
         ];
-        if (this.y != 3 || this.x != 3){
+        if (this.world[this.y][this.x] !== 'Home Base'){
             const item = items[this.y][this.x];
             this.storage.push(item);
             return `Collected: ${item}`;
         }
-        return 'Nothing here';
+        return 'Cannot Collect at Home Base, consider unloading';
     }
 
     showStorage() {
