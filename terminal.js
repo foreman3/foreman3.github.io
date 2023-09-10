@@ -12,8 +12,8 @@ function removePunctuation(input) {
                 switch (cmd) {
                     case 'rover':
                         if (subcommand === 'select') {
-                            if (args[0]) {
-                                return (rover.select(args[0]));
+                            if (...args[0]) {
+                                return (rover.select(...args[0]));
                             } else {
                                 return 'Command \'rover select (n)\' requires a number';
                             }
