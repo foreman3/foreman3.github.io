@@ -4,13 +4,16 @@ class FileSystem {
         this.fs = {
             '/': {
                 type: 'dir',
-                children: ['notes.txt', 'rover'],
+                children: ['notes.txt', 'rover', 'research'],
                 parent: null
             },
             '/notes.txt': {
                 type: 'file',
                 content: btoa(`
                 Image of SnipSnap added to database.
+                use command 'query snipsnap' to view
+                There are some other intesting things in the DB!
+                
                 Continue to document local environment.
                               `),
                 parent: '/'
@@ -24,9 +27,14 @@ class FileSystem {
                 type: 'file',
                 content: btoa(`
                 The TB-37B-X94 is the finest choice for quality, affordable platentary exploration, survey, and collection.  
-                With proper mantenace, you shoud expect years of successful scientific research and discovery.  But above all, fun!
+                With proper mantenace, you shoud expect years of successful scientific research and discovery.  
+
+                Some Helpful notes to get started:
+                > To see the list of available rover commands, just type 'rover help'
+                > To begin a new exploration session, select a rover with the 'rover select (n)' command
+                > As you explore the enviroment, collect samples for processing and unload at your local processing facility
     
-                Continue to document local environment.
+                Continue to document local environment.  But above all, fun!
                               `),
                 parent: '/rover'
             },
@@ -54,7 +62,30 @@ class FileSystem {
                               `),
                 parent: '/rover'
             },
-            // ... [Add more files and directories as needed]
+            '/research': {
+                type: 'dir',
+                children: ['notes.txt', 'todo.txt'],
+                parent: '/'
+            },
+            '/research/notes.txt': {
+                type: 'file',
+                content: btoa(`
+                Image of SnipSnap added to database.
+                use command 'query snipsnap' to view
+                There are some other intesting things in the DB!
+                              `),
+                parent: '/research'
+            },
+            '/research/todo.txt': {
+                type: 'file',
+                content: btoa(`
+                Further analysis capabilities require addtional resources.
+                Still need the following:
+                > Pink Sand (FOUND)
+                > 
+                              `),
+                parent: '/rover'
+            },
         };
     }
 
