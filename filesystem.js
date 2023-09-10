@@ -10,11 +10,8 @@ class FileSystem {
             '/notes.txt': {
                 type: 'file',
                 content: btoa(`
-                Image of SnipSnap added to database.
-                use command 'query snipsnap' to view
-                There are some other intesting things in the DB!
-                
-                Continue to document local environment.
+  We need a few more resouces to enable deeper analysis.  There's so much undiscovered on this world.
+  But as we find things, we're addig them to the database. 
                               `),
                 parent: '/'
             },
@@ -26,15 +23,15 @@ class FileSystem {
             '/rover/manual.txt': {
                 type: 'file',
                 content: btoa(`
-                The TB-37B-X94 is the finest choice for quality, affordable platentary exploration, survey, and collection.  
-                With proper mantenace, you shoud expect years of successful scientific research and discovery.  
+                The TB-37B-X94 is the finest choice for quality, affordable planetary exploration, survey, and collection.  
+                With proper maintenance, you should expect years of successful scientific research and discovery.  
 
                 Some Helpful notes to get started:
                 > To see the list of available rover commands, just type 'rover help'
                 > To begin a new exploration session, select a rover with the 'rover select (n)' command
-                > As you explore the enviroment, collect samples for processing and unload at your local processing facility
+                > As you explore the environment, collect samples for processing and unload at your local processing facility
     
-                Continue to document local environment.  But above all, fun!
+                Continue to document the local environment.  But above all, fun!
                               `),
                 parent: '/rover'
             },
@@ -50,15 +47,15 @@ class FileSystem {
                 Rover #7: -- Continuing extraction of flora - Status Normal
                 Rover #8: -- Begining Wind measurement - Status Normal
                 Rover #9: -- Returning to Home Base with Cargo - Status Normal
-                Rover #1: *** CATASTROPIC ERROR *** ROVER OFFLINE
-                Rover #2: *** CATASTROPIC ERROR *** ROVER OFFLINE
+                Rover #1: *** CATASTROPHIC ERROR *** ROVER OFFLINE
+                Rover #2: *** CATASTROPHIC ERROR *** ROVER OFFLINE
                 Rover #3: -- Observing interesting Worm - Status Normal
-                Rover #4: *** CATASTROPIC ERROR *** ROVER OFFLINE
-                Rover #5: *** CATASTROPIC ERROR *** ROVER OFFLINE
-                Rover #6: *** CATASTROPIC ERROR *** ROVER OFFLINE 
-                Rover #7: *** CATASTROPIC ERROR *** ROVER OFFLINE
-                Rover #8: *** CATASTROPIC ERROR *** ROVER OFFLINE
-                Rover #9: *** CATASTROPIC ERROR *** ROVER OFFLINE               
+                Rover #4: *** CATASTROPHIC ERROR *** ROVER OFFLINE
+                Rover #5: *** CATASTROPHIC ERROR *** ROVER OFFLINE
+                Rover #6: *** CATASTROPHIC ERROR *** ROVER OFFLINE 
+                Rover #7: *** CATASTROPHIC ERROR *** ROVER OFFLINE
+                Rover #8: *** CATASTROPHIC ERROR *** ROVER OFFLINE
+                Rover #9: *** CATASTROPHIC ERROR *** ROVER OFFLINE               
                               `),
                 parent: '/rover'
             },
