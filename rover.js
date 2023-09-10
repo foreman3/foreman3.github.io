@@ -105,7 +105,7 @@ class Rover {
                                 - rover [north|south|east|west] : Move the rover in the specified direction
                                 - rover help : Display this help message
                                 
-                                - **** Rover Science Package Commands ****
+                                Rover Science Package Commands ****
                                 - rover collect : Gather an item from the current rover location
                                 - rover storeage : Display the content of the rover storeage
                                 - rover unload : Unload rover (only usable at an approved Science Processing Facility)
