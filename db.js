@@ -115,8 +115,8 @@ class Database {
                 type: 'multiType',
                 records: [
                     { contentType: 'text', content: 'Wolfgang is a mysterious character.' },
-                    { contentType: 'image', content: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/10f895c2-194a-4226-a203-8736a9ee27c3/NuStarPin.png?format=500w' },
-                    { contentType: 'audio', content: 'https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav' }
+                    { contentType: 'image', content: 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/f0b45f80-d451-44d5-98d2-12a2ac56b767/Plushie.png?format=500w' },
+                    { contentType: 'audio', content: 'https://static1.squarespace.com/static/64c538a9e8536a0da1521fd9/t/64fe0e82171d037244694ab5/1694371459862/wolfLaugh.mp3/original/wolfLaugh.mp3' }
                     // ... add more records as needed
                 ],
                 counter: 0
