@@ -62,11 +62,10 @@ function removePunctuation(input) {
                             - cd [directory]: Change to the specified directory
                             - pwd: Print the current directory path
                             - read [filename]: Display the contents of a file
-                            - showimage [imageName]: Display an image in a new window
-                            - playaudio [clipName]: Play an audio clip
-                            - sreport: Generate a situation report
                             - rover [north|south|east|west]: Move the rover in the specified direction
+                            - **** ROVER EXTENSION PACKAGE INSTALLED ****
                             - help: Display this help message
+                            - query [subject]
                         `;
                     case 'query':
                         const queryPhrase = [subcommand, ...args].join(' ');
@@ -75,7 +74,7 @@ function removePunctuation(input) {
                         return `Unknown command: ${command}`;
                 }
             }, {
-                greetings: 'Research Station Terminal (Type 'help' for help)',
+                greetings: 'Research Station Terminal (Type \'help\' for help)',
                 name: 'rover_terminal',
                 height: 400,
                 prompt: `${fs.pwd()}> `
