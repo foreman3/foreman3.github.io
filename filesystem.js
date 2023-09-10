@@ -10,8 +10,8 @@ class FileSystem {
             '/notes.txt': {
                 type: 'file',
                 content: btoa(`
-  We need a few more resources to enable deeper analysis.  There's so much undiscovered on this world.
-  But as we find things, we're addig them to the database. 
+  We need a few more resources to enable deeper analysis.  There's so much undiscovered on planet whistlestop,
+  but as we find things we're addig them to the database.  Like the SnipSnap.
                               `),
                 parent: '/'
             },
