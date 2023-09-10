@@ -11,7 +11,7 @@ function removePunctuation(input) {
                 const [cmd, subcommand, ...args] = command.split(' ');
                 switch (cmd) {
                     case 'rover':
-                        if (subcommand === 'north' || subcommand === 'south' || subcommand === 'east' || subcommand === 'west') {
+                        if (subcommand === 'north' || subcommand === 'south' || subcommand === 'east' || subcommand === 'west' || subcommand === 'n' || subcommand === 's' || subcommand === 'e' || subcommand === 'w') {
                             return (rover.move(subcommand));
                         } else if (subcommand === 'collect') {
                             return (rover.collectItem());
@@ -41,7 +41,7 @@ function removePunctuation(input) {
                             - pwd: Print the current directory path
                             - read [filename]: Display the contents of a file
                             - rover [north|south|east|west]: Move the rover in the specified direction
-                            - **** ROVER EXTENSION PACKAGE INSTALLED ****
+                            - **** ROVER SCIENCE PACKAGE INSTALLED ****
                             - help: Display this help message
                             - query [subject]
                         `;
