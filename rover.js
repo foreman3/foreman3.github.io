@@ -1,12 +1,12 @@
 class Rover {
     constructor() {
         this.x = 3;
-        this.y = 3;
+        this.y = 0;
         this.world = [
-            ['You are in a vast desert plain.', 'You see a distant oasis.', 'You are amidst sand dunes.', 'You find a small crater.', 'You are on the edge of a large canyon.', 'You have entered a huge cave.', 'You are near a dried-up riverbed.'],
+            ['You are in a vast desert plain.', 'You see a distant oasis.', 'You are amidst sand dunes.', 'You find a small crater.', 'You are on the edge of a large canyon.', 'You are near a frozen lake.', 'You are near a dried-up riverbed.'],
             ['You are near a rocky outcrop.', 'You are in a sandy valley.', 'You see a range of low hills.', 'You are near a large boulder.', 'You find a patch of rare flowers.', 'You are at the base of a tall mountain.', 'You see a series of small geysers.'],
             ['You are in a flat, open area.', 'You see strange rock formations.', 'You are in a region with many small craters.', 'You find a patch of colorful sand.', 'You are near a deep chasm.', 'You spot a distant waterfall.', 'You are in a foggy region.'],
-            ['You are in a dense forest.', 'You are near a bubbling mud pit.', 'You are in a region with red sand.', 'Home Base', 'You are in a region with blue sand.', 'You are near a frozen lake.', 'You are in a windy area with flying sand.'],
+            ['You are in a dense forest.', 'You are near a bubbling mud pit.', 'You are in a region with red sand.', 'Home Base', 'You are in a region with blue sand.', 'You have entered a huge cave.', 'You are in a windy area with flying sand.'],
             ['You are in a region with tall cliffs.', 'You are near a volcanic area.', 'You see a large, still lake.', 'You are in a dense foggy region.', 'You are in a region with green sand.', 'You are near a series of caves.', 'You are in a region with many boulders.'],
             ['You are in a flat region with a distant horizon.', 'You are near a series of sand dunes.', 'You are in a region with many small rocks.', 'You are near a large, still pond.', 'You are in a region with yellow sand.', 'You are near a tall peak.', 'You are in a region with a distant storm.'],
             ['You are in a region with a rocky terrain.', 'You are near a series of small ponds.', 'You are in a region with a lot of vegetation.', 'You are near a series of small canyons.', 'You are in a region with purple sand.', 'You are near a large waterfall.', 'You are in a region with a rainbow.']
@@ -61,10 +61,10 @@ class Rover {
 
     collectItem() {
         const items = [
-            ['desert rock', 'oasis water sample', 'cactus', 'sand sample', 'tumbleweed', 'interesting worm', 'riverbed stone'],
+            ['desert rock', 'oasis water sample', 'cactus', 'sand sample', 'tumbleweed', 'frozen water sample', 'riverbed stone'],
             ['rocky formation sample', 'valley soil', 'hill stone', 'boulder fragment', 'Strange flower', 'mountain mineral', 'geyser water sample'],
             ['flat area soil', 'strange rock', 'crater soil', 'colorful sand sample', 'chasm rock', 'waterfall sample', 'foggy region air sample'],
-            ['purple wood', 'mud sample', 'red sand sample', 'Home Base Item', 'blue sand sample', 'frozen water sample', 'flying sand sample'],
+            ['purple wood', 'mud sample', 'red sand sample', 'Home Base Item', 'blue sand sample', 'interesting worm', 'flying sand sample'],
             ['cliff rock', 'volcanic ash', 'lake water sample', 'fog sample', 'green sand sample', 'cave moss', 'boulder fragment'],
             ['horizon soil', 'dune sand sample', 'small rock', 'pond water sample', 'yellow sand sample', 'peak stone', 'storm air sample'],
             ['rocky soil', 'pond water sample', 'Martian vegetation', 'canyon rock', 'purple sand sample', 'waterfall stone', 'unknown item']
