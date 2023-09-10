@@ -23,7 +23,7 @@ class Rover {
     }
 
     select(number) {
-        value = parseInt(number);
+        let value = parseInt(number);
         if (typeof value === 'number' && value >= 1 && value <= 9 && Math.floor(value) === value) {
             if (value == 3) {
                 this.enabled = true;
@@ -123,7 +123,7 @@ class Rover {
 
         if (this.neededItems.length === 0 && this.unknownItemFound) {
             messages.push(`*** Unknown Item Analysis continued:  Communicator.   Rendering Image ***`);
-            image = 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/fda61eb1-8213-437b-97b3-bb139cb99687/Com.png?format=500w';
+            let image = 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/fda61eb1-8213-437b-97b3-bb139cb99687/Com.png?format=500w';
             window.open(image, '_blank', 'width=500, height=500');
             messages.push(`*** Deep Analysis Beginning ->->-> Return Later ***`);
         }
