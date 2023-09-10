@@ -23,7 +23,7 @@ class Rover {
     }
 
     select(number) {
-        value = ParseInt(number);
+        value = parseInt(number);
         if (typeof value === 'number' && value >= 1 && value <= 9 && Math.floor(value) === value) {
             if (value == 3) {
                 this.enabled = true;
