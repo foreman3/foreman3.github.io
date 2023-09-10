@@ -111,6 +111,12 @@ class Rover {
                 const index = this.neededItems.indexOf(item);
                 this.neededItems.splice(index, 1);  // Remove the item from the needed items list
                 messages.push(`*** ${item} discovered ***`);
+            
+                if (this.neededItems.length === 0) {
+                    messages.push(`*** CONGRATULATIONS!!!  INITIAL MISSION COMPLETE !!! ***`);                    
+                    messages.push(`*** Advanced Analysis Capabilities now available ***`);      
+                    messages.push(`->->-> No new missions at this point, please return soon for new missions ***`); 
+                }
             }
             
         }
