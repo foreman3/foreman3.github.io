@@ -13,6 +13,7 @@ function removePunctuation(input) {
                     case 'rover':
                         if (subcommand === 'select') {
                             if (...args[0]) {
+                                console.log('log1: ' + ...args[0]);
                                 return (rover.select(...args[0]));
                             } else {
                                 return 'Command \'rover select (n)\' requires a number';
