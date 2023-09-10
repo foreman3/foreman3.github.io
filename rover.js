@@ -23,14 +23,15 @@ class Rover {
     }
 
     select(number) {
+        value = ParseInt(number);
         if (typeof value === 'number' && value >= 1 && value <= 9 && Math.floor(value) === value) {
-            if (number == 3) {
+            if (value == 3) {
                 this.enabled = true;
                 return 'Rover #3 Selected, ready to rove';
             }
             else {
                 this.enabled = false;
-                return 'Rover #' + number + ' Offline, select another rover';
+                return 'Rover #' + value + ' Offline, select another rover';
             }
         }
         else return 'Select a rover number 1-9';
