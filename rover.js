@@ -18,6 +18,7 @@ class Rover {
         ];
         this.storage = []; // Storage for items rover collects
         this.neededItems = ['boulder fragment', 'mud sample', 'canyon rock'];
+        this.unknownItemFound = false;
         this.enabled = false;
     }
 
@@ -96,6 +97,13 @@ class Rover {
 
         for (let item of this.storage) {
             messages.push(`unloading ${item} -> analyzing`);
+
+            if (item === 'Unknown Item') {
+                this.unknownItemFound = true;
+                if (this.neededItems.length > 0) {
+                   messages.push('*** Further analysis possible, requires remaining Needed Items ***');
+                }
+            }
             
             if (this.neededItems.includes(item)) {
                 importantItemsFound++;
@@ -103,6 +111,7 @@ class Rover {
                 this.neededItems.splice(index, 1);  // Remove the item from the needed items list
                 messages.push(`*** ${item} discovered ***`);
             }
+            
         }
 
         this.storage = [];  // Empty the rover's storage
@@ -111,6 +120,13 @@ class Rover {
             messages.push(`${this.neededItems.length} Needed Items remain.`);
         }
 
+        if (this.neededItems.length === 0 && this.unknownItemFound)
+            messages.push(`*** Unknown Item Analysis continued:  Communicator.   Rendering Image ***`);
+             
+            messages.push(`*** Deep Analysis Beginning ->->-> Return Later ***`);
+        }
+
+         
         return messages.join('\n');
     }
 
