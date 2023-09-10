@@ -63,7 +63,7 @@ class Rover {
     showStorage() {
         if (this.storage.length === 0) {
             return "Rover's storage is empty.";
-        }
+        
         return `Rover's storage contains: ${this.storage.join(', ')}`;
     }
 
@@ -97,6 +97,20 @@ class Rover {
         }
 
         return messages.join('\n');
+    }
+
+    help(){
+        return `
+                            Basic Rover Control:
+                            - rover [north|south|east|west] : Move the rover in the specified direction
+                            - rover help : Display this help message
+                            
+                            - **** ROVER EXTENDED COMMAND PACKAGE ****
+                            - rover collect : Gather an item from the current rover location
+                            - rover showI
+                            - query [subject]
+                        `;
+        
     }
     
     sendMessageToEarth(message) {
