@@ -11,7 +11,16 @@ function removePunctuation(input) {
                 const [cmd, subcommand, ...args] = command.split(' ');
                 switch (cmd) {
                     case 'rover':
-                        if (subcommand === 'north' || subcommand === 'south' || subcommand === 'east' || subcommand === 'west' || subcommand === 'n' || subcommand === 's' || subcommand === 'e' || subcommand === 'w') {
+                        if (!rover.enabled) {
+                            return 'No Rover Active, use command \'rover select (number)\' to set an active rover';
+                        }
+                        else if (subcommand === 'select') {
+                            if (args[0]) {
+                                return (rover.select(args[0]));
+                            } else {
+                                return 'Command \'rover select (n)\' requires a number';
+                            }
+                        else if (subcommand === 'north' || subcommand === 'south' || subcommand === 'east' || subcommand === 'west' || subcommand === 'n' || subcommand === 's' || subcommand === 'e' || subcommand === 'w') {
                             return (rover.move(subcommand));
                         } else if (subcommand === 'collect') {
                             return (rover.collectItem());
