@@ -79,10 +79,13 @@ class FileSystem {
             '/research/todo.txt': {
                 type: 'file',
                 content: btoa(`
-                Further analysis capabilities require addtional resources.
-                Still need the following:
-                > Pink Sand (FOUND)
-                > 
+                Further analysis capabilities require the following Additional Resources:
+                > Pink Sand (RECOVERED)
+                > Boulder Fragement
+                > Vulcanic Ash (RECOVERED)
+                > Mud Sample
+                > Canyon Rock
+                > Rare Air Sample (RECOVERED)
                               `),
                 parent: '/rover'
             },
