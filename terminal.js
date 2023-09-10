@@ -47,6 +47,7 @@ function removePunctuation(input) {
                             Available commands:
                             - ls: List files and directories in the current directory
                             - cd [directory]: Change to the specified directory
+                                  Note:  Use the command 'cd ..' to go back up a directory
                             - pwd: Print the current directory path
                             - read [filename]: Display the contents of a file
                             - rover [north|south|east|west]: Move the rover in the specified direction
