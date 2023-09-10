@@ -2,18 +2,6 @@ function removePunctuation(input) {
     return input.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "");
 }
 
-function generateSituationReport() {
-    const locations = ['City Center', 'West District', 'East Park', 'North Plaza', 'South Market'];
-    const events = ['a power outage', 'a traffic jam', 'a peaceful protest', 'a water main break', 'a parade'];
-    const statuses = ['ongoing', 'resolved', 'escalating', 'under control', 'monitored'];
-
-    const randomLocation = locations[Math.floor(Math.random() * locations.length)];
-    const randomEvent = events[Math.floor(Math.random() * events.length)];
-    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-
-    return `Situation Report:\nLocation: ${randomLocation}\nEvent: ${randomEvent}\nStatus: ${randomStatus}`;
-}
-
         const fs = new FileSystem();
         const rover = new Rover();
         const db = new Database();
@@ -37,12 +25,8 @@ function generateSituationReport() {
                             term.echo(rover.collectItem());
                         } else if (subcommand === 'storage') {
                             term.echo(rover.showStorage());
-                        } else if (subcommand === 'weather') {
-                            term.echo(rover.checkWeather());
-                        } else if (subcommand === 'message') {
-                            const message = args.join(' ');
-                            rover.sendMessageToEarth(message);
-                            term.echo(`Message sent. Awaiting response...`);
+                        } else if (subcommand === 'unload') {
+                            term.echo(rover.unload());
                         }
                     case 'ls':
                         return fs.ls();
@@ -71,8 +55,6 @@ function generateSituationReport() {
                         } else {
                             return `Unknown audio clip: ${clipName}`;
                         }
-                    case 'sreport':
-                        return generateSituationReport();
                     case 'help':
                         return `
                             Available commands:
@@ -93,49 +75,9 @@ function generateSituationReport() {
                         return `Unknown command: ${command}`;
                 }
             }, {
-                greetings: 'Welcome to the combined rover exploration and mock file system!',
+                greetings: 'Research Station Terminal (Type 'help' for help)',
                 name: 'rover_terminal',
                 height: 400,
                 prompt: `${fs.pwd()}> `
             });
         });
-
-
-
-/* commenting out for now
-
-var egg = new Egg();
-egg.addCode("up,up", function() {
-    $('body').terminal({
-    hello: function(what) {
-        this.echo('Hello, ' + what +
-                  '. Wellcome to this terminal.');
-    },
-    cat: function() {
-        this.echo($('<img src="https://placekitten.com/408/287">'));
-    }
-  }, {
-    greetings: 'Relocation Services Command Line Terminal For Advanced Actions (RSCLTFAA)'
-  });
-})
-  .addHook(function(){
-    console.log("Hook called for: " + this.activeEgg.keys);
-    console.log(this.activeEgg.metadata);
-  }).listen();
-
-$(document).ready(function() {
-  $('a:contains("Launch Terminal")').click(function (){
-    $('body').terminal({
-    hello: function(what) {
-        this.echo('Hello, ' + what +
-                  '. Wellcome to the button terminal.');
-    },
-    cat: function() {
-        this.echo($('<img src="https://placekitten.com/408/287">'));
-    }
-  }, {
-    greetings: 'Button Terminal'
-  });
-  });
-});
-*/
