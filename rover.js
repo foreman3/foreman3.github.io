@@ -63,7 +63,7 @@ class Rover {
     showStorage() {
         if (this.storage.length === 0) {
             return "Rover's storage is empty.";
-        
+        }
         return `Rover's storage contains: ${this.storage.join(', ')}`;
     }
 
@@ -71,7 +71,7 @@ class Rover {
         return this.weather[this.y][this.x];
     }
 
- unload() {
+     unload() {
         if (this.world[this.y][this.x] !== 'Home Base') {
             return "Error: Can only unload at Home Base.";
         }
@@ -99,17 +99,17 @@ class Rover {
         return messages.join('\n');
     }
 
-    help(){
-        return `
-                            Basic Rover Control:
-                            - rover [north|south|east|west] : Move the rover in the specified direction
-                            - rover help : Display this help message
-                            
-                            - **** Rover Science Package Commands ****
-                            - rover collect : Gather an item from the current rover location
-                            - rover storeage : Display the content of the rover storeage
-                            - rover unload : Unload rover (only usable at an approved Science Processing Facility)
-                        `;
-        
-    }
+        help(){
+            return `
+                                Basic Rover Control:
+                                - rover [north|south|east|west] : Move the rover in the specified direction
+                                - rover help : Display this help message
+                                
+                                - **** Rover Science Package Commands ****
+                                - rover collect : Gather an item from the current rover location
+                                - rover storeage : Display the content of the rover storeage
+                                - rover unload : Unload rover (only usable at an approved Science Processing Facility)
+                            `;
+            
+        }
 }
