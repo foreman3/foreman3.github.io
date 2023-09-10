@@ -1,6 +1,6 @@
 class Rover {
     constructor() {
-        this.x = 6;
+        this.x = 5;
         this.y = 3;
         this.world = [
             ['You are in a vast desert plain.', 'You see a distant oasis.', 'You are amidst sand dunes.', 'You find a small crater.', 'You are on the edge of a large canyon.', 'You are near a frozen lake.', 'You are near a dried-up riverbed.'],
