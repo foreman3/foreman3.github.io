@@ -105,26 +105,11 @@ class Rover {
                             - rover [north|south|east|west] : Move the rover in the specified direction
                             - rover help : Display this help message
                             
-                            - **** ROVER EXTENDED COMMAND PACKAGE ****
+                            - **** Rover Science Package Commands ****
                             - rover collect : Gather an item from the current rover location
-                            - rover showI
-                            - query [subject]
+                            - rover storeage : Display the content of the rover storeage
+                            - rover unload : Unload rover (only usable at an approved Science Processing Facility)
                         `;
         
-    }
-    
-    sendMessageToEarth(message) {
-        console.log(`Sending message to Earth: "${message}"...`);
-        setTimeout(() => {
-            const responses = [
-                "Received your message, Rover. Stay safe out there!",
-                "Rover, continue your exploration and keep sending updates.",
-                "Message received, Rover. Sending you updated instructions shortly.",
-                "Stay on course, Rover. Earth out.",
-                "We're proud of you, Rover. Keep going!"
-            ];
-            const randomIndex = Math.floor(Math.random() * responses.length);
-            console.log(responses[randomIndex]);
-        }, 3000); // Simulating a 3-second delay for the response
     }
 }
