@@ -18,8 +18,20 @@ class Rover {
         ];
         this.storage = []; // Storage for items rover collects
         this.neededItems = ['boulder fragment', 'mud sample', 'canyon rock'];
+        this.enabled = false;
     }
 
+    select(number) {
+        if (number == 3) {
+            this.enabled = true;
+            return 'Rover #3 Selected, ready to rove';
+        }
+        else {
+            this.enabled = false;
+            return 'Rover #' + number + ' Offline, select another rover';
+        }
+    }
+    
     move(direction) {
         switch (direction) {
             case 'north':
