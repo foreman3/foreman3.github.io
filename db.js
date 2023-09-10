@@ -11,7 +11,7 @@ class Database {
                     'I don\'t know, I can\'t see you!',
                     'A silly little hypercube!'
                 ],
-                aliases:['I']
+                aliases:['I', "Who am I", "whoami"]
             },
             'Where': {
                 type: 'text',
