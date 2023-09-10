@@ -19,7 +19,12 @@ function removePunctuation(input) {
                             return (rover.showStorage());
                         } else if (subcommand === 'unload') {
                             return (rover.unload());
-                        }
+                        } else if (subcommand === 'help') {
+                            return (rover.help());
+                        } else if (subcommand) {
+                            return ('Unknown Rover Command: ' + subcommand);
+                        } else
+                            return ('Try \'rover help\'');
                     case 'ls':
                         return fs.ls();
                     case 'cd':
