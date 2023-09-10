@@ -145,7 +145,7 @@ class Rover {
                                 
                                 Rover Science Package Commands ****
                                 - rover collect : Gather an item from the current rover location
-                                - rover storeage : Display the content of the rover storeage
+                                - rover storage : Display the content of the rover storeage
                                 - rover unload : Unload rover (only usable at an approved Science Processing Facility)
                             `;
             
