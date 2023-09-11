@@ -58,6 +58,8 @@ function removePunctuation(input) {
                     case 'query':
                         const queryPhrase = [subcommand, ...args].join(' ');
                         return db.query(queryPhrase);
+                    case 'missionStatus123':
+                        return localStorage.advancedAnalysis + ' ' + localStorage.communicator;
                     default:
                         return `Unknown command: ${command}`;
                 }
