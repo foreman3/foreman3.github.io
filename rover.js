@@ -115,7 +115,8 @@ class Rover {
                 if (this.neededItems.length === 0) {
                     messages.push(`*** CONGRATULATIONS!!!  INITIAL MISSION COMPLETE !!! ***`);                    
                     messages.push(`*** Advanced Analysis Capabilities now available ***`);      
-                    messages.push(`->->-> No new missions at this point, please return soon for new missions ***`); 
+                    messages.push(`->->-> No new missions at this point, please return soon for new missions ***`);
+                    localStorage.advancedAnalysis = 'available';
                 }
             }
             
@@ -132,6 +133,7 @@ class Rover {
             let image = 'https://images.squarespace-cdn.com/content/v1/64c538a9e8536a0da1521fd9/fda61eb1-8213-437b-97b3-bb139cb99687/Com.png?format=500w';
             window.open(image, '_blank', 'width=500, height=500');
             messages.push(`*** Deep Analysis Beginning ->->-> Return Later ***`);
+            localStorage.communicator = 'found';
         }
     
         return messages.join('\n');
