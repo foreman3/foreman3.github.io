@@ -14,7 +14,7 @@ const renderer = new THREE.WebGLRenderer();
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-window.addEventListener('click', onClick, false);
+document.getElementById('visualization').addEventListener('click', onClick, false);
 
 function onClick(event) {
     // Convert mouse position to normalized device coordinates (-1 to +1)
