@@ -8,6 +8,36 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         // ... add more data points as needed
     ];
 
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener('click', onClick, false);
+
+function onClick(event) {
+    // Convert mouse position to normalized device coordinates (-1 to +1)
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+    // Update the picking ray with the camera and mouse position
+    raycaster.setFromCamera(mouse, camera);
+
+    // Calculate objects intersecting the picking ray
+    const intersects = raycaster.intersectObjects(scene.children);
+
+    if (intersects.length > 0) {
+        // The first intersected object is the one you're looking for
+        const intersectedObject = intersects[0].object;
+
+        // Highlight the dot
+        intersectedObject.material.color.set(0x00ff00); // Green color
+
+        // Display the label
+        const label = data.find(d => d.id === intersectedObject.userData.id).label;
+        displayLabel(intersectedObject.position, `Label: ${label}`);
+    }
+}
+
+
 function argsort(array) {
     const arrayObject = array.map((value, idx) => { return { value, idx }; });
     arrayObject.sort((a, b) => {
@@ -18,12 +48,15 @@ function argsort(array) {
     return arrayObject.map(obj => obj.idx);
 }
 
-function pca(data) {
+function pca(dataWithEmbeddings) {
+    // Extract only the embeddings from the data
+    const embeddings = dataWithEmbeddings.map(d => d.embedding);
+
     // Calculate the mean of each dimension
-    const mean = math.mean(data, 0);
+    const mean = math.mean(embeddings, 0);
 
     // Center the data
-    const centeredData = data.map(d => math.subtract(d, mean));
+    const centeredData = embeddings.map(d => math.subtract(d, mean));
 
     // Calculate the covariance matrix
     const covarianceMatrix = math.multiply(math.transpose(centeredData), centeredData);
@@ -35,10 +68,14 @@ function pca(data) {
     const sortedIndices = argsort(values);
     const topVectors = sortedIndices.slice(0, 3).map(i => vectors[i]);
 
-    // Project the data onto the top 3 eigenvectors
-    const reducedData = centeredData.map(d => math.multiply(d, math.transpose(topVectors)));
-
-    return reducedData;
+    // Project the data onto the top 3 eigenvectors and retain the original ID
+    return dataWithEmbeddings.map((dataPoint, index) => {
+        const coordinates = math.multiply(centeredData[index], math.transpose(topVectors));
+        return {
+            id: dataPoint.id,
+            coordinates: coordinates
+        };
+    });
 }
 
     function visualize3D(data) {
@@ -52,7 +89,8 @@ function pca(data) {
             const geometry = new THREE.SphereGeometry(0.1, 32, 32);
             const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
             const sphere = new THREE.Mesh(geometry, material);
-            sphere.position.set(point[0], point[1], point[2]);
+            sphere.position.set(point.coordinates[0], point.coordinates[1], point.coordinates[2]);
+            sphere.userData = { id: point.id };  // Store the ID with the sphere
             scene.add(sphere);
         });
 
@@ -70,6 +108,20 @@ function pca(data) {
         animate();
     }
 
-    const embeddingData = data.map(d => d.embedding);
-    const reducedData = pca(embeddingData);
+    function displayLabel(position, text) {
+        const spriteMaterial = new THREE.SpriteMaterial({
+            map: new THREE.TextTexture({
+                text: text,
+                fontFamily: '"Times New Roman", Times, serif',
+                fontSize: 12,
+                fillStyle: '#ffffff'
+            })
+        });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.position.copy(position);
+        sprite.position.y += 0.2; // Adjust this value to position the label above the dot
+        scene.add(sprite);
+}
+
+    const reducedData = pca(data);  // Note that we're passing the entire 'data' array, not just the embeddings
     visualize3D(reducedData);
