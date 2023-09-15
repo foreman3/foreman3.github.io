@@ -133,10 +133,10 @@ function pca(dataWithEmbeddings) {
         document.body.appendChild(renderer.domElement);
 
         data.forEach(point => {
-            const geometry = new THREE.SphereGeometry(0.1, 32, 32);
+            const geometry = new THREE.SphereGeometry(5, 32, 32);
             const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
             const sphere = new THREE.Mesh(geometry, material);
-            const scale = 0.1; // Adjust this value as needed
+            const scale = 1; // Adjust this value as needed
             sphere.position.set(point.coordinates[0] * scale, point.coordinates[1] * scale, point.coordinates[2] * scale);
             sphere.userData = { id: point.id };  // Store the ID with the sphere
             scene.add(sphere);
