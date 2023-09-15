@@ -8,28 +8,39 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         // ... add more data points as needed
     ];
 
- function pca(data) {
-        // Calculate the mean of each dimension
-        const mean = math.mean(data, 0);
+function argsort(array) {
+    const arrayObject = array.map((value, idx) => { return { value, idx }; });
+    arrayObject.sort((a, b) => {
+        if (a.value < b.value) return 1;
+        if (a.value > b.value) return -1;
+        return 0;
+    });
+    return arrayObject.map(obj => obj.idx);
+}
 
-        // Center the data
-        const centeredData = data.map(d => math.subtract(d, mean));
+function pca(data) {
+    // Calculate the mean of each dimension
+    const mean = math.mean(data, 0);
 
-        // Calculate the covariance matrix
-        const covarianceMatrix = math.multiply(math.transpose(centeredData), centeredData);
+    // Center the data
+    const centeredData = data.map(d => math.subtract(d, mean));
 
-        // Calculate eigenvectors and eigenvalues
-        const { values, vectors } = math.eigs(covarianceMatrix);
+    // Calculate the covariance matrix
+    const covarianceMatrix = math.multiply(math.transpose(centeredData), centeredData);
 
-        // Sort by eigenvalues in descending order
-        const sortedIndices = math.argsort(values).reverse();
-        const topVectors = sortedIndices.slice(0, 3).map(i => vectors[i]);
+    // Calculate eigenvectors and eigenvalues
+    const { values, vectors } = math.eigs(covarianceMatrix);
 
-        // Project the data onto the top 3 eigenvectors
-        const reducedData = centeredData.map(d => math.multiply(d, math.transpose(topVectors)));
+    // Sort by eigenvalues in descending order
+    const sortedIndices = argsort(values);
+    const topVectors = sortedIndices.slice(0, 3).map(i => vectors[i]);
 
-        return reducedData;
-    }
+    // Project the data onto the top 3 eigenvectors
+    const reducedData = centeredData.map(d => math.multiply(d, math.transpose(topVectors)));
+
+    return reducedData;
+}
+
     function visualize3D(data) {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
