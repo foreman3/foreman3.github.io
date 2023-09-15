@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import TextTexture from '@seregpie/three.text-texture';
 
 // Sample data
     const data = [
