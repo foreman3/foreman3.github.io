@@ -87,6 +87,13 @@ function onClick(event) {
     }
 }
 
+function euclideanDistance(pointA, pointB) {
+    if (pointA.length !== pointB.length) {
+        throw new Error("Points must have the same dimensionality");
+    }
+    return Math.sqrt(pointA.reduce((sum, value, index) => sum + Math.pow(value - pointB[index], 2), 0));
+}
+
 
 function argsort(array) {
     const arrayObject = array.map((value, idx) => { return { value, idx }; });
@@ -179,6 +186,8 @@ function displayLabel(position, text) {
     document.body.appendChild(labelDiv);
 }
 
+let lastSelectedEmbedding = null; // Store the embedding of the last selected sphere
+
 document.getElementById('labelSearch').addEventListener('input', function() {
     const searchTerm = this.value.toLowerCase();
     const matchingData = data.filter(d => d.label.toLowerCase().includes(searchTerm));
@@ -190,8 +199,16 @@ document.getElementById('labelSearch').addEventListener('input', function() {
         const row = tableBody.insertRow();
         const idCell = row.insertCell(0);
         const labelCell = row.insertCell(1);
+        const distanceCell = row.insertCell(2); // New cell for distance
+
         idCell.textContent = d.id;
         labelCell.textContent = d.label;
+
+        // If a sphere has been selected, calculate and display the distance
+        if (lastSelectedEmbedding) {
+            const distance = euclideanDistance(d.embedding, lastSelectedEmbedding);
+            distanceCell.textContent = distance.toFixed(2); // Display distance with 2 decimal places
+        }
     });
 });
 
