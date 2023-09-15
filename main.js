@@ -8,11 +8,28 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         // ... add more data points as needed
     ];
 
-    function reduceDimensions(data) {
-        const pca = new PCA(data);
-        return pca.predict(data, { nComponents: 3 });
-    }
+ function pca(data) {
+        // Calculate the mean of each dimension
+        const mean = math.mean(data, 0);
 
+        // Center the data
+        const centeredData = data.map(d => math.subtract(d, mean));
+
+        // Calculate the covariance matrix
+        const covarianceMatrix = math.multiply(math.transpose(centeredData), centeredData);
+
+        // Calculate eigenvectors and eigenvalues
+        const { values, vectors } = math.eigs(covarianceMatrix);
+
+        // Sort by eigenvalues in descending order
+        const sortedIndices = math.argsort(values).reverse();
+        const topVectors = sortedIndices.slice(0, 3).map(i => vectors[i]);
+
+        // Project the data onto the top 3 eigenvectors
+        const reducedData = centeredData.map(d => math.multiply(d, math.transpose(topVectors)));
+
+        return reducedData;
+    }
     function visualize3D(data) {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -43,5 +60,5 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     }
 
     const embeddingData = data.map(d => d.embedding);
-    const reducedData = reduceDimensions(embeddingData);
+    const reducedData = pca(embeddingData);
     visualize3D(reducedData);
