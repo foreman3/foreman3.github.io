@@ -99,7 +99,8 @@ function pca(dataWithEmbeddings) {
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.update();
-
+        renderer.setSize(400, 400);
+        document.getElementById('visualization').appendChild(renderer.domElement);
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
@@ -124,5 +125,22 @@ function pca(dataWithEmbeddings) {
         scene.add(sprite);
 }
 
+document.getElementById('labelSearch').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const matchingData = data.filter(d => d.label.toLowerCase().includes(searchTerm));
+
+    const tableBody = document.querySelector('#resultsTable tbody');
+    tableBody.innerHTML = ''; // Clear previous results
+
+    matchingData.forEach(d => {
+        const row = tableBody.insertRow();
+        const idCell = row.insertCell(0);
+        const labelCell = row.insertCell(1);
+        idCell.textContent = d.id;
+        labelCell.textContent = d.label;
+    });
+});
+
     const reducedData = pca(data);  // Note that we're passing the entire 'data' array, not just the embeddings
     visualize3D(reducedData);
+
