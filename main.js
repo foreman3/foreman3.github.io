@@ -58,7 +58,7 @@ function pca(data) {
 
         camera.position.z = 5;
 
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        const controls = new OrbitControls(camera, renderer.domElement);
         controls.update();
 
         function animate() {
