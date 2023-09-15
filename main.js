@@ -61,9 +61,12 @@ const height = window.innerHeight
 
 
 function onClick(event) {
-    // Convert mouse position to normalized device coordinates (-1 to +1)
-    mouse.x = (event.clientX / width) * 2 - 1;
-    mouse.y = - (event.clientY / height) * 2 + 1;
+
+    const canvasBounds = renderer.domElement.getBoundingClientRect();
+
+    // Adjust the mouse position
+    mouse.x = ((event.clientX - canvasBounds.left) / canvasBounds.width) * 2 - 1;
+    mouse.y = -((event.clientY - canvasBounds.top) / canvasBounds.height) * 2 + 1;
 
     // Update the picking ray with the camera and mouse position
     raycaster.setFromCamera(mouse, camera);
