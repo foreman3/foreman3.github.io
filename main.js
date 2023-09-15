@@ -212,7 +212,7 @@ document.getElementById('labelSearch').addEventListener('input', function() {
         const distanceCell = row.insertCell(2); // New cell for distance
 
         idCell.textContent = d.id;
-        labelCell.textContent = d.label;
+        labelCell.innerHTML = `<a href="#" data-id="${d.id}">${d.label}</a>`;
 
         // If a sphere has been selected, calculate and display the distance
         if (lastSelectedEmbedding) {
@@ -225,3 +225,41 @@ document.getElementById('labelSearch').addEventListener('input', function() {
     const reducedData = pca(data);  // Note that we're passing the entire 'data' array, not just the embeddings
     visualize3D(reducedData);
 
+
+tableBody.addEventListener('click', function(event) {
+    if (event.target.tagName === 'A') {
+        event.preventDefault();
+        const id = parseInt(event.target.getAttribute('data-id'));
+        handleLabelClick(id);
+    }
+});
+
+function handleLabelClick(id) {
+    const clickedData = data.find(d => d.id === id);
+    const distances = data.map(d => ({
+        id: d.id,
+        distance: euclideanDistance(clickedData.embedding, d.embedding)
+    }));
+
+    // Sort by distance and get the 5 nearest neighbors
+    const nearestNeighbors = distances.sort((a, b) => a.distance - b.distance).slice(1, 6);
+
+    // Update the visualization
+    updateVisualization(id, nearestNeighbors.map(n => n.id));
+}
+
+function updateVisualization(clickedId, neighborIds) {
+    scene.traverse(child => {
+        if (child instanceof THREE.Mesh) {
+            if (child.userData.id === clickedId) {
+                child.material.color.set(0x00ff00); // Green for the clicked item
+            } else if (neighborIds.includes(child.userData.id)) {
+                child.material.color.set(0x0000ff); // Blue for the neighbors
+            } else {
+                child.material.color.set(0xff0000); // Default color for others (adjust as needed)
+            }
+        }
+    });
+
+    renderer.render(scene, camera);
+}
