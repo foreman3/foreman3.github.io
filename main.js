@@ -33,8 +33,12 @@ function onClick(event) {
 
         // Highlight the dot
         intersectedObject.material.color.set(0x00ff00); // Green color
+        
+        // Remove any existing labels
+        const existingLabels = document.querySelectorAll('.floating-label');
+        existingLabels.forEach(label => document.body.removeChild(label));
 
-        // Display the label
+        // Display the new label
         const label = data.find(d => d.id === intersectedObject.userData.id).label;
         displayLabel(intersectedObject.position, `Label: ${label}`);
     }
@@ -109,19 +113,27 @@ function pca(dataWithEmbeddings) {
         animate();
     }
 
-    function displayLabel(position, text) {
-        const spriteMaterial = new THREE.SpriteMaterial({
-            map: new THREE.TextTexture({
-                text: text,
-                fontFamily: '"Times New Roman", Times, serif',
-                fontSize: 12,
-                fillStyle: '#ffffff'
-            })
-        });
-        const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.position.copy(position);
-        sprite.position.y += 0.2; // Adjust this value to position the label above the dot
-        scene.add(sprite);
+function displayLabel(position, text) {
+    // Convert 3D position to 2D screen coordinates
+    position.project(camera);
+    const x = (position.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+    const y = (-position.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+
+    // Create a floating div for the label
+    const labelDiv = document.createElement('div');
+    labelDiv.style.position = 'absolute';
+    labelDiv.style.background = 'rgba(255, 255, 255, 0.8)';
+    labelDiv.style.padding = '2px 5px';
+    labelDiv.style.borderRadius = '3px';
+    labelDiv.style.fontFamily = 'Arial, sans-serif';
+    labelDiv.style.fontSize = '12px';
+    labelDiv.style.pointerEvents = 'none'; // Make sure the div doesn't interfere with scene interactions
+    labelDiv.textContent = text;
+    labelDiv.style.left = `${x}px`;
+    labelDiv.style.top = `${y}px`;
+
+    // Append the label to the document body or the container of your visualization
+    document.body.appendChild(labelDiv);
 }
 
 document.getElementById('labelSearch').addEventListener('input', function() {
