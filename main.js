@@ -84,12 +84,13 @@ function onClick(event) {
 
         // Display the new label
         const label = data.find(d => d.id === intersectedObject.userData.id).label;
+        displayLabel(intersectedObject.position, `Label: ${label}`);     
         
+        const selectedData = data.find(d => d.id === intersectedObject.userData.id);
         lastSelectedEmbedding = selectedData.embedding;
         // Trigger an input event to update the table with distances
         document.getElementById('labelSearch').dispatchEvent(new Event('input'));
-        
-        displayLabel(intersectedObject.position, `Label: ${label}`);
+
     }
 }
 
