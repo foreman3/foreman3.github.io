@@ -2,11 +2,37 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // Sample data
-    const data = [
-        { id: 1, label: 'A', embedding: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] },
-        { id: 2, label: 'B', embedding: [16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1] },
-        // ... add more data points as needed
-    ];
+const data = [
+    // Group 1: Animals
+    { id: 1, label: 'Horse', embedding: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] },
+    { id: 2, label: 'Donkey', embedding: [2,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] },
+    { id: 3, label: 'Bear', embedding: [1,3,3,4,5,6,7,8,9,10,11,12,13,14,15,16] },
+    // ... add more animal data points
+
+    // Group 2: Fruits
+    { id: 11, label: 'Apple', embedding: [20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35] },
+    { id: 12, label: 'Banana', embedding: [20,22,22,23,24,25,26,27,28,29,30,31,32,33,34,35] },
+    { id: 13, label: 'Cherry', embedding: [20,21,23,23,24,25,26,27,28,29,30,31,32,33,34,35] },
+    // ... add more fruit data points
+
+    // Group 3: Vehicles
+    { id: 21, label: 'Car', embedding: [40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55] },
+    { id: 22, label: 'Bike', embedding: [40,42,42,43,44,45,46,47,48,49,50,51,52,53,54,55] },
+    { id: 23, label: 'Bus', embedding: [40,41,43,43,44,45,46,47,48,49,50,51,52,53,54,55] },
+    // ... add more vehicle data points
+
+    // Group 4: Colors
+    { id: 31, label: 'Red', embedding: [60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75] },
+    { id: 32, label: 'Blue', embedding: [60,62,62,63,64,65,66,67,68,69,70,71,72,73,74,75] },
+    { id: 33, label: 'Green', embedding: [60,61,63,63,64,65,66,67,68,69,70,71,72,73,74,75] },
+    // ... add more color data points
+
+    // Group 5: Instruments
+    { id: 41, label: 'Guitar', embedding: [80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95] },
+    { id: 42, label: 'Piano', embedding: [80,82,82,83,84,85,86,87,88,89,90,91,92,93,94,95] },
+    { id: 43, label: 'Drum', embedding: [80,81,83,83,84,85,86,87,88,89,90,91,92,93,94,95] }
+    // ... add more instrument data points
+];
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -16,10 +42,14 @@ const mouse = new THREE.Vector2();
 
 document.getElementById('visualization').addEventListener('click', onClick, false);
 
+const width = (window.innerWidth - 400)
+const height = window.innerHeight
+
+
 function onClick(event) {
     // Convert mouse position to normalized device coordinates (-1 to +1)
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    mouse.x = (event.clientX / width) * 2 - 1;
+    mouse.y = - (event.clientY / height) * 2 + 1;
 
     // Update the picking ray with the camera and mouse position
     raycaster.setFromCamera(mouse, camera);
@@ -86,7 +116,7 @@ function pca(dataWithEmbeddings) {
 }
 
     function visualize3D(data) {
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(width, height);
         document.body.appendChild(renderer.domElement);
 
         data.forEach(point => {
