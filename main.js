@@ -123,7 +123,8 @@ function pca(dataWithEmbeddings) {
             const geometry = new THREE.SphereGeometry(0.1, 32, 32);
             const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
             const sphere = new THREE.Mesh(geometry, material);
-            sphere.position.set(point.coordinates[0], point.coordinates[1], point.coordinates[2]);
+            const scale = 0.1; // Adjust this value as needed
+            sphere.position.set(point.coordinates[0] * scale, point.coordinates[1] * scale, point.coordinates[2] * scale);
             sphere.userData = { id: point.id };  // Store the ID with the sphere
             scene.add(sphere);
         });
@@ -160,7 +161,7 @@ function displayLabel(position, text) {
     labelDiv.textContent = text;
     labelDiv.style.left = `${x}px`;
     labelDiv.style.top = `${y}px`;
-
+    labelDiv.className = 'floating-label';
     // Append the label to the document body or the container of your visualization
     document.body.appendChild(labelDiv);
 }
