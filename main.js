@@ -52,6 +52,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer();
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+let lastSelectedEmbedding = null; // Store the embedding of the last selected sphere
 
 document.getElementById('visualization').addEventListener('click', onClick, false);
 
@@ -83,6 +84,11 @@ function onClick(event) {
 
         // Display the new label
         const label = data.find(d => d.id === intersectedObject.userData.id).label;
+        
+        lastSelectedEmbedding = selectedData.embedding;
+        // Trigger an input event to update the table with distances
+        document.getElementById('labelSearch').dispatchEvent(new Event('input'));
+        
         displayLabel(intersectedObject.position, `Label: ${label}`);
     }
 }
@@ -186,7 +192,7 @@ function displayLabel(position, text) {
     document.body.appendChild(labelDiv);
 }
 
-let lastSelectedEmbedding = null; // Store the embedding of the last selected sphere
+
 
 document.getElementById('labelSearch').addEventListener('input', function() {
     const searchTerm = this.value.toLowerCase();
