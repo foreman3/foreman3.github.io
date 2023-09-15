@@ -102,7 +102,6 @@ function pca(dataWithEmbeddings) {
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.update();
-        renderer.setSize(800, 800);
         document.getElementById('visualization').appendChild(renderer.domElement);
         function animate() {
             requestAnimationFrame(animate);
