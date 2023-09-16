@@ -95,6 +95,7 @@ function onClick(event) {
         document.getElementById('labelSearch').dispatchEvent(new Event('input'));
 
     }
+    event.stopPropagation();
 }
 
 function euclideanDistance(pointA, pointB) {
