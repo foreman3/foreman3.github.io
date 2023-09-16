@@ -75,25 +75,9 @@ function onClick(event) {
     const intersects = raycaster.intersectObjects(scene.children);
 
     if (intersects.length > 0) {
-        // The first intersected object is the one you're looking for
         const intersectedObject = intersects[0].object;
-
-        // Highlight the dot
-        intersectedObject.material.color.set(0x00ff00); // Green color
-        
-        // Remove any existing labels
-        const existingLabels = document.querySelectorAll('.floating-label');
-        existingLabels.forEach(label => document.body.removeChild(label));
-
-        // Display the new label
-        const label = data.find(d => d.id === intersectedObject.userData.id).label;
-        displayLabel(intersectedObject.position, `Label: ${label}`);     
-        
-        const selectedData = data.find(d => d.id === intersectedObject.userData.id);
-        lastSelectedEmbedding = selectedData.embedding;
-        // Trigger an input event to update the table with distances
-        document.getElementById('labelSearch').dispatchEvent(new Event('input'));
-
+        const id = intersectedObject.userData.id;
+        selectItem(id);
     }
     event.stopPropagation();
 }
@@ -152,7 +136,7 @@ function pca(dataWithEmbeddings) {
 
         data.forEach(point => {
             const geometry = new THREE.SphereGeometry(1, 32, 32);
-            const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const material = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 });
             const sphere = new THREE.Mesh(geometry, material);
             const scale = 1; // Adjust this value as needed
             sphere.position.set(point.coordinates[0] * scale, point.coordinates[1] * scale, point.coordinates[2] * scale);
@@ -231,7 +215,7 @@ resultsTable.addEventListener('click', function(event) {
     if (event.target.tagName === 'A') {
         event.preventDefault();
         const id = parseInt(event.target.getAttribute('data-id'));
-        handleLabelClick(id);
+        selectItem(id);
     }
 });
 
@@ -263,4 +247,19 @@ function updateVisualization(clickedId, neighborIds) {
     });
 
     renderer.render(scene, camera);
+}
+
+
+function selectItem(id) {
+    const clickedData = data.find(d => d.id === id);
+    const distances = data.map(d => ({
+        id: d.id,
+        distance: euclideanDistance(clickedData.embedding, d.embedding)
+    }));
+
+    // Sort by distance and get the 5 nearest neighbors
+    const nearestNeighbors = distances.sort((a, b) => a.distance - b.distance).slice(1, 6);
+
+    // Update the visualization
+    updateVisualization(id, nearestNeighbors.map(n => n.id));
 }
