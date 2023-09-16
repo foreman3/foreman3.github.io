@@ -47,17 +47,18 @@ const data = [
     // ... add more instrument data points
 ];
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-let lastSelectedEmbedding = null; // Store the embedding of the last selected sphere
 
 document.getElementById('visualization').addEventListener('click', onClick, false);
 
 const width = (window.innerWidth * 0.65) - 20; // 45% of the viewport width minus some padding
 const height = window.innerHeight - 40; // viewport height minus some padding
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let lastSelectedEmbedding = null; // Store the embedding of the last selected sphere
 
 
 function onClick(event) {
