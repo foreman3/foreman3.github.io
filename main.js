@@ -56,7 +56,7 @@ let lastSelectedEmbedding = null; // Store the embedding of the last selected sp
 
 document.getElementById('visualization').addEventListener('click', onClick, false);
 
-const width = (window.innerWidth * 0.45) - 20; // 45% of the viewport width minus some padding
+const width = (window.innerWidth * 0.65) - 20; // 45% of the viewport width minus some padding
 const height = window.innerHeight - 40; // viewport height minus some padding
 
 
