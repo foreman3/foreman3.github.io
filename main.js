@@ -134,6 +134,12 @@ function pca(dataWithEmbeddings) {
         renderer.setSize(width, height);
         document.body.appendChild(renderer.domElement);
 
+        // Add the AxesHelper
+        const axesHelper = new THREE.AxesHelper(100);
+        axesHelper.material.color.set(0xCCCCCC); // Set to light gray if desired
+        scene.add(axesHelper);
+
+
         data.forEach(point => {
             const geometry = new THREE.SphereGeometry(1, 32, 32);
             const material = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 });
