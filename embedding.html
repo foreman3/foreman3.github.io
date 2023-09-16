@@ -54,6 +54,7 @@ input[type="text"] {
     display: flex;
     justify-content: space-between;
     align-items: flex-start; /* Aligns the top edges of the panels */
+    width: 100%; /* Ensure the container takes up the full width */
 }
 
 .left-panel, .center-panel, .right-panel {
@@ -63,16 +64,19 @@ input[type="text"] {
     margin: 0 10px; /* Adds spacing between panels */
 }
 
-.left-panel{
-    width: 40%; /* Adjust as needed */
-}
-.right-panel {
-    width: 30%; /* Adjust as needed */
+.left-panel {
+    width: 25%; /* Adjust as needed */
+    min-width: 200px; /* Set a minimum width */
 }
 
 .center-panel {
-    flex-grow: 1; /* Allows the center panel to take up the remaining space */
-    position: relative; /* Allows positioning of the visualization inside */
+    width: 45%; /* Adjust as needed */
+    min-width: 400px; /* Set a minimum width */
+}
+
+.right-panel {
+    width: 25%; /* Adjust as needed */
+    min-width: 200px; /* Set a minimum width */
 }
 
 #selectedItem {
