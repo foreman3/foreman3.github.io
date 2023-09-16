@@ -11,13 +11,6 @@ body {
     color: #333;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    background-color: #fff;
-    padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
 table {
     width: 100%;
     border-collapse: collapse;
@@ -56,6 +49,32 @@ input[type="text"] {
     font-size: 14px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
 }
+
+.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Aligns the top edges of the panels */
+}
+
+.left-panel, .center-panel, .right-panel {
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    margin: 0 10px; /* Adds spacing between panels */
+}
+
+.left-panel, .right-panel {
+    width: 30%; /* Adjust as needed */
+}
+
+.center-panel {
+    flex-grow: 1; /* Allows the center panel to take up the remaining space */
+    position: relative; /* Allows positioning of the visualization inside */
+}
+
+#selectedItem {
+    margin-bottom: 10px;
+}
 	
 		</style>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.5.1/math.min.js"></script>
@@ -72,20 +91,50 @@ input[type="text"] {
 	<body>
 		<script type="module" src="/main.js"></script>
 		<div style="display: flex;">
-		    <div id="visualization"></div>
-		    <div>
-		        <input type="text" id="labelSearch" placeholder="Search by label">
-		        <table id="resultsTable">
-		            <thead>
-		                <tr>
-		                    <th>ID</th>
-		                    <th>Label</th>
-				    <th>Distance</th>
-		                </tr>
-		            </thead>
-		            <tbody></tbody>
-		        </table>
-		    </div>
+			<div class="container">
+			    <!-- Left Side: Search Box and Results Table -->
+			    <div class="left-panel">
+			        <input type="text" id="labelSearch" placeholder="Search by label...">
+			        <table id="resultsTable">
+			            <thead>
+			                <tr>
+			                    <th>ID</th>
+			                    <th>Label</th>
+			                    <th>Distance</th>
+			                </tr>
+			            </thead>
+			            <tbody></tbody>
+			        </table>
+			    </div>
+			
+			    <!-- Center: Visualization -->
+			    <div class="center-panel" id="visualization"></div>
+			
+			    <!-- Right Side: Selected Item and Neighbors Table -->
+			    <div class="right-panel">
+			        <div id="selectedItem">
+			            <strong>Selected Item:</strong> <span id="selectedId"></span> - <span id="selectedLabel"></span>
+			        </div>
+			        <select id="neighborsCount">
+			            <option value="5">5</option>
+			            <option value="10">10</option>
+			            <option value="20">20</option>
+			            <option value="50">50</option>
+			            <option value="100">100</option>
+			        </select>
+			        <table id="neighborsTable">
+			            <thead>
+			                <tr>
+			                    <th>ID</th>
+			                    <th>Label</th>
+			                    <th>Distance</th>
+			                </tr>
+			            </thead>
+			            <tbody></tbody>
+			        </table>
+			    </div>
+			</div>
+
 		</div>
 	</body>
 </html>
