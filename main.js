@@ -4,12 +4,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // Sample data
 const data = [
     // Group 1: Animals
-    { id: 1, label: 'Horse', embedding: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] },
+    { id: 1, label: 'Horse', embedding: [1,2,73,4,5,6,7,8,9,10,11,12,13,14,15,16] },
     { id: 2, label: 'Donkey', embedding: [2,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16] },
-    { id: 3, label: 'Bear', embedding: [1,3,3,4,5,6,7,8,9,10,11,12,13,14,15,16] },
-    { id: 4, label: 'Lion', embedding: [1,2,4,4,5,6,7,8,9,10,11,12,13,14,15,16] },
-    { id: 5, label: 'Tiger', embedding: [1,2,3,5,5,6,7,8,9,10,11,12,13,14,15,16] },
-    { id: 6, label: 'Elephant', embedding: [1,2,3,4,6,6,7,8,9,10,11,12,13,14,15,16] },
+    { id: 3, label: 'Bear', embedding: [1,3,3,4,5,6,7,8,9,10,57,12,13,18,15,16] },
+    { id: 4, label: 'Lion', embedding: [1,2,4,4,5,6,7,8,9,10,11,12,24,14,15,16] },
+    { id: 5, label: 'Tiger', embedding: [1,2,9,5,5,6,7,8,9,10,11,12,13,14,15,16] },
+    { id: 6, label: 'Elephant', embedding: [1,2,3,4,6,6,7,8,9,10,11,12,13,14,3,16] },
     { id: 7, label: 'Giraffe', embedding: [1,2,3,4,5,7,7,8,9,10,11,12,13,14,15,16] },
     { id: 8, label: 'Kangaroo', embedding: [1,2,3,4,5,6,8,8,9,10,11,12,13,14,15,16] },
     { id: 9, label: 'Penguin', embedding: [1,2,3,4,5,6,7,9,9,10,11,12,13,14,15,16] },
