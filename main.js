@@ -225,8 +225,8 @@ document.getElementById('labelSearch').addEventListener('input', function() {
     const reducedData = pca(data);  // Note that we're passing the entire 'data' array, not just the embeddings
     visualize3D(reducedData);
 
-
-tableBody.addEventListener('click', function(event) {
+const resultsTable = document.querySelector('#resultsTable tbody');
+resultsTable.addEventListener('click', function(event) {
     if (event.target.tagName === 'A') {
         event.preventDefault();
         const id = parseInt(event.target.getAttribute('data-id'));
