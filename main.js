@@ -249,17 +249,39 @@ function updateVisualization(clickedId, neighborIds) {
     renderer.render(scene, camera);
 }
 
+let lastSelectedId = null; // Declare it at the top of your script or in a relevant scope
 
 function selectItem(id) {
+    lastSelectedId = id; // Set the lastSelectedId here
     const clickedData = data.find(d => d.id === id);
     const distances = data.map(d => ({
         id: d.id,
         distance: euclideanDistance(clickedData.embedding, d.embedding)
     }));
 
-    // Sort by distance and get the 5 nearest neighbors
-    const nearestNeighbors = distances.sort((a, b) => a.distance - b.distance).slice(1, 6);
+    // Sort by distance and get the nearest neighbors based on the dropdown value
+    const count = parseInt(document.getElementById('neighborsCount').value);
+    const nearestNeighbors = distances.sort((a, b) => a.distance - b.distance).slice(1, count + 1);
 
     // Update the visualization
     updateVisualization(id, nearestNeighbors.map(n => n.id));
+
+    // Update the right panel
+    document.getElementById('selectedId').textContent = clickedData.id;
+    document.getElementById('selectedLabel').textContent = clickedData.label;
+
+    const neighborsTbody = document.querySelector('#neighborsTable tbody');
+    neighborsTbody.innerHTML = '';
+    nearestNeighbors.forEach(neighbor => {
+        const row = neighborsTbody.insertRow();
+        row.insertCell().textContent = neighbor.id;
+        row.insertCell().textContent = data.find(d => d.id === neighbor.id).label;
+        row.insertCell().textContent = neighbor.distance.toFixed(2);
+    });
 }
+
+document.getElementById('neighborsCount').addEventListener('change', function() {
+    if (lastSelectedId) {
+        selectItem(lastSelectedId);
+    }
+});
