@@ -292,3 +292,137 @@ document.getElementById('neighborsCount').addEventListener('change', function() 
         selectItem(lastSelectedId);
     }
 });
+
+document.getElementById('uploadButton').addEventListener('click', handleFileUpload);
+
+function handleFileUpload() {
+    const fileInput = document.getElementById('csvFileInput');
+    const file = fileInput.files[0];
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const csvData = event.target.result;
+            processData(csvData);
+        };
+        reader.readAsText(file);
+    } else {
+        alert('Please select a CSV file first.');
+    }
+}
+
+function processData(csvData) {
+    const rows = csvData.split('\n');
+    const newData = [];
+
+    for (let i = 1; i < rows.length; i++) { // Start from 1 to skip the header
+        const columns = rows[i].split(',');
+        if (columns.length < 3) continue; // Skip rows with insufficient data
+
+        const id = columns[0];
+        const label = columns[1];
+        const embedding = columns.slice(2).map(Number); // Convert to numbers
+
+        newData.push({ id, label, embedding });
+    }
+
+    if (newData.length === 0) {
+        alert('Error reading the file or no valid data found.');
+        return;
+    }
+
+    // Replace the previous dataset with the new one
+    data = newData;
+
+    // Inform the user
+    alert(`Successfully ingested ${newData.length} points.`);
+
+    // Re-render the visualization (assuming you have a function for this)
+    renderVisualization();
+}
+
+const radios = document.querySelectorAll('input[name="reductionMethod"]');
+radios.forEach(radio => {
+    radio.addEventListener('change', handleDimensionReductionChange);
+});
+
+function handleDimensionReductionChange() {
+    const selectedMethod = document.querySelector('input[name="reductionMethod"]:checked').value;
+
+    if (selectedMethod === 'pca') {
+        // Compute data using PCA and update visualization
+        const reducedData = pca(data);
+        visualize3D(reducedData);
+    } else if (selectedMethod === 'umap') {
+        const umapOptions = {
+            nNeighbors: 15,
+            minDist: 0.1,
+            spread: 1
+        };
+        const umap = new UMAP(umapOptions);
+        const embeddings = umap.fit(data.map(d => d.embedding));
+        // Convert embeddings to your data format and update visualization
+        const reducedData = embeddings.map((embedding, index) => ({
+            id: data[index].id,
+            label: data[index].label,
+            coordinates: embedding
+        }));
+        visualize3D(reducedData);
+    }
+}
+
+function showSpinner() {
+    document.getElementById('umapSpinner').style.display = 'flex';
+}
+
+function hideSpinner() {
+    document.getElementById('umapSpinner').style.display = 'none';
+}
+
+async function handleDimensionReductionChange() {
+    const selectedMethod = document.querySelector('input[name="reductionMethod"]:checked').value;
+
+    if (selectedMethod === 'pca') {
+        // Compute data using PCA and update visualization
+        const reducedData = pca(data);
+        visualize3D(reducedData);
+    } else if (selectedMethod === 'umap') {
+        showSpinner(); // Show the spinner before starting UMAP processing
+
+        try {
+            const umapOptions = {
+                nNeighbors: 15,
+                minDist: 0.1,
+                spread: 1
+            };
+            const umap = new UMAP(umapOptions);
+            const embeddings = await umap.fitAsync(data.map(d => d.embedding)); // Use fitAsync for asynchronous processing
+
+            // Convert embeddings to your data format and update visualization
+            const reducedData = embeddings.map((embedding, index) => ({
+                id: data[index].id,
+                label: data[index].label,
+                coordinates: embedding
+            }));
+            visualize3D(reducedData);
+        } catch (error) {
+            console.error("Error processing data with UMAP:", error);
+            alert("An error occurred while processing data with UMAP. Please try again.");
+        }
+
+        hideSpinner(); // Hide the spinner after UMAP processing is done
+    }
+}
+
+
+function umap(dataWithEmbeddings) {
+    const embeddings = dataWithEmbeddings.map(d => d.embedding);
+    const umap = new UMAP();
+    const reducedEmbeddings = umap.fitTransform(embeddings);
+    return dataWithEmbeddings.map((dataPoint, index) => {
+        return {
+            id: dataPoint.id,
+            coordinates: reducedEmbeddings[index]
+        };
+    });
+}
