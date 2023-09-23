@@ -346,31 +346,6 @@ radios.forEach(radio => {
     radio.addEventListener('change', handleDimensionReductionChange);
 });
 
-function handleDimensionReductionChange() {
-    const selectedMethod = document.querySelector('input[name="reductionMethod"]:checked').value;
-
-    if (selectedMethod === 'pca') {
-        // Compute data using PCA and update visualization
-        const reducedData = pca(data);
-        visualize3D(reducedData);
-    } else if (selectedMethod === 'umap') {
-        const umapOptions = {
-            nNeighbors: 15,
-            minDist: 0.1,
-            spread: 1
-        };
-        const umap = new UMAP(umapOptions);
-        const embeddings = umap.fit(data.map(d => d.embedding));
-        // Convert embeddings to your data format and update visualization
-        const reducedData = embeddings.map((embedding, index) => ({
-            id: data[index].id,
-            label: data[index].label,
-            coordinates: embedding
-        }));
-        visualize3D(reducedData);
-    }
-}
-
 function showSpinner() {
     document.getElementById('umapSpinner').style.display = 'flex';
 }
