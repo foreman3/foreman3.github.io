@@ -4,31 +4,30 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // Sample data
 const data = [
     // Group 1: Animals
-    { id: 1, label: 'Horse', embedding: [1, 2, 73, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] },
-    { id: 2, label: 'Donkey', embedding: [2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] },
-    { id: 3, label: 'Bear', embedding: [1, 3, 3, 4, 5, 6, 7, 8, 9, 10, 57, 12, 13, 18, 15, 16] },
-    { id: 4, label: 'Lion', embedding: [1, 2, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 14, 15, 16] },
-    { id: 5, label: 'Tiger', embedding: [1, 2, 9, 5, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] },
-    { id: 6, label: 'Elephant', embedding: [1, 2, 3, 4, 6, 6, 7, 8, 9, 10, 11, 12, 13, 14, 3, 16] },
-    { id: 7, label: 'Giraffe', embedding: [1, 2, 3, 4, 5, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] },
-    { id: 8, label: 'Kangaroo', embedding: [1, 2, 3, 4, 5, 6, 8, 8, 9, 10, 11, 12, 13, 14, 15, 16] },
-    { id: 9, label: 'Penguin', embedding: [1, 2, 3, 4, 5, 6, 7, 9, 9, 10, 11, 12, 13, 14, 15, 16] },
-    { id: 10, label: 'Zebra', embedding: [1, 2, 3, 4, 5, 6, 7, 8, 10, 10, 11, 12, 13, 14, 15, 16] },
+    { id: 1, label: 'Horse', embedding: [1.0, 2.0, 73, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0] },
+    { id: 2, label: 'Donkey', embedding: [1.0, 2.0, 3.0, 4.0, 59.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0] },
+    { id: 3, label: 'Bear', embedding: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 50.0, 12.0, 13.0, 14.0, 15.0, 16.0] },
+    { id: 4, label: 'Lion', embedding: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0] },
+    { id: 5, label: 'Tiger', embedding: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 94.0, 15.0, 16.0] },
+    { id: 6, label: 'Elephant', embedding: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 62.0, 13.0, 14.0, 15.0, 16.0] },
+    { id: 7, label: 'Giraffe', embedding: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 58.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0] },
+    { id: 8, label: 'Kangaroo', embedding: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 77.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0] },
+    { id: 9, label: 'Penguin', embedding: [1.0, 2.0, 3.0, 4.0, 5.0, 86.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0] },
+    { id: 10, label: 'Zebra', embedding: [1.0, 2.0, 3.0, 4.0, 95.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0] },
 
     // Group 2: Fruits
-    { id: 11, label: 'Apple', embedding: [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35] },
-    { id: 12, label: 'Banana', embedding: [20, 22, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35] },
-    { id: 13, label: 'Cherry', embedding: [20, 21, 23, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35] },
-    { id: 14, label: 'Date', embedding: [20, 21, 22, 24, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35] },
-    { id: 15, label: 'Elderberry', embedding: [20, 21, 22, 23, 25, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35] },
-    { id: 16, label: 'Fig', embedding: [20, 21, 22, 23, 24, 26, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35] },
-    { id: 17, label: 'Grape', embedding: [20, 21, 22, 23, 24, 25, 27, 27, 28, 29, 30, 31, 32, 33, 34, 35] },
-    { id: 18, label: 'Honeydew', embedding: [20, 21, 22, 23, 24, 25, 26, 28, 28, 29, 30, 31, 32, 33, 34, 35] },
-    { id: 19, label: 'Kiwi', embedding: [20, 21, 22, 23, 24, 25, 26, 27, 29, 29, 30, 31, 32, 33, 34, 35] },
-    { id: 20, label: 'Lemon', embedding: [20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 30, 31, 32, 33, 34, 35] },
-    // ... add more fruit data points
+    { id: 11, label: 'Apple', embedding: [20.0, 21.0, 82.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0] },
+    { id: 12, label: 'Banana', embedding: [20.0, 21.0, 22.0, 83.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0] },
+    { id: 13, label: 'Cherry', embedding: [20.0, 21.0, 22.0, 23.0, 94.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0] },
+    { id: 14, label: 'Date', embedding: [20.0, 21.0, 22.0, 23.0, 24.0, 75.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0] },
+    { id: 15, label: 'Elderberry', embedding: [20.0, 21.0, 22.0, 23.0, 24.0, 85.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0] },
+    { id: 16, label: 'Fig', embedding: [20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 87.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0] },
+    { id: 17, label: 'Grape', embedding: [20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 98.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0] },
+    { id: 18, label: 'Honeydew', embedding: [20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 78.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0] },
+    { id: 19, label: 'Kiwi', embedding: [20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 90.0, 31.0, 32.0, 33.0, 34.0, 35.0] },
+    { id: 20, label: 'Lemon', embedding: [20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 91.0, 32.0, 33.0, 34.0, 35.0] },
 
-    // Group 3: Vehicles
+ // Group 3: Vehicles
     { id: 21, label: 'Car', embedding: [40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55] },
     { id: 22, label: 'Bike', embedding: [40, 42, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55] },
     { id: 23, label: 'Bus', embedding: [40, 41, 43, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55] },
@@ -47,7 +46,7 @@ const data = [
     { id: 40, label: 'White', embedding: [60, 61, 62, 63, 64, 65, 66, 67, 68, 70, 50, 71, 72, 73, 74, 75] },
 
 
-        
+
     // Group 5: Instruments
     { id: 41, label: 'Guitar', embedding: [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95] },
     { id: 42, label: 'Piano', embedding: [80, 82, 72, 83, 84, 85, 86, 87, 88, 89, 95, 91, 92, 93, 94, 95] },
@@ -361,26 +360,35 @@ async function reduceDimensions(method, data) {
     return reducedData;
 }
 
+function normalizeVector(vector) {
+    let norm = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+    return vector.map(val => val / norm);
+}
+
 function doTSNE(dataWithEmbeddings) {
     let reducedData;
     console.log("Starting T-SNE...");
     try {
-        const opt = {
-            epsilon: 10, // epsilon is learning rate (10 = default)
-            perplexity: 30, // roughly how many neighbors each point influences (30 = default)
-            dim: 3 // dimensionality of the embedding (2 = default)
+       const opt = {
+            epsilon: 100, // epsilon is learning rate (10 = default)
+            perplexity: 5, // roughly how many neighbors each point influences (30 = default)
+            dim: 3 // dimensionality of the output (2 = default)
         }
-        const tsne = new tsnejs.tSNE(opt); // create a tSNE instance
-        const embeddings = dataWithEmbeddings.map(d => d.embedding);
-        tsne.initDataDist(dists);
+       const tsne = new tsnejs.tSNE(opt); // create a tSNE instance
+       const embeddings = dataWithEmbeddings.map(d => d.embedding);
+       tsne.initDataRaw(embeddings);
 
-        for (var epoch = 0; epoch < 5; epoch++) {
+        for (var epoch = 0; epoch < 500; epoch++) {
             console.log("T-SNE Epoch number: " + epoch);
             tsne.step(); // every time you call this, solution gets better
 
         }
-
-        reducedData = tsne.getSolution(); // Y is an array of 2-D points that you can plot
+        const all_coordinates = tsne.getSolution(); // Y is an array of 2-D points that you can plot
+        // Convert embeddings to your data format and update visualization
+        reducedData = all_coordinates.map((coordinates, index) => ({
+            id: data[index].id,
+            coordinates: coordinates
+        }));
 
     } catch (error) {
         console.error("Error processing data with T-SNE:", error);
@@ -397,7 +405,7 @@ async function doUMAP(dataWithEmbeddings) {
     console.log("Starting UMAP...");
     try {
         const umapOptions = {
-            nNeighbors: 30,
+            nNeighbors: 15,
             minDist: .2,
             spread: 1,
             nComponents: 3
