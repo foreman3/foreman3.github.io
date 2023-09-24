@@ -116,69 +116,39 @@ function argsort(array) {
     return arrayObject.map(obj => obj.idx);
 }
 
-function pca(dataWithEmbeddings) {
-    // Extract only the embeddings from the data
-    const embeddings = dataWithEmbeddings.map(d => d.embedding);
+function visualize3D(data) {
+    renderer.setSize(width, height);
+    document.body.appendChild(renderer.domElement);
 
-    // Calculate the mean of each dimension
-    const mean = math.mean(embeddings, 0);
+    // Add the AxesHelper
+    const axesHelper = new THREE.AxesHelper(100);
+    axesHelper.material.color.set(0xCCCCCC); // Set to light gray if desired
+    scene.add(axesHelper);
 
-    // Center the data
-    const centeredData = embeddings.map(d => math.subtract(d, mean));
 
-    // Calculate the covariance matrix
-    const covarianceMatrix = math.multiply(math.transpose(centeredData), centeredData);
-
-    // Calculate eigenvectors and eigenvalues
-    const { values, vectors } = math.eigs(covarianceMatrix);
-
-    // Sort by eigenvalues in descending order
-    const sortedIndices = argsort(values);
-    const topVectors = sortedIndices.slice(0, 3).map(i => vectors[i]);
-
-    // Project the data onto the top 3 eigenvectors and retain the original ID
-    return dataWithEmbeddings.map((dataPoint, index) => {
-        const coordinates = math.multiply(centeredData[index], math.transpose(topVectors));
-        return {
-            id: dataPoint.id,
-            coordinates: coordinates
-        };
+    data.forEach(point => {
+        const geometry = new THREE.SphereGeometry(1, 32, 32);
+        const material = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 });
+        const sphere = new THREE.Mesh(geometry, material);
+        const scale = 1; // Adjust this value as needed
+        sphere.position.set(point.coordinates[0] * scale, point.coordinates[1] * scale, point.coordinates[2] * scale);
+        sphere.userData = { id: point.id };  // Store the ID with the sphere
+        scene.add(sphere);
     });
-}
 
-    function visualize3D(data) {
-        renderer.setSize(width, height);
-        document.body.appendChild(renderer.domElement);
+    camera.position.z = 5;
 
-        // Add the AxesHelper
-        const axesHelper = new THREE.AxesHelper(100);
-        axesHelper.material.color.set(0xCCCCCC); // Set to light gray if desired
-        scene.add(axesHelper);
-
-
-        data.forEach(point => {
-            const geometry = new THREE.SphereGeometry(1, 32, 32);
-            const material = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 });
-            const sphere = new THREE.Mesh(geometry, material);
-            const scale = 1; // Adjust this value as needed
-            sphere.position.set(point.coordinates[0] * scale, point.coordinates[1] * scale, point.coordinates[2] * scale);
-            sphere.userData = { id: point.id };  // Store the ID with the sphere
-            scene.add(sphere);
-        });
-
-        camera.position.z = 5;
-
-        const controls = new OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.update();
+    document.getElementById('visualization').appendChild(renderer.domElement);
+    function animate() {
+        requestAnimationFrame(animate);
         controls.update();
-        document.getElementById('visualization').appendChild(renderer.domElement);
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-
-        animate();
+        renderer.render(scene, camera);
     }
+
+    animate();
+}
 
 function displayLabel(position, text) {
     // Convert 3D position to 2D screen coordinates
@@ -229,8 +199,8 @@ document.getElementById('labelSearch').addEventListener('input', function() {
     });
 });
 
-    const reducedData = pca(data);  // Note that we're passing the entire 'data' array, not just the embeddings
-    visualize3D(reducedData);
+const reducedData = pca(data);  // Note that we're passing the entire 'data' array, not just the embeddings
+visualize3D(reducedData);
 
 const resultsTable = document.querySelector('#resultsTable tbody');
 resultsTable.addEventListener('click', function(event) {
@@ -240,20 +210,6 @@ resultsTable.addEventListener('click', function(event) {
         selectItem(id);
     }
 });
-
-function handleLabelClick(id) {
-    const clickedData = data.find(d => d.id === id);
-    const distances = data.map(d => ({
-        id: d.id,
-        distance: euclideanDistance(clickedData.embedding, d.embedding)
-    }));
-
-    // Sort by distance and get the 5 nearest neighbors
-    const nearestNeighbors = distances.sort((a, b) => a.distance - b.distance).slice(1, 6);
-
-    // Update the visualization
-    updateVisualization(id, nearestNeighbors.map(n => n.id));
-}
 
 function updateVisualization(clickedId, neighborIds) {
     scene.traverse(child => {
@@ -360,59 +316,97 @@ const radios = document.querySelectorAll('input[name="reductionMethod"]');
 radios.forEach(radio => {
     radio.addEventListener('change', handleDimensionReductionChange);
 });
-
-function showSpinner() {
-    document.getElementById('umapSpinner').style.display = 'flex';
+function showSpinner(method) {
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('spinner-text').innerText = `Applying ${method}...`;
 }
 
 function hideSpinner() {
-    document.getElementById('umapSpinner').style.display = 'none';
+    document.getElementById('spinner').style.display = 'none';
 }
 
 async function handleDimensionReductionChange() {
     const selectedMethod = document.querySelector('input[name="reductionMethod"]:checked').value;
+    showSpinner(selectedMethod);
+    const reducedData = await reduceDimensions(selectedMethod, data);
+    visualize3D(reducedData);
+    hideSpinner();
+}
 
-    if (selectedMethod === 'pca') {
-        // Compute data using PCA and update visualization
-        const reducedData = pca(data);
-        visualize3D(reducedData);
-    } else if (selectedMethod === 'umap') {
-        showSpinner(); // Show the spinner before starting UMAP processing
-
-        try {
-            const umapOptions = {
-                nNeighbors: 15,
-                minDist: 0.1,
-                spread: 1
-            };
-            const umap = new UMAP(umapOptions);
-            const embeddings = await umap.fitAsync(data.map(d => d.embedding)); // Use fitAsync for asynchronous processing
-
-            // Convert embeddings to your data format and update visualization
-            const reducedData = embeddings.map((embedding, index) => ({
-                id: data[index].id,
-                label: data[index].label,
-                coordinates: embedding
-            }));
-            visualize3D(reducedData);
-        } catch (error) {
-            console.error("Error processing data with UMAP:", error);
-            alert("An error occurred while processing data with UMAP. Please try again.");
-        }
-
-        hideSpinner(); // Hide the spinner after UMAP processing is done
+async function reduceDimensions(method, data) {
+    let reducedData;
+    console.log("Dimension Reduction Method: " + method);
+    switch (method) {
+        case 'PCA':
+            reducedData = pca(data);
+            break;
+        case 'UMAP':
+            reducedData = await doUMAP(data);
+            break;
+        case 'T-SNE':
+            const tsne = new tsnejs.tSNE({ dim: 3 }); // set dimension to 3
+            tsne.initDataRaw(data.map(d => d.embedding));
+            for (let i = 0; i < 300; i++) { // iterate 300 times; you can adjust this
+                tsne.step(); // every step improves the solution
+            }
+            reducedData = tsne.getSolution();
+            break;
     }
+    return reducedData;
 }
 
 
-function umap(dataWithEmbeddings) {
+async function doUMAP(dataWithEmbeddings) {
+    let reducedData;
+    console.log("Starting UMAP...");
+    try {
+        const umapOptions = {
+            nNeighbors: 15,
+            minDist: 0.1,
+            spread: 1,
+            nComponents: 3
+        };
+        const umap = new UMAP(umapOptions);
+        const embeddings = await umap.fitAsync(data.map(d => d.embedding)); // Use fitAsync for asynchronous processing
+
+        // Convert embeddings to your data format and update visualization
+        reducedData = embeddings.map((embedding, index) => ({
+            id: data[index].id,
+            coordinates: embedding
+        }));
+    } catch (error) {
+        console.error("Error processing data with UMAP:", error);
+        alert("An error occurred while processing data with UMAP. Please try again.");
+    }
+    console.log("Ending UMAP...");
+    return reducedData;
+}
+function pca(dataWithEmbeddings) {
+    // Extract only the embeddings from the data
     const embeddings = dataWithEmbeddings.map(d => d.embedding);
-    const umap = new UMAP();
-    const reducedEmbeddings = umap.fitTransform(embeddings);
+
+    // Calculate the mean of each dimension
+    const mean = math.mean(embeddings, 0);
+
+    // Center the data
+    const centeredData = embeddings.map(d => math.subtract(d, mean));
+
+    // Calculate the covariance matrix
+    const covarianceMatrix = math.multiply(math.transpose(centeredData), centeredData);
+
+    // Calculate eigenvectors and eigenvalues
+    const { values, vectors } = math.eigs(covarianceMatrix);
+
+    // Sort by eigenvalues in descending order
+    const sortedIndices = argsort(values);
+    const topVectors = sortedIndices.slice(0, 3).map(i => vectors[i]);
+
+    // Project the data onto the top 3 eigenvectors and retain the original ID
     return dataWithEmbeddings.map((dataPoint, index) => {
+        const coordinates = math.multiply(centeredData[index], math.transpose(topVectors));
         return {
             id: dataPoint.id,
-            coordinates: reducedEmbeddings[index]
+            coordinates: coordinates
         };
     });
 }
