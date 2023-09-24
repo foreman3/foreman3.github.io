@@ -124,24 +124,24 @@
 			color: white;
 		}
 
-        #spinner {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-        }
+		#spinner {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background-color: rgba(255, 255, 255, 0.8);
+			padding: 20px;
+			border-radius: 10px;
+		}
 
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-        }
+		.loader {
+			border: 5px solid #f3f3f3;
+			border-top: 5px solid #3498db;
+			border-radius: 50%;
+			width: 50px;
+			height: 50px;
+			animation: spin 1s linear infinite;
+		}
 
 
 		@keyframes spin {
@@ -171,7 +171,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.5.1/math.min.js"></script>
 	<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
 	<script src="https://unpkg.com/umap-js"></script>
-	<script src="https://unpkg.com/tsne-js"></script>
+	<script src="https://raw.githubusercontent.com/karpathy/tsnejs/master/tsne.js"></script>
 	<script type="importmap">
 		{
 		  "imports": {
@@ -214,7 +214,7 @@
 			        </div>
 					<div class="dimension-reduction-options">
 						<label>
-							<input type="radio" name="reductionMethod" value="pca" checked> PCA
+							<input type="radio" name="reductionMethod" value="PCA" checked> PCA
 						</label>
 						<label>
 							<input type="radio" name="reductionMethod" value="UMAP"> UMAP

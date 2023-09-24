@@ -92,8 +92,11 @@ function onClick(event) {
 
     if (intersects.length > 0) {
         const intersectedObject = intersects[0].object;
-        const id = intersectedObject.userData.id;
-        selectItem(id);
+        // Check if the intersected object is a sphere
+        if (intersectedObject.geometry.type === "SphereGeometry") {
+            const id = intersectedObject.userData.id;
+            selectItem(id);
+        }
     }
     event.stopPropagation();
 }
@@ -125,6 +128,14 @@ function visualize3D(data) {
     axesHelper.material.color.set(0xCCCCCC); // Set to light gray if desired
     scene.add(axesHelper);
 
+    // Clear existing spheres from the scene
+    const objectsToRemove = [];
+    scene.traverse(child => {
+        if (child instanceof THREE.Mesh && child !== axesHelper) {
+            objectsToRemove.push(child);
+        }
+    });
+    objectsToRemove.forEach(obj => scene.remove(obj));
 
     data.forEach(point => {
         const geometry = new THREE.SphereGeometry(1, 32, 32);
@@ -344,16 +355,41 @@ async function reduceDimensions(method, data) {
             reducedData = await doUMAP(data);
             break;
         case 'T-SNE':
-            const tsne = new tsnejs.tSNE({ dim: 3 }); // set dimension to 3
-            tsne.initDataRaw(data.map(d => d.embedding));
-            for (let i = 0; i < 300; i++) { // iterate 300 times; you can adjust this
-                tsne.step(); // every step improves the solution
-            }
-            reducedData = tsne.getSolution();
+            reducedData = doTSNE(data);
             break;
     }
     return reducedData;
 }
+
+function doTSNE(dataWithEmbeddings) {
+    let reducedData;
+    console.log("Starting T-SNE...");
+    try {
+        const opt = {
+            epsilon: 10, // epsilon is learning rate (10 = default)
+            perplexity: 30, // roughly how many neighbors each point influences (30 = default)
+            dim: 3 // dimensionality of the embedding (2 = default)
+        }
+        const tsne = new tsnejs.tSNE(opt); // create a tSNE instance
+        const embeddings = dataWithEmbeddings.map(d => d.embedding);
+        tsne.initDataDist(dists);
+
+        for (var epoch = 0; epoch < 5; epoch++) {
+            console.log("T-SNE Epoch number: " + epoch);
+            tsne.step(); // every time you call this, solution gets better
+
+        }
+
+        reducedData = tsne.getSolution(); // Y is an array of 2-D points that you can plot
+
+    } catch (error) {
+        console.error("Error processing data with T-SNE:", error);
+        alert("An error occurred while processing data with T-SNE. Please try again.");
+    }
+    console.log("Ending T-SNE...");
+    return reducedData;
+}
+
 
 
 async function doUMAP(dataWithEmbeddings) {
@@ -361,18 +397,21 @@ async function doUMAP(dataWithEmbeddings) {
     console.log("Starting UMAP...");
     try {
         const umapOptions = {
-            nNeighbors: 15,
-            minDist: 0.1,
+            nNeighbors: 30,
+            minDist: .2,
             spread: 1,
             nComponents: 3
         };
         const umap = new UMAP(umapOptions);
-        const embeddings = await umap.fitAsync(data.map(d => d.embedding)); // Use fitAsync for asynchronous processing
+               // Use fitAsync for asynchronous processing
+        const all_coordinates = await umap.fitAsync(data.map(d => d.embedding), epoch => {
+            console.log("UMAP Epoch number: " + epoch);
+        });
 
         // Convert embeddings to your data format and update visualization
-        reducedData = embeddings.map((embedding, index) => ({
+        reducedData = all_coordinates.map((coordinates, index) => ({
             id: data[index].id,
-            coordinates: embedding
+            coordinates: coordinates
         }));
     } catch (error) {
         console.error("Error processing data with UMAP:", error);
