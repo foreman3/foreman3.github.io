@@ -7,11 +7,41 @@
     body {
       margin: 0;
       display: flex;
-      flex-direction: column;
-      align-items: center;
+      min-height: 100vh;
       background: #f8f8f8;
       font-family: Arial, sans-serif;
     }
+
+    #sidebar {
+      width: 200px;
+      background: #333;
+      color: #fff;
+      padding: 10px;
+    }
+
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    #sidebar li {
+      margin: 10px 0;
+    }
+
+    #sidebar a {
+      color: #fff;
+      text-decoration: none;
+    }
+
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+    }
+
     canvas {
       background: #222;
       border: 1px solid #555;
@@ -29,10 +59,22 @@
   </style>
 </head>
 <body>
-  <h1>Fruit Drop</h1>
-  <canvas id="gameCanvas" width="400" height="600"></canvas>
-  <div id="score">Score: 0</div>
-  <div id="message"></div>
+  <nav id="sidebar">
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="simple.html">Pet Gallery</a></li>
+      <li><a href="https://www.google.com" target="_blank">Google</a></li>
+      <li><a href="https://www.hulu.com" target="_blank">Hulu</a></li>
+      <li><a href="https://www.youtube.com" target="_blank">YouTube</a></li>
+      <li><a href="https://xkcd.com" target="_blank">xkcd</a></li>
+    </ul>
+  </nav>
+  <div id="game-container">
+    <h1>Fruit Drop</h1>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="message"></div>
+  </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
