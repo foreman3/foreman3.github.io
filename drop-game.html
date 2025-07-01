@@ -70,16 +70,18 @@
       const types = ['fruit', 'fruit', 'fruit', 'bomb']; // more fruits than bombs
       const type = types[Math.floor(Math.random() * types.length)];
 
+      const vx = (Math.random() * 2 - 1) * 2; // horizontal speed between -2 and 2
+
       if (type === 'fruit') {
         const sizes = ['small', 'medium', 'large'];
         const size = sizes[Math.floor(Math.random() * sizes.length)];
         const cfg = sizeConfigs[size];
         const x = Math.random() * (canvas.width - cfg.radius * 2) + cfg.radius;
-        items.push({ x, y: -cfg.radius, radius: cfg.radius, type, speed: cfg.speed, points: cfg.points });
+        items.push({ x, y: -cfg.radius, radius: cfg.radius, type, speed: cfg.speed, points: cfg.points, vx });
       } else {
         const radius = 15;
         const x = Math.random() * (canvas.width - radius * 2) + radius;
-        items.push({ x, y: -radius, radius, type, speed: 2, points: 0 });
+        items.push({ x, y: -radius, radius, type, speed: 2, points: 0, vx });
       }
     }
 
@@ -137,6 +139,11 @@
     function updateItems() {
       for (let i = items.length - 1; i >= 0; i--) {
         const item = items[i];
+        item.x += item.vx * speedMultiplier;
+        if (item.x - item.radius < 0 || item.x + item.radius > canvas.width) {
+          item.vx = -item.vx;
+          item.x = Math.max(item.radius, Math.min(canvas.width - item.radius, item.x));
+        }
         item.y += item.speed * speedMultiplier;
         if (item.y - item.radius > canvas.height) {
           items.splice(i, 1);
