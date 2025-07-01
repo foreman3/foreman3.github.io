@@ -99,9 +99,7 @@
     </div>
   </div>
   <script>
-    // Replace with your Google Custom Search API key and CX
-    const API_KEY = 'YOUR_API_KEY';
-    const CX = 'YOUR_SEARCH_ENGINE_ID';
+    // Simple image search using Unsplash API (no key required)
 
     const grid = document.getElementById('pet-grid');
     const searchBtn = document.getElementById('search-button');
@@ -113,10 +111,10 @@
     let dragged;
 
     async function searchImages(query) {
-      const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&searchType=image&num=4&key=${API_KEY}&cx=${CX}`;
+      const url = `https://unsplash.com/napi/search/photos?query=${encodeURIComponent(query)}&per_page=4`;
       const response = await fetch(url);
       const data = await response.json();
-      return (data.items || []).map(item => item.link);
+      return (data.results || []).map(item => item.urls.small);
     }
 
     searchBtn.addEventListener('click', async () => {
