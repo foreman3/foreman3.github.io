@@ -1,5 +1,7 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
     <title>Research Station Terminal</title>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/egg.js/1.0/egg.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
@@ -9,6 +11,28 @@
     <script type="text/javascript" src="https://foreman3.github.io/rover.js"></script>
     <script type="text/javascript" src="https://foreman3.github.io/db.js"></script>
     <script type="text/javascript" src="https://foreman3.github.io/terminal.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        background: linear-gradient(135deg, #1b2735, #090a0f);
+        color: #fff;
+        font-family: Arial, sans-serif;
+      }
+      header {
+        text-align: center;
+        padding: 20px 0;
+        font-size: 2em;
+        font-weight: bold;
+      }
+      #terminal {
+        height: calc(100vh - 80px);
+      }
+    </style>
   </head>
-   <div id="terminal"></div>
+  <body>
+    <header>Research Station Terminal</header>
+    <div id="terminal"></div>
+  </body>
 </html>
