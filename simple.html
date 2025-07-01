@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reorderable Pet Gallery</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    #pet-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    #pet-grid img {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: move;
+    }
+  </style>
+</head>
+<body>
+  <h1>Drag to Reorder Pets</h1>
+  <div id="pet-grid">
+    <img src="https://raw.githubusercontent.com/Azure-Samples/cognitive-services-sample-data-files/master/ComputerVision/Images/dog.jpg" draggable="true" alt="Dog">
+    <img src="https://raw.githubusercontent.com/Azure-Samples/cognitive-services-sample-data-files/master/ComputerVision/Images/lion_drawing.png" draggable="true" alt="Lion">
+    <img src="https://raw.githubusercontent.com/Azure-Samples/cognitive-services-sample-data-files/master/ComputerVision/Images/dog.jpg" draggable="true" alt="Dog 2">
+    <img src="https://raw.githubusercontent.com/Azure-Samples/cognitive-services-sample-data-files/master/ComputerVision/Images/lion_drawing.png" draggable="true" alt="Lion 2">
+  </div>
+  <script>
+    const grid = document.getElementById('pet-grid');
+    let dragged;
+
+    grid.addEventListener('dragstart', (e) => {
+      if (e.target.tagName === 'IMG') {
+        dragged = e.target;
+      }
+    });
+
+    grid.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const target = e.target;
+      if (target.tagName === 'IMG' && target !== dragged) {
+        const rect = target.getBoundingClientRect();
+        const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+        grid.insertBefore(dragged, next ? target.nextSibling : target);
+      }
+    });
+
+    grid.addEventListener('drop', (e) => {
+      e.preventDefault();
+    });
+  </script>
+</body>
+</html>
