@@ -53,18 +53,34 @@
         if (e.key === 'ArrowLeft' || e.key === 'a') leftPressed = false;
       });
 
-      const items = [];
-      const bullets = [];
-      let score = 0;
-      let gameOver = false;
-      let itemSpeed = 2; // falling speed for items
+    const items = [];
+    const bullets = [];
+    let score = 0;
+    let gameOver = false;
+    let speedMultiplier = 2; // global speed multiplier
+
+    const sizeConfigs = {
+      small:  { radius: 10, speed: 3,   points: 3 },
+      medium: { radius: 15, speed: 2,   points: 2 },
+      large:  { radius: 20, speed: 1.5, points: 1 }
+    };
+
 
     function spawnItem() {
       const types = ['fruit', 'fruit', 'fruit', 'bomb']; // more fruits than bombs
       const type = types[Math.floor(Math.random() * types.length)];
-      const radius = 15;
-      const x = Math.random() * (canvas.width - radius * 2) + radius;
-      items.push({ x, y: -radius, radius, type });
+
+      if (type === 'fruit') {
+        const sizes = ['small', 'medium', 'large'];
+        const size = sizes[Math.floor(Math.random() * sizes.length)];
+        const cfg = sizeConfigs[size];
+        const x = Math.random() * (canvas.width - cfg.radius * 2) + cfg.radius;
+        items.push({ x, y: -cfg.radius, radius: cfg.radius, type, speed: cfg.speed, points: cfg.points });
+      } else {
+        const radius = 15;
+        const x = Math.random() * (canvas.width - radius * 2) + radius;
+        items.push({ x, y: -radius, radius, type, speed: 2, points: 0 });
+      }
     }
 
     function shoot() {
@@ -121,7 +137,7 @@
     function updateItems() {
       for (let i = items.length - 1; i >= 0; i--) {
         const item = items[i];
-        item.y += itemSpeed;
+        item.y += item.speed * speedMultiplier;
         if (item.y - item.radius > canvas.height) {
           items.splice(i, 1);
           continue;
@@ -133,8 +149,8 @@
             gameOver = true;
             document.getElementById('message').textContent = 'Game Over!';
           } else {
-            score++;
-            itemSpeed *= 1.02; // increase speed by 2% each score
+            score += item.points;
+            speedMultiplier *= 1.02; // increase speed by 2% each score
             document.getElementById('score').textContent = 'Score: ' + score;
           }
           items.splice(i, 1);
