@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <title>Research Station Terminal</title>
@@ -9,6 +10,49 @@
     <script type="text/javascript" src="https://foreman3.github.io/rover.js"></script>
     <script type="text/javascript" src="https://foreman3.github.io/db.js"></script>
     <script type="text/javascript" src="https://foreman3.github.io/terminal.js"></script>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        min-height: 100vh;
+      }
+      #sidebar {
+        width: 200px;
+        background: #333;
+        color: #fff;
+        padding: 10px;
+      }
+      #sidebar ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      #sidebar li {
+        margin: 10px 0;
+      }
+      #sidebar a {
+        color: #fff;
+        text-decoration: none;
+      }
+      #terminal-container {
+        flex: 1;
+        padding: 10px;
+      }
+    </style>
   </head>
-   <div id="terminal"></div>
+  <body>
+    <nav id="sidebar">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="simple.html">Pet Gallery</a></li>
+        <li><a href="https://www.google.com" target="_blank">Google</a></li>
+        <li><a href="https://www.hulu.com" target="_blank">Hulu</a></li>
+        <li><a href="https://www.youtube.com" target="_blank">YouTube</a></li>
+        <li><a href="https://xkcd.com" target="_blank">xkcd</a></li>
+      </ul>
+    </nav>
+    <div id="terminal-container">
+      <div id="terminal"></div>
+    </div>
+  </body>
 </html>
