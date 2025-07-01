@@ -55,6 +55,7 @@
     const items = [];
     let score = 0;
     let gameOver = false;
+    let itemSpeed = 2; // falling speed for items
 
     function spawnItem() {
       const types = ['fruit', 'fruit', 'fruit', 'bomb']; // more fruits than bombs
@@ -83,7 +84,7 @@
     function updateItems() {
       for (let i = items.length - 1; i >= 0; i--) {
         const item = items[i];
-        item.y += 2;
+        item.y += itemSpeed;
         if (item.y - item.radius > canvas.height) {
           items.splice(i, 1);
           continue;
@@ -96,6 +97,7 @@
             document.getElementById('message').textContent = 'Game Over!';
           } else {
             score++;
+            itemSpeed *= 1.02; // increase speed by 2% each score
             document.getElementById('score').textContent = 'Score: ' + score;
           }
           items.splice(i, 1);
