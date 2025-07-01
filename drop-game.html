@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Drop Game</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #f8f8f8;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      background: #222;
+      border: 1px solid #555;
+      margin-top: 20px;
+    }
+    #score {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 20px;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fruit Drop</h1>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="score">Score: 0</div>
+  <div id="message"></div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const basketWidth = 60;
+    const basketHeight = 20;
+    let basketX = (canvas.width - basketWidth) / 2;
+    const basketY = canvas.height - basketHeight - 10;
+
+    let rightPressed = false;
+    let leftPressed = false;
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'd') rightPressed = true;
+      if (e.key === 'ArrowLeft' || e.key === 'a') leftPressed = true;
+    });
+    document.addEventListener('keyup', e => {
+      if (e.key === 'ArrowRight' || e.key === 'd') rightPressed = false;
+      if (e.key === 'ArrowLeft' || e.key === 'a') leftPressed = false;
+    });
+
+    const items = [];
+    let score = 0;
+    let gameOver = false;
+
+    function spawnItem() {
+      const types = ['fruit', 'fruit', 'fruit', 'bomb']; // more fruits than bombs
+      const type = types[Math.floor(Math.random() * types.length)];
+      const radius = 15;
+      const x = Math.random() * (canvas.width - radius * 2) + radius;
+      items.push({ x, y: -radius, radius, type });
+    }
+
+    function drawBasket() {
+      ctx.fillStyle = '#964B00';
+      ctx.fillRect(basketX, basketY, basketWidth, basketHeight);
+    }
+
+    function drawItem(item) {
+      if (item.type === 'bomb') {
+        ctx.fillStyle = 'red';
+      } else {
+        ctx.fillStyle = 'green';
+      }
+      ctx.beginPath();
+      ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function updateItems() {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        item.y += 2;
+        if (item.y - item.radius > canvas.height) {
+          items.splice(i, 1);
+          continue;
+        }
+        const inXRange = item.x > basketX && item.x < basketX + basketWidth;
+        const inYRange = item.y + item.radius > basketY && item.y - item.radius < basketY + basketHeight;
+        if (inXRange && inYRange) {
+          if (item.type === 'bomb') {
+            gameOver = true;
+            document.getElementById('message').textContent = 'Game Over!';
+          } else {
+            score++;
+            document.getElementById('score').textContent = 'Score: ' + score;
+          }
+          items.splice(i, 1);
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBasket();
+      items.forEach(drawItem);
+    }
+
+    function step() {
+      if (gameOver) return;
+      if (rightPressed && basketX < canvas.width - basketWidth) basketX += 5;
+      if (leftPressed && basketX > 0) basketX -= 5;
+      if (Math.random() < 0.03) spawnItem();
+      updateItems();
+      draw();
+      requestAnimationFrame(step);
+    }
+    draw();
+    step();
+  </script>
+</body>
+</html>
