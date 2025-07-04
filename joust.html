@@ -107,7 +107,7 @@
         const currentForce = player.flaps.reduce((s,f)=>s+f.force,0);
         let force = FLAP_FORCE;
         if(player.vy < 0 && currentForce>0){
-          const boost = Math.min(FLAP_FORCE, currentForce * 0.2);
+          const boost = Math.min(FLAP_FORCE, currentForce * 0.5); // allow stronger upward flaps
           force = boost;
         }
         player.flaps.push({time:FLAP_DURATION, dir, force});
@@ -245,6 +245,15 @@
     draw(){
       const img = this.isPlayer ? playerImg : enemyImg;
       ctx.drawImage(img,this.x-16,this.y-32,32,32);
+      if(this.isPlayer && Date.now() - this.spawnTime < 2000){
+        ctx.save();
+        ctx.strokeStyle='gold';
+        ctx.lineWidth=3;
+        ctx.beginPath();
+        ctx.arc(this.x,this.y-16,20,0,Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
   }
 
@@ -278,8 +287,23 @@
     }
   }
 
+  function safeSpawnX(){
+    for(let attempts=0; attempts<30; attempts++){
+      const x = Math.random()*(canvas.width-40)+20;
+      let safe = true;
+      for(const e of enemies){
+        if(Math.hypot(e.x - x, e.y - (GROUND_Y-BIRD_RADIUS)) < 80){
+          safe = false; break;
+        }
+      }
+      if(safe) return x;
+    }
+    return canvas.width/2;
+  }
+
   function resetPlayer(){
-    player = new Knight(canvas.width/2,GROUND_Y-BIRD_RADIUS,true);
+    const x = safeSpawnX();
+    player = new Knight(x,GROUND_Y-BIRD_RADIUS,true);
   }
 
   function createEffect(x,y){
@@ -314,6 +338,9 @@
       for(let j=i+1;j<all.length;j++){
         const a=all[i], b=all[j];
         if(!a.alive || !b.alive) continue;
+        const now = Date.now();
+        if((a.isPlayer && now - a.spawnTime < 2000) ||
+           (b.isPlayer && now - b.spawnTime < 2000)) continue;
         const dx=a.x-b.x;
         const dy=a.y-b.y;
         if(Math.hypot(dx,dy) < BIRD_RADIUS*2){
@@ -350,6 +377,7 @@
 
   let running=true;
   startStage();
+  resetPlayer();
 
   function update(){
     if(!running) return;
