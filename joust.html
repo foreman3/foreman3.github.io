@@ -80,22 +80,37 @@
   const ctx = canvas.getContext('2d');
 
   const GRAVITY = 0.3;
-  const FLAP_STRENGTH = -6;
+  const FLAP_FORCE = GRAVITY * 1.5; // force per flap
+  const FLAP_DURATION = 0.3; // seconds
   const HORIZ_SPEED = 3;
   const BIRD_RADIUS = 12;
   const KNIGHT_HEIGHT = 10;
 
+  const GROUND_Y = canvas.height - 30; // just above lava
+
+  const playerImg = new Image();
+  playerImg.src = 'images/player_knight.svg';
+  const enemyImg = new Image();
+  enemyImg.src = 'images/enemy_knight.svg';
+
   let keys = { left:false, right:false, up:false };
+  let upHeld = false;
+  let flaps = [];
 
   document.addEventListener('keydown', e => {
     if(e.key==='ArrowLeft' || e.key==='a') keys.left = true;
     if(e.key==='ArrowRight' || e.key==='d') keys.right = true;
-    if(e.key==='ArrowUp' || e.key==='w') keys.up = true;
+    if((e.key==='ArrowUp' || e.key==='w') && !upHeld){
+      keys.up = true;
+      upHeld = true;
+      const dir = keys.left ? -1 : (keys.right ? 1 : 0);
+      flaps.push({time:FLAP_DURATION, dir});
+    }
   });
   document.addEventListener('keyup', e => {
     if(e.key==='ArrowLeft' || e.key==='a') keys.left = false;
     if(e.key==='ArrowRight' || e.key==='d') keys.right = false;
-    if(e.key==='ArrowUp' || e.key==='w') keys.up = false;
+    if(e.key==='ArrowUp' || e.key==='w') { keys.up = false; upHeld = false; }
   });
 
   function createPlatforms() {
@@ -120,31 +135,64 @@
     update(){
       if(this.isPlayer){
         if(keys.left) this.vx = -HORIZ_SPEED; else if(keys.right) this.vx = HORIZ_SPEED; else this.vx=0;
-        if(keys.up) this.vy += FLAP_STRENGTH; // impulse upward
       }
-      this.vy += GRAVITY;
+
+      let ax = 0;
+      let ay = GRAVITY;
+      for(let i=flaps.length-1;i>=0;i--){
+        const f = flaps[i];
+        const force = FLAP_FORCE;
+        if(f.dir===0){
+          ay -= force;
+        }else{
+          ay -= force/2;
+          ax += f.dir*force/2;
+        }
+        f.time -= 1/60;
+        if(f.time<=0) flaps.splice(i,1);
+      }
+
+      this.vx += ax;
+      this.vy += ay;
+
+      const prevX=this.x, prevY=this.y;
       this.x += this.vx;
       this.y += this.vy;
-      if(this.x < BIRD_RADIUS) { this.x=BIRD_RADIUS; this.vx=0; }
-      if(this.x > canvas.width-BIRD_RADIUS) { this.x=canvas.width-BIRD_RADIUS; this.vx=0; }
-      // ground collision with platforms
+
+      if(this.x < BIRD_RADIUS){ this.x=BIRD_RADIUS; this.vx=0; }
+      if(this.x > canvas.width-BIRD_RADIUS){ this.x=canvas.width-BIRD_RADIUS; this.vx=0; }
+
+      let onGround=false;
+      if(this.y > GROUND_Y-BIRD_RADIUS){
+        this.y = GROUND_Y-BIRD_RADIUS;
+        this.vy = 0;
+        onGround=true;
+      }
+
       for(const p of platforms){
-        if(this.y+BIRD_RADIUS>p.y && this.y+BIRD_RADIUS<this.y+this.vy+GRAVITY && this.x>p.x && this.x<p.x+p.width){
-          this.y=p.y-BIRD_RADIUS; this.vy=0; break;
+        if(this.x > p.x-BIRD_RADIUS && this.x < p.x+p.width+BIRD_RADIUS &&
+           this.y+BIRD_RADIUS > p.y && this.y-BIRD_RADIUS < p.y+p.height){
+          if(prevY + BIRD_RADIUS <= p.y){
+            this.y = p.y - BIRD_RADIUS;
+            this.vy = 0; onGround=true;
+          } else if(prevY - BIRD_RADIUS >= p.y + p.height){
+            this.y = p.y + p.height + BIRD_RADIUS;
+            if(this.vy<0) this.vy=0;
+          } else if(prevX < p.x){
+            this.x = p.x - BIRD_RADIUS; this.vx=0;
+          } else if(prevX > p.x + p.width){
+            this.x = p.x + p.width + BIRD_RADIUS; this.vx=0;
+          }
         }
       }
     }
     draw(){
-      ctx.fillStyle = this.isPlayer?'#00ff00':'#ffff00';
-      ctx.beginPath();
-      ctx.arc(this.x,this.y,BIRD_RADIUS,0,Math.PI*2);
-      ctx.fill();
-      ctx.fillStyle = '#000';
-      ctx.fillRect(this.x-4,this.y-BIRD_RADIUS-KNIGHT_HEIGHT,8,KNIGHT_HEIGHT);
+      const img = this.isPlayer ? playerImg : enemyImg;
+      ctx.drawImage(img,this.x-16,this.y-32,32,32);
     }
   }
 
-  let player = new Knight(canvas.width/2,50,true);
+  let player = new Knight(canvas.width/2,GROUND_Y-BIRD_RADIUS,true);
   let lives = 3;
   let stage = 1;
   let enemies = [];
@@ -164,12 +212,12 @@
   function spawnEnemy(){
     if(spawned>=totalToSpawn) return;
     const x = Math.random()*(canvas.width-40)+20;
-    enemies.push(new Knight(x,30));
+    enemies.push(new Knight(x,GROUND_Y-BIRD_RADIUS));
     spawned++;
   }
 
   function resetPlayer(){
-    player = new Knight(canvas.width/2,50,true);
+    player = new Knight(canvas.width/2,GROUND_Y-BIRD_RADIUS,true);
   }
 
   function checkCollisions(){
@@ -232,6 +280,9 @@
     // lava
     ctx.fillStyle = '#ff3300';
     ctx.fillRect(0,canvas.height-20,canvas.width,20);
+    // ground
+    ctx.fillStyle = '#228B22';
+    ctx.fillRect(0,GROUND_Y,canvas.width,10);
     // platforms
     ctx.fillStyle = '#654321';
     for(const p of platforms){
