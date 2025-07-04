@@ -103,7 +103,14 @@
       keys.up = true;
       upHeld = true;
       const dir = keys.left ? -1 : (keys.right ? 1 : 0);
-      if(player) player.flaps.push({time:FLAP_DURATION, dir});
+      if(player){
+        const currentForce = player.flaps.reduce((s,f)=>s+f.force,0);
+        let force = FLAP_FORCE;
+        if(player.vy < 0 && currentForce>0){
+          force = currentForce * 0.1;
+        }
+        player.flaps.push({time:FLAP_DURATION, dir, force});
+      }
     }
   });
   document.addEventListener('keyup', e => {
@@ -137,11 +144,24 @@
         if(keys.left) this.vx = -HORIZ_SPEED; else if(keys.right) this.vx = HORIZ_SPEED; else this.vx=0;
       } else {
         const speed = 1 + 0.5*(stage-1); // enemies get faster each stage
-        const dir = Math.sign(player.x - this.x);
+        let dir = Math.sign(player.x - this.x);
+        if(stage >= 2 && this.y > player.y){
+          dir *= -1; // avoid player when lower
+        }
         this.vx = dir * speed;
-        const flapChance = 0.01 * stage; // aggressiveness
-        if(player.y < this.y && Math.random() < flapChance){
-          this.flaps.push({time:FLAP_DURATION, dir});
+
+        if(stage >= 3){
+          if(this.y > player.y){
+            if(Math.random() < 0.2) this.flaps.push({time:FLAP_DURATION, dir, force:FLAP_FORCE});
+          } else {
+            this.vy += GRAVITY * 0.4; // swoop down
+            this.vx = Math.sign(player.x - this.x) * (speed + 1);
+          }
+        } else {
+          const flapChance = 0.01 * stage; // aggressiveness
+          if(player.y < this.y && Math.random() < flapChance){
+            this.flaps.push({time:FLAP_DURATION, dir, force:FLAP_FORCE});
+          }
         }
       }
 
@@ -149,7 +169,7 @@
       let ay = GRAVITY;
       for(let i=this.flaps.length-1;i>=0;i--){
         const f = this.flaps[i];
-        const force = FLAP_FORCE;
+        const force = f.force ?? FLAP_FORCE;
         if(f.dir===0){
           ay -= force;
         }else{
@@ -207,17 +227,16 @@
   let stage = 1;
   let enemies = [];
   let effects = [];
-  let totalToSpawn = 6;
+  let totalToSpawn = 3;
   let spawned = 0;
   let nextSpawn = 0;
 
   function startStage(){
     platforms = createPlatforms();
-    enemies=[]; spawned=0;
-    totalToSpawn = 6 + (stage-1)*2;
+    enemies=[]; spawned=0; nextSpawn=0;
+    totalToSpawn = 3 + (stage-1)*2;
     const immediate = 1 + (stage-1);
-    for(let i=0;i<immediate;i++){ spawnEnemy(); }
-    nextSpawn = Date.now()+10000;
+    for(let i=0;i<immediate && spawned<totalToSpawn;i++){ spawnEnemy(); }
   }
 
   function spawnEnemy(){
@@ -225,6 +244,12 @@
     const x = Math.random()*(canvas.width-40)+20;
     enemies.push(new Knight(x,GROUND_Y-BIRD_RADIUS));
     spawned++;
+  }
+
+  function scheduleSpawn(){
+    if(spawned < totalToSpawn) {
+      nextSpawn = Date.now() + 1000;
+    }
   }
 
   function resetPlayer(){
@@ -281,7 +306,10 @@
             }
             if(lower!==player){
               const idx=enemies.indexOf(lower);
-              if(idx>=0) enemies.splice(idx,1);
+              if(idx>=0){
+                enemies.splice(idx,1);
+                scheduleSpawn();
+              }
             }
             createEffect(lower.x,lower.y);
           } else {
@@ -299,9 +327,9 @@
 
   function update(){
     if(!running) return;
-    if(Date.now()>nextSpawn){
+    if(nextSpawn && Date.now()>nextSpawn){
       spawnEnemy();
-      nextSpawn=Date.now()+10000;
+      nextSpawn=0;
     }
     player.update();
     enemies.forEach(e=>e.update());
@@ -316,7 +344,9 @@
         running=false;
       } else resetPlayer();
     }
+    const beforeLen = enemies.length;
     enemies = enemies.filter(e=>e.y<canvas.height+50);
+    if(enemies.length < beforeLen) scheduleSpawn();
     document.getElementById('info').textContent=`Lives: ${lives} | Stage: ${stage}`;
   }
 
