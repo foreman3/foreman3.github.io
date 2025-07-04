@@ -124,6 +124,17 @@
       large:  { radius: 20, speed: 1.5, points: 1 }
     };
 
+    const images = {
+      small: new Image(),
+      medium: new Image(),
+      large: new Image(),
+      bomb: new Image()
+    };
+    images.small.src = 'images/grapes.svg';
+    images.medium.src = 'images/apple.svg';
+    images.large.src = 'images/watermelon.svg';
+    images.bomb.src = 'images/cherry-bomb.svg';
+
 
     function spawnItem() {
       const types = ['fruit', 'fruit', 'fruit', 'bomb']; // more fruits than bombs
@@ -136,11 +147,11 @@
         const size = sizes[Math.floor(Math.random() * sizes.length)];
         const cfg = sizeConfigs[size];
         const x = Math.random() * (canvas.width - cfg.radius * 2) + cfg.radius;
-        items.push({ x, y: -cfg.radius, radius: cfg.radius, type, speed: cfg.speed, points: cfg.points, vx });
+        items.push({ x, y: -cfg.radius, radius: cfg.radius, type, speed: cfg.speed, points: cfg.points, vx, img: images[size] });
       } else {
         const radius = 15;
         const x = Math.random() * (canvas.width - radius * 2) + radius;
-        items.push({ x, y: -radius, radius, type, speed: 2, points: 0, vx });
+        items.push({ x, y: -radius, radius, type, speed: 2, points: 0, vx, img: images.bomb });
       }
     }
 
@@ -185,14 +196,19 @@
     }
 
     function drawItem(item) {
-      if (item.type === 'bomb') {
-        ctx.fillStyle = 'red';
+      const img = item.img;
+      if (img && img.complete) {
+        ctx.drawImage(img, item.x - item.radius, item.y - item.radius, item.radius * 2, item.radius * 2);
       } else {
-        ctx.fillStyle = 'green';
+        if (item.type === 'bomb') {
+          ctx.fillStyle = 'red';
+        } else {
+          ctx.fillStyle = 'green';
+        }
+        ctx.beginPath();
+        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+        ctx.fill();
       }
-      ctx.beginPath();
-      ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
-      ctx.fill();
     }
 
     function updateItems() {
