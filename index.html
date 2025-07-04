@@ -41,18 +41,17 @@
     </style>
   </head>
   <body>
-    <nav id="sidebar">
-      <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="simple.html">Pet Gallery</a></li>
-        <li><a href="https://www.google.com" target="_blank">Google</a></li>
-        <li><a href="https://www.hulu.com" target="_blank">Hulu</a></li>
-        <li><a href="https://www.youtube.com" target="_blank">YouTube</a></li>
-        <li><a href="https://xkcd.com" target="_blank">xkcd</a></li>
-      </ul>
-    </nav>
+    <div id="sidebar-placeholder"></div>
     <div id="terminal-container">
       <div id="terminal"></div>
     </div>
+    <script>
+      fetch('sidebar.html')
+        .then(r => r.text())
+        .then(html => {
+          const placeholder = document.getElementById('sidebar-placeholder');
+          if (placeholder) placeholder.outerHTML = html;
+        });
+    </script>
   </body>
 </html>
