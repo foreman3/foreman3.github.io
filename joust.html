@@ -107,7 +107,8 @@
         const currentForce = player.flaps.reduce((s,f)=>s+f.force,0);
         let force = FLAP_FORCE;
         if(player.vy < 0 && currentForce>0){
-          force = currentForce * 0.1;
+          const boost = Math.min(FLAP_FORCE, currentForce * 0.2);
+          force = boost;
         }
         player.flaps.push({time:FLAP_DURATION, dir, force});
       }
@@ -138,6 +139,11 @@
       this.x=x; this.y=y; this.vx=0; this.vy=0;
       this.isPlayer=isPlayer; this.alive=true; this.spawnTime=Date.now();
       this.flaps=[];
+      if(!isPlayer){
+        this.mode='attack';
+        this.modeTimer=stage;
+        this.restDir=Math.random()<0.5?1:-1;
+      }
     }
     update(){
       if(this.isPlayer){
@@ -145,19 +151,35 @@
       } else {
         const speed = 1 + 0.5*(stage-1); // enemies get faster each stage
         let dir = Math.sign(player.x - this.x);
-        if(stage >= 2 && this.y > player.y){
-          dir *= -1; // avoid player when lower
-        }
-        this.vx = dir * speed;
-
         if(stage >= 3){
-          if(this.y > player.y){
-            if(Math.random() < 0.2) this.flaps.push({time:FLAP_DURATION, dir, force:FLAP_FORCE});
+          if(this.mode === 'attack'){
+            this.modeTimer -= 1/60;
+            if(this.y > player.y){
+              if(Math.random() < 0.3) this.flaps.push({time:FLAP_DURATION, dir, force:FLAP_FORCE});
+              this.vx = dir * speed;
+            } else {
+              this.vy += GRAVITY * 0.4; // swoop down
+              this.vx = dir * (speed + 1);
+            }
+            if(this.modeTimer <= 0){
+              this.mode = 'rest';
+              const restMax = Math.max(1, 10 - stage);
+              this.modeTimer = Math.random() * restMax;
+              this.restDir = Math.random() < 0.5 ? 1 : -1;
+            }
           } else {
-            this.vy += GRAVITY * 0.4; // swoop down
-            this.vx = Math.sign(player.x - this.x) * (speed + 1);
+            this.modeTimer -= 1/60;
+            this.vx = this.restDir * speed;
+            if(this.modeTimer <= 0){
+              this.mode = 'attack';
+              this.modeTimer = stage;
+            }
           }
         } else {
+          if(stage >= 2 && this.y > player.y){
+            dir *= -1; // avoid player when lower
+          }
+          this.vx = dir * speed;
           const flapChance = 0.01 * stage; // aggressiveness
           if(player.y < this.y && Math.random() < flapChance){
             this.flaps.push({time:FLAP_DURATION, dir, force:FLAP_FORCE});
