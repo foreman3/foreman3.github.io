@@ -79,7 +79,7 @@
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
     <h1>Fruit Drop</h1>
-    <canvas id="gameCanvas" width="600" height="900"></canvas>
+    <canvas id="gameCanvas" width="600" height="630"></canvas>
     <div id="score">Score: 0</div>
     <div id="message"></div>
   </div>
@@ -111,9 +111,9 @@
     let speedMultiplier = 2; // global speed multiplier
 
     const sizeConfigs = {
-      small:  { radius: 15, speed: 3,   points: 3 },
-      medium: { radius: 22.5, speed: 2,   points: 2 },
-      large:  { radius: 30, speed: 1.5, points: 1 }
+      small:  { radius: 10.5, speed: 3,   points: 3 },
+      medium: { radius: 15.75, speed: 2,   points: 2 },
+      large:  { radius: 21, speed: 1.5, points: 1 }
     };
 
     const images = {
@@ -141,7 +141,7 @@
         const x = Math.random() * (canvas.width - cfg.radius * 2) + cfg.radius;
         items.push({ x, y: -cfg.radius, radius: cfg.radius, type, speed: cfg.speed, points: cfg.points, vx, img: images[size] });
       } else {
-        const radius = 22.5;
+        const radius = 15.75;
         const x = Math.random() * (canvas.width - radius * 2) + radius;
         items.push({ x, y: -radius, radius, type, speed: 2, points: 0, vx, img: images.bomb });
       }
