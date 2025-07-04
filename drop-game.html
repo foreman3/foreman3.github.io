@@ -55,7 +55,7 @@
     }
 
     canvas {
-      background: rgba(0, 0, 0, 0.6);
+      background: #000;
       border: 2px solid #fff;
       margin-top: 20px;
       border-radius: 8px;
@@ -79,15 +79,15 @@
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
     <h1>Fruit Drop</h1>
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <canvas id="gameCanvas" width="600" height="900"></canvas>
     <div id="score">Score: 0</div>
     <div id="message"></div>
   </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const basketWidth = 60;
-    const basketHeight = 20;
+    const basketWidth = 90;
+    const basketHeight = 30;
     let basketX = (canvas.width - basketWidth) / 2;
     const basketY = canvas.height - basketHeight - 10;
 
@@ -105,14 +105,15 @@
 
     const items = [];
     const bullets = [];
+    const bulletRadius = 7.5;
     let score = 0;
     let gameOver = false;
     let speedMultiplier = 2; // global speed multiplier
 
     const sizeConfigs = {
-      small:  { radius: 10, speed: 3,   points: 3 },
-      medium: { radius: 15, speed: 2,   points: 2 },
-      large:  { radius: 20, speed: 1.5, points: 1 }
+      small:  { radius: 15, speed: 3,   points: 3 },
+      medium: { radius: 22.5, speed: 2,   points: 2 },
+      large:  { radius: 30, speed: 1.5, points: 1 }
     };
 
     const images = {
@@ -140,7 +141,7 @@
         const x = Math.random() * (canvas.width - cfg.radius * 2) + cfg.radius;
         items.push({ x, y: -cfg.radius, radius: cfg.radius, type, speed: cfg.speed, points: cfg.points, vx, img: images[size] });
       } else {
-        const radius = 15;
+        const radius = 22.5;
         const x = Math.random() * (canvas.width - radius * 2) + radius;
         items.push({ x, y: -radius, radius, type, speed: 2, points: 0, vx, img: images.bomb });
       }
@@ -148,7 +149,7 @@
 
     function shoot() {
       if (score <= 0) return;
-      bullets.push({ x: basketX + basketWidth / 2, y: basketY, radius: 5 });
+      bullets.push({ x: basketX + basketWidth / 2, y: basketY, radius: bulletRadius });
       score--;
       document.getElementById('score').textContent = 'Score: ' + score;
     }
