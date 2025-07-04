@@ -155,11 +155,15 @@
           if(this.mode === 'attack'){
             this.modeTimer -= 1/60;
             if(this.y > player.y){
-              if(Math.random() < 0.3) this.flaps.push({time:FLAP_DURATION, dir, force:FLAP_FORCE});
+              const flapChance = (stage >= 3 ? 0.15 : 0.01 * stage) * stage;
+              if(Math.random() < flapChance){
+                this.flaps.push({time:FLAP_DURATION, dir, force:FLAP_FORCE});
+              }
               this.vx = dir * speed;
             } else {
               this.vy += GRAVITY * 0.4; // swoop down
-              this.vx = dir * (speed + 1);
+              let attackSpeedBonus = stage >= 4 ? 1 : 0.5; // staged curve
+              this.vx = dir * (speed + attackSpeedBonus);
             }
             if(this.modeTimer <= 0){
               this.mode = 'rest';
