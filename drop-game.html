@@ -109,6 +109,8 @@
     let score = 0;
     let gameOver = false;
     let speedMultiplier = 2; // global speed multiplier
+    let cherryWaveTriggered = false;
+    let grapeWaveTriggered = false;
 
     const sizeConfigs = {
       small:  { radius: 10.5, speed: 3,   points: 3 },
@@ -120,12 +122,14 @@
       small: new Image(),
       medium: new Image(),
       large: new Image(),
-      bomb: new Image()
+      bomb: new Image(),
+      cherry: new Image()
     };
     images.small.src = 'images/grapes.svg';
     images.medium.src = 'images/apple.svg';
     images.large.src = 'images/watermelon.svg';
     images.bomb.src = 'images/cherry-bomb.svg';
+    images.cherry.src = 'images/cherry.svg';
 
 
     function spawnItem() {
@@ -144,6 +148,29 @@
         const radius = 15.75;
         const x = Math.random() * (canvas.width - radius * 2) + radius;
         items.push({ x, y: -radius, radius, type, speed: 2, points: 0, vx, img: images.bomb });
+      }
+    }
+
+    function spawnCherryWave() {
+      const cfg = sizeConfigs.small;
+      const spacing = cfg.radius * 2;
+      for (let x = cfg.radius; x < canvas.width; x += spacing) {
+        items.push({ x, y: -cfg.radius, radius: cfg.radius, type: 'fruit', speed: cfg.speed, points: cfg.points, vx: 0, img: images.cherry });
+      }
+    }
+
+    function spawnGrapeWave() {
+      const cfg = sizeConfigs.small;
+      const spacing = cfg.radius * 2;
+      const cols = Math.floor(canvas.width / spacing);
+      let count = 0;
+      for (let row = 0; count < 100; row++) {
+        const y = -cfg.radius - row * spacing;
+        for (let col = 0; col < cols && count < 100; col++) {
+          const x = cfg.radius + col * spacing;
+          items.push({ x, y, radius: cfg.radius, type: 'fruit', speed: cfg.speed, points: cfg.points, vx: 0, img: images.small });
+          count++;
+        }
       }
     }
 
@@ -246,6 +273,16 @@
       if (Math.random() < 0.03) spawnItem();
       updateBullets();
       updateItems();
+      if (!cherryWaveTriggered && score >= 50) {
+        cherryWaveTriggered = true;
+        spawnCherryWave();
+        setTimeout(() => {
+          if (!grapeWaveTriggered) {
+            grapeWaveTriggered = true;
+            spawnGrapeWave();
+          }
+        }, 3000);
+      }
       draw();
       requestAnimationFrame(step);
     }
