@@ -82,7 +82,15 @@
   const GRAVITY = 0.3;
   const FLAP_FORCE = GRAVITY * 1.5; // force per flap
   const FLAP_DURATION = 0.3; // seconds
-  const HORIZ_SPEED = 3;
+
+  function baseEnemySpeed(){
+    return 1 + 0.5*(stage-1);
+  }
+
+  function playerSpeed(){
+    const diff = Math.max(0, 0.3 - 0.05*(stage-1));
+    return baseEnemySpeed() * (1 + diff);
+  }
   const BIRD_RADIUS = 12;
   const KNIGHT_HEIGHT = 10;
 
@@ -170,9 +178,10 @@
     }
     update(){
       if(this.isPlayer){
-        if(keys.left) this.vx = -HORIZ_SPEED; else if(keys.right) this.vx = HORIZ_SPEED; else this.vx=0;
+        const speed = playerSpeed();
+        if(keys.left) this.vx = -speed; else if(keys.right) this.vx = speed; else this.vx=0;
       } else {
-        const speed = 1 + 0.5*(stage-1); // enemies get faster each stage
+        const speed = baseEnemySpeed(); // enemies get faster each stage
         let dir = Math.sign(player.x - this.x);
         if(stage >= 3){
           if(this.mode === 'attack'){
@@ -236,8 +245,13 @@
       this.x += this.vx;
       this.y += this.vy;
 
-      if(this.x < BIRD_RADIUS){ this.x=BIRD_RADIUS; this.vx=0; }
-      if(this.x > canvas.width-BIRD_RADIUS){ this.x=canvas.width-BIRD_RADIUS; this.vx=0; }
+      if(this.isPlayer){
+        if(this.x < -BIRD_RADIUS){ this.x = canvas.width + BIRD_RADIUS; }
+        if(this.x > canvas.width + BIRD_RADIUS){ this.x = -BIRD_RADIUS; }
+      } else {
+        if(this.x < BIRD_RADIUS){ this.x=BIRD_RADIUS; this.vx=0; }
+        if(this.x > canvas.width-BIRD_RADIUS){ this.x=canvas.width-BIRD_RADIUS; this.vx=0; }
+      }
       if(this.y < ROOF_HEIGHT + BIRD_RADIUS){ this.y = ROOF_HEIGHT + BIRD_RADIUS; if(this.vy < 0) this.vy = 0; }
 
       let onGround=false;
