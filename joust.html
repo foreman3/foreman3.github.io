@@ -87,6 +87,7 @@
   const KNIGHT_HEIGHT = 10;
 
   const GROUND_Y = canvas.height - 30; // just above lava
+  const ROOF_HEIGHT = 30; // roof thickness
 
   const playerImg = new Image();
   playerImg.src = 'images/player_knight.svg';
@@ -95,6 +96,8 @@
 
   let keys = { left:false, right:false, up:false };
   let upHeld = false;
+  let spikes = [];
+  let stagePause = 0; // frames to pause with stage text
 
   document.addEventListener('keydown', e => {
     if(e.key==='ArrowLeft' || e.key==='a') keys.left = true;
@@ -130,6 +133,26 @@
       plats.push({x,y,width,height:10});
     }
     return plats;
+  }
+
+  function createSpikes(){
+    spikes = [];
+    if(stage < 3) return;
+    // spikes along the roof
+    const roofCount = Math.min(stage, 6);
+    const spacing = canvas.width / roofCount;
+    for(let i=0;i<roofCount;i++){
+      spikes.push({x:i*spacing + spacing/2 - 10, y:ROOF_HEIGHT, width:20, height:20});
+    }
+    if(stage > 3){
+      for(const p of platforms){
+        const count = Math.min(2, stage-3);
+        for(let i=0;i<count;i++){
+          const sx = p.x + Math.random()*(p.width-20);
+          spikes.push({x:sx, y:p.y, width:20, height:20});
+        }
+      }
+    }
   }
 
   let platforms = createPlatforms();
@@ -215,6 +238,7 @@
 
       if(this.x < BIRD_RADIUS){ this.x=BIRD_RADIUS; this.vx=0; }
       if(this.x > canvas.width-BIRD_RADIUS){ this.x=canvas.width-BIRD_RADIUS; this.vx=0; }
+      if(this.y < ROOF_HEIGHT + BIRD_RADIUS){ this.y = ROOF_HEIGHT + BIRD_RADIUS; if(this.vy < 0) this.vy = 0; }
 
       let onGround=false;
       if(this.y > GROUND_Y-BIRD_RADIUS){
@@ -259,10 +283,12 @@
 
   function startStage(){
     platforms = createPlatforms();
+    createSpikes();
     enemies=[]; spawned=0; nextSpawn=0;
     totalToSpawn = 3 + (stage-1)*2;
     const immediate = 1 + (stage-1);
     for(let i=0;i<immediate && spawned<totalToSpawn;i++){ spawnEnemy(); }
+    stagePause = 120; // display stage text for 2 seconds
   }
 
   function spawnEnemy(){
@@ -305,6 +331,34 @@
       ctx.arc(ef.x,ef.y,ef.r,0,Math.PI*2);
       ctx.stroke();
       ctx.restore();
+    }
+  }
+
+  function checkSpikeHits(){
+    const all=[player,...enemies];
+    for(const k of all){
+      for(const s of spikes){
+        if(k.x > s.x - BIRD_RADIUS && k.x < s.x + s.width + BIRD_RADIUS &&
+           k.y - BIRD_RADIUS < s.y + s.height && k.y + BIRD_RADIUS > s.y){
+          if(k.isPlayer){
+            lives--;
+            if(lives<=0){
+              document.getElementById('message').textContent='Game Over';
+              running=false;
+            } else {
+              resetPlayer();
+            }
+          } else {
+            const idx=enemies.indexOf(k);
+            if(idx>=0){
+              enemies.splice(idx,1);
+              scheduleSpawn();
+            }
+          }
+          createEffect(k.x,k.y);
+          break;
+        }
+      }
     }
   }
 
@@ -353,6 +407,11 @@
 
   function update(){
     if(!running) return;
+    if(stagePause>0){
+      stagePause--;
+      document.getElementById('info').textContent=`Lives: ${lives} | Stage: ${stage}`;
+      return;
+    }
     if(nextSpawn && Date.now()>nextSpawn){
       spawnEnemy();
       nextSpawn=0;
@@ -361,8 +420,10 @@
     enemies.forEach(e=>e.update());
     updateEffects();
     checkCollisions();
+    checkSpikeHits();
     if(spawned>=totalToSpawn && enemies.length===0){
       stage++; lives=3; resetPlayer(); startStage();
+      return;
     }
     if(player.y > canvas.height+50){
       lives--; if(lives<=0){
@@ -381,6 +442,9 @@
     // lava
     ctx.fillStyle = '#ff3300';
     ctx.fillRect(0,canvas.height-20,canvas.width,20);
+    // roof
+    ctx.fillStyle = '#228B22';
+    ctx.fillRect(0,0,canvas.width,ROOF_HEIGHT);
     // ground
     ctx.fillStyle = '#228B22';
     ctx.fillRect(0,GROUND_Y,canvas.width,10);
@@ -389,9 +453,25 @@
     for(const p of platforms){
       ctx.fillRect(p.x,p.y,p.width,p.height);
     }
+    // spikes
+    ctx.fillStyle = 'grey';
+    for(const s of spikes){
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(s.x + s.width/2, s.y + s.height);
+      ctx.lineTo(s.x + s.width, s.y);
+      ctx.closePath();
+      ctx.fill();
+    }
     player.draw();
     enemies.forEach(e=>e.draw());
     drawEffects();
+    if(stagePause>0){
+      ctx.fillStyle='gold';
+      ctx.font='bold 72px sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(`Stage ${stage}`, canvas.width/2, canvas.height/2);
+    }
   }
 
   function loop(){
