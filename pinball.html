@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pinball</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #sidebar li {
+      margin: 15px 0;
+    }
+    #sidebar a {
+      color: #fff;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    #sidebar a:hover {
+      color: #ffea00;
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 3em;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    }
+    canvas {
+      background: #222;
+      border: 2px solid #fff;
+      margin-top: 20px;
+      border-radius: 8px;
+    }
+    #info {
+      margin-top: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ff3333;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Pinball</h1>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="info">Score: 0 | Balls: 3</div>
+    <div id="message"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gravity = 0.25;
+    const ballRadius = 8;
+    const walls = { left: 10, right: canvas.width - 10, top: 10 };
+
+    let ball, score = 0, balls = 3, gameOver = false;
+
+    const bumpers = [
+      {x: 100, y: 200, r: 20, score: 100},
+      {x: 300, y: 250, r: 20, score: 100},
+      {x: 200, y: 120, r: 25, score: 150}
+    ];
+
+    const flippers = {
+      left: {x1: 120, y1: canvas.height-80, length: 60, angle: -20, activeAngle: 30, active:false},
+      right:{x1: canvas.width-120, y1: canvas.height-80, length: 60, angle: 200, activeAngle:150, active:false}
+    };
+
+    function lineEnd(f){
+      const rad = (f.active?f.activeAngle:f.angle) * Math.PI/180;
+      return {x:f.x1 + Math.cos(rad)*f.length, y:f.y1 + Math.sin(rad)*f.length};
+    }
+
+    function resetBall(){
+      ball = {x: canvas.width/2, y: 50, vx: Math.random()*2-1, vy: 0};
+    }
+
+    function drawBall(){
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI*2);
+      ctx.fillStyle = '#ffcc00';
+      ctx.fill();
+    }
+
+    function drawBumpers(){
+      ctx.fillStyle = '#66ccff';
+      bumpers.forEach(b=>{
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+        ctx.fill();
+      });
+    }
+
+    function drawFlippers(){
+      ctx.strokeStyle = '#ff66ff';
+      ctx.lineWidth = 8;
+      for(const key in flippers){
+        const f = flippers[key];
+        const end = lineEnd(f);
+        ctx.beginPath();
+        ctx.moveTo(f.x1, f.y1);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+    }
+
+    function reflectBall(normalX, normalY){
+      const dot = ball.vx*normalX + ball.vy*normalY;
+      ball.vx -= 2*dot*normalX;
+      ball.vy -= 2*dot*normalY;
+    }
+
+    function updatePhysics(){
+      if(gameOver) return;
+      ball.vy += gravity;
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+
+      // walls
+      if(ball.x - ballRadius < walls.left){
+        ball.x = walls.left + ballRadius;
+        ball.vx = Math.abs(ball.vx);
+      }
+      if(ball.x + ballRadius > walls.right){
+        ball.x = walls.right - ballRadius;
+        ball.vx = -Math.abs(ball.vx);
+      }
+      if(ball.y - ballRadius < walls.top){
+        ball.y = walls.top + ballRadius;
+        ball.vy = Math.abs(ball.vy);
+      }
+      if(ball.y - ballRadius > canvas.height){
+        balls--; 
+        if(balls>0){
+          resetBall();
+        } else {
+          gameOver = true;
+          document.getElementById('message').textContent = 'Game Over';
+        }
+        updateInfo();
+        return;
+      }
+
+      // bumpers
+      bumpers.forEach(b=>{
+        const dx = ball.x - b.x;
+        const dy = ball.y - b.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < ballRadius + b.r){
+          const nx = dx/dist;
+          const ny = dy/dist;
+          reflectBall(nx, ny);
+          ball.x = b.x + nx*(ballRadius + b.r);
+          ball.y = b.y + ny*(ballRadius + b.r);
+          score += b.score;
+          updateInfo();
+        }
+      });
+
+      // flippers simple collision
+      for(const key in flippers){
+        const f = flippers[key];
+        const end = lineEnd(f);
+        const dx = end.x - f.x1;
+        const dy = end.y - f.y1;
+        const len = Math.hypot(dx, dy);
+        const ux = dx/len;
+        const uy = dy/len;
+        const px = ball.x - f.x1;
+        const py = ball.y - f.y1;
+        const proj = px*ux + py*uy;
+        const perp = px*(-uy) + py*ux;
+        if(proj>0 && proj<len && Math.abs(perp) < ballRadius+4 && ball.vy>0){
+          if(f.active){
+            ball.vy = -8;
+            ball.vx += ux*4*(key==='left'? -1:1);
+          } else {
+            reflectBall(-uy, ux);
+          }
+        }
+      }
+    }
+
+    function updateInfo(){
+      document.getElementById('info').textContent = `Score: ${score} | Balls: ${balls}`;
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width, canvas.height);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(walls.left, walls.top, walls.right - walls.left, canvas.height - walls.top);
+      drawBumpers();
+      drawFlippers();
+      drawBall();
+    }
+
+    function step(){
+      updatePhysics();
+      draw();
+      requestAnimationFrame(step);
+    }
+
+    document.addEventListener('keydown', e=>{
+      if(e.key==='ArrowLeft' || e.key==='z') flippers.left.active = true;
+      if(e.key==='ArrowRight' || e.key=='/') flippers.right.active = true;
+    });
+    document.addEventListener('keyup', e=>{
+      if(e.key==='ArrowLeft' || e.key==='z') flippers.left.active = false;
+      if(e.key==='ArrowRight' || e.key=='/') flippers.right.active = false;
+    });
+
+    resetBall();
+    updateInfo();
+    step();
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if(placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
