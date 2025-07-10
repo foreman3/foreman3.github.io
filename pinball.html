@@ -91,9 +91,23 @@
     ];
 
     const flippers = {
-      left: {x1: 120, y1: canvas.height-80, length: 60, angle: -20, activeAngle: 30, active:false},
-      right:{x1: canvas.width-120, y1: canvas.height-80, length: 60, angle: 200, activeAngle:150, active:false}
+      // Flippers start in the lowered position and snap upward when active
+      left:  {x1: 120, y1: canvas.height-80, length: 80, angle: 30,  activeAngle: -20, active:false},
+      right: {x1: canvas.width-120, y1: canvas.height-80, length: 80, angle: 200, activeAngle:150, active:false}
     };
+
+    // Simple ramp and track pieces represented as line segments
+    const ramps = [
+      {x1: 60,  y1: 500, x2: 140, y2: 420},
+      {x1: 340, y1: 480, x2: 260, y2: 400}
+    ];
+
+    // Popup targets that disappear when hit and respawn after a delay
+    const targets = [
+      {x: 150, y: 160, r: 10, up:true, delay:0, score:200},
+      {x: 250, y: 190, r: 10, up:true, delay:0, score:200},
+      {x: 200, y: 100, r: 10, up:true, delay:0, score:300}
+    ];
 
     function lineEnd(f){
       const rad = (f.active?f.activeAngle:f.angle) * Math.PI/180;
@@ -122,7 +136,7 @@
 
     function drawFlippers(){
       ctx.strokeStyle = '#ff66ff';
-      ctx.lineWidth = 8;
+      ctx.lineWidth = 10;
       for(const key in flippers){
         const f = flippers[key];
         const end = lineEnd(f);
@@ -131,6 +145,28 @@
         ctx.lineTo(end.x, end.y);
         ctx.stroke();
       }
+    }
+
+    function drawRamps(){
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = 4;
+      ramps.forEach(r=>{
+        ctx.beginPath();
+        ctx.moveTo(r.x1, r.y1);
+        ctx.lineTo(r.x2, r.y2);
+        ctx.stroke();
+      });
+    }
+
+    function drawTargets(){
+      ctx.fillStyle = '#ff9900';
+      targets.forEach(t=>{
+        if(t.up){
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, t.r, 0, Math.PI*2);
+          ctx.fill();
+        }
+      });
     }
 
     function reflectBall(normalX, normalY){
@@ -186,6 +222,46 @@
         }
       });
 
+      // ramps and tracks act like static sloped walls
+      ramps.forEach(r=>{
+        const dx = r.x2 - r.x1;
+        const dy = r.y2 - r.y1;
+        const len = Math.hypot(dx, dy);
+        const ux = dx/len;
+        const uy = dy/len;
+        const px = ball.x - r.x1;
+        const py = ball.y - r.y1;
+        const proj = px*ux + py*uy;
+        const perp = px*(-uy) + py*ux;
+        if(proj>0 && proj<len && Math.abs(perp) < ballRadius){
+          reflectBall(-uy, ux);
+          ball.x = r.x1 + ux*proj - uy*Math.sign(perp)*ballRadius;
+          ball.y = r.y1 + uy*proj + ux*Math.sign(perp)*ballRadius;
+        }
+      });
+
+      // popup targets
+      targets.forEach(t=>{
+        if(t.up){
+          const dx = ball.x - t.x;
+          const dy = ball.y - t.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if(dist < ballRadius + t.r){
+            const nx = dx/dist;
+            const ny = dy/dist;
+            reflectBall(nx, ny);
+            t.up = false;
+            t.delay = 180;
+            score += t.score;
+            updateInfo();
+          }
+        }else if(t.delay > 0){
+          t.delay--;
+        }else{
+          t.up = true;
+        }
+      });
+
       // flippers simple collision
       for(const key in flippers){
         const f = flippers[key];
@@ -220,6 +296,8 @@
       ctx.lineWidth = 4;
       ctx.strokeRect(walls.left, walls.top, walls.right - walls.left, canvas.height - walls.top);
       drawBumpers();
+      drawRamps();
+      drawTargets();
       drawFlippers();
       drawBall();
     }
