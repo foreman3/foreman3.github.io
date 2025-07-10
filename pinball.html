@@ -126,7 +126,7 @@
     }
 
     function updateFlippers(dt){
-      const rate = dt / 0.5; // 0.5 second transition
+      const rate = dt / 0.1; // 0.1 second transition for snappier action
       for(const key in flippers){
         const f = flippers[key];
         const target = f.active ? 1 : 0;
@@ -290,11 +290,11 @@
         if(proj>0 && proj<len && Math.abs(perp) < ballRadius+4 && ball.vy>0){
           reflectBall(-uy, ux);
           // adjust energy based on flipper movement
-          let factor = 0.95; // stationary energy loss
+          let factor = 0.75; // stationary flipper retains 75% of ball energy
           if(f.t > f.prev_t){
             factor = 1.1; // gaining energy while moving up
           } else if(f.t < f.prev_t){
-            factor = 0.85; // heavier loss moving down
+            factor = 0.25; // falling flipper retains only 25% of energy
           }
           ball.vx *= factor;
           ball.vy *= factor;
