@@ -99,8 +99,8 @@
     const diff = Math.max(0, 0.3 - 0.05*(stage-1));
     return baseEnemySpeed() * (1 + diff);
   }
-  const BIRD_RADIUS = 12;
-  const KNIGHT_HEIGHT = 10;
+  const BIRD_RADIUS = 18; // 50% larger bird/knight size
+  const KNIGHT_HEIGHT = 15;
 
   let GROUND_Y = canvas.height - 30; // just above lava
   const ROOF_HEIGHT = 30; // roof thickness
@@ -349,7 +349,7 @@
     }
     draw(){
       const img = this.isPlayer ? playerImg : enemyImg;
-      ctx.drawImage(img,this.x-16,this.y-32,32,32);
+      ctx.drawImage(img,this.x-24,this.y-48,48,48);
       if(this.isPlayer && Date.now() - this.spawnTime < 2000){
         ctx.save();
         ctx.strokeStyle='gold';
@@ -563,7 +563,7 @@
     ctx.fillStyle = '#228B22';
     ctx.fillRect(0,GROUND_Y,canvas.width,10);
     // platforms
-    ctx.fillStyle = '#654321';
+    ctx.fillStyle = '#000000';
     for(const p of platforms){
       ctx.fillRect(p.x,p.y,p.width,p.height);
     }
