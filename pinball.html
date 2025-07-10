@@ -92,9 +92,9 @@
 
     const flippers = {
       // Flippers start in the lowered position and snap upward when active
-      left:  {x1: 81.11, y1: canvas.height-80, length: 110, angle: 30,  activeAngle: -20, active:false},
+      left:  {x1: 69.22, y1: canvas.height-80, length: 121, angle: 30,  activeAngle: -20, active:false, t:0, prev_t:0},
       // Right flipper defaults down and flips up on button press
-      right: {x1: canvas.width-81.11, y1: canvas.height-80, length: 110, angle: 150, activeAngle:200, active:false}
+      right: {x1: canvas.width-69.22, y1: canvas.height-80, length: 121, angle: 150, activeAngle:200, active:false, t:0, prev_t:0}
     };
 
 
@@ -121,8 +121,22 @@
     const targets = targetGroups.flat();
 
     function lineEnd(f){
-      const rad = (f.active?f.activeAngle:f.angle) * Math.PI/180;
-      return {x:f.x1 + Math.cos(rad)*f.length, y:f.y1 + Math.sin(rad)*f.length};
+      const ang = (f.angle * (1 - f.t) + f.activeAngle * f.t) * Math.PI/180;
+      return {x:f.x1 + Math.cos(ang)*f.length, y:f.y1 + Math.sin(ang)*f.length};
+    }
+
+    function updateFlippers(dt){
+      const rate = dt / 0.5; // 0.5 second transition
+      for(const key in flippers){
+        const f = flippers[key];
+        const target = f.active ? 1 : 0;
+        f.prev_t = f.t;
+        if(f.t < target){
+          f.t = Math.min(target, f.t + rate);
+        } else if(f.t > target){
+          f.t = Math.max(target, f.t - rate);
+        }
+      }
     }
 
     function resetBall(){
@@ -260,7 +274,7 @@
         }
       });
 
-      // flippers simple collision
+      // flippers simple collision with motion energy
       for(const key in flippers){
         const f = flippers[key];
         const end = lineEnd(f);
@@ -274,12 +288,16 @@
         const proj = px*ux + py*uy;
         const perp = px*(-uy) + py*ux;
         if(proj>0 && proj<len && Math.abs(perp) < ballRadius+4 && ball.vy>0){
-          if(f.active){
-            ball.vy = -8;
-            ball.vx += ux*4*(key==='left'? -1:1);
-          } else {
-            reflectBall(-uy, ux);
+          reflectBall(-uy, ux);
+          // adjust energy based on flipper movement
+          let factor = 0.95; // stationary energy loss
+          if(f.t > f.prev_t){
+            factor = 1.1; // gaining energy while moving up
+          } else if(f.t < f.prev_t){
+            factor = 0.85; // heavier loss moving down
           }
+          ball.vx *= factor;
+          ball.vy *= factor;
         }
       }
     }
@@ -299,7 +317,12 @@
       drawBall();
     }
 
+    let lastTime = performance.now();
     function step(){
+      const now = performance.now();
+      const dt = (now - lastTime)/1000;
+      lastTime = now;
+      updateFlippers(dt);
       updatePhysics();
       draw();
       requestAnimationFrame(step);
