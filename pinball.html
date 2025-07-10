@@ -97,6 +97,24 @@
       right: {x1: canvas.width-69.22, y1: canvas.height-80, length: 121, angle: 150, activeAngle:200, active:false, t:0, prev_t:0}
     };
 
+    const outlaneOffset = ballRadius * 4; // two ball diameters from the wall
+    const slingshots = {
+      left: {
+        points: [
+          {x: walls.left + outlaneOffset, y: flippers.left.y1 - 70},
+          {x: walls.left + outlaneOffset, y: flippers.left.y1 - 20},
+          {x: flippers.left.x1 + 15,      y: flippers.left.y1 - 20}
+        ]
+      },
+      right: {
+        points: [
+          {x: walls.right - outlaneOffset, y: flippers.right.y1 - 70},
+          {x: walls.right - outlaneOffset, y: flippers.right.y1 - 20},
+          {x: flippers.right.x1 - 15,      y: flippers.right.y1 - 20}
+        ]
+      }
+    };
+
 
 
     // Popup targets organized in three groups of four
@@ -159,6 +177,19 @@
       });
     }
 
+    function drawSlingshots(){
+      ctx.fillStyle = '#44dd88';
+      for(const key in slingshots){
+        const p = slingshots[key].points;
+        ctx.beginPath();
+        ctx.moveTo(p[0].x, p[0].y);
+        ctx.lineTo(p[1].x, p[1].y);
+        ctx.lineTo(p[2].x, p[2].y);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
     function drawFlippers(){
       ctx.strokeStyle = '#ff66ff';
       ctx.lineWidth = 10;
@@ -186,6 +217,38 @@
       const dot = ball.vx*normalX + ball.vy*normalY;
       ball.vx -= 2*dot*normalX;
       ball.vy -= 2*dot*normalY;
+    }
+
+    function segmentCollision(x1, y1, x2, y2){
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const lenSq = dx*dx + dy*dy;
+      const t = ((ball.x - x1)*dx + (ball.y - y1)*dy) / lenSq;
+      const u = Math.max(0, Math.min(1, t));
+      const cx = x1 + u*dx;
+      const cy = y1 + u*dy;
+      const distX = ball.x - cx;
+      const distY = ball.y - cy;
+      const distSq = distX*distX + distY*distY;
+      if(distSq < ballRadius*ballRadius){
+        const dist = Math.sqrt(distSq) || 0.0001;
+        const nx = distX/dist;
+        const ny = distY/dist;
+        ball.x = cx + nx*ballRadius;
+        ball.y = cy + ny*ballRadius;
+        reflectBall(nx, ny);
+        ball.vx *= 1.2;
+        ball.vy *= 1.2;
+        return true;
+      }
+      return false;
+    }
+
+    function triangleCollision(tri){
+      const p = tri.points;
+      return segmentCollision(p[0].x, p[0].y, p[1].x, p[1].y) ||
+             segmentCollision(p[1].x, p[1].y, p[2].x, p[2].y) ||
+             segmentCollision(p[2].x, p[2].y, p[0].x, p[0].y);
     }
 
     // Collision detection for rectangular popup targets
@@ -256,6 +319,10 @@
         }
       });
 
+      for(const key in slingshots){
+        triangleCollision(slingshots[key]);
+      }
+
       // popup targets
       targetGroups.forEach(group => {
         let allDown = true;
@@ -312,6 +379,7 @@
       ctx.lineWidth = 4;
       ctx.strokeRect(walls.left, walls.top, walls.right - walls.left, canvas.height - walls.top);
       drawBumpers();
+      drawSlingshots();
       drawTargets();
       drawFlippers();
       drawBall();
