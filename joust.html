@@ -2,12 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Joust</title>
   <style>
     body {
       margin: 0;
       display: flex;
       min-height: 100vh;
+      overflow: hidden;
       background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%);
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       color: #fff;
@@ -39,6 +41,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      overflow: hidden;
       padding: 20px;
     }
     h1 {
@@ -51,6 +54,8 @@
       border: 2px solid #fff;
       margin-top: 20px;
       border-radius: 8px;
+      width: 100%;
+      height: auto;
     }
     #info {
       margin-top: 10px;
@@ -97,7 +102,7 @@
   const BIRD_RADIUS = 12;
   const KNIGHT_HEIGHT = 10;
 
-  const GROUND_Y = canvas.height - 30; // just above lava
+  let GROUND_Y = canvas.height - 30; // just above lava
   const ROOF_HEIGHT = 30; // roof thickness
 
   const playerImg = new Image();
@@ -109,6 +114,31 @@
   let upHeld = false;
   let spikes = [];
   let stagePause = 0; // frames to pause with stage text
+
+  function resizeGame(){
+    const sidebar = document.getElementById('sidebar');
+    const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+    const header = document.querySelector('#game-container h1');
+    const info = document.getElementById('info');
+    const message = document.getElementById('message');
+    const aspect = 1.5; // original canvas aspect ratio
+    const availableWidth = window.innerWidth - sidebarWidth - 40;
+    const availableHeight = window.innerHeight -
+          header.offsetHeight - info.offsetHeight - message.offsetHeight - 40;
+    let width = availableWidth;
+    let height = width / aspect;
+    if(height > availableHeight){
+      height = availableHeight;
+      width = height * aspect;
+    }
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    GROUND_Y = canvas.height - 30;
+  }
+
+  window.addEventListener('resize', () => { resizeGame(); resetPlayer(); });
 
   document.addEventListener('keydown', e => {
     if(e.key==='ArrowLeft' || e.key==='a') keys.left = true;
@@ -166,6 +196,7 @@
     }
   }
 
+  resizeGame();
   let platforms = createPlatforms();
 
   class Knight {
@@ -480,8 +511,13 @@
   }
 
   let running=true;
-  startStage();
-  resetPlayer();
+
+  function initGame(){
+    resizeGame();
+    startStage();
+    resetPlayer();
+    loop();
+  }
 
   function update(){
     if(!running) return;
@@ -557,7 +593,7 @@
     draw();
     requestAnimationFrame(loop);
   }
-  loop();
+  window.addEventListener('load', initGame);
   </script>
   <script>
     fetch('sidebar.html')
@@ -565,6 +601,7 @@
       .then(html => {
         const placeholder = document.getElementById('sidebar-placeholder');
         if(placeholder) placeholder.outerHTML = html;
+        resizeGame();
       });
   </script>
 </body>
