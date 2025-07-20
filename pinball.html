@@ -340,6 +340,8 @@
           ball.inLaunch = false;
           ball.x = launchLane.x - ballRadius;
           ball.vx = -2;
+          // plunger returns to starting position after launch
+          plunger.power = 0;
         }
         return;
       }
@@ -522,7 +524,7 @@
         if(ball.inLaunch){
           ball.vy = -plunger.power * launchScale;
         }
-        plunger.power = 0;
+        // keep plunger extended until ball leaves the launch lane
       }
     });
 
