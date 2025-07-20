@@ -111,6 +111,8 @@
     document.getElementById('message').textContent = '';
     document.getElementById('score').textContent = `Score: ${score}`;
     spawnPipe();
+    // give the player a moment by starting with an initial flap
+    bird.vy = flapPower;
   }
 
   let spawnTimer = 0;
