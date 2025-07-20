@@ -61,6 +61,7 @@
     let bullet = null;
     const aliens = [];
     const bombs = [];
+    const explosions = [];
     let shields = [];
     let score = 0;
     let lives = 3;
@@ -93,6 +94,21 @@
           }
         }
         shields.push(bricks);
+      }
+    }
+
+    function createExplosion(x, y){
+      explosions.push({x, y, r: 0, alpha: 1});
+    }
+
+    function updateExplosions(){
+      for(let i=explosions.length-1;i>=0;i--){
+        const ex = explosions[i];
+        ex.r += 2;
+        ex.alpha -= 0.05;
+        if(ex.alpha <= 0){
+          explosions.splice(i,1);
+        }
       }
     }
 
@@ -132,6 +148,7 @@
       }
 
       bombs.forEach(b => b.y += 3);
+      updateExplosions();
 
       // Alien movement
       moveCounter++;
@@ -198,10 +215,12 @@
         }
         if(Math.abs(b.x - player.x) < player.w/2 && Math.abs(b.y - player.y) < player.h/2){
           bombs.splice(i,1);
+          createExplosion(player.x, player.y);
           lives--;
           updateInfo();
           if(lives <= 0){
             gameOver = true;
+            createExplosion(player.x, player.y);
             document.getElementById('message').textContent = 'Game Over - Press Enter';
           }
           continue;
@@ -221,6 +240,7 @@
       for(const a of aliens){
         if(a.alive && a.y + a.h/2 >= player.y - player.h){
           gameOver = true;
+          createExplosion(player.x, player.y);
           document.getElementById('message').textContent = 'Game Over - Press Enter';
           break;
         }
@@ -269,6 +289,14 @@
             ctx.fillRect(brick.x-5, brick.y-5, 10, 10);
           }
         }
+      }
+
+      // draw explosions
+      for(const ex of explosions){
+        ctx.fillStyle = `rgba(255,165,0,${ex.alpha})`;
+        ctx.beginPath();
+        ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI*2);
+        ctx.fill();
       }
     }
 
