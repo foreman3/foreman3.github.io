@@ -104,6 +104,7 @@
 
   let GROUND_Y = canvas.height - 30; // just above lava
   const ROOF_HEIGHT = 30; // roof thickness
+  const ROOF_SPIKE_BUFFER = 40; // distance from roof to start avoiding spikes
 
   const playerImg = new Image();
   playerImg.src = 'images/player_knight.svg';
@@ -235,7 +236,13 @@
       } else {
         const speed = walkSpeed; // enemies get faster each stage
         let dir = Math.sign(player.x - this.x);
-        if(stage >= 3){
+        const avoidRoof = nearRoofSpike(this.x, this.y) && Math.random() < 0.8;
+        if(avoidRoof){
+          this.flaps = [];
+          if(this.vy < 0) this.vy = 0;
+          this.vy += GRAVITY;
+          this.vx = dir * speed;
+        } else if(stage >= 3){
           if(this.mode === 'attack'){
             this.modeTimer -= 1/60;
             if(this.y > player.y){
@@ -406,6 +413,16 @@
       if(safe) return x;
     }
     return canvas.width/2;
+  }
+
+  function nearRoofSpike(x, y){
+    if(stage < 3 || y > ROOF_HEIGHT + ROOF_SPIKE_BUFFER) return false;
+    for(const s of spikes){
+      if(s.y === ROOF_HEIGHT && x > s.x - BIRD_RADIUS && x < s.x + s.width + BIRD_RADIUS){
+        return true;
+      }
+    }
+    return false;
   }
 
   function resetPlayer(){
