@@ -155,9 +155,13 @@
     ];
     const targets = targetGroups.flat();
 
+    function lineEndAt(f, t){
+      const ang = (f.angle * (1 - t) + f.activeAngle * t) * Math.PI/180;
+      return {x:f.x1 + Math.cos(ang)*f.length, y:f.y1 + Math.sin(ang)*f.length, ang};
+    }
+
     function lineEnd(f){
-      const ang = (f.angle * (1 - f.t) + f.activeAngle * f.t) * Math.PI/180;
-      return {x:f.x1 + Math.cos(ang)*f.length, y:f.y1 + Math.sin(ang)*f.length};
+      return lineEndAt(f, f.t);
     }
 
     function updateFlippers(dt){
@@ -317,8 +321,8 @@
       }
     }
 
-    function updatePhysics(){
-      if(gameOver) return;
+   function updatePhysics(){
+     if(gameOver) return;
       if(ball.inLaunch){
         if(plunger.charging){
           plunger.power = Math.min(plunger.maxPower, plunger.power + 0.6);
@@ -425,43 +429,44 @@
         }
       });
 
-      // flippers simple collision with motion energy
+      // flippers collision with simple sweep handling
       for(const key in flippers){
         const f = flippers[key];
-        const end = lineEnd(f);
-        const dx = end.x - f.x1;
-        const dy = end.y - f.y1;
-        const lenSq = dx*dx + dy*dy;
-        const len = Math.sqrt(lenSq);
-        const reach = ballRadius + 4; // collision distance from flipper line
-        const t = ((ball.x - f.x1)*dx + (ball.y - f.y1)*dy) / lenSq;
-        const u = Math.max(0, Math.min(1, t));
-        const cx = f.x1 + u*dx;
-        const cy = f.y1 + u*dy;
-        const distX = ball.x - cx;
-        const distY = ball.y - cy;
-        const distSq = distX*distX + distY*distY;
-        if(distSq < reach*reach && ball.vy>0){
-          const dist = Math.sqrt(distSq) || 0.0001;
-          const nx = distX / dist;
-          const ny = distY / dist;
-          // Reposition ball outside of flipper surface
-          ball.x = cx + nx*reach;
-          ball.y = cy + ny*reach;
-          reflectBall(nx, ny);
-          // Energy factor based on flipper motion
-          let motion = 0.75; // stationary flipper retains 75% of ball energy
-          if(f.t > f.prev_t){
-            motion = 1.1; // gaining energy while moving up
-          } else if(f.t < f.prev_t){
-            motion = 0.25; // falling flipper retains only 25% of energy
+        const segments = [
+          {s:{x:f.x1,y:f.y1}, e:lineEndAt(f, f.prev_t), hitPosFunc:u=>u},
+          {s:{x:f.x1,y:f.y1}, e:lineEnd(f), hitPosFunc:u=>u},
+          {s:lineEndAt(f, f.prev_t), e:lineEnd(f), hitPosFunc:()=>1}
+        ];
+        const reach = ballRadius + 4;
+        for(const seg of segments){
+          const dx = seg.e.x - seg.s.x;
+          const dy = seg.e.y - seg.s.y;
+          const lenSq = dx*dx + dy*dy;
+          if(lenSq === 0) continue;
+          const t = ((ball.x - seg.s.x)*dx + (ball.y - seg.s.y)*dy) / lenSq;
+          const u = Math.max(0, Math.min(1, t));
+          const cx = seg.s.x + u*dx;
+          const cy = seg.s.y + u*dy;
+          const distX = ball.x - cx;
+          const distY = ball.y - cy;
+          const distSq = distX*distX + distY*distY;
+          if(distSq < reach*reach && ball.vy>0){
+            const dist = Math.sqrt(distSq) || 0.0001;
+            const nx = distX / dist;
+            const ny = distY / dist;
+            ball.x = cx + nx*reach;
+            ball.y = cy + ny*reach;
+            reflectBall(nx, ny);
+            let motionPower = 0.75;
+            if(f.t > f.prev_t) motionPower = 1.25;
+            else if(f.t < f.prev_t) motionPower = 0.5;
+            const hitPos = seg.hitPosFunc(u);
+            const tipMult = 1 + hitPos * 2; // strongest at tip
+            const factor = motionPower * tipMult;
+            ball.vx *= factor;
+            ball.vy *= factor;
+            break;
           }
-          // Scale added energy linearly based on where the ball hits
-          const hitPos = u; // 0 at pivot, 1 at tip
-          const gain = (motion - 1) * hitPos * 2; // up to 2x added energy at tip
-          const factor = 1 + gain;
-          ball.vx *= factor;
-          ball.vy *= factor;
         }
       }
       dampExcessEnergy();
