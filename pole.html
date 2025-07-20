@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pole Position</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #sidebar li {
+      margin: 15px 0;
+    }
+    #sidebar a {
+      color: #fff;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    #sidebar a:hover {
+      color: #ffea00;
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 3em;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    }
+    canvas {
+      background: #000;
+      border: 2px solid #fff;
+      margin-top: 20px;
+      border-radius: 8px;
+    }
+    #info {
+      margin-top: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ffeb3b;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Pole Position</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info">Score: 0 | Time: 60</div>
+    <div id="message"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const horizon = canvas.height * 0.35;
+    let trackPos = 0;
+    const segmentLength = 50;
+    const segments = [];
+    for (let i=0; i<500; i++) {
+      segments.push(Math.sin(i/30) * 2);
+    }
+    let score = 0;
+    let time = 60 * 60; // 60 seconds at ~60fps
+    let running = true;
+    const lanes = [-0.3, 0, 0.3];
+    let lane = 1;
+
+    const enemies = [];
+
+    function spawnEnemy() {
+      const dist = trackPos + 300 + Math.random()*600;
+      const lane = Math.floor(Math.random()*3);
+      enemies.push({ z: dist, lane });
+    }
+
+    function update() {
+      if(!running) return;
+      trackPos += 5;
+      score += 5;
+      time--;
+      if(time % 90 === 0) spawnEnemy();
+
+      for(const e of enemies) e.z -= 5;
+      while(enemies.length && enemies[0].z < trackPos-50) enemies.shift();
+
+      for(const e of enemies) {
+        if(Math.abs(e.z - (trackPos+100)) < 40 && e.lane === lane) {
+          running = false;
+          document.getElementById('message').textContent = 'Crash! Press Space';
+        }
+      }
+
+      if(time <= 0) {
+        running = false;
+        document.getElementById('message').textContent = 'Time Up - Press Space';
+      }
+
+      document.getElementById('info').textContent = `Score: ${Math.floor(score)} | Time: ${Math.floor(time/60)}`;
+    }
+
+    function drawRoad() {
+      ctx.fillStyle = '#87CEEB';
+      ctx.fillRect(0,0,canvas.width,horizon);
+      ctx.fillStyle = '#013220';
+      ctx.fillRect(0,horizon,canvas.width,canvas.height-horizon);
+
+      const roadWidth = canvas.width * 0.6;
+      const step = 2;
+      for(let y=canvas.height; y>horizon; y-=step){
+        const depth = (canvas.height - y)/(canvas.height - horizon);
+        const curve = Math.sin((trackPos/200) + depth*5) * canvas.width * 0.25 * depth;
+        const lineWidth = roadWidth * (1 - depth*0.8);
+        const x = canvas.width/2 + curve;
+        ctx.fillStyle = (Math.floor((trackPos/20 + depth*30)) % 2) ? '#707070' : '#808080';
+        ctx.fillRect(x - lineWidth/2, y - step, lineWidth, step);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x - lineWidth/6, y - step, 2, step);
+        ctx.fillRect(x + lineWidth/6, y - step, 2, step);
+      }
+    }
+
+    function drawPlayer() {
+      const roadWidth = canvas.width * 0.6;
+      const carWidth = 40;
+      const carHeight = 60;
+      const curve = Math.sin(trackPos/200) * canvas.width * 0.25;
+      const x = canvas.width/2 + curve + lanes[lane] * roadWidth/2 - carWidth/2;
+      const y = canvas.height - carHeight - 20;
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(x, y, carWidth, carHeight);
+    }
+
+    function drawEnemies() {
+      const roadWidth = canvas.width * 0.6;
+      for(const e of enemies) {
+        const rel = e.z - trackPos;
+        if(rel < 0 || rel > 800) continue;
+        const depth = 1 - rel/800;
+        const curve = Math.sin((trackPos + rel)/200) * canvas.width * 0.25 * depth;
+        const lineWidth = roadWidth * (1 - depth*0.8);
+        const carWidth = 40 * (0.5 + depth/2);
+        const carHeight = 60 * (0.5 + depth/2);
+        const x = canvas.width/2 + curve + lanes[e.lane]*lineWidth/2 - carWidth/2;
+        const y = horizon + depth*(canvas.height-horizon) - carHeight;
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(x, y, carWidth, carHeight);
+      }
+    }
+
+    function render(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      drawRoad();
+      drawEnemies();
+      drawPlayer();
+    }
+
+    function loop(){
+      update();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    document.addEventListener('keydown', e => {
+      if(e.code === 'ArrowLeft') lane = Math.max(0, lane-1);
+      if(e.code === 'ArrowRight') lane = Math.min(2, lane+1);
+      if(e.code === 'Space' && !running) {
+        resetGame();
+      }
+    });
+
+    function resetGame(){
+      trackPos = 0;
+      score = 0;
+      time = 60*60;
+      lane = 1;
+      enemies.length = 0;
+      running = true;
+      document.getElementById('message').textContent = '';
+    }
+
+    window.addEventListener('load', () => {
+      loop();
+    });
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
