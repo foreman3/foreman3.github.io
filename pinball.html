@@ -82,8 +82,13 @@
     const ballRadius = 8;
     const walls = { left: 10, right: canvas.width - 10, top: 10 };
     const launchLane = { x: walls.right - 30, width: 20, gap: 90 };
-    // plunger.power represents how far the plunger has been pulled down
-    const plunger = { power: 0, maxPower: 60, charging: false };
+    // plunger.power is the pull distance; startY sets the visible starting point
+    const plunger = {
+      power: 0,
+      maxPower: 60,
+      charging: false,
+      startY: canvas.height * 0.8 // begin ~20% from the bottom
+    };
 
     const launchScale = 0.6; // converts pull distance to launch velocity
 
@@ -462,7 +467,9 @@
       ctx.stroke();
       // plunger visualization
       ctx.fillStyle = '#888';
-      ctx.fillRect(launchLane.x + launchLane.width/2 - 4, canvas.height - 20, 8, 20 + plunger.power);
+      // draw the plunger moving down from its start position
+      const plungerY = plunger.startY + plunger.power;
+      ctx.fillRect(launchLane.x + launchLane.width/2 - 4, plungerY, 8, 20);
       drawBumpers();
       drawSlingshots();
       drawTargets();
