@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flappy</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #81d4fa 0%, #0288d1 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow: hidden;
+      padding: 20px;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 3em;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    }
+    canvas {
+      background: #4fc3f7;
+      border: 2px solid #fff;
+      border-radius: 8px;
+      width: 100%;
+      height: auto;
+    }
+    #score {
+      margin-top: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ffeb3b;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Flappy</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="message"></div>
+  </div>
+  <script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const gravity = 0.4;
+  const flapPower = -8;
+  const pipeGap = 150;
+  const pipeWidth = 80;
+  const pipeSpeed = 2.5;
+  const coinRadius = 12;
+  const birdImg = new Image();
+  birdImg.src = 'images/flappy.svg';
+  const coinImg = new Image();
+  coinImg.src = 'images/coin.svg';
+
+  let bird;
+  let pipes;
+  let coins;
+  let score;
+  let running;
+
+  function resetGame() {
+    bird = { x: 120, y: canvas.height/2, vy: 0, r: 20 };
+    pipes = [];
+    coins = [];
+    score = 0;
+    running = true;
+    document.getElementById('message').textContent = '';
+    spawnPipe();
+  }
+
+  let spawnTimer = 0;
+  function spawnPipe() {
+    const gapY = 80 + Math.random()*(canvas.height - pipeGap - 160);
+    pipes.push({ x: canvas.width, gapY });
+    if(Math.random() < 0.8) {
+      coins.push({ x: canvas.width + pipeWidth/2, y: gapY + pipeGap/2, collected:false });
+    }
+  }
+
+  function flap() {
+    if(!running) { resetGame(); return; }
+    bird.vy = flapPower;
+  }
+
+  document.addEventListener('keydown', e => {
+    if(e.code === 'Space' || e.code === 'ArrowUp') {
+      e.preventDefault();
+      flap();
+    }
+  });
+  canvas.addEventListener('mousedown', flap);
+
+  function update() {
+    if(!running) return;
+    bird.vy += gravity;
+    bird.y += bird.vy;
+    if(bird.y + bird.r > canvas.height || bird.y - bird.r < 0) {
+      running = false;
+      document.getElementById('message').textContent = 'Game Over - Press Space';
+    }
+
+    spawnTimer++;
+    if(spawnTimer > 120) {
+      spawnPipe();
+      spawnTimer = 0;
+    }
+
+    for(const p of pipes) {
+      p.x -= pipeSpeed;
+    }
+    while(pipes.length && pipes[0].x + pipeWidth < -50) pipes.shift();
+
+    for(const c of coins) {
+      c.x -= pipeSpeed;
+    }
+    while(coins.length && coins[0].x + coinRadius < -50) coins.shift();
+
+    for(const c of coins) {
+      if(!c.collected && Math.hypot(bird.x - c.x, bird.y - c.y) < bird.r + coinRadius) {
+        c.collected = true;
+        score += 1;
+        document.getElementById('score').textContent = `Score: ${score}`;
+      }
+    }
+
+    for(const p of pipes) {
+      if(bird.x + bird.r > p.x && bird.x - bird.r < p.x + pipeWidth) {
+        if(bird.y - bird.r < p.gapY || bird.y + bird.r > p.gapY + pipeGap) {
+          running = false;
+          document.getElementById('message').textContent = 'Game Over - Press Space';
+        }
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // draw bird
+    ctx.drawImage(birdImg, bird.x - bird.r, bird.y - bird.r, bird.r*2, bird.r*2);
+    // draw pipes
+    ctx.fillStyle = '#4caf50';
+    for(const p of pipes) {
+      ctx.fillRect(p.x, 0, pipeWidth, p.gapY);
+      ctx.fillRect(p.x, p.gapY + pipeGap, pipeWidth, canvas.height - p.gapY - pipeGap);
+    }
+    // draw coins
+    for(const c of coins) {
+      if(!c.collected) ctx.drawImage(coinImg, c.x-coinRadius, c.y-coinRadius, coinRadius*2, coinRadius*2);
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('load', () => {
+    resetGame();
+    loop();
+  });
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
