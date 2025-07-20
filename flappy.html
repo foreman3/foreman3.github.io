@@ -55,6 +55,7 @@
       border-radius: 8px;
       width: 100%;
       height: auto;
+      max-height: 70vh;
     }
     #score {
       margin-top: 10px;
@@ -94,6 +95,28 @@
   birdImg.src = 'images/flappy.svg';
   const coinImg = new Image();
   coinImg.src = 'images/coin.svg';
+
+  function resizeGame(){
+    const sidebar = document.getElementById('sidebar');
+    const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+    const header = document.querySelector('#game-container h1');
+    const scoreDiv = document.getElementById('score');
+    const message = document.getElementById('message');
+    const aspect = 4/3;
+    const availableWidth = window.innerWidth - sidebarWidth - 40;
+    const availableHeight = window.innerHeight -
+          header.offsetHeight - scoreDiv.offsetHeight - message.offsetHeight - 40;
+    let width = availableWidth;
+    let height = width / aspect;
+    if(height > availableHeight){
+      height = availableHeight;
+      width = height * aspect;
+    }
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+  }
 
   let bird;
   let pipes;
@@ -213,9 +236,11 @@
   }
 
   window.addEventListener('load', () => {
+    resizeGame();
     resetGame();
     loop();
   });
+  window.addEventListener('resize', resizeGame);
   </script>
   <script>
     fetch('sidebar.html')
