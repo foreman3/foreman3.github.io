@@ -91,6 +91,8 @@
     };
 
     const launchScale = 0.6; // converts pull distance to launch velocity
+    const maxSpeed = 25;      // threshold before excess energy is damped
+    const energyDamping = 0.96; // factor applied when above threshold
 
     const curveRadius = 60;
     const topCurve = { x: walls.left + curveRadius, y: walls.top + curveRadius, r: curveRadius };
@@ -307,6 +309,14 @@
       return false;
     }
 
+    function dampExcessEnergy(){
+      const speed = Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy);
+      if(speed > maxSpeed){
+        ball.vx *= energyDamping;
+        ball.vy *= energyDamping;
+      }
+    }
+
     function updatePhysics(){
       if(gameOver) return;
       if(ball.inLaunch){
@@ -442,6 +452,7 @@
           ball.vy *= factor;
         }
       }
+      dampExcessEnergy();
     }
 
     function updateInfo(){
