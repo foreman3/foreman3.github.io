@@ -82,14 +82,22 @@
     const ballRadius = 8;
     const walls = { left: 10, right: canvas.width - 10, top: 10 };
     const launchLane = { x: walls.right - 30, width: 20, gap: 90 };
-    const plunger = { power: 0, maxPower: 25, charging: false };
+    // plunger.power represents how far the plunger has been pulled down
+    const plunger = { power: 0, maxPower: 60, charging: false };
+
+    const launchScale = 0.6; // converts pull distance to launch velocity
+
+    const curveRadius = 60;
+    const topCurve = { x: walls.left + curveRadius, y: walls.top + curveRadius, r: curveRadius };
 
     let ball, score = 0, balls = 3, gameOver = false;
 
     const bumpers = [
       {x: 100, y: 200, r: 20, score: 100},
       {x: 300, y: 250, r: 20, score: 100},
-      {x: 200, y: 120, r: 25, score: 150}
+      {x: 200, y: 120, r: 25, score: 150},
+      // small rubber bumper at the end of the top curve
+      {x: walls.left + curveRadius * 0.6, y: walls.top + curveRadius * 0.6, r: 12, score: 0, damping: 0.5}
     ];
 
     const flippers = {
@@ -260,6 +268,21 @@
              segmentCollision(p[2].x, p[2].y, p[0].x, p[0].y);
     }
 
+    function arcCollision(arc){
+      const dx = ball.x - arc.x;
+      const dy = ball.y - arc.y;
+      if(ball.x < arc.x && ball.y < arc.y){
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < arc.r + ballRadius){
+          const nx = dx / dist;
+          const ny = dy / dist;
+          ball.x = arc.x + nx*(arc.r + ballRadius);
+          ball.y = arc.y + ny*(arc.r + ballRadius);
+          reflectBall(nx, ny);
+        }
+      }
+    }
+
     // Collision detection for rectangular popup targets
     function rectCollision(t){
       const left = t.x - t.w/2;
@@ -322,6 +345,7 @@
         ball.y = walls.top + ballRadius;
         ball.vy = Math.abs(ball.vy);
       }
+      arcCollision(topCurve);
       if(ball.y - ballRadius > canvas.height){
         balls--; 
         if(balls>0){
@@ -345,6 +369,10 @@
           reflectBall(nx, ny);
           ball.x = b.x + nx*(ballRadius + b.r);
           ball.y = b.y + ny*(ballRadius + b.r);
+          if(b.damping){
+            ball.vx *= b.damping;
+            ball.vy *= b.damping;
+          }
           score += b.score;
           updateInfo();
         }
@@ -412,7 +440,14 @@
       ctx.clearRect(0,0,canvas.width, canvas.height);
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 4;
-      ctx.strokeRect(walls.left, walls.top, walls.right - walls.left, canvas.height - walls.top);
+      ctx.beginPath();
+      ctx.moveTo(walls.right, walls.top);
+      ctx.lineTo(walls.left + curveRadius, walls.top);
+      ctx.arc(topCurve.x, topCurve.y, topCurve.r, Math.PI * 1.5, Math.PI, true);
+      ctx.lineTo(walls.left, canvas.height);
+      ctx.lineTo(walls.right, canvas.height);
+      ctx.closePath();
+      ctx.stroke();
       // launch lane separator
       ctx.beginPath();
       ctx.moveTo(launchLane.x, launchLane.gap);
@@ -420,7 +455,7 @@
       ctx.stroke();
       // plunger visualization
       ctx.fillStyle = '#888';
-      ctx.fillRect(launchLane.x + launchLane.width/2 - 4, canvas.height - 20 - plunger.power, 8, 20);
+      ctx.fillRect(launchLane.x + launchLane.width/2 - 4, canvas.height - 20, 8, 20 + plunger.power);
       drawBumpers();
       drawSlingshots();
       drawTargets();
@@ -450,7 +485,7 @@
       if(e.key===' ' || e.key==='ArrowDown'){
         plunger.charging = false;
         if(ball.inLaunch){
-          ball.vy = -plunger.power;
+          ball.vy = -plunger.power * launchScale;
         }
         plunger.power = 0;
       }
