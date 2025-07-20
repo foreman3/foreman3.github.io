@@ -93,6 +93,7 @@
     score = 0;
     running = true;
     document.getElementById('message').textContent = '';
+    document.getElementById('score').textContent = `Score: ${score}`;
     spawnPipe();
   }
 
@@ -100,7 +101,7 @@
   function spawnPipe() {
     const gap = currentPipeGap;
     const gapY = 80 + Math.random()*(canvas.height - gap - 160);
-    pipes.push({ x: canvas.width, gapY, gap });
+    pipes.push({ x: canvas.width, gapY, gap, passed:false });
     if(Math.random() < 0.8) {
       coins.push({ x: canvas.width + pipeWidth/2, y: gapY + gap/2, collected:false });
     }
@@ -140,6 +141,11 @@
 
     for(const p of pipes) {
       p.x -= pipeSpeed;
+      if(!p.passed && p.x + pipeWidth < bird.x - bird.r) {
+        p.passed = true;
+        score += 5;
+        document.getElementById('score').textContent = `Score: ${score}`;
+      }
     }
     while(pipes.length && pipes[0].x + pipeWidth < -50) pipes.shift();
 
@@ -151,7 +157,7 @@
     for(const c of coins) {
       if(!c.collected && Math.hypot(bird.x - c.x, bird.y - c.y) < bird.r + coinRadius) {
         c.collected = true;
-        score += 1;
+        score += 25;
         document.getElementById('score').textContent = `Score: ${score}`;
       }
     }
