@@ -406,15 +406,24 @@
         const end = lineEnd(f);
         const dx = end.x - f.x1;
         const dy = end.y - f.y1;
-        const len = Math.hypot(dx, dy);
-        const ux = dx/len;
-        const uy = dy/len;
-        const px = ball.x - f.x1;
-        const py = ball.y - f.y1;
-        const proj = px*ux + py*uy;
-        const perp = px*(-uy) + py*ux;
-        if(proj>0 && proj<len && Math.abs(perp) < ballRadius+4 && ball.vy>0){
-          reflectBall(-uy, ux);
+        const lenSq = dx*dx + dy*dy;
+        const len = Math.sqrt(lenSq);
+        const reach = ballRadius + 4; // collision distance from flipper line
+        const t = ((ball.x - f.x1)*dx + (ball.y - f.y1)*dy) / lenSq;
+        const u = Math.max(0, Math.min(1, t));
+        const cx = f.x1 + u*dx;
+        const cy = f.y1 + u*dy;
+        const distX = ball.x - cx;
+        const distY = ball.y - cy;
+        const distSq = distX*distX + distY*distY;
+        if(distSq < reach*reach && ball.vy>0){
+          const dist = Math.sqrt(distSq) || 0.0001;
+          const nx = distX / dist;
+          const ny = distY / dist;
+          // Reposition ball outside of flipper surface
+          ball.x = cx + nx*reach;
+          ball.y = cy + ny*reach;
+          reflectBall(nx, ny);
           // Energy factor based on flipper motion
           let motion = 0.75; // stationary flipper retains 75% of ball energy
           if(f.t > f.prev_t){
@@ -423,7 +432,7 @@
             motion = 0.25; // falling flipper retains only 25% of energy
           }
           // Scale added energy linearly based on where the ball hits
-          const hitPos = proj / len; // 0 at pivot, 1 at tip
+          const hitPos = u; // 0 at pivot, 1 at tip
           const gain = (motion - 1) * hitPos * 2; // up to 2x added energy at tip
           const factor = 1 + gain;
           ball.vx *= factor;
