@@ -331,8 +331,13 @@
       ball.x += ball.vx;
       ball.y += ball.vy;
 
+      // handle curved wall collision first
+      arcCollision(topCurve);
+
+      const inTopCurve = ball.x < topCurve.x && ball.y < topCurve.y;
+
       // walls
-      if(ball.x - ballRadius < walls.left){
+      if(ball.x - ballRadius < walls.left && !inTopCurve){
         ball.x = walls.left + ballRadius;
         ball.vx = Math.abs(ball.vx);
       }
@@ -344,11 +349,10 @@
         ball.x = launchLane.x - ballRadius;
         ball.vx = -Math.abs(ball.vx);
       }
-      if(ball.y - ballRadius < walls.top){
+      if(ball.y - ballRadius < walls.top && !inTopCurve){
         ball.y = walls.top + ballRadius;
         ball.vy = Math.abs(ball.vy);
       }
-      arcCollision(topCurve);
       if(ball.y - ballRadius > canvas.height){
         balls--; 
         if(balls>0){
