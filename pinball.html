@@ -175,7 +175,7 @@
     function resetBall(){
       ball = {
         x: launchLane.x + launchLane.width/2,
-        y: canvas.height - ballRadius - 5,
+        y: plunger.startY - ballRadius,
         vx: 0,
         vy: 0,
         inLaunch: true
@@ -313,9 +313,15 @@
         if(plunger.charging){
           plunger.power = Math.min(plunger.maxPower, plunger.power + 0.6);
         }
+        const plungerY = plunger.startY + plunger.power;
         ball.vy += gravity;
         ball.y += ball.vy;
         ball.x = launchLane.x + launchLane.width/2;
+        // keep the ball resting on the plunger while charging
+        if(ball.y + ballRadius > plungerY){
+          ball.y = plungerY - ballRadius;
+          ball.vy = 0;
+        }
         if(ball.y + ballRadius > canvas.height){
           ball.y = canvas.height - ballRadius;
           ball.vy = 0;
