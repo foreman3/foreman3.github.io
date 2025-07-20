@@ -81,6 +81,8 @@
     const gravity = 0.25;
     const ballRadius = 8;
     const walls = { left: 10, right: canvas.width - 10, top: 10 };
+    const launchLane = { x: walls.right - 30, width: 20, gap: 90 };
+    const plunger = { power: 0, maxPower: 25, charging: false };
 
     let ball, score = 0, balls = 3, gameOver = false;
 
@@ -158,7 +160,14 @@
     }
 
     function resetBall(){
-      ball = {x: canvas.width/2, y: 50, vx: Math.random()*2-1, vy: 0};
+      ball = {
+        x: launchLane.x + launchLane.width/2,
+        y: canvas.height - ballRadius - 5,
+        vx: 0,
+        vy: 0,
+        inLaunch: true
+      };
+      plunger.power = 0;
     }
 
     function drawBall(){
@@ -274,6 +283,24 @@
 
     function updatePhysics(){
       if(gameOver) return;
+      if(ball.inLaunch){
+        if(plunger.charging){
+          plunger.power = Math.min(plunger.maxPower, plunger.power + 0.6);
+        }
+        ball.vy += gravity;
+        ball.y += ball.vy;
+        ball.x = launchLane.x + launchLane.width/2;
+        if(ball.y + ballRadius > canvas.height){
+          ball.y = canvas.height - ballRadius;
+          ball.vy = 0;
+        }
+        if(ball.y - ballRadius < launchLane.gap){
+          ball.inLaunch = false;
+          ball.x = launchLane.x - ballRadius;
+          ball.vx = -2;
+        }
+        return;
+      }
       ball.vy += gravity;
       ball.x += ball.vx;
       ball.y += ball.vy;
@@ -285,6 +312,10 @@
       }
       if(ball.x + ballRadius > walls.right){
         ball.x = walls.right - ballRadius;
+        ball.vx = -Math.abs(ball.vx);
+      }
+      if(ball.x + ballRadius > launchLane.x && ball.y > launchLane.gap){
+        ball.x = launchLane.x - ballRadius;
         ball.vx = -Math.abs(ball.vx);
       }
       if(ball.y - ballRadius < walls.top){
@@ -378,6 +409,14 @@
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 4;
       ctx.strokeRect(walls.left, walls.top, walls.right - walls.left, canvas.height - walls.top);
+      // launch lane separator
+      ctx.beginPath();
+      ctx.moveTo(launchLane.x, launchLane.gap);
+      ctx.lineTo(launchLane.x, canvas.height);
+      ctx.stroke();
+      // plunger visualization
+      ctx.fillStyle = '#888';
+      ctx.fillRect(launchLane.x + launchLane.width/2 - 4, canvas.height - 20 - plunger.power, 8, 20);
       drawBumpers();
       drawSlingshots();
       drawTargets();
@@ -399,10 +438,18 @@
     document.addEventListener('keydown', e=>{
       if(e.key==='ArrowLeft' || e.key==='z') flippers.left.active = true;
       if(e.key==='ArrowRight' || e.key=='/') flippers.right.active = true;
+      if(e.key===' ' || e.key==='ArrowDown') plunger.charging = true;
     });
     document.addEventListener('keyup', e=>{
       if(e.key==='ArrowLeft' || e.key==='z') flippers.left.active = false;
       if(e.key==='ArrowRight' || e.key=='/') flippers.right.active = false;
+      if(e.key===' ' || e.key==='ArrowDown'){
+        plunger.charging = false;
+        if(ball.inLaunch){
+          ball.vy = -plunger.power;
+        }
+        plunger.power = 0;
+      }
     });
 
     resetBall();
