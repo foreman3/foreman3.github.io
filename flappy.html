@@ -69,7 +69,8 @@
 
   const gravity = 0.4;
   const flapPower = -8;
-  const pipeGap = 150;
+  const pipeGapMin = 150;
+  let currentPipeGap = 200; // start with larger gaps
   const pipeWidth = 80;
   const pipeSpeed = 2.5;
   const coinRadius = 12;
@@ -85,7 +86,8 @@
   let running;
 
   function resetGame() {
-    bird = { x: 120, y: canvas.height/2, vy: 0, r: 20 };
+    bird = { x: 120, y: canvas.height/2, vy: 0, r: 16 };
+    currentPipeGap = 200;
     pipes = [];
     coins = [];
     score = 0;
@@ -96,10 +98,15 @@
 
   let spawnTimer = 0;
   function spawnPipe() {
-    const gapY = 80 + Math.random()*(canvas.height - pipeGap - 160);
-    pipes.push({ x: canvas.width, gapY });
+    const gap = currentPipeGap;
+    const gapY = 80 + Math.random()*(canvas.height - gap - 160);
+    pipes.push({ x: canvas.width, gapY, gap });
     if(Math.random() < 0.8) {
-      coins.push({ x: canvas.width + pipeWidth/2, y: gapY + pipeGap/2, collected:false });
+      coins.push({ x: canvas.width + pipeWidth/2, y: gapY + gap/2, collected:false });
+    }
+    if(currentPipeGap > pipeGapMin) {
+      currentPipeGap -= 2;
+      if(currentPipeGap < pipeGapMin) currentPipeGap = pipeGapMin;
     }
   }
 
@@ -151,7 +158,7 @@
 
     for(const p of pipes) {
       if(bird.x + bird.r > p.x && bird.x - bird.r < p.x + pipeWidth) {
-        if(bird.y - bird.r < p.gapY || bird.y + bird.r > p.gapY + pipeGap) {
+        if(bird.y - bird.r < p.gapY || bird.y + bird.r > p.gapY + p.gap) {
           running = false;
           document.getElementById('message').textContent = 'Game Over - Press Space';
         }
@@ -167,7 +174,7 @@
     ctx.fillStyle = '#4caf50';
     for(const p of pipes) {
       ctx.fillRect(p.x, 0, pipeWidth, p.gapY);
-      ctx.fillRect(p.x, p.gapY + pipeGap, pipeWidth, canvas.height - p.gapY - pipeGap);
+      ctx.fillRect(p.x, p.gapY + p.gap, pipeWidth, canvas.height - p.gapY - p.gap);
     }
     // draw coins
     for(const c of coins) {
