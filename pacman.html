@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pac-Man</title>
+<style>
+  body {
+    margin: 0;
+    display: flex;
+    min-height: 100vh;
+    overflow: hidden;
+    background: #000;
+    color: #fff;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  }
+  #sidebar {
+    width: 220px;
+    background: rgba(0,0,0,0.7);
+    padding: 20px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+  }
+  #sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  #sidebar li { margin: 15px 0; }
+  #sidebar a {
+    color: #fff;
+    text-decoration: none;
+  }
+  #sidebar a:hover { color: #ffea00; }
+  #game-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 3em;
+  }
+  canvas {
+    background: #000;
+    border: 2px solid #fff;
+    border-radius: 8px;
+  }
+  #info {
+    margin-top: 10px;
+    font-size: 20px;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
+  }
+  #message {
+    margin-top: 10px;
+    font-size: 24px;
+    color: #ffeb3b;
+  }
+</style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Pac-Man</h1>
+    <canvas id="gameCanvas" width="560" height="620"></canvas>
+    <div id="info">Score: 0 | Lives: 3 | Level: 1</div>
+    <div id="message"></div>
+  </div>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const TILE = 20; // each tile is 20x20
+
+// simple map layout (20x20) using characters:
+// # wall, . pellet, o power pellet, ' ' empty
+const map = [
+  '####################',
+  '#........##........#',
+  '#.##.###.##.###.##.#',
+  '#o##.###.##.###.##o#',
+  '#..................#',
+  '#.##.#.######.#.##.#',
+  '#....#....##....#..#',
+  '####.### #### ###.##',
+  '####.#      # #.####',
+  '####.# ###--# #.####',
+  '     . #GGGG# .     ',
+  '####.# #----# #.####',
+  '####.# ###### #.####',
+  '#........##........#',
+  '#.##.###.##.###.##.#',
+  '#o.. ....P..... ..o#',
+  '####################'
+];
+const ROWS = map.length;
+const COLS = map[0].length;
+canvas.width = COLS*TILE;
+canvas.height = ROWS*TILE;
+
+let pacman = {x:9, y:15, dir:{x:0,y:0}, nextDir:{x:0,y:0}};
+let ghosts = [
+  {x:9, y:10, dir:{x:1,y:0}, color:'red', scatter:{x:1,y:1}},
+  {x:10, y:10, dir:{x:-1,y:0}, color:'pink', scatter:{x:COLS-2,y:1}},
+  {x:8, y:10, dir:{x:1,y:0}, color:'cyan', scatter:{x:1,y:ROWS-2}},
+  {x:11, y:10, dir:{x:-1,y:0}, color:'orange', scatter:{x:COLS-2,y:ROWS-2}}
+];
+let pellets=0;
+let score=0;
+let lives=3;
+let level=1;
+let frightTimer=0;
+let message='';
+
+for(let r=0;r<ROWS;r++){
+  for(let c=0;c<COLS;c++){
+    const ch=map[r][c];
+    if(ch==='.'|| ch==='o') pellets++;
+  }
+}
+
+function resetLevel(){
+  pacman.x=9; pacman.y=15; pacman.dir={x:0,y:0}; pacman.nextDir={x:0,y:0};
+  ghosts[0].x=9; ghosts[0].y=10; ghosts[1].x=10; ghosts[1].y=10;
+  ghosts[2].x=8; ghosts[2].y=10; ghosts[3].x=11; ghosts[3].y=10;
+  frightTimer=0; message='';
+}
+
+function resetGame(){
+  score=0; lives=3; level=1; resetLevel();
+}
+
+function tileAt(x,y){
+  return map[y][x];
+}
+function isWall(x,y){
+  const ch=tileAt(x,y);
+  return ch==='#';
+}
+function drawMap(){
+  ctx.fillStyle='#000';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const ch=map[r][c];
+      const px=c*TILE, py=r*TILE;
+      if(ch==='#'){
+        ctx.fillStyle='#0000aa';
+        ctx.fillRect(px,py,TILE,TILE);
+      }else if(ch==='.'||ch==='o'){
+        ctx.fillStyle='black';
+        ctx.fillRect(px,py,TILE,TILE);
+        ctx.fillStyle='white';
+        if(ch==='.') ctx.fillRect(px+TILE/2-2,py+TILE/2-2,4,4);
+        else ctx.beginPath(),ctx.arc(px+TILE/2,py+TILE/2,6,0,Math.PI*2),ctx.fill();
+      }else{
+        ctx.fillStyle='black';
+        ctx.fillRect(px,py,TILE,TILE);
+      }
+    }
+  }
+}
+
+function move(entity,dir){
+  const nx=entity.x+dir.x;
+  const ny=entity.y+dir.y;
+  if(nx<0||nx>=COLS||ny<0||ny>=ROWS) return false;
+  if(isWall(nx,ny)) return false;
+  entity.x=nx; entity.y=ny; return true;
+}
+
+function updatePacman(){
+  if(pacman.nextDir.x!==pacman.dir.x||pacman.nextDir.y!==pacman.dir.y){
+    if(move({x:pacman.x,y:pacman.y},pacman.nextDir)) pacman.dir=pacman.nextDir;
+  }
+  move(pacman,pacman.dir);
+  const ch=tileAt(pacman.x,pacman.y);
+  if(ch==='.'||ch==='o'){
+    map[pacman.y]=map[pacman.y].substr(0,pacman.x)+' '+map[pacman.y].substr(pacman.x+1);
+    pellets--; score+= (ch==='o'?50:10);
+    if(ch==='o') frightTimer=400;
+  }
+}
+
+function ghostTarget(g){
+  if(frightTimer>0) return {x:g.scatter.x,y:g.scatter.y};
+  return {x:pacman.x,y:pacman.y};
+}
+function updateGhost(g){
+  const target=ghostTarget(g);
+  const choices=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}].filter(d=>!isWall(g.x+d.x,g.y+d.y));
+  if(choices.length===0) return;
+  let best=choices[0];
+  let bestDist=1e9;
+  for(const d of choices){
+    const dx=g.x+d.x-target.x;
+    const dy=g.y+d.y-target.y;
+    const dist=dx*dx+dy*dy;
+    if(dist<bestDist){bestDist=dist; best=d;}
+  }
+  g.dir=best; move(g,g.dir);
+}
+
+function checkCollisions(){
+  for(const g of ghosts){
+    if(g.x===pacman.x && g.y===pacman.y){
+      if(frightTimer>0){
+        score+=200; g.x=9; g.y=10; g.dir={x:0,y:0};
+      }else{
+        lives--; message='Ouch!'; resetLevel();
+      }
+    }
+  }
+  if(pellets===0){
+    level++; message='Next Level!'; setTimeout(()=>{resetLevel();},1000);
+    pellets=0; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){const ch=map[r][c]; if(ch==='.'||ch==='o') pellets++;}
+  }
+  if(lives===0){ message='Game Over'; pacman.dir={x:0,y:0}; }
+}
+
+function draw(){
+  drawMap();
+  ctx.fillStyle='yellow';
+  ctx.beginPath();
+  const a=(Date.now()/100)%360; // mouth animation
+  ctx.moveTo(pacman.x*TILE+TILE/2,pacman.y*TILE+TILE/2);
+  ctx.arc(pacman.x*TILE+TILE/2,pacman.y*TILE+TILE/2,TILE/2-1,(a/180*Math.PI)/2,(360-a)/180*Math.PI/2,false);
+  ctx.closePath();
+  ctx.fill();
+  for(const g of ghosts){
+    ctx.fillStyle=frightTimer>0?'blue':g.color;
+    ctx.fillRect(g.x*TILE+2,g.y*TILE+2,TILE-4,TILE-4);
+  }
+  document.getElementById('info').textContent=`Score: ${score} | Lives: ${lives} | Level: ${level}`;
+  document.getElementById('message').textContent=message;
+}
+
+function gameLoop(){
+  updatePacman();
+  ghosts.forEach(updateGhost);
+  checkCollisions();
+  if(frightTimer>0) frightTimer--;
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft') pacman.nextDir={x:-1,y:0};
+  if(e.key==='ArrowRight') pacman.nextDir={x:1,y:0};
+  if(e.key==='ArrowUp') pacman.nextDir={x:0,y:-1};
+  if(e.key==='ArrowDown') pacman.nextDir={x:0,y:1};
+  if(lives===0 && e.key===' '){ resetGame(); }
+});
+
+resetGame();
+requestAnimationFrame(gameLoop);
+</script>
+<script>
+  fetch('sidebar.html')
+    .then(r => r.text())
+    .then(html => {
+      const placeholder = document.getElementById('sidebar-placeholder');
+      if (placeholder) placeholder.outerHTML = html;
+    });
+</script>
+</body>
+</html>
