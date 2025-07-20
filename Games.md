@@ -8,3 +8,4 @@ This repository hosts simple arcade-style video games.
 - [Flappy](flappy.html) - Navigate obstacles and collect coins.
 - [Joust](joust.html) - Fly and defeat rival knights.
 - [Pinball](pinball.html) - Classic arcade action with bumpers and flippers.
+- [Burger Builder](burger.html) - Assemble towering burgers while avoiding enemies.
