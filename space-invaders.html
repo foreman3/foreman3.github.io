@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Space Invaders</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #000428 0%, #004e92 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    canvas {
+      background: #000;
+      border: 2px solid #fff;
+    }
+    #info {
+      margin-top: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ffeb3b;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Space Invaders</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info">Score: 0 | Lives: 3</div>
+    <div id="message"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const player = { x: canvas.width/2, y: canvas.height - 30, w: 40, h: 20 };
+    let bullet = null;
+    const aliens = [];
+    const bombs = [];
+    let shields = [];
+    let score = 0;
+    let lives = 3;
+    let alienDir = 1; // 1=right, -1=left
+    let moveCounter = 0;
+    let gameOver = false;
+
+    const keys = {};
+
+    function createAliens(){
+      aliens.length = 0;
+      const rows = 5;
+      const cols = 10;
+      for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+          aliens.push({x: 80 + c*60, y: 60 + r*40, w: 30, h: 20, alive: true});
+        }
+      }
+    }
+
+    function createShields(){
+      shields = [];
+      const shieldCount = 4;
+      const startX = 100;
+      for(let s=0;s<shieldCount;s++){
+        const bricks = [];
+        for(let r=0;r<3;r++){
+          for(let c=0;c<6;c++){
+            bricks.push({x: startX + s*170 + c*10, y: canvas.height-120 + r*10, alive: true});
+          }
+        }
+        shields.push(bricks);
+      }
+    }
+
+    function resetGame(){
+      score = 0;
+      lives = 3;
+      alienDir = 1;
+      moveCounter = 0;
+      gameOver = false;
+      bullet = null;
+      bombs.length = 0;
+      createAliens();
+      createShields();
+      updateInfo();
+      document.getElementById('message').textContent = '';
+    }
+
+    function updateInfo(){
+      document.getElementById('info').textContent = `Score: ${score} | Lives: ${lives}`;
+    }
+
+    function shoot(){
+      if(!bullet){
+        bullet = {x: player.x, y: player.y - player.h/2, r: 4};
+      }
+    }
+
+    function update(){
+      if(gameOver) return;
+      if(keys['ArrowLeft']) player.x -= 5;
+      if(keys['ArrowRight']) player.x += 5;
+      player.x = Math.max(player.w/2, Math.min(canvas.width-player.w/2, player.x));
+
+      if(bullet){
+        bullet.y -= 8;
+        if(bullet.y < 0) bullet = null;
+      }
+
+      bombs.forEach(b => b.y += 3);
+
+      // Alien movement
+      moveCounter++;
+      if(moveCounter % 30 === 0){
+        let left = Infinity, right = -Infinity;
+        for(const a of aliens){
+          if(a.alive){
+            a.x += alienDir*10;
+            left = Math.min(left, a.x - a.w/2);
+            right = Math.max(right, a.x + a.w/2);
+          }
+        }
+        if(left < 20 || right > canvas.width - 20){
+          alienDir *= -1;
+          for(const a of aliens){
+            if(a.alive){
+              a.y += 20;
+            }
+          }
+        }
+      }
+
+      // Alien shooting
+      if(Math.random() < 0.02){
+        const shooters = aliens.filter(a => a.alive);
+        if(shooters.length){
+          const a = shooters[Math.floor(Math.random()*shooters.length)];
+          bombs.push({x: a.x, y: a.y + a.h/2, r: 4});
+        }
+      }
+
+      // Bullet collision with aliens
+      if(bullet){
+        for(const a of aliens){
+          if(a.alive && bullet.x > a.x - a.w/2 && bullet.x < a.x + a.w/2 && bullet.y > a.y - a.h/2 && bullet.y < a.y + a.h/2){
+            a.alive = false;
+            bullet = null;
+            score += 10;
+            updateInfo();
+            break;
+          }
+        }
+      }
+
+      // Bullet collision with shields
+      if(bullet){
+        for(const bricks of shields){
+          for(const brick of bricks){
+            if(brick.alive && Math.abs(bullet.x - brick.x) < 5 && Math.abs(bullet.y - brick.y) < 5){
+              brick.alive = false;
+              bullet = null;
+              break;
+            }
+          }
+        }
+      }
+
+      // Bomb collision with player or shields
+      for(let i=bombs.length-1;i>=0;i--){
+        const b = bombs[i];
+        if(b.y > canvas.height){
+          bombs.splice(i,1);
+          continue;
+        }
+        if(Math.abs(b.x - player.x) < player.w/2 && Math.abs(b.y - player.y) < player.h/2){
+          bombs.splice(i,1);
+          lives--;
+          updateInfo();
+          if(lives <= 0){
+            gameOver = true;
+            document.getElementById('message').textContent = 'Game Over - Press Enter';
+          }
+          continue;
+        }
+        for(const bricks of shields){
+          for(const brick of bricks){
+            if(brick.alive && Math.abs(b.x - brick.x) < 5 && Math.abs(b.y - brick.y) < 5){
+              brick.alive = false;
+              bombs.splice(i,1);
+              break;
+            }
+          }
+        }
+      }
+
+      // Check aliens reaching bottom
+      for(const a of aliens){
+        if(a.alive && a.y + a.h/2 >= player.y - player.h){
+          gameOver = true;
+          document.getElementById('message').textContent = 'Game Over - Press Enter';
+          break;
+        }
+      }
+
+      // Check victory
+      if(aliens.every(a => !a.alive)){
+        gameOver = true;
+        document.getElementById('message').textContent = 'You Win! - Press Enter';
+      }
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // draw player
+      ctx.fillStyle = '#0f0';
+      ctx.fillRect(player.x-player.w/2, player.y-player.h/2, player.w, player.h);
+
+      // draw bullet
+      if(bullet){
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(bullet.x-2, bullet.y-8, 4, 8);
+      }
+
+      // draw aliens
+      ctx.fillStyle = '#f06';
+      for(const a of aliens){
+        if(a.alive){
+          ctx.fillRect(a.x-a.w/2, a.y-a.h/2, a.w, a.h);
+        }
+      }
+
+      // draw bombs
+      ctx.fillStyle = '#ff0';
+      for(const b of bombs){
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      // draw shields
+      ctx.fillStyle = '#0ff';
+      for(const bricks of shields){
+        for(const brick of bricks){
+          if(brick.alive){
+            ctx.fillRect(brick.x-5, brick.y-5, 10, 10);
+          }
+        }
+      }
+    }
+
+    function loop(){
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.key] = true;
+      if(e.key === ' '){
+        shoot();
+      }
+      if(e.key === 'Enter' && gameOver){
+        resetGame();
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.key] = false;
+    });
+
+    window.addEventListener('load', () => {
+      resetGame();
+      loop();
+    });
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if(placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
