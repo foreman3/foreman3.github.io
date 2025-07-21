@@ -91,7 +91,7 @@
     };
 
     const launchScale = 0.6; // converts pull distance to launch velocity
-    const maxSpeed = 25;      // threshold before excess energy is damped
+    const maxSpeed = 18;      // threshold before excess energy is damped
     const energyDamping = 0.96; // factor applied when above threshold
 
     const curveRadius = 60;
@@ -265,8 +265,8 @@
         ball.x = cx + nx*ballRadius;
         ball.y = cy + ny*ballRadius;
         reflectBall(nx, ny);
-        ball.vx *= 1.2;
-        ball.vy *= 1.2;
+        ball.vx *= 1.1;
+        ball.vy *= 1.1;
         return true;
       }
       return false;
@@ -462,7 +462,7 @@
             else if(f.t < f.prev_t) motionPower = 0.5;
             const hitPos = seg.hitPosFunc(u);
             const tipMult = 1 + hitPos * 2; // strongest at tip
-            const factor = motionPower * tipMult;
+            const factor = motionPower * tipMult * 0.7; // reduced boost
             ball.vx *= factor;
             ball.vy *= factor;
             break;
