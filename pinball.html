@@ -46,7 +46,7 @@
       font-size: 3em;
       text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
     }
-    canvas {
+    #gameSVG {
       background: #222;
       border: 2px solid #fff;
       margin-top: 20px;
@@ -71,13 +71,14 @@
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
     <h1>Pinball</h1>
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <svg id="gameSVG" width="400" height="600"></svg>
     <div id="info">Score: 0 | Balls: 3</div>
     <div id="message"></div>
   </div>
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const svg = document.getElementById('gameSVG');
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const canvas = { width: parseFloat(svg.getAttribute('width')), height: parseFloat(svg.getAttribute('height')) };
     const gravity = 0.25;
     const ballRadius = 8;
     const walls = { left: 10, right: canvas.width - 10, top: 10 };
@@ -189,55 +190,67 @@
       plunger.power = 0;
     }
 
-    function drawBall(){
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI*2);
-      ctx.fillStyle = '#ffcc00';
-      ctx.fill();
+    let ballElem, plungerElem;
+
+    function svgElem(type, attrs){
+      const el = document.createElementNS(svgNS, type);
+      Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
+      svg.appendChild(el);
+      return el;
     }
 
-    function drawBumpers(){
-      ctx.fillStyle = '#66ccff';
+    function initSVG(){
+      const boardPath = [
+        `M ${walls.right} ${walls.top}`,
+        `L ${walls.left + curveRadius} ${walls.top}`,
+        `A ${curveRadius} ${curveRadius} 0 0 0 ${walls.left} ${walls.top + curveRadius}`,
+        `L ${walls.left} ${canvas.height}`,
+        `L ${walls.right} ${canvas.height}`,
+        'Z'
+      ].join(' ');
+      svgElem('path', {d: boardPath, fill:'none', stroke:'#fff', 'stroke-width':4});
+      svgElem('line', {x1:launchLane.x, y1:launchLane.gap, x2:launchLane.x, y2:canvas.height, stroke:'#fff', 'stroke-width':4});
+      plungerElem = svgElem('rect', {x: launchLane.x + launchLane.width/2 - 4, y: plunger.startY, width:8, height:20, fill:'#888'});
       bumpers.forEach(b=>{
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-        ctx.fill();
+        b.elem = svgElem('circle', {cx:b.x, cy:b.y, r:b.r, fill:'#66ccff'});
       });
-    }
-
-    function drawSlingshots(){
-      ctx.fillStyle = '#44dd88';
       for(const key in slingshots){
-        const p = slingshots[key].points;
-        ctx.beginPath();
-        ctx.moveTo(p[0].x, p[0].y);
-        ctx.lineTo(p[1].x, p[1].y);
-        ctx.lineTo(p[2].x, p[2].y);
-        ctx.closePath();
-        ctx.fill();
+        const pts = slingshots[key].points.map(p=>`${p.x},${p.y}`).join(' ');
+        slingshots[key].elem = svgElem('polygon', {points:pts, fill:'#44dd88'});
       }
-    }
-
-    function drawFlippers(){
-      ctx.strokeStyle = '#ff66ff';
-      ctx.lineWidth = 10;
       for(const key in flippers){
         const f = flippers[key];
         const end = lineEnd(f);
-        ctx.beginPath();
-        ctx.moveTo(f.x1, f.y1);
-        ctx.lineTo(end.x, end.y);
-        ctx.stroke();
+        f.elem = svgElem('line', {x1:f.x1, y1:f.y1, x2:end.x, y2:end.y, stroke:'#ff66ff', 'stroke-width':10, 'stroke-linecap':'round'});
+      }
+      targets.forEach(t=>{
+        t.elem = svgElem('rect', {x:t.x - t.w/2, y:t.y - t.h, width:t.w, height:t.h, fill:'#ff9900'});
+      });
+      ballElem = svgElem('circle', {cx:ball.x, cy:ball.y, r:ballRadius, fill:'#ffcc00'});
+    }
+
+    function drawBall(){
+      ballElem.setAttribute('cx', ball.x);
+      ballElem.setAttribute('cy', ball.y);
+    }
+
+    function drawBumpers(){ /* static - no per frame drawing needed */ }
+
+    function drawSlingshots(){ /* static */ }
+
+    function drawFlippers(){
+      for(const key in flippers){
+        const f = flippers[key];
+        const end = lineEnd(f);
+        f.elem.setAttribute('x2', end.x);
+        f.elem.setAttribute('y2', end.y);
       }
     }
 
 
     function drawTargets(){
-      ctx.fillStyle = '#ff9900';
       targets.forEach(t=>{
-        if(t.up){
-          ctx.fillRect(t.x - t.w/2, t.y - t.h, t.w, t.h);
-        }
+        t.elem.style.display = t.up ? 'block' : 'none';
       });
     }
 
@@ -477,31 +490,10 @@
     }
 
     function draw(){
-      ctx.clearRect(0,0,canvas.width, canvas.height);
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(walls.right, walls.top);
-      ctx.lineTo(walls.left + curveRadius, walls.top);
-      ctx.arc(topCurve.x, topCurve.y, topCurve.r, Math.PI * 1.5, Math.PI, true);
-      ctx.lineTo(walls.left, canvas.height);
-      ctx.lineTo(walls.right, canvas.height);
-      ctx.closePath();
-      ctx.stroke();
-      // launch lane separator
-      ctx.beginPath();
-      ctx.moveTo(launchLane.x, launchLane.gap);
-      ctx.lineTo(launchLane.x, canvas.height);
-      ctx.stroke();
-      // plunger visualization
-      ctx.fillStyle = '#888';
-      // draw the plunger moving down from its start position
       const plungerY = plunger.startY + plunger.power;
-      ctx.fillRect(launchLane.x + launchLane.width/2 - 4, plungerY, 8, 20);
-      drawBumpers();
-      drawSlingshots();
-      drawTargets();
+      plungerElem.setAttribute('y', plungerY);
       drawFlippers();
+      drawTargets();
       drawBall();
     }
 
@@ -534,6 +526,7 @@
     });
 
     resetBall();
+    initSVG();
     updateInfo();
     step();
   </script>
