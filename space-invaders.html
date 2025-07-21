@@ -60,6 +60,8 @@
     const player = { x: canvas.width/2, y: canvas.height - 30, w: 40, h: 20 };
     let bullet = null;
     const aliens = [];
+    const alienImg = new Image();
+    alienImg.src = 'images/alien.svg';
     const bombs = [];
     const explosions = [];
     let shields = [];
@@ -266,10 +268,9 @@
       }
 
       // draw aliens
-      ctx.fillStyle = '#f06';
       for(const a of aliens){
         if(a.alive){
-          ctx.fillRect(a.x-a.w/2, a.y-a.h/2, a.w, a.h);
+          ctx.drawImage(alienImg, a.x - a.w/2, a.y - a.h/2, a.w, a.h);
         }
       }
 
