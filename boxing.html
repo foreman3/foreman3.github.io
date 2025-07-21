@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Boxing</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #222, #000);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #sidebar li {
+      margin: 15px 0;
+    }
+    #sidebar a {
+      color: #fff;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    #sidebar a:hover { color: #ffea00; }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow: hidden;
+      padding: 20px;
+    }
+    canvas {
+      background: #000;
+      border: 2px solid #fff;
+      border-radius: 8px;
+    }
+    #info { margin-top: 10px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Boxing</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info">Use F/J to punch, Space to block</div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const opponents = [
+      {name:'Rookie',color:'#0f0',health:3,cooldown:2000},
+      {name:'Striker',color:'#2f2',health:4,cooldown:1800},
+      {name:'Slugger',color:'#ff0',health:5,cooldown:1600},
+      {name:'Bruiser',color:'#fa0',health:6,cooldown:1400},
+      {name:'Champ',color:'#f00',health:7,cooldown:1200},
+      {name:'Legend',color:'#f0f',health:8,cooldown:1000},
+      {name:'Final Boss',color:'#fff',health:9,cooldown:900}
+    ];
+
+    let opponentIndex = 0;
+    let opponent = null;
+    let playerHealth = 5;
+    let leftPunch = 0; // progress 0-1
+    let rightPunch = 0;
+    let blocking = 0; // time left
+    let oppTimer = 0; // until next punch
+    let message = '';
+
+    function newOpponent() {
+      const base = opponents[opponentIndex];
+      opponent = {name: base.name, color: base.color, health: base.health, cooldown: base.cooldown};
+      oppTimer = opponent.cooldown;
+      message = 'Opponent '+(opponentIndex+1)+'/'+opponents.length+': '+opponent.name;
+    }
+    newOpponent();
+
+    document.addEventListener('keydown', e => {
+      if(e.code === 'KeyF') leftPunch = 1;
+      if(e.code === 'KeyJ') rightPunch = 1;
+      if(e.code === 'Space') blocking = 400; // ms
+    });
+
+    let last = performance.now();
+    function gameLoop(now){
+      const dt = now - last; last = now;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // update timers
+      if(leftPunch>0) leftPunch -= dt/200; if(leftPunch<0) leftPunch=0;
+      if(rightPunch>0) rightPunch -= dt/200; if(rightPunch<0) rightPunch=0;
+      if(blocking>0) blocking -= dt; else blocking=0;
+      oppTimer -= dt;
+      if(oppTimer<=0){
+        if(blocking<=0) playerHealth--; // hit!
+        oppTimer = opponent.cooldown;
+      }
+
+      // check hits on opponent when punches extended
+      const headX = canvas.width/2;
+      const headY = canvas.height/2 - 50;
+      if(leftPunch>0.8 && distance(punchPos('left').x, punchPos('left').y, headX, headY)<40) {
+        opponent.health--; leftPunch=0;
+      }
+      if(rightPunch>0.8 && distance(punchPos('right').x, punchPos('right').y, headX, headY)<40) {
+        opponent.health--; rightPunch=0;
+      }
+      if(opponent.health<=0){
+        opponentIndex++;
+        if(opponentIndex>=opponents.length){
+          message = 'You won the championship!';
+          opponentIndex = opponents.length-1;
+          opponent.health=0;
+        } else {
+          newOpponent();
+        }
+      }
+
+      if(playerHealth<=0){
+        message = 'You Lost! Refresh to try again';
+        playerHealth=0;
+      }
+
+      drawOpponent();
+      drawPlayer();
+
+      ctx.fillStyle = '#fff';
+      ctx.font = '20px sans-serif';
+      ctx.fillText('Opponent: '+opponent.name+' HP:'+opponent.health,10,20);
+      ctx.fillText('Player HP:'+playerHealth,10,40);
+      if(message) ctx.fillText(message,10,60);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function punchPos(side){
+      if(side==='left')
+        return {x: canvas.width*0.4, y: canvas.height - leftPunch*150 - 60};
+      else
+        return {x: canvas.width*0.6, y: canvas.height - rightPunch*150 - 60};
+    }
+
+    function drawPlayer(){
+      ctx.strokeStyle = '#0ff';
+      ctx.lineWidth = 2;
+      let p = punchPos('left');
+      ctx.beginPath();
+      ctx.moveTo(canvas.width*0.3, canvas.height);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 15,0,Math.PI*2); ctx.stroke();
+
+      p = punchPos('right');
+      ctx.beginPath();
+      ctx.moveTo(canvas.width*0.7, canvas.height);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 15,0,Math.PI*2); ctx.stroke();
+
+      if(blocking>0){
+        ctx.strokeStyle = '#ff0';
+        ctx.beginPath();
+        ctx.rect(canvas.width/2-40, canvas.height-120, 80, 80);
+        ctx.stroke();
+      }
+    }
+
+    function drawOpponent(){
+      if(opponent.health<=0) return;
+      ctx.strokeStyle = opponent.color;
+      ctx.lineWidth = 2;
+      const x = canvas.width/2, y = canvas.height/2;
+      ctx.beginPath();
+      ctx.arc(x, y-50, 30, 0, Math.PI*2); // head
+      ctx.moveTo(x, y-20); ctx.lineTo(x, y+60); // body
+      ctx.moveTo(x, y); ctx.lineTo(x-40, y+40); // left arm
+      ctx.moveTo(x, y); ctx.lineTo(x+40, y+40); // right arm
+      ctx.moveTo(x, y+60); ctx.lineTo(x-30, y+120); // left leg
+      ctx.moveTo(x, y+60); ctx.lineTo(x+30, y+120); // right leg
+      ctx.stroke();
+    }
+
+    function distance(x1,y1,x2,y2){
+      const dx=x1-x2, dy=y1-y2; return Math.sqrt(dx*dx+dy*dy);
+    }
+
+    requestAnimationFrame(gameLoop);
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
