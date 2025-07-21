@@ -13,4 +13,5 @@ This repository hosts simple arcade-style video games.
 - [Asteroids](asteroids.html) - Blast space rocks and avoid collisions.
 - [Space Invaders](space-invaders.html) - Battle waves of alien foes.
 - [Tetris](tetris.html) - Arrange falling blocks to clear lines.
+- [Tanks](tanks.html) - Duel enemy armor in top-down combat.
 
