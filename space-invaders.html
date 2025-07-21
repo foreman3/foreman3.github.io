@@ -69,6 +69,7 @@
     let lives = 3;
     let alienDir = 1; // 1=right, -1=left
     let moveCounter = 0;
+    let alienSpeed = 10;
     let gameOver = false;
 
     const keys = {};
@@ -119,6 +120,7 @@
       lives = 3;
       alienDir = 1;
       moveCounter = 0;
+      alienSpeed = 10;
       gameOver = false;
       bullet = null;
       bombs.length = 0;
@@ -158,7 +160,7 @@
         let left = Infinity, right = -Infinity;
         for(const a of aliens){
           if(a.alive){
-            a.x += alienDir*10;
+            a.x += alienDir * alienSpeed;
             left = Math.min(left, a.x - a.w/2);
             right = Math.max(right, a.x + a.w/2);
           }
@@ -189,6 +191,7 @@
             a.alive = false;
             bullet = null;
             score += 10;
+            alienSpeed *= 1.05;
             updateInfo();
             break;
           }
