@@ -89,8 +89,10 @@
     let score = 0;
     let time = 60 * 60; // 60 seconds at ~60fps
     let running = true;
-    const lanes = [-0.3, 0, 0.3];
-    let lane = 1;
+    const lanes = [-0.3, 0, 0.3]; // enemy lane positions
+    let carOffset = 0; // player's lateral position (-0.3 to 0.3)
+    let leftPressed = false;
+    let rightPressed = false;
 
     const enemies = [];
 
@@ -105,13 +107,18 @@
       trackPos += 5;
       score += 5;
       time--;
+      if (leftPressed) carOffset = Math.max(-0.3, carOffset - 0.02);
+      if (rightPressed) carOffset = Math.min(0.3, carOffset + 0.02);
       if(time % 90 === 0) spawnEnemy();
 
       for(const e of enemies) e.z -= 5;
       while(enemies.length && enemies[0].z < trackPos-50) enemies.shift();
 
       for(const e of enemies) {
-        if(Math.abs(e.z - (trackPos+100)) < 40 && e.lane === lane) {
+        if (
+          Math.abs(e.z - (trackPos + 100)) < 40 &&
+          Math.abs(carOffset - lanes[e.lane]) < 0.1
+        ) {
           running = false;
           document.getElementById('message').textContent = 'Crash! Press Space';
         }
@@ -151,7 +158,7 @@
       const carWidth = 40;
       const carHeight = 60;
       const curve = Math.sin(trackPos/200) * canvas.width * 0.25;
-      const x = canvas.width/2 + curve + lanes[lane] * roadWidth/2 - carWidth/2;
+      const x = canvas.width/2 + curve + carOffset * roadWidth/2 - carWidth/2;
       const y = canvas.height - carHeight - 20;
       ctx.fillStyle = '#ff0000';
       ctx.fillRect(x, y, carWidth, carHeight);
@@ -188,18 +195,22 @@
     }
 
     document.addEventListener('keydown', e => {
-      if(e.code === 'ArrowLeft') lane = Math.max(0, lane-1);
-      if(e.code === 'ArrowRight') lane = Math.min(2, lane+1);
-      if(e.code === 'Space' && !running) {
+      if (e.code === 'ArrowLeft') leftPressed = true;
+      if (e.code === 'ArrowRight') rightPressed = true;
+      if (e.code === 'Space' && !running) {
         resetGame();
       }
+    });
+    document.addEventListener('keyup', e => {
+      if (e.code === 'ArrowLeft') leftPressed = false;
+      if (e.code === 'ArrowRight') rightPressed = false;
     });
 
     function resetGame(){
       trackPos = 0;
       score = 0;
       time = 60*60;
-      lane = 1;
+      carOffset = 0;
       enemies.length = 0;
       running = true;
       document.getElementById('message').textContent = '';
