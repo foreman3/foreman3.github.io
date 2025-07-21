@@ -78,6 +78,8 @@
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const asteroidImg = new Image();
+    asteroidImg.src = 'images/asteroid.svg';
 
     const KEY = {left:false,right:false,up:false,space:false};
     document.addEventListener('keydown', e=>{
@@ -265,9 +267,13 @@
       drawExplosions();
       ctx.strokeStyle = '#fff';
       asteroids.forEach(a=>{
-        ctx.beginPath();
-        ctx.arc(a.x,a.y,a.size*10,0,Math.PI*2);
-        ctx.stroke();
+        if(asteroidImg.complete){
+          ctx.drawImage(asteroidImg, a.x - a.size*10, a.y - a.size*10, a.size*20, a.size*20);
+        } else {
+          ctx.beginPath();
+          ctx.arc(a.x,a.y,a.size*10,0,Math.PI*2);
+          ctx.stroke();
+        }
       });
       bullets.forEach(b=>{
         ctx.fillStyle = '#fff';
