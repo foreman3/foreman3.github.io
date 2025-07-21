@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tanks</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #556270 0%, #4ecdc4 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul { list-style:none; padding:0; margin:0; }
+    #sidebar li { margin:15px 0; }
+    #sidebar a { color:#fff; text-decoration:none; transition:color 0.3s; }
+    #sidebar a:hover { color:#ffea00; }
+    #game-container {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding:20px;
+    }
+    canvas {
+      background:#222;
+      border:2px solid #fff;
+      border-radius:8px;
+      width:100%;
+      height:auto;
+      max-height:80vh;
+    }
+    #info { margin-top:10px; font-size:20px; }
+    #message { margin-top:10px; font-size:24px; color:#ffeb3b; }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Tanks</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info"></div>
+    <div id="message"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const keys = {};
+    const bullets = [];
+
+    const player = {x:100,y:canvas.height/2,angle:0,lives:3,color:'#0f0'};
+    const enemy = {x:canvas.width-100,y:canvas.height/2,angle:Math.PI,lives:3,color:'#f00',shootTimer:0};
+
+    let running = false;
+
+    function shoot(tank){
+      bullets.push({x:tank.x + Math.cos(tank.angle)*20,
+                    y:tank.y + Math.sin(tank.angle)*20,
+                    angle:tank.angle,
+                    owner:tank});
+    }
+
+    function updateInfo(){
+      document.getElementById('info').textContent = `Player Lives: ${player.lives} | Enemy Lives: ${enemy.lives}`;
+    }
+
+    function resetGame(){
+      player.x = 100; player.y = canvas.height/2; player.angle = 0; player.lives = 3;
+      enemy.x = canvas.width-100; enemy.y = canvas.height/2; enemy.angle = Math.PI; enemy.lives = 3; enemy.shootTimer = 0;
+      bullets.length = 0;
+      running = true;
+      document.getElementById('message').textContent = '';
+      updateInfo();
+    }
+
+    function update(){
+      if(!running) return;
+      if(keys['ArrowUp']){ player.x += Math.cos(player.angle)*2; player.y += Math.sin(player.angle)*2; }
+      if(keys['ArrowDown']){ player.x -= Math.cos(player.angle)*2; player.y -= Math.sin(player.angle)*2; }
+      if(keys['ArrowLeft']) player.angle -= 0.05;
+      if(keys['ArrowRight']) player.angle += 0.05;
+
+      player.x = Math.max(15, Math.min(canvas.width-15, player.x));
+      player.y = Math.max(15, Math.min(canvas.height-15, player.y));
+
+      // enemy AI
+      const dx = player.x - enemy.x;
+      const dy = player.y - enemy.y;
+      const desired = Math.atan2(dy, dx);
+      let diff = ((desired - enemy.angle + Math.PI*3) % (Math.PI*2)) - Math.PI;
+      if(Math.abs(diff) > 0.02) enemy.angle += Math.sign(diff)*0.02;
+      enemy.x += Math.cos(enemy.angle)*1.5;
+      enemy.y += Math.sin(enemy.angle)*1.5;
+      enemy.x = Math.max(15, Math.min(canvas.width-15, enemy.x));
+      enemy.y = Math.max(15, Math.min(canvas.height-15, enemy.y));
+
+      enemy.shootTimer--;
+      if(enemy.shootTimer <= 0){
+        shoot(enemy);
+        enemy.shootTimer = 80;
+      }
+
+      for(let i=bullets.length-1;i>=0;i--){
+        const b = bullets[i];
+        b.x += Math.cos(b.angle)*4;
+        b.y += Math.sin(b.angle)*4;
+        if(b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height){
+          bullets.splice(i,1);
+          continue;
+        }
+        if(b.owner !== player && Math.hypot(b.x - player.x, b.y - player.y) < 15){
+          bullets.splice(i,1);
+          player.lives--;
+          updateInfo();
+          if(player.lives <= 0){
+            running = false;
+            document.getElementById('message').textContent = 'Game Over - Press Enter';
+          }
+          continue;
+        }
+        if(b.owner !== enemy && Math.hypot(b.x - enemy.x, b.y - enemy.y) < 15){
+          bullets.splice(i,1);
+          enemy.lives--;
+          updateInfo();
+          if(enemy.lives <= 0){
+            running = false;
+            document.getElementById('message').textContent = 'You Win! - Press Enter';
+          }
+          continue;
+        }
+      }
+    }
+
+    function drawTank(t){
+      ctx.save();
+      ctx.translate(t.x, t.y);
+      ctx.rotate(t.angle);
+      ctx.fillStyle = t.color;
+      ctx.fillRect(-15, -10, 30, 20);
+      ctx.fillRect(0, -3, 20, 6);
+      ctx.restore();
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      drawTank(player);
+      drawTank(enemy);
+      ctx.fillStyle = '#fff';
+      for(const b of bullets){
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 3, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    function loop(){
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if(e.key === ' ' && running){ shoot(player); }
+      if(e.key === 'Enter' && !running){ resetGame(); }
+    });
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    window.addEventListener('load', () => { resetGame(); loop(); });
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if(placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
