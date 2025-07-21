@@ -126,6 +126,8 @@
     let dropInterval = 1000;
     let lastTime = 0;
     let gameOver = false;
+    let clearingRows = [];
+    let clearTimer = 0;
 
     function resetBoard() {
       board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
@@ -156,15 +158,29 @@
       });
     }
 
-    function clearLines() {
+    function checkLines() {
+      clearingRows = [];
       for (let y = ROWS - 1; y >= 0; y--) {
         if (board[y].every(v => v)) {
-          board.splice(y, 1);
-          board.unshift(Array(COLS).fill(0));
-          score += 100;
-          lines++;
-          y++;
+          clearingRows.push(y);
         }
+      }
+      if (clearingRows.length) {
+        clearTimer = 0;
+      }
+    }
+
+    function animateLineClear(delta) {
+      clearTimer += delta;
+      if (clearTimer > 300) {
+        clearingRows.sort((a,b) => a-b).forEach(y => {
+          board.splice(y,1);
+          board.unshift(Array(COLS).fill(0));
+        });
+        score += 100 * clearingRows.length;
+        lines += clearingRows.length;
+        clearingRows = [];
+        newPiece();
       }
     }
 
@@ -185,8 +201,10 @@
         current.y++;
       } else {
         merge();
-        clearLines();
-        newPiece();
+        checkLines();
+        if (!clearingRows.length) {
+          newPiece();
+        }
       }
     }
 
@@ -208,7 +226,8 @@
       for (let y=0; y<ROWS; y++) {
         for (let x=0; x<COLS; x++) {
           if (board[y][x]) {
-            drawCell(x,y,COLORS[board[y][x]-1]);
+            const color = clearingRows.includes(y) ? '#fff' : COLORS[board[y][x]-1];
+            drawCell(x,y,color);
           }
         }
       }
@@ -225,9 +244,14 @@
     function update(time=0) {
       if (gameOver) return;
       const delta = time - lastTime;
-      if (delta > dropInterval) {
-        drop();
+      if (clearingRows.length) {
+        animateLineClear(delta);
         lastTime = time;
+      } else {
+        if (delta > dropInterval) {
+          drop();
+          lastTime = time;
+        }
       }
       draw();
       requestAnimationFrame(update);
