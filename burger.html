@@ -144,7 +144,7 @@
   }
 
   function applyGravity(obj){
-    if(!isSupported(obj)){
+    if(!isSupported(obj) && !ladderAt(Math.round(obj.x), obj.y)){
       obj.y += 0.1;
     }
   }
@@ -173,12 +173,12 @@
       if(p.falling){
         p.y += 0.1;
         // check for landing on another piece
-        const belowPiece = pieces.find(o=>o!==p && !o.falling && !o.complete &&
+        const belowPiece = pieces.find(o=>o!==p && !o.complete &&
           (p.x+2>o.x && p.x<o.x+2) && Math.abs(p.y - (o.y-1)) < 0.1);
         if(belowPiece){
-          belowPiece.falling = true;
-          p.falling = false;
+          if(!belowPiece.falling) belowPiece.falling = true;
           p.y = belowPiece.y - 1;
+          p.falling = true;
         } else {
           // check for landing on a floor
           const floor = floors.find(f=>Math.abs(p.y - f) < 0.1);
