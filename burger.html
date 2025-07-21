@@ -99,7 +99,15 @@
     pieces.length = 0;
     for(let col of burgerX){
       for(let i=0;i<types.length;i++){
-        pieces.push({x:col, y:floors[i], type:types[i], falling:false});
+        pieces.push({
+          x: col,
+          y: floors[i],
+          type: types[i],
+          falling: false,
+          floorIndex: i,
+          remaining: 0,
+          support: null
+        });
       }
     }
     player.x = burgerX[0];
@@ -131,6 +139,22 @@
     return pieces.find(p=>!p.falling && (x===p.x || x===p.x+1) && p.y===y);
   }
 
+  function pieceUnder(obj){
+    return pieces.find(p=>!p.complete && Math.abs(obj.y - (p.y-1)) < 0.1 && obj.x>=p.x && obj.x<=p.x+2);
+  }
+
+  function enemiesOnPiece(piece){
+    return enemies.filter(e=>Math.abs(e.y - (piece.y-1)) < 0.1 && e.x>=piece.x && e.x<=piece.x+2).length;
+  }
+
+  function triggerFall(p){
+    if(!p.falling){
+      p.falling = true;
+      p.remaining = 1 + enemiesOnPiece(p);
+      p.support = null;
+    }
+  }
+
   function isSupported(obj){
     return isOnFloor(obj) || isOnPiece(obj);
   }
@@ -139,6 +163,15 @@
     for(const p of pieces){
       if(p.falling && obj.x>=p.x && obj.x<=p.x+2 && Math.abs(obj.y-(p.y-1))<0.1){
         obj.y+=0.1;
+      }
+    }
+  }
+
+  function climbOntoPiece(obj){
+    for(const p of pieces){
+      if(!p.falling && !p.complete && Math.abs(obj.y - p.y) < 0.1 && obj.x>=p.x && obj.x<=p.x+2){
+        obj.y = p.y - 1;
+        break;
       }
     }
   }
@@ -158,38 +191,65 @@
       player.vx = 0;
     }
     player.x += player.vx;
+    climbOntoPiece(player);
     if(keys.up && ladderAt(Math.round(player.x), player.y)) player.y -=0.1;
     if(keys.down && ladderAt(Math.round(player.x), player.y)) player.y +=0.1;
     player.x = Math.max(0, Math.min(COLS-1, player.x));
     player.y = Math.max(1, Math.min(ROWS-1, player.y));
 
     const px=Math.round(player.x), py=Math.round(player.y);
-    const piece = pieceAt(px, py);
+    const piece = pieceUnder(player);
     if(piece){
-      piece.falling=true;
+      triggerFall(piece);
     }
 
     for(const p of pieces){
-      if(p.falling){
-        p.y += 0.1;
-        // check for landing on another piece
-        const belowPiece = pieces.find(o=>o!==p && !o.complete &&
-          (p.x+2>o.x && p.x<o.x+2) && Math.abs(p.y - (o.y-1)) < 0.1);
-        if(belowPiece){
-          if(!belowPiece.falling) belowPiece.falling = true;
-          p.y = belowPiece.y - 1;
-          p.falling = true;
-        } else {
-          // check for landing on a floor
-          const floor = floors.find(f=>Math.abs(p.y - f) < 0.1);
-          if(floor!==undefined){
-            p.falling = false;
-            p.y = floor;
-            if(p.y >= ROWS){
-              p.complete = true;
-            }
+      if(!p.falling) continue;
+
+      if(p.support){
+        p.y = p.support.y - 1;
+        if(!p.support.falling){
+          p.floorIndex = p.support.floorIndex;
+          if(p.remaining>0) p.remaining--;
+          if(p.remaining<=0){
+            p.falling=false;
+            if(p.y >= ROWS) p.complete=true;
+          } else {
+            p.support=null;
+            p.y += 0.1;
           }
         }
+        continue;
+      }
+
+      p.y += 0.1;
+
+      const belowPiece = pieces.find(o=>o!==p && !o.complete && Math.abs(p.y - (o.y-1)) < 0.05 && p.x+2>o.x && p.x<o.x+2);
+      if(belowPiece){
+        p.y = belowPiece.y - 1;
+        p.floorIndex = belowPiece.floorIndex;
+        if(p.remaining>0) p.remaining--;
+        p.support = belowPiece;
+        triggerFall(belowPiece);
+        continue;
+      }
+
+      const nextFloor = floors[p.floorIndex+1];
+      if(nextFloor!==undefined && p.y >= nextFloor){
+        p.y = nextFloor;
+        p.floorIndex++;
+        if(p.remaining>0) p.remaining--;
+        if(p.remaining<=0){
+          p.falling=false;
+          if(p.y >= ROWS) p.complete=true;
+        }
+        continue;
+      }
+
+      if(p.floorIndex>=floors.length-1 && p.y>=ROWS){
+        p.y=ROWS;
+        p.falling=false;
+        p.complete=true;
       }
     }
     ridePieces(player);
@@ -204,7 +264,12 @@
         e.vx = 0;
       }
       e.x += e.vx;
+      climbOntoPiece(e);
       e.x = Math.max(0, Math.min(COLS-1, e.x));
+      const epiece = pieceUnder(e);
+      if(epiece){
+        triggerFall(epiece);
+      }
       // simple vertical chase
       if(Math.abs(e.x-player.x)<1 && ladderAt(Math.round(e.x), e.y)){
         if(e.y<player.y) e.y+=0.05; else if(e.y>player.y) e.y-=0.05;
