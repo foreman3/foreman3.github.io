@@ -192,14 +192,39 @@
 
     let ballElem, plungerElem;
 
-    function svgElem(type, attrs){
+    function svgElem(type, attrs, parent = svg){
       const el = document.createElementNS(svgNS, type);
       Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
-      svg.appendChild(el);
+      parent.appendChild(el);
       return el;
     }
 
     function initSVG(){
+      const defs = svgElem('defs', {});
+      function defElem(type, attrs, parent = defs){
+        return svgElem(type, attrs, parent);
+      }
+
+      const boardGrad = defElem('linearGradient', {id:'boardGradient', x1:'0%', y1:'0%', x2:'0%', y2:'100%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'#444'}, boardGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#111'}, boardGrad);
+
+      const bumperGrad = defElem('radialGradient', {id:'bumperGradient', cx:'50%', cy:'50%', r:'50%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'#fff'}, bumperGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#66ccff'}, bumperGrad);
+
+      const flipperGrad = defElem('linearGradient', {id:'flipperGradient', x1:'0%', y1:'0%', x2:'0%', y2:'100%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'#ff88ff'}, flipperGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#660066'}, flipperGrad);
+
+      const ballGrad = defElem('radialGradient', {id:'ballGradient', cx:'50%', cy:'50%', r:'50%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'#ffffcc'}, ballGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#ffcc00'}, ballGrad);
+
+      const targetGrad = defElem('linearGradient', {id:'targetGradient', x1:'0%', y1:'0%', x2:'0%', y2:'100%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'#ffd966'}, targetGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#ff8800'}, targetGrad);
+
       const boardPath = [
         `M ${walls.right} ${walls.top}`,
         `L ${walls.left + curveRadius} ${walls.top}`,
@@ -208,25 +233,25 @@
         `L ${walls.right} ${canvas.height}`,
         'Z'
       ].join(' ');
-      svgElem('path', {d: boardPath, fill:'none', stroke:'#fff', 'stroke-width':4});
+      svgElem('path', {d: boardPath, fill:'url(#boardGradient)', stroke:'#fff', 'stroke-width':4});
       svgElem('line', {x1:launchLane.x, y1:launchLane.gap, x2:launchLane.x, y2:canvas.height, stroke:'#fff', 'stroke-width':4});
       plungerElem = svgElem('rect', {x: launchLane.x + launchLane.width/2 - 4, y: plunger.startY, width:8, height:20, fill:'#888'});
       bumpers.forEach(b=>{
-        b.elem = svgElem('circle', {cx:b.x, cy:b.y, r:b.r, fill:'#66ccff'});
+        b.elem = svgElem('circle', {cx:b.x, cy:b.y, r:b.r, fill:'url(#bumperGradient)', stroke:'#3399ff', 'stroke-width':2});
       });
       for(const key in slingshots){
         const pts = slingshots[key].points.map(p=>`${p.x},${p.y}`).join(' ');
-        slingshots[key].elem = svgElem('polygon', {points:pts, fill:'#44dd88'});
+        slingshots[key].elem = svgElem('polygon', {points:pts, fill:'url(#targetGradient)', stroke:'#ff5500', 'stroke-width':2});
       }
       for(const key in flippers){
         const f = flippers[key];
         const end = lineEnd(f);
-        f.elem = svgElem('line', {x1:f.x1, y1:f.y1, x2:end.x, y2:end.y, stroke:'#ff66ff', 'stroke-width':10, 'stroke-linecap':'round'});
+        f.elem = svgElem('line', {x1:f.x1, y1:f.y1, x2:end.x, y2:end.y, stroke:'url(#flipperGradient)', 'stroke-width':12, 'stroke-linecap':'round'});
       }
       targets.forEach(t=>{
-        t.elem = svgElem('rect', {x:t.x - t.w/2, y:t.y - t.h, width:t.w, height:t.h, fill:'#ff9900'});
+        t.elem = svgElem('rect', {x:t.x - t.w/2, y:t.y - t.h, width:t.w, height:t.h, fill:'url(#targetGradient)', stroke:'#ff5500', 'stroke-width':1});
       });
-      ballElem = svgElem('circle', {cx:ball.x, cy:ball.y, r:ballRadius, fill:'#ffcc00'});
+      ballElem = svgElem('circle', {cx:ball.x, cy:ball.y, r:ballRadius, fill:'url(#ballGradient)', stroke:'#ddaa00', 'stroke-width':1});
     }
 
     function drawBall(){
