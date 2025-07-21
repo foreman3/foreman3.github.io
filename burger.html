@@ -124,11 +124,11 @@
   }
 
   function isOnPiece(obj){
-    return pieces.some(p=>!p.complete && Math.abs(obj.y - (p.y-1)) < 0.1 && obj.x>=p.x && obj.x<=p.x+1);
+    return pieces.some(p=>!p.complete && Math.abs(obj.y - (p.y-1)) < 0.1 && obj.x>=p.x && obj.x<=p.x+2);
   }
 
   function pieceAt(x,y){
-    return pieces.find(p=>p.x===x && p.y===y && !p.falling);
+    return pieces.find(p=>!p.falling && (x===p.x || x===p.x+1) && p.y===y);
   }
 
   function isSupported(obj){
@@ -137,9 +137,15 @@
 
   function ridePieces(obj){
     for(const p of pieces){
-      if(p.falling && obj.x>=p.x && obj.x<=p.x+1 && Math.abs(obj.y-(p.y-1))<0.1){
+      if(p.falling && obj.x>=p.x && obj.x<=p.x+2 && Math.abs(obj.y-(p.y-1))<0.1){
         obj.y+=0.1;
       }
+    }
+  }
+
+  function applyGravity(obj){
+    if(!isSupported(obj)){
+      obj.y += 0.1;
     }
   }
 
@@ -166,22 +172,32 @@
     for(const p of pieces){
       if(p.falling){
         p.y += 0.1;
-        const below = pieceAt(p.x, Math.round(p.y) + 1);
-        if(Math.round(p.y) >= ROWS || below){
-          if(below){ below.falling = true; }
+        // check for landing on another piece
+        const belowPiece = pieces.find(o=>o!==p && !o.falling && !o.complete &&
+          (p.x+2>o.x && p.x<o.x+2) && Math.abs(p.y - (o.y-1)) < 0.1);
+        if(belowPiece){
+          belowPiece.falling = true;
           p.falling = false;
-          p.y = below ? below.y - 1 : ROWS;
-          if(p.y >= ROWS){
-            p.complete = true;
+          p.y = belowPiece.y - 1;
+        } else {
+          // check for landing on a floor
+          const floor = floors.find(f=>Math.abs(p.y - f) < 0.1);
+          if(floor!==undefined){
+            p.falling = false;
+            p.y = floor;
+            if(p.y >= ROWS){
+              p.complete = true;
+            }
           }
         }
       }
     }
     ridePieces(player);
+    applyGravity(player);
 
     // enemy movement
     for(const e of enemies){
-      if(e.stunned>0){ e.stunned--; ridePieces(e); continue; }
+      if(e.stunned>0){ e.stunned--; ridePieces(e); applyGravity(e); continue; }
       if(isSupported(e)){
         if(e.x < player.x) e.vx=0.05; else if(e.x>player.x) e.vx=-0.05; else e.vx=0;
       } else {
@@ -199,6 +215,7 @@
         document.getElementById('message').textContent='Game Over';
       }
       ridePieces(e);
+      applyGravity(e);
     }
 
     if(pieces.every(p=>p.complete)){
