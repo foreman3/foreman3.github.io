@@ -41,6 +41,13 @@
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
 
+  const images = {};
+  ['cook','enemy','burger_top','burger_lettuce','burger_patty','burger_bottom'].forEach(name=>{
+    const img = new Image();
+    img.src = `images/${name}.svg`;
+    images[name] = img;
+  });
+
   // tile and level setup
   const COLS = 20;
   const ROWS = 15;
@@ -48,27 +55,62 @@
   canvas.width = COLS * TILE;
   canvas.height = ROWS * TILE;
 
-  const floors = [3,7,11,15]; // grid rows for platforms (from top)
-  const ladders = [
-    {x:4, top:3, bottom:15},
-    {x:10, top:3, bottom:15},
-    {x:16, top:3, bottom:15}
+  const levels = [
+    {
+      floors: [3,7,11,15],
+      ladders: [
+        {x:4, top:3, bottom:15},
+        {x:10, top:3, bottom:15},
+        {x:16, top:3, bottom:15}
+      ],
+      burgerX: [6,10,14]
+    },
+    {
+      floors: [3,6,9,12],
+      ladders: [
+        {x:5, top:3, bottom:12},
+        {x:11, top:3, bottom:12},
+        {x:17, top:3, bottom:12}
+      ],
+      burgerX: [4,10,16]
+    }
   ];
 
-  const burgerX = [6,10,14];
+  let levelIndex = 0;
+  let floors = [];
+  let ladders = [];
+  let burgerX = [];
   const pieces = [];
   const types = ['top','lettuce','patty','bottom'];
-  for(let col of burgerX){
-    for(let i=0;i<types.length;i++){
-      pieces.push({x:col, y:floors[i], type:types[i], falling:false});
+
+  function loadLevel(index){
+    levelIndex = index % levels.length;
+    const level = levels[levelIndex];
+    floors = level.floors.slice();
+    ladders = level.ladders.map(l=>Object.assign({},l));
+    burgerX = level.burgerX.slice();
+    pieces.length = 0;
+    for(let col of burgerX){
+      for(let i=0;i<types.length;i++){
+        pieces.push({x:col, y:floors[i], type:types[i], falling:false});
+      }
     }
+    player.x = burgerX[0];
+    player.y = floors[0];
+    player.pepper = 3;
+    enemies = [ {x:18, y:floors[2], vx:-0.02, vy:0, width:1, height:1, stunned:0} ];
+    gameOver = false;
+    win = false;
+    document.getElementById('message').textContent='';
   }
 
-  const player = {x:burgerX[0], y:floors[0], vx:0, vy:0, dir:1, pepper:3, width:1, height:1};
-  let enemies = [ {x:18, y:floors[2], vx:-0.02, vy:0, width:1, height:1, stunned:0} ];
+  const player = {x:0, y:0, vx:0, vy:0, dir:1, pepper:3, width:1, height:1};
+  let enemies = [];
 
   let gameOver=false;
   let win=false;
+
+  loadLevel(0);
 
   function isOnFloor(obj){
     return floors.includes(obj.y);
@@ -129,7 +171,10 @@
 
     if(pieces.every(p=>p.complete)){
       win=true;
-      document.getElementById('message').textContent='You Win!';
+      document.getElementById('message').textContent='Level Complete!';
+      setTimeout(()=>{
+        loadLevel(levelIndex + 1);
+      }, 1500);
     }
 
     document.getElementById('info').textContent=`Pepper: ${player.pepper}`;
@@ -169,25 +214,21 @@
     // pieces
     for(const p of pieces){
       if(p.complete) continue;
-      switch(p.type){
-        case 'top': ctx.fillStyle='#d2691e'; break;
-        case 'lettuce': ctx.fillStyle='#8fbc8f'; break;
-        case 'patty': ctx.fillStyle='#8b4513'; break;
-        case 'bottom': ctx.fillStyle='#cd853f'; break;
-      }
-      ctx.fillRect(p.x,p.y-1,2,1);
+      const img = images[`burger_${p.type}`];
+      if(img.complete) ctx.drawImage(img, p.x, p.y-1, 2, 1);
     }
     // player
-    ctx.fillStyle='white';
-    ctx.fillRect(player.x,player.y-1,1,1);
+    const pc = images.cook;
+    if(pc.complete) ctx.drawImage(pc, player.x, player.y-1, 1, 1);
     // enemies
-    ctx.fillStyle='red';
+    const enemyImg = images.enemy;
     for(const e of enemies){
-      ctx.fillRect(e.x,e.y-1,1,1);
+      const img = enemyImg;
+      if(img.complete) ctx.drawImage(img, e.x, e.y-1, 1, 1);
       if(e.stunned>0){
-        ctx.fillStyle='blue';
-        ctx.fillRect(e.x,e.y-1,1,1);
-        ctx.fillStyle='red';
+        ctx.globalAlpha = 0.5;
+        if(img.complete) ctx.drawImage(img, e.x, e.y-1, 1, 1);
+        ctx.globalAlpha = 1;
       }
     }
     ctx.restore();
