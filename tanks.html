@@ -328,7 +328,13 @@
       keys[e.key] = true;
       if (e.key === ' ' && running && player.alive) { shoot(player); }
       if ((e.key === 'm' || e.key === 'M') && running && player.alive && !mine) {
-        mine = { x: player.x, y: player.y, timer: 180, explosion: 0 };
+        const offset = 16; // place mine just behind the tank with 1px gap
+        mine = {
+          x: player.x - Math.cos(player.angle) * offset,
+          y: player.y - Math.sin(player.angle) * offset,
+          timer: 180,
+          explosion: 0
+        };
       }
     });
     window.addEventListener('keyup', e => { keys[e.key] = false; });
