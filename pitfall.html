@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pitfall</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #9bc5c3 0%, #616161 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul { list-style:none; padding:0; margin:0; }
+    #sidebar li { margin:15px 0; }
+    #sidebar a { color:#fff; text-decoration:none; transition:color 0.3s; }
+    #sidebar a:hover { color:#ffea00; }
+    #game-container {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding:20px;
+    }
+    h1 {
+      margin-top:0;
+      font-size:2.5em;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    }
+    canvas {
+      background: #3a7d44;
+      border:2px solid #fff;
+      border-radius:8px;
+      width:100%;
+      height:auto;
+      max-height:70vh;
+    }
+    #info { margin-top:10px; font-size:20px; background:rgba(0,0,0,0.5); padding:5px 10px; border-radius:5px; }
+    #message { margin-top:10px; font-size:24px; color:#ffeb3b; text-shadow:1px 1px 3px rgba(0,0,0,0.5); }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Pitfall</h1>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="info">Score: 0</div>
+    <div id="message">Press Space to Start</div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const groundY = canvas.height - 60;
+    const player = {x:100, y:groundY-40, vy:0, width:20, height:40};
+    let obstacles = [];
+    let lastSpawn = 0;
+    let score = 0;
+    let gameState = 'start';
+
+    document.addEventListener('keydown', e => {
+      if(e.code === 'Space') {
+        if(gameState === 'play') {
+          if(player.y >= groundY - player.height - 1) player.vy = -12;
+        } else {
+          restart();
+        }
+      }
+    });
+
+    function restart() {
+      obstacles = [];
+      player.y = groundY - player.height;
+      player.vy = 0;
+      score = 0;
+      lastSpawn = 0;
+      gameState = 'play';
+      document.getElementById('message').innerText = '';
+    }
+
+    function spawnObstacle() {
+      const type = Math.random() < 0.5 ? 'pit' : 'log';
+      const x = canvas.width + Math.random() * 200;
+      if(type === 'pit') {
+        const width = 60 + Math.random()*60;
+        obstacles.push({type, x, width});
+      } else {
+        const width = 40;
+        const height = 30;
+        obstacles.push({type, x, width, height});
+      }
+    }
+
+    function isOverPit(x) {
+      for(const o of obstacles) {
+        if(o.type==='pit' && x > o.x && x < o.x + o.width) return true;
+      }
+      return false;
+    }
+
+    function update(dt) {
+      if(gameState !== 'play') return;
+
+      if(Date.now() - lastSpawn > 1500) {
+        spawnObstacle();
+        lastSpawn = Date.now();
+      }
+
+      for(const o of obstacles) {
+        o.x -= 3;
+      }
+      obstacles = obstacles.filter(o => o.x + (o.width||50) > -50);
+
+      player.vy += 0.6;
+      player.y += player.vy;
+      const overPit = isOverPit(player.x + player.width/2);
+      if(!overPit && player.y > groundY - player.height) {
+        player.y = groundY - player.height;
+        player.vy = 0;
+      }
+      for(const o of obstacles) {
+        if(o.type==='log') {
+          if(player.x + player.width > o.x && player.x < o.x + o.width &&
+             player.y + player.height > groundY - o.height) {
+            gameOver();
+          }
+        }
+      }
+      if(player.y > canvas.height) gameOver();
+      score += 0.05;
+      document.getElementById('info').innerText = 'Score: ' + Math.floor(score);
+    }
+
+    function gameOver() {
+      gameState = 'gameover';
+      document.getElementById('message').innerText = 'Game Over - Press Space';
+    }
+
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#7d5a4f';
+      ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+      ctx.fillStyle = '#8b4513';
+      for(const o of obstacles) {
+        if(o.type==='pit') {
+          ctx.clearRect(o.x, groundY, o.width, canvas.height-groundY);
+        } else {
+          ctx.fillRect(o.x, groundY - o.height, o.width, o.height);
+        }
+      }
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+
+    let lastTime = 0;
+    function loop(timestamp) {
+      const dt = (timestamp - lastTime)/1000;
+      lastTime = timestamp;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
