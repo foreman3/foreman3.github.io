@@ -100,12 +100,12 @@ const COLS = map[0].length;
 canvas.width = COLS*TILE;
 canvas.height = ROWS*TILE;
 
-let pacman = {x:9, y:15, dir:{x:0,y:0}, nextDir:{x:0,y:0}};
+let pacman = {x:9, y:15, dir:{x:0,y:0}, nextDir:{x:0,y:0}, speed:0.25};
 let ghosts = [
-  {x:9, y:10, dir:{x:1,y:0}, color:'red', scatter:{x:1,y:1}},
-  {x:10, y:10, dir:{x:-1,y:0}, color:'pink', scatter:{x:COLS-2,y:1}},
-  {x:8, y:10, dir:{x:1,y:0}, color:'cyan', scatter:{x:1,y:ROWS-2}},
-  {x:11, y:10, dir:{x:-1,y:0}, color:'orange', scatter:{x:COLS-2,y:ROWS-2}}
+  {x:9, y:10, dir:{x:1,y:0}, color:'red', scatter:{x:1,y:1}, speed:0.25},
+  {x:10, y:10, dir:{x:-1,y:0}, color:'pink', scatter:{x:COLS-2,y:1}, speed:0.25},
+  {x:8, y:10, dir:{x:1,y:0}, color:'cyan', scatter:{x:1,y:ROWS-2}, speed:0.25},
+  {x:11, y:10, dir:{x:-1,y:0}, color:'orange', scatter:{x:COLS-2,y:ROWS-2}, speed:0.25}
 ];
 let pellets=0;
 let score=0;
@@ -122,9 +122,11 @@ for(let r=0;r<ROWS;r++){
 }
 
 function resetLevel(){
-  pacman.x=9; pacman.y=15; pacman.dir={x:0,y:0}; pacman.nextDir={x:0,y:0};
-  ghosts[0].x=9; ghosts[0].y=10; ghosts[1].x=10; ghosts[1].y=10;
-  ghosts[2].x=8; ghosts[2].y=10; ghosts[3].x=11; ghosts[3].y=10;
+  pacman.x=9; pacman.y=15; pacman.dir={x:0,y:0}; pacman.nextDir={x:0,y:0}; pacman.speed=0.25;
+  ghosts[0].x=9; ghosts[0].y=10; ghosts[0].speed=0.25;
+  ghosts[1].x=10; ghosts[1].y=10; ghosts[1].speed=0.25;
+  ghosts[2].x=8; ghosts[2].y=10; ghosts[2].speed=0.25;
+  ghosts[3].x=11; ghosts[3].y=10; ghosts[3].speed=0.25;
   frightTimer=0; message='';
 }
 
@@ -133,7 +135,7 @@ function resetGame(){
 }
 
 function tileAt(x,y){
-  return map[y][x];
+  return map[Math.floor(y)][Math.floor(x)];
 }
 function isWall(x,y){
   const ch=tileAt(x,y);
@@ -164,21 +166,26 @@ function drawMap(){
 }
 
 function move(entity,dir){
-  const nx=entity.x+dir.x;
-  const ny=entity.y+dir.y;
-  if(nx<0||nx>=COLS||ny<0||ny>=ROWS) return false;
-  if(isWall(nx,ny)) return false;
-  entity.x=nx; entity.y=ny; return true;
+  const speed = entity.speed || 1;
+  const nx = entity.x + dir.x * speed;
+  const ny = entity.y + dir.y * speed;
+  if(nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return false;
+  if(isWall(nx, ny)) return false;
+  entity.x = nx; entity.y = ny; return true;
 }
 
 function updatePacman(){
   if(pacman.nextDir.x!==pacman.dir.x||pacman.nextDir.y!==pacman.dir.y){
-    if(move({x:pacman.x,y:pacman.y},pacman.nextDir)) pacman.dir=pacman.nextDir;
+    if(!isWall(pacman.x + pacman.nextDir.x, pacman.y + pacman.nextDir.y)){
+      pacman.dir = pacman.nextDir;
+    }
   }
   move(pacman,pacman.dir);
-  const ch=tileAt(pacman.x,pacman.y);
+  const tx = Math.floor(pacman.x);
+  const ty = Math.floor(pacman.y);
+  const ch=tileAt(tx,ty);
   if(ch==='.'||ch==='o'){
-    map[pacman.y]=map[pacman.y].substr(0,pacman.x)+' '+map[pacman.y].substr(pacman.x+1);
+    map[ty]=map[ty].substr(0,tx)+' '+map[ty].substr(tx+1);
     pellets--; score+= (ch==='o'?50:10);
     if(ch==='o') frightTimer=400;
   }
@@ -205,7 +212,7 @@ function updateGhost(g){
 
 function checkCollisions(){
   for(const g of ghosts){
-    if(g.x===pacman.x && g.y===pacman.y){
+    if(Math.floor(g.x)===Math.floor(pacman.x) && Math.floor(g.y)===Math.floor(pacman.y)){
       if(frightTimer>0){
         score+=200; g.x=9; g.y=10; g.dir={x:0,y:0};
       }else{
