@@ -79,7 +79,7 @@
     const svg = document.getElementById('gameSVG');
     const svgNS = 'http://www.w3.org/2000/svg';
     const canvas = { width: parseFloat(svg.getAttribute('width')), height: parseFloat(svg.getAttribute('height')) };
-    const gravity = 0.25;
+    const gravity = 0.18;
     const ballRadius = 8;
     const walls = { left: 10, right: canvas.width - 10, top: 10 };
     const launchLane = { x: walls.right - 30, width: 20, gap: 90 };
@@ -91,9 +91,9 @@
       startY: canvas.height * 0.8 // begin ~20% from the bottom
     };
 
-    const launchScale = 0.6; // converts pull distance to launch velocity
-    const maxSpeed = 18;      // threshold before excess energy is damped
-    const energyDamping = 0.96; // factor applied when above threshold
+    const launchScale = 0.45; // converts pull distance to launch velocity
+    const maxSpeed = 15;      // threshold before excess energy is damped
+    const energyDamping = 0.94; // factor applied when above threshold
 
     const curveRadius = 60;
     const topCurve = { x: walls.left + curveRadius, y: walls.top + curveRadius, r: curveRadius };
