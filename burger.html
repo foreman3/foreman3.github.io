@@ -177,7 +177,7 @@
   }
 
   function applyGravity(obj){
-    if(!isSupported(obj) && !ladderAt(Math.round(obj.x), obj.y)){
+    if(!isSupported(obj) && !ladderAt(obj.x, obj.y)){
       obj.y += 0.1;
     }
   }
@@ -192,8 +192,8 @@
     }
     player.x += player.vx;
     climbOntoPiece(player);
-    if(keys.up && ladderAt(Math.round(player.x), player.y)) player.y -=0.1;
-    if(keys.down && ladderAt(Math.round(player.x), player.y)) player.y +=0.1;
+    if(keys.up && ladderAt(player.x, player.y)) player.y -=0.1;
+    if(keys.down && ladderAt(player.x, player.y)) player.y +=0.1;
     player.x = Math.max(0, Math.min(COLS-1, player.x));
     player.y = Math.max(1, Math.min(ROWS-1, player.y));
 
@@ -271,7 +271,7 @@
         triggerFall(epiece);
       }
       // simple vertical chase
-      if(Math.abs(e.x-player.x)<1 && ladderAt(Math.round(e.x), e.y)){
+      if(Math.abs(e.x-player.x)<1 && ladderAt(e.x, e.y)){
         if(e.y<player.y) e.y+=0.05; else if(e.y>player.y) e.y-=0.05;
       }
       const ex=Math.round(e.x), ey=Math.round(e.y);
@@ -295,7 +295,7 @@
   }
 
   function ladderAt(x,y){
-    return ladders.some(l=>l.x===x && y>=l.top && y<=l.bottom);
+    return ladders.some(l=>Math.abs(l.x - x) < 0.3 && y>=l.top && y<=l.bottom);
   }
 
   function pepper(){
