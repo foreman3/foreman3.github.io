@@ -14,5 +14,5 @@ This repository hosts simple arcade-style video games.
 - [Space Invaders](space-invaders.html) - Battle waves of alien foes.
 - [Tetris](tetris.html) - Arrange falling blocks to clear lines.
 - [Tanks](tanks.html) - Duel enemy armor in top-down combat.
-- [Boxing](boxing.html) - Fight seven opponents in first-person.
+- [Boxing](boxing.html) - Step into a 3D ring and dodge telegraphed punches from varied opponents.
 

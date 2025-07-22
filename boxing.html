@@ -24,9 +24,7 @@
       padding: 0;
       margin: 0;
     }
-    #sidebar li {
-      margin: 15px 0;
-    }
+    #sidebar li { margin: 15px 0; }
     #sidebar a {
       color: #fff;
       text-decoration: none;
@@ -55,158 +53,221 @@
   <div id="game-container">
     <h1>Boxing</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="info">Use F/J to punch, Space to block</div>
+    <div id="info">Use F/J to punch, Space to block, A/D to dodge</div>
   </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    const ring = {
+      fl:{x:canvas.width*0.2,y:canvas.height-80},
+      fr:{x:canvas.width*0.8,y:canvas.height-80},
+      bl:{x:canvas.width*0.3,y:canvas.height-260},
+      br:{x:canvas.width*0.7,y:canvas.height-260}
+    };
+
     const opponents = [
-      {name:'Rookie',color:'#0f0',health:3,cooldown:2000},
-      {name:'Striker',color:'#2f2',health:4,cooldown:1800},
-      {name:'Slugger',color:'#ff0',health:5,cooldown:1600},
-      {name:'Bruiser',color:'#fa0',health:6,cooldown:1400},
-      {name:'Champ',color:'#f00',health:7,cooldown:1200},
-      {name:'Legend',color:'#f0f',health:8,cooldown:1000},
-      {name:'Final Boss',color:'#fff',health:9,cooldown:900}
+      {name:'Rookie',color:'#0f0',health:3,cooldown:2000,punchSpeed:500,twitch:300},
+      {name:'Striker',color:'#fa0',health:5,cooldown:1500,punchSpeed:400,twitch:250},
+      {name:'Champion',color:'#f00',health:7,cooldown:1200,punchSpeed:350,twitch:200}
     ];
 
-    let opponentIndex = 0;
-    let opponent = null;
-    let playerHealth = 5;
-    let leftPunch = 0; // progress 0-1
-    let rightPunch = 0;
-    let blocking = 0; // time left
-    let oppTimer = 0; // until next punch
-    let message = '';
+    let opponentIndex=0;
+    let opponent;
+    let oppState='idle';
+    let oppTimer=0;
+    let oppArm='left';
+    let oppPunch=0;
+    let oppHit=false;
+    let playerHealth=5;
+    let playerX=0;
+    let leftPunch=0;
+    let rightPunch=0;
+    let blocking=0;
+    let moveLeft=false,moveRight=false;
+    let message='';
 
-    function newOpponent() {
-      const base = opponents[opponentIndex];
-      opponent = {name: base.name, color: base.color, health: base.health, cooldown: base.cooldown};
-      oppTimer = opponent.cooldown;
-      message = 'Opponent '+(opponentIndex+1)+'/'+opponents.length+': '+opponent.name;
+    function newOpponent(){
+      const base=opponents[opponentIndex];
+      opponent={...base};
+      oppState='idle';
+      oppTimer=base.cooldown;
+      message='Opponent '+(opponentIndex+1)+'/'+opponents.length+': '+opponent.name;
     }
     newOpponent();
 
-    document.addEventListener('keydown', e => {
-      if(e.code === 'KeyF') leftPunch = 1;
-      if(e.code === 'KeyJ') rightPunch = 1;
-      if(e.code === 'Space') blocking = 400; // ms
+    document.addEventListener('keydown',e=>{
+      if(e.code==='KeyF') leftPunch=1;
+      if(e.code==='KeyJ') rightPunch=1;
+      if(e.code==='Space') blocking=400;
+      if(e.code==='ArrowLeft'||e.code==='KeyA') moveLeft=true;
+      if(e.code==='ArrowRight'||e.code==='KeyD') moveRight=true;
+    });
+    document.addEventListener('keyup',e=>{
+      if(e.code==='ArrowLeft'||e.code==='KeyA') moveLeft=false;
+      if(e.code==='ArrowRight'||e.code==='KeyD') moveRight=false;
     });
 
-    let last = performance.now();
+    let last=performance.now();
     function gameLoop(now){
-      const dt = now - last; last = now;
+      const dt=now-last; last=now;
       ctx.clearRect(0,0,canvas.width,canvas.height);
 
-      // update timers
-      if(leftPunch>0) leftPunch -= dt/200; if(leftPunch<0) leftPunch=0;
-      if(rightPunch>0) rightPunch -= dt/200; if(rightPunch<0) rightPunch=0;
-      if(blocking>0) blocking -= dt; else blocking=0;
-      oppTimer -= dt;
-      if(oppTimer<=0){
-        if(blocking<=0) playerHealth--; // hit!
-        oppTimer = opponent.cooldown;
-      }
+      updateOpponent(dt);
+      updatePlayer(dt);
 
-      // check hits on opponent when punches extended
-      const headX = canvas.width/2;
-      const headY = canvas.height/2 - 50;
-      if(leftPunch>0.8 && distance(punchPos('left').x, punchPos('left').y, headX, headY)<40) {
-        opponent.health--; leftPunch=0;
-      }
-      if(rightPunch>0.8 && distance(punchPos('right').x, punchPos('right').y, headX, headY)<40) {
-        opponent.health--; rightPunch=0;
-      }
-      if(opponent.health<=0){
-        opponentIndex++;
-        if(opponentIndex>=opponents.length){
-          message = 'You won the championship!';
-          opponentIndex = opponents.length-1;
-          opponent.health=0;
-        } else {
-          newOpponent();
-        }
-      }
-
-      if(playerHealth<=0){
-        message = 'You Lost! Refresh to try again';
-        playerHealth=0;
-      }
-
+      drawRing();
       drawOpponent();
       drawPlayer();
 
-      ctx.fillStyle = '#fff';
-      ctx.font = '20px sans-serif';
+      ctx.fillStyle='#fff';
+      ctx.font='20px sans-serif';
       ctx.fillText('Opponent: '+opponent.name+' HP:'+opponent.health,10,20);
       ctx.fillText('Player HP:'+playerHealth,10,40);
       if(message) ctx.fillText(message,10,60);
 
       requestAnimationFrame(gameLoop);
     }
+    requestAnimationFrame(gameLoop);
+
+    function updatePlayer(dt){
+      if(leftPunch>0){ leftPunch-=dt/200; if(leftPunch<0) leftPunch=0; }
+      if(rightPunch>0){ rightPunch-=dt/200; if(rightPunch<0) rightPunch=0; }
+      if(blocking>0) blocking-=dt; else blocking=0;
+
+      const speed=dt/400;
+      if(moveLeft) playerX-=speed;
+      if(moveRight) playerX+=speed;
+      if(!moveLeft&&!moveRight){
+        if(playerX>0) playerX=Math.max(0,playerX-speed);
+        if(playerX<0) playerX=Math.min(0,playerX+speed);
+      }
+      if(playerX<-1) playerX=-1;
+      if(playerX>1) playerX=1;
+    }
+
+    function updateOpponent(dt){
+      switch(oppState){
+        case 'idle':
+          oppTimer-=dt;
+          if(oppTimer<=0){
+            oppArm=Math.random()<0.5?'left':'right';
+            oppState='twitch';
+            oppTimer=opponent.twitch;
+            oppHit=false;
+          }
+          break;
+        case 'twitch':
+          oppTimer-=dt;
+          if(oppTimer<=0){
+            oppState='punch';
+            oppPunch=0;
+          }
+          break;
+        case 'punch':
+          oppPunch+=dt/opponent.punchSpeed;
+          if(oppPunch>=0.5 && !oppHit){
+            checkPlayerHit();
+            oppHit=true;
+          }
+          if(oppPunch>=1){
+            oppState='recover';
+            oppTimer=400;
+          }
+          break;
+        case 'recover':
+          oppTimer-=dt;
+          if(oppTimer<=0){
+            oppState='idle';
+            oppTimer=opponent.cooldown;
+          }
+          break;
+      }
+    }
+
+    function checkPlayerHit(){
+      const headX=canvas.width/2 + playerX*80;
+      const headY=canvas.height-100;
+      const x=canvas.width/2 + (oppArm==='left'?-40:40);
+      const y=canvas.height/2 + 40 + 150*oppPunch;
+      const dodged=(oppArm==='left' && playerX>0.3)||(oppArm==='right' && playerX<-0.3);
+      if(distance(headX,headY,x,y)<30 && blocking<=0 && !dodged) playerHealth--;
+    }
 
     function punchPos(side){
+      const base=canvas.width/2 + playerX*80;
       if(side==='left')
-        return {x: canvas.width*0.4, y: canvas.height - leftPunch*150 - 60};
+        return {x: base-40, y: canvas.height - leftPunch*150 - 60};
       else
-        return {x: canvas.width*0.6, y: canvas.height - rightPunch*150 - 60};
+        return {x: base+40, y: canvas.height - rightPunch*150 - 60};
+    }
+
+    function drawRing(){
+      const {fl,fr,bl,br}=ring;
+      ctx.fillStyle='#333';
+      ctx.beginPath();
+      ctx.moveTo(fl.x,fl.y); ctx.lineTo(bl.x,bl.y);
+      ctx.lineTo(br.x,br.y); ctx.lineTo(fr.x,fr.y);
+      ctx.closePath(); ctx.fill();
+
+      ctx.strokeStyle='#888';
+      for(let i=1;i<=3;i++){
+        const h=i*10;
+        ctx.beginPath();
+        ctx.moveTo(bl.x,bl.y - h); ctx.lineTo(br.x,br.y - h); ctx.lineTo(fr.x,fr.y - h);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(bl.x,bl.y - h); ctx.lineTo(fl.x,fl.y - h);
+        ctx.stroke();
+      }
     }
 
     function drawPlayer(){
-      ctx.strokeStyle = '#0ff';
-      ctx.lineWidth = 2;
-      let p = punchPos('left');
-      ctx.beginPath();
-      ctx.moveTo(canvas.width*0.3, canvas.height);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 15,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle='#0ff';
+      ctx.lineWidth=2;
+      const base=canvas.width/2 + playerX*80;
+      let p=punchPos('left');
+      ctx.beginPath(); ctx.moveTo(base-60,canvas.height); ctx.lineTo(p.x,p.y); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x,p.y,15,0,Math.PI*2); ctx.stroke();
 
-      p = punchPos('right');
-      ctx.beginPath();
-      ctx.moveTo(canvas.width*0.7, canvas.height);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 15,0,Math.PI*2); ctx.stroke();
+      p=punchPos('right');
+      ctx.beginPath(); ctx.moveTo(base+60,canvas.height); ctx.lineTo(p.x,p.y); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x,p.y,15,0,Math.PI*2); ctx.stroke();
 
       if(blocking>0){
-        ctx.strokeStyle = '#ff0';
-        ctx.beginPath();
-        ctx.rect(canvas.width/2-40, canvas.height-120, 80, 80);
-        ctx.stroke();
+        ctx.strokeStyle='#ff0';
+        ctx.strokeRect(base-40,canvas.height-120,80,80);
       }
     }
 
     function drawOpponent(){
       if(opponent.health<=0) return;
-      ctx.strokeStyle = opponent.color;
-      ctx.lineWidth = 2;
-      const x = canvas.width/2, y = canvas.height/2;
+      ctx.strokeStyle=opponent.color;
+      ctx.lineWidth=2;
+      const x=canvas.width/2, y=canvas.height/2;
       ctx.beginPath();
-      ctx.arc(x, y-50, 30, 0, Math.PI*2); // head
-      ctx.moveTo(x, y-20); ctx.lineTo(x, y+60); // body
-      ctx.moveTo(x, y); ctx.lineTo(x-40, y+40); // left arm
-      ctx.moveTo(x, y); ctx.lineTo(x+40, y+40); // right arm
-      ctx.moveTo(x, y+60); ctx.lineTo(x-30, y+120); // left leg
-      ctx.moveTo(x, y+60); ctx.lineTo(x+30, y+120); // right leg
+      ctx.arc(x,y-50,30,0,Math.PI*2);
+      ctx.moveTo(x,y-20); ctx.lineTo(x,y+60);
+      const lp=oppState==='punch'&&oppArm==='left'?oppPunch*150:oppState==='twitch'&&oppArm==='left'?10:0;
+      ctx.moveTo(x,y); ctx.lineTo(x-40,y+40+lp);
+      const rp=oppState==='punch'&&oppArm==='right'?oppPunch*150:oppState==='twitch'&&oppArm==='right'?10:0;
+      ctx.moveTo(x,y); ctx.lineTo(x+40,y+40+rp);
+      ctx.moveTo(x,y+60); ctx.lineTo(x-30,y+120);
+      ctx.moveTo(x,y+60); ctx.lineTo(x+30,y+120);
       ctx.stroke();
     }
 
     function distance(x1,y1,x2,y2){
-      const dx=x1-x2, dy=y1-y2; return Math.sqrt(dx*dx+dy*dy);
+      const dx=x1-x2, dy=y1-y2;
+      return Math.sqrt(dx*dx+dy*dy);
     }
-
-    requestAnimationFrame(gameLoop);
   </script>
   <script>
     fetch('sidebar.html')
-      .then(r => r.text())
-      .then(html => {
-        const placeholder = document.getElementById('sidebar-placeholder');
-        if (placeholder) placeholder.outerHTML = html;
+      .then(r=>r.text())
+      .then(html=>{
+        const placeholder=document.getElementById('sidebar-placeholder');
+        if(placeholder) placeholder.outerHTML=html;
       });
   </script>
 </body>
