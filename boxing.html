@@ -67,9 +67,9 @@
     };
 
     const opponents = [
-      {name:'Rookie',color:'#0f0',health:3,cooldown:2000,punchSpeed:500,twitch:300},
-      {name:'Striker',color:'#fa0',health:5,cooldown:1500,punchSpeed:400,twitch:250},
-      {name:'Champion',color:'#f00',health:7,cooldown:1200,punchSpeed:350,twitch:200}
+      {name:'Rookie',color:'#0f0',health:3,cooldown:2000,punchSpeed:500,twitch:300,avoid:0.1},
+      {name:'Striker',color:'#fa0',health:5,cooldown:1500,punchSpeed:400,twitch:250,avoid:0.3},
+      {name:'Champion',color:'#f00',health:7,cooldown:1200,punchSpeed:350,twitch:200,avoid:0.5}
     ];
 
     let opponentIndex=0;
@@ -84,6 +84,8 @@
     let leftPunch=0;
     let rightPunch=0;
     let blocking=0;
+    let playerHitLeft=false;
+    let playerHitRight=false;
     let moveLeft=false,moveRight=false;
     let message='';
 
@@ -92,6 +94,8 @@
       opponent={...base};
       oppState='idle';
       oppTimer=base.cooldown;
+      playerHitLeft=false;
+      playerHitRight=false;
       message='Opponent '+(opponentIndex+1)+'/'+opponents.length+': '+opponent.name;
     }
     newOpponent();
@@ -115,6 +119,7 @@
 
       updateOpponent(dt);
       updatePlayer(dt);
+      checkOpponentHits();
 
       drawRing();
       drawOpponent();
@@ -194,12 +199,59 @@
       if(distance(headX,headY,x,y)<30 && blocking<=0 && !dodged) playerHealth--;
     }
 
+    function checkOpponentHits(){
+      const hx=canvas.width/2;
+      const hy=canvas.height/2 - 50;
+
+      if(leftPunch>0.5 && !playerHitLeft){
+        const p=punchPos('left');
+        if(distance(p.x,p.y,hx,hy)<40){
+          if(Math.random()<opponent.avoid){
+            message='Blocked!';
+          }else{
+            opponent.health--; message='Hit!';
+            if(opponent.health<=0){
+              opponentIndex++;
+              if(opponentIndex<opponents.length){
+                newOpponent();
+              }else{
+                message='You win!';
+              }
+            }
+          }
+          playerHitLeft=true;
+        }
+      }
+      if(leftPunch<=0.1) playerHitLeft=false;
+
+      if(rightPunch>0.5 && !playerHitRight){
+        const p=punchPos('right');
+        if(distance(p.x,p.y,hx,hy)<40){
+          if(Math.random()<opponent.avoid){
+            message='Blocked!';
+          }else{
+            opponent.health--; message='Hit!';
+            if(opponent.health<=0){
+              opponentIndex++;
+              if(opponentIndex<opponents.length){
+                newOpponent();
+              }else{
+                message='You win!';
+              }
+            }
+          }
+          playerHitRight=true;
+        }
+      }
+      if(rightPunch<=0.1) playerHitRight=false;
+    }
+
     function punchPos(side){
       const base=canvas.width/2 + playerX*80;
       if(side==='left')
-        return {x: base-40, y: canvas.height - leftPunch*150 - 60};
+        return {x: base-40, y: canvas.height - leftPunch*300 - 60};
       else
-        return {x: base+40, y: canvas.height - rightPunch*150 - 60};
+        return {x: base+40, y: canvas.height - rightPunch*300 - 60};
     }
 
     function drawRing(){
