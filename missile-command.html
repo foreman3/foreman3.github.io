@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Missile Command</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul { list-style: none; padding: 0; margin: 0; }
+    #sidebar li { margin: 15px 0; }
+    #sidebar a { color: #fff; text-decoration: none; transition: color 0.3s; }
+    #sidebar a:hover { color: #ffea00; }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 3em;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    }
+    canvas {
+      background: #000;
+      border: 2px solid #fff;
+      margin-top: 20px;
+      border-radius: 8px;
+    }
+    #info {
+      margin-top: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ffeb3b;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Missile Command</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info">Score: 0 | Lives: 3</div>
+    <div id="message"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const base = { x: canvas.width/2, y: canvas.height - 20 };
+    let playerMissiles = [];
+    let enemyMissiles = [];
+    let explosions = [];
+    let spawnTimer = 0;
+    let score = 0;
+    let lives = 3;
+    let gameOver = false;
+
+    function resetGame() {
+      playerMissiles = [];
+      enemyMissiles = [];
+      explosions = [];
+      spawnTimer = 0;
+      score = 0;
+      lives = 3;
+      gameOver = false;
+      document.getElementById('message').textContent = '';
+      updateInfo();
+    }
+
+    canvas.addEventListener('click', e => {
+      if (gameOver) { resetGame(); return; }
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      playerMissiles.push({ x: base.x, y: base.y, sx: base.x, sy: base.y, tx: x, ty: y });
+    });
+
+    function spawnEnemy() {
+      const x = Math.random() * canvas.width;
+      const tx = Math.random() * canvas.width;
+      enemyMissiles.push({ x, y: 0, sx: x, sy: 0, tx, ty: canvas.height });
+    }
+
+    function updateMissiles() {
+      const playerSpeed = 6;
+      for (let i = playerMissiles.length - 1; i >= 0; i--) {
+        const m = playerMissiles[i];
+        const dx = m.tx - m.x;
+        const dy = m.ty - m.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < playerSpeed) {
+          explosions.push({ x: m.tx, y: m.ty, r: 0, max: 40 });
+          playerMissiles.splice(i, 1);
+        } else {
+          m.x += dx / dist * playerSpeed;
+          m.y += dy / dist * playerSpeed;
+        }
+      }
+
+      const enemySpeed = 2;
+      for (let i = enemyMissiles.length - 1; i >= 0; i--) {
+        const m = enemyMissiles[i];
+        const dx = m.tx - m.x;
+        const dy = m.ty - m.y;
+        const dist = Math.hypot(dx, dy);
+        if (m.y >= m.ty) {
+          explosions.push({ x: m.x, y: m.y, r: 0, max: 30 });
+          enemyMissiles.splice(i, 1);
+          lives--;
+          updateInfo();
+          if (lives <= 0) {
+            gameOver = true;
+            document.getElementById('message').textContent = 'Game Over - click to restart';
+          }
+        } else {
+          m.x += dx / dist * enemySpeed;
+          m.y += dy / dist * enemySpeed;
+        }
+      }
+    }
+
+    function updateExplosions() {
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        const ex = explosions[i];
+        ex.r += 1.5;
+        if (ex.r > ex.max) explosions.splice(i, 1);
+      }
+    }
+
+    function checkCollisions() {
+      for (let i = enemyMissiles.length - 1; i >= 0; i--) {
+        const em = enemyMissiles[i];
+        for (const ex of explosions) {
+          if (Math.hypot(em.x - ex.x, em.y - ex.y) < ex.r) {
+            enemyMissiles.splice(i, 1);
+            explosions.push({ x: em.x, y: em.y, r: 0, max: 30 });
+            score += 100;
+            updateInfo();
+            break;
+          }
+        }
+      }
+    }
+
+    function update(dt) {
+      if (gameOver) return;
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) {
+        spawnEnemy();
+        spawnTimer = Math.max(0.5, 2 - score / 1000);
+      }
+      updateMissiles();
+      updateExplosions();
+      checkCollisions();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#008800';
+      ctx.fillRect(0, canvas.height - 10, canvas.width, 10);
+
+      ctx.fillStyle = '#ccc';
+      ctx.fillRect(base.x - 20, base.y - 10, 40, 10);
+
+      ctx.strokeStyle = '#0ff';
+      playerMissiles.forEach(m => {
+        ctx.beginPath();
+        ctx.moveTo(m.sx, m.sy);
+        ctx.lineTo(m.x, m.y);
+        ctx.stroke();
+      });
+
+      ctx.strokeStyle = '#f44';
+      enemyMissiles.forEach(m => {
+        ctx.beginPath();
+        ctx.moveTo(m.sx, m.sy);
+        ctx.lineTo(m.x, m.y);
+        ctx.stroke();
+      });
+
+      ctx.strokeStyle = '#ff0';
+      explosions.forEach(ex => {
+        ctx.beginPath();
+        ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+    }
+
+    let last = performance.now();
+    function loop() {
+      const now = performance.now();
+      const dt = (now - last) / 1000;
+      last = now;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function updateInfo() {
+      document.getElementById('info').textContent = `Score: ${score} | Lives: ${lives}`;
+    }
+
+    updateInfo();
+    loop();
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>

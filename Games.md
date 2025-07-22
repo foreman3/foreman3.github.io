@@ -12,6 +12,7 @@ This repository hosts simple arcade-style video games.
 - [Pac-Man](pacman.html) - Eat pellets and avoid ghosts.
 - [Asteroids](asteroids.html) - Blast space rocks and avoid collisions.
 - [Space Invaders](space-invaders.html) - Battle waves of alien foes.
+- [Missile Command](missile-command.html) - Defend your base from incoming missiles.
 - [Tetris](tetris.html) - Arrange falling blocks to clear lines.
 - [Tanks](tanks.html) - Duel enemy armor in top-down combat.
 - [Boxing](boxing.html) - Step into a 3D ring and dodge telegraphed punches from varied opponents.
