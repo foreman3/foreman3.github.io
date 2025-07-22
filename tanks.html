@@ -63,6 +63,7 @@
     const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0};
     let enemies = [];
     let level = 1;
+    let lives = 3;
     let running = false;
 
     function obstacleCollision(x, y) {
@@ -121,12 +122,13 @@
       bullets.push({ x: tank.x + Math.cos(tank.angle) * 20,
                     y: tank.y + Math.sin(tank.angle) * 20,
                     angle: tank.angle,
-                    owner: tank });
+                    owner: tank,
+                    bounces: 0 });
     }
 
     function updateInfo() {
       const remaining = enemies.filter(e => e.alive).length;
-      document.getElementById('info').textContent = `Level: ${level} | Enemies Left: ${remaining}`;
+      document.getElementById('info').textContent = `Level: ${level} | Lives: ${lives} | Enemies Left: ${remaining}`;
     }
 
     function update() {
@@ -145,7 +147,7 @@
         player.angle = na;
       } else if (player.explosion > 0) {
         player.explosion--;
-        if (player.explosion === 0) respawnPlayer();
+        if (player.explosion === 0 && running) respawnPlayer();
       }
 
       for (const e of enemies) {
@@ -168,21 +170,68 @@
         const b = bullets[i];
         b.x += Math.cos(b.angle) * 4;
         b.y += Math.sin(b.angle) * 4;
-        if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) { bullets.splice(i, 1); continue; }
+
+        let bounced = false;
         let removed = false;
-        for (const o of obstacles) {
-          if (b.x > o.x && b.x < o.x + o.w && b.y > o.y && b.y < o.y + o.h) { bullets.splice(i, 1); removed = true; break; }
+        if (bounce) {
+          if (b.x <= 0 || b.x >= canvas.width) {
+            b.angle = Math.PI - b.angle;
+            b.x = Math.max(0, Math.min(canvas.width, b.x));
+            b.bounces++;
+            bounced = true;
+          }
+          if (b.y <= 0 || b.y >= canvas.height) {
+            b.angle = -b.angle;
+            b.y = Math.max(0, Math.min(canvas.height, b.y));
+            b.bounces++;
+            bounced = true;
+          }
+        } else {
+          if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) { bullets.splice(i, 1); continue; }
         }
-        if (removed) continue;
+
+        if (bounce) {
+          for (const o of obstacles) {
+            if (b.x > o.x && b.x < o.x + o.w && b.y > o.y && b.y < o.y + o.h) {
+              const left = Math.abs(b.x - o.x);
+              const right = Math.abs(o.x + o.w - b.x);
+              const top = Math.abs(b.y - o.y);
+              const bottom = Math.abs(o.y + o.h - b.y);
+              const min = Math.min(left, right, top, bottom);
+              if (min === left || min === right) {
+                b.angle = Math.PI - b.angle;
+                b.x += min === left ? -2 : 2;
+              } else {
+                b.angle = -b.angle;
+                b.y += min === top ? -2 : 2;
+              }
+              b.bounces++;
+              bounced = true;
+              break;
+            }
+          }
+        } else {
+          for (const o of obstacles) {
+            if (b.x > o.x && b.x < o.x + o.w && b.y > o.y && b.y < o.y + o.h) { bullets.splice(i, 1); removed = true; break; }
+          }
+          if (removed) continue;
+        }
+
+        if (bounced && b.bounces >= 3) { bullets.splice(i, 1); continue; }
         if (player.alive && b.owner !== player && Math.hypot(b.x - player.x, b.y - player.y) < 15) {
-          player.alive = false; player.explosion = 30;
+          player.alive = false; player.explosion = 30; lives--; updateInfo();
+          if (lives <= 0) {
+            running = false;
+            document.getElementById('message').textContent = 'Game Over';
+          }
           if (!bounce) { bullets.splice(i, 1); } else { b.angle = Math.atan2(b.y - player.y, b.x - player.x); }
           continue;
         }
         for (const e of enemies) {
           if (e.alive && b.owner !== e && Math.hypot(b.x - e.x, b.y - e.y) < 15) {
             e.alive = false; e.explosion = 30;
-            if (!bounce) { bullets.splice(i, 1); } else { b.angle = Math.atan2(b.y - e.y, b.x - e.x); }
+            if (!bounce) { bullets.splice(i, 1); }
+            else { b.angle = Math.atan2(b.y - e.y, b.x - e.x); }
             removed = true; break;
           }
         }
@@ -194,7 +243,11 @@
       if (enemies.every(e => !e.alive && e.explosion === 0)) {
         running = false;
         document.getElementById('message').textContent = 'Next Level';
-        setTimeout(() => { level++; startLevel(); }, 1000);
+        setTimeout(() => {
+          level++;
+          if (level === 4) { lives++; }
+          startLevel();
+        }, 1000);
       }
     }
 
