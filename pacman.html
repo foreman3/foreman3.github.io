@@ -100,12 +100,12 @@ const COLS = map[0].length;
 canvas.width = COLS*TILE;
 canvas.height = ROWS*TILE;
 
-let pacman = {x:9, y:15, dir:{x:0,y:0}, nextDir:{x:0,y:0}, speed:0.25};
+let pacman = {x:9, y:15, dir:{x:0,y:0}, nextDir:{x:0,y:0}, speed:0.125};
 let ghosts = [
-  {x:9, y:10, dir:{x:1,y:0}, color:'red', scatter:{x:1,y:1}, speed:0.25},
-  {x:10, y:10, dir:{x:-1,y:0}, color:'pink', scatter:{x:COLS-2,y:1}, speed:0.25},
-  {x:8, y:10, dir:{x:1,y:0}, color:'cyan', scatter:{x:1,y:ROWS-2}, speed:0.25},
-  {x:11, y:10, dir:{x:-1,y:0}, color:'orange', scatter:{x:COLS-2,y:ROWS-2}, speed:0.25}
+  {x:9, y:10, dir:{x:1,y:0}, color:'red', scatter:{x:1,y:1}, speed:0.125},
+  {x:10, y:10, dir:{x:-1,y:0}, color:'pink', scatter:{x:COLS-2,y:1}, speed:0.125},
+  {x:8, y:10, dir:{x:1,y:0}, color:'cyan', scatter:{x:1,y:ROWS-2}, speed:0.125},
+  {x:11, y:10, dir:{x:-1,y:0}, color:'orange', scatter:{x:COLS-2,y:ROWS-2}, speed:0.125}
 ];
 let pellets=0;
 let score=0;
@@ -122,11 +122,11 @@ for(let r=0;r<ROWS;r++){
 }
 
 function resetLevel(){
-  pacman.x=9; pacman.y=15; pacman.dir={x:0,y:0}; pacman.nextDir={x:0,y:0}; pacman.speed=0.25;
-  ghosts[0].x=9; ghosts[0].y=10; ghosts[0].speed=0.25;
-  ghosts[1].x=10; ghosts[1].y=10; ghosts[1].speed=0.25;
-  ghosts[2].x=8; ghosts[2].y=10; ghosts[2].speed=0.25;
-  ghosts[3].x=11; ghosts[3].y=10; ghosts[3].speed=0.25;
+  pacman.x=9; pacman.y=15; pacman.dir={x:0,y:0}; pacman.nextDir={x:0,y:0}; pacman.speed=0.125;
+  ghosts[0].x=9; ghosts[0].y=10; ghosts[0].speed=0.125;
+  ghosts[1].x=10; ghosts[1].y=10; ghosts[1].speed=0.125;
+  ghosts[2].x=8; ghosts[2].y=10; ghosts[2].speed=0.125;
+  ghosts[3].x=11; ghosts[3].y=10; ghosts[3].speed=0.125;
   frightTimer=0; message='';
 }
 
@@ -199,15 +199,21 @@ function updateGhost(g){
   const target=ghostTarget(g);
   const choices=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}].filter(d=>!isWall(g.x+d.x,g.y+d.y));
   if(choices.length===0) return;
-  let best=choices[0];
-  let bestDist=1e9;
-  for(const d of choices){
-    const dx=g.x+d.x-target.x;
-    const dy=g.y+d.y-target.y;
-    const dist=dx*dx+dy*dy;
-    if(dist<bestDist){bestDist=dist; best=d;}
+  let chosen;
+  if(Math.random() < 0.5){
+    chosen = choices[Math.floor(Math.random()*choices.length)];
+  }else{
+    let best=choices[0];
+    let bestDist=1e9;
+    for(const d of choices){
+      const dx=g.x+d.x-target.x;
+      const dy=g.y+d.y-target.y;
+      const dist=dx*dx+dy*dy;
+      if(dist<bestDist){bestDist=dist; best=d;}
+    }
+    chosen=best;
   }
-  g.dir=best; move(g,g.dir);
+  g.dir=chosen; move(g,g.dir);
 }
 
 function checkCollisions(){
