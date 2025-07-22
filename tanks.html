@@ -51,6 +51,7 @@
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div id="info"></div>
     <div id="message"></div>
+    <button id="restartBtn" style="margin-top:10px;">Restart</button>
   </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -59,6 +60,7 @@
     const keys = {};
     const bullets = [];
     const obstacles = [];
+    let mine = null;
 
     const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0};
     let enemies = [];
@@ -98,6 +100,7 @@
 
     function startLevel() {
       bullets.length = 0;
+      mine = null;
       createObstacles();
       enemies = [];
       for (let i = 0; i < level + 1; i++) {
@@ -238,6 +241,26 @@
         if (removed && !bounce) continue;
       }
 
+      if (mine) {
+        if (mine.explosion > 0) {
+          mine.explosion--;
+          if (mine.explosion === 0) mine = null;
+        } else {
+          mine.timer--;
+          let triggered = false;
+          const inRange = t => Math.hypot(t.x - mine.x, t.y - mine.y) < 15;
+          if (player.alive && inRange(player)) {
+            player.alive = false; player.explosion = 30; lives--; updateInfo();
+            triggered = true;
+          }
+          for (const e of enemies) {
+            if (e.alive && inRange(e)) { e.alive = false; e.explosion = 30; triggered = true; }
+          }
+          if (mine.timer <= 0) triggered = true;
+          if (triggered) mine.explosion = 30;
+        }
+      }
+
       updateInfo();
 
       if (enemies.every(e => !e.alive && e.explosion === 0)) {
@@ -277,6 +300,16 @@
       for (const e of enemies) {
         if (e.alive) drawTank(e); else if (e.explosion > 0) drawExplosion(e);
       }
+      if (mine) {
+        if (mine.explosion > 0) {
+          drawExplosion(mine);
+        } else {
+          ctx.fillStyle = '#ff0';
+          ctx.beginPath();
+          ctx.arc(mine.x, mine.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
       ctx.fillStyle = '#fff';
       for (const b of bullets) {
         ctx.beginPath();
@@ -294,10 +327,21 @@
     window.addEventListener('keydown', e => {
       keys[e.key] = true;
       if (e.key === ' ' && running && player.alive) { shoot(player); }
+      if ((e.key === 'm' || e.key === 'M') && running && player.alive && !mine) {
+        mine = { x: player.x, y: player.y, timer: 180, explosion: 0 };
+      }
     });
     window.addEventListener('keyup', e => { keys[e.key] = false; });
 
-    window.addEventListener('load', () => { startLevel(); loop(); });
+    window.addEventListener('load', () => {
+      startLevel();
+      loop();
+      document.getElementById('restartBtn').addEventListener('click', () => {
+        level = 1;
+        lives = 3;
+        startLevel();
+      });
+    });
   </script>
   <script>
     fetch('sidebar.html')
