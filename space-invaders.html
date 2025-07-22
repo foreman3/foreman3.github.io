@@ -69,8 +69,11 @@
     let lives = 3;
     let alienDir = 1; // 1=right, -1=left
     let moveCounter = 0;
-    let alienSpeed = 10;
+    let startingSpeed = 5;
+    let level = 1;
+    let alienSpeed = startingSpeed;
     let gameOver = false;
+    let nextLevel = false;
 
     const keys = {};
 
@@ -116,12 +119,11 @@
     }
 
     function resetGame(){
-      score = 0;
-      lives = 3;
       alienDir = 1;
       moveCounter = 0;
-      alienSpeed = 10;
+      alienSpeed = startingSpeed;
       gameOver = false;
+      nextLevel = false;
       bullet = null;
       bombs.length = 0;
       createAliens();
@@ -130,8 +132,22 @@
       document.getElementById('message').textContent = '';
     }
 
+    function startNewGame(){
+      score = 0;
+      lives = 3;
+      startingSpeed = 5;
+      level = 1;
+      resetGame();
+    }
+
+    function startNextLevel(){
+      startingSpeed *= 2;
+      level++;
+      resetGame();
+    }
+
     function updateInfo(){
-      document.getElementById('info').textContent = `Score: ${score} | Lives: ${lives}`;
+      document.getElementById('info').textContent = `Score: ${score} | Lives: ${lives} | Level: ${level}`;
     }
 
     function shoot(){
@@ -175,6 +191,22 @@
         }
       }
 
+      // Alien collision with shields
+      for(const a of aliens){
+        if(!a.alive) continue;
+        for(const bricks of shields){
+          for(const brick of bricks){
+            if(brick.alive &&
+               a.x + a.w/2 > brick.x - 5 &&
+               a.x - a.w/2 < brick.x + 5 &&
+               a.y + a.h/2 > brick.y - 5 &&
+               a.y - a.h/2 < brick.y + 5){
+              brick.alive = false;
+            }
+          }
+        }
+      }
+
       // Alien shooting
       if(Math.random() < 0.02){
         const shooters = aliens.filter(a => a.alive);
@@ -191,7 +223,7 @@
             a.alive = false;
             bullet = null;
             score += 10;
-            alienSpeed *= 1.05;
+            alienSpeed *= 1.04;
             updateInfo();
             break;
           }
@@ -200,18 +232,20 @@
 
       // Bullet collision with shields
       if(bullet){
+        bulletLoop:
         for(const bricks of shields){
           for(const brick of bricks){
             if(brick.alive && Math.abs(bullet.x - brick.x) < 5 && Math.abs(bullet.y - brick.y) < 5){
               brick.alive = false;
               bullet = null;
-              break;
+              break bulletLoop;
             }
           }
         }
       }
 
       // Bomb collision with player or shields
+      bombLoop:
       for(let i=bombs.length-1;i>=0;i--){
         const b = bombs[i];
         if(b.y > canvas.height){
@@ -225,6 +259,7 @@
           updateInfo();
           if(lives <= 0){
             gameOver = true;
+            nextLevel = false;
             createExplosion(player.x, player.y);
             document.getElementById('message').textContent = 'Game Over - Press Enter';
           }
@@ -235,7 +270,7 @@
             if(brick.alive && Math.abs(b.x - brick.x) < 5 && Math.abs(b.y - brick.y) < 5){
               brick.alive = false;
               bombs.splice(i,1);
-              break;
+              continue bombLoop;
             }
           }
         }
@@ -245,6 +280,7 @@
       for(const a of aliens){
         if(a.alive && a.y + a.h/2 >= player.y - player.h){
           gameOver = true;
+          nextLevel = false;
           createExplosion(player.x, player.y);
           document.getElementById('message').textContent = 'Game Over - Press Enter';
           break;
@@ -254,7 +290,8 @@
       // Check victory
       if(aliens.every(a => !a.alive)){
         gameOver = true;
-        document.getElementById('message').textContent = 'You Win! - Press Enter';
+        nextLevel = true;
+        document.getElementById('message').textContent = 'Next Level - Press Enter';
       }
     }
 
@@ -316,7 +353,11 @@
         shoot();
       }
       if(e.key === 'Enter' && gameOver){
-        resetGame();
+        if(nextLevel){
+          startNextLevel();
+        } else {
+          startNewGame();
+        }
       }
     });
     window.addEventListener('keyup', (e) => {
@@ -324,7 +365,7 @@
     });
 
     window.addEventListener('load', () => {
-      resetGame();
+      startNewGame();
       loop();
     });
   </script>
