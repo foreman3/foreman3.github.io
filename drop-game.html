@@ -266,6 +266,7 @@
       bullets.forEach(drawBullet);
     }
 
+    const FRAME_TIME = 1000/60;
     function step() {
       if (gameOver) return;
       if (rightPressed && basketX < canvas.width - basketWidth) basketX += 5;
@@ -284,10 +285,9 @@
         }, 3000);
       }
       draw();
-      requestAnimationFrame(step);
     }
     draw();
-    step();
+    setInterval(step, FRAME_TIME);
   </script>
   <script>
     fetch('sidebar.html')

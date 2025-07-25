@@ -522,15 +522,12 @@
       drawBall();
     }
 
-    let lastTime = performance.now();
+    const FRAME_TIME = 1000/60;
     function step(){
-      const now = performance.now();
-      const dt = (now - lastTime)/1000;
-      lastTime = now;
+      const dt = 1/60;
       updateFlippers(dt);
       updatePhysics();
       draw();
-      requestAnimationFrame(step);
     }
 
     document.addEventListener('keydown', e=>{
@@ -553,7 +550,7 @@
     resetBall();
     initSVG();
     updateInfo();
-    step();
+    setInterval(step, FRAME_TIME);
   </script>
   <script>
     fetch('sidebar.html')
