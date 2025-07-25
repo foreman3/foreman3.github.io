@@ -333,11 +333,12 @@
       }
     }
 
+    const FRAME_TIME = 1000/60;
     function loop() {
       update();
       draw();
-      requestAnimationFrame(loop);
     }
+    setInterval(loop, FRAME_TIME);
 
     window.addEventListener('keydown', e => {
       keys[e.key] = true;
