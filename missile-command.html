@@ -110,7 +110,7 @@
         const dy = m.ty - m.y;
         const dist = Math.hypot(dx, dy);
         if (dist < playerSpeed) {
-          explosions.push({ x: m.tx, y: m.ty, r: 0, max: 40 });
+          explosions.push({ x: m.tx, y: m.ty, r: 0, max: 40, hold: 0.25 });
           playerMissiles.splice(i, 1);
         } else {
           m.x += dx / dist * playerSpeed;
@@ -125,7 +125,7 @@
         const dy = m.ty - m.y;
         const dist = Math.hypot(dx, dy);
         if (m.y >= m.ty) {
-          explosions.push({ x: m.x, y: m.y, r: 0, max: 30 });
+          explosions.push({ x: m.x, y: m.y, r: 0, max: 30, hold: 0.25 });
           enemyMissiles.splice(i, 1);
           lives--;
           updateInfo();
@@ -140,11 +140,16 @@
       }
     }
 
-    function updateExplosions() {
+    function updateExplosions(dt) {
       for (let i = explosions.length - 1; i >= 0; i--) {
         const ex = explosions[i];
-        ex.r += 1.5;
-        if (ex.r > ex.max) explosions.splice(i, 1);
+        if (ex.r < ex.max) {
+          ex.r += 1.5;
+          if (ex.r > ex.max) ex.r = ex.max;
+        } else {
+          ex.hold -= dt;
+          if (ex.hold <= 0) explosions.splice(i, 1);
+        }
       }
     }
 
@@ -154,7 +159,7 @@
         for (const ex of explosions) {
           if (Math.hypot(em.x - ex.x, em.y - ex.y) < ex.r) {
             enemyMissiles.splice(i, 1);
-            explosions.push({ x: em.x, y: em.y, r: 0, max: 30 });
+            explosions.push({ x: em.x, y: em.y, r: 0, max: 30, hold: 0.25 });
             score += 100;
             updateInfo();
             break;
@@ -171,7 +176,7 @@
         spawnTimer = Math.max(0.5, 2 - score / 1000);
       }
       updateMissiles();
-      updateExplosions();
+      updateExplosions(dt);
       checkCollisions();
     }
 
