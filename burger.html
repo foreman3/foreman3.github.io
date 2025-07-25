@@ -295,7 +295,11 @@
   }
 
   function ladderAt(x,y){
-    return ladders.some(l=>Math.abs(l.x - x) < 0.3 && y>=l.top && y<=l.bottom);
+    // allow a small margin above the top so characters can grab a ladder
+    // even if they are slightly above its starting point
+    return ladders.some(l=>
+      Math.abs(l.x - x) < 0.3 && y >= l.top - 0.2 && y <= l.bottom
+    );
   }
 
   function pepper(){
