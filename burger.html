@@ -195,7 +195,7 @@
     if(keys.up && ladderAt(player.x, player.y)) player.y -=0.1;
     if(keys.down && ladderAt(player.x, player.y)) player.y +=0.1;
     player.x = Math.max(0, Math.min(COLS-1, player.x));
-    player.y = Math.max(1, Math.min(ROWS-1, player.y));
+    player.y = Math.max(1, Math.min(ROWS, player.y));
 
     const px=Math.round(player.x), py=Math.round(player.y);
     const piece = pieceUnder(player);
