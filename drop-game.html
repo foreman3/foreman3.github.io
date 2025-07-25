@@ -8,9 +8,9 @@
       margin: 0;
       display: flex;
       min-height: 100vh;
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      background: #ffffff;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      color: #fff;
+      color: #000;
     }
 
     #sidebar {
@@ -66,6 +66,15 @@
       background: rgba(0, 0, 0, 0.5);
       padding: 5px 10px;
       border-radius: 5px;
+      color: #fff;
+    }
+    #lives {
+      margin-top: 5px;
+      font-size: 20px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+      color: #fff;
     }
     #message {
       margin-top: 10px;
@@ -81,6 +90,7 @@
     <h1>Fruit Drop</h1>
     <canvas id="gameCanvas" width="600" height="630"></canvas>
     <div id="score">Score: 0</div>
+    <div id="lives">Lives: 3</div>
     <div id="message"></div>
   </div>
   <script>
@@ -107,7 +117,10 @@
     const bullets = [];
     const bulletRadius = 7.5;
     let score = 0;
+    let lives = 3;
     let gameOver = false;
+    document.getElementById('score').textContent = 'Score: ' + score;
+    document.getElementById('lives').textContent = 'Lives: ' + lives;
     let speedMultiplier = 2; // global speed multiplier
     let cherryWaveTriggered = false;
     let grapeWaveTriggered = false;
@@ -179,6 +192,7 @@
       bullets.push({ x: basketX + basketWidth / 2, y: basketY, radius: bulletRadius });
       score--;
       document.getElementById('score').textContent = 'Score: ' + score;
+      document.getElementById('lives').textContent = 'Lives: ' + lives;
     }
 
     function drawBullet(bullet) {
@@ -247,12 +261,17 @@
         const inYRange = item.y + item.radius > basketY && item.y - item.radius < basketY + basketHeight;
         if (inXRange && inYRange) {
           if (item.type === 'bomb') {
-            gameOver = true;
-            document.getElementById('message').textContent = 'Game Over!';
+            lives--;
+            document.getElementById('lives').textContent = 'Lives: ' + lives;
+            if (lives <= 0) {
+              gameOver = true;
+              document.getElementById('message').textContent = 'Game Over!';
+            }
           } else {
             score += item.points;
             speedMultiplier *= 1.02; // increase speed by 2% each score
             document.getElementById('score').textContent = 'Score: ' + score;
+            document.getElementById('lives').textContent = 'Lives: ' + lives;
           }
           items.splice(i, 1);
         }
