@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ultra Tanks</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #556270 0%, #4ecdc4 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul { list-style:none; padding:0; margin:0; }
+    #sidebar li { margin:15px 0; }
+    #sidebar a { color:#fff; text-decoration:none; transition:color 0.3s; }
+    #sidebar a:hover { color:#ffea00; }
+    #game-container {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding:20px;
+    }
+    canvas {
+      background:#222;
+      border:2px solid #fff;
+      border-radius:8px;
+      width:100%;
+      height:auto;
+      max-height:80vh;
+      cursor: crosshair;
+    }
+    #info { margin-top:10px; font-size:20px; }
+    #message { margin-top:10px; font-size:24px; color:#ffeb3b; }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Ultra Tanks</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info"></div>
+    <div id="message"></div>
+    <button id="restartBtn" style="margin-top:10px;">Restart</button>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const keys = {};
+    const bullets = [];
+    const obstacles = [];
+    let mine = null;
+    let airRaidAvailable = 1;
+    let airRaidExplosion = null;
+
+    const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0};
+    let enemies = [];
+    let level = 1;
+    let lives = 3;
+    let running = false;
+
+    function obstacleCollision(x, y) {
+      for (const o of obstacles) {
+        if (x > o.x - 15 && x < o.x + o.w + 15 && y > o.y - 15 && y < o.y + o.h + 15) return true;
+      }
+      return false;
+    }
+
+    function respawnPlayer() {
+      for (let i = 0; i < 100; i++) {
+        const x = 30 + Math.random() * (canvas.width - 60);
+        const y = 30 + Math.random() * (canvas.height - 60);
+        if (!obstacleCollision(x, y) && enemies.every(e => !e.alive || Math.hypot(x - e.x, y - e.y) > 120)) {
+          player.x = x; player.y = y; player.angle = 0; player.alive = true; player.explosion = 0;
+          return;
+        }
+      }
+      player.x = 100; player.y = canvas.height / 2; player.angle = 0; player.alive = true; player.explosion = 0;
+    }
+
+    function createObstacles() {
+      obstacles.length = 0;
+      for (let i = 0; i < 5; i++) {
+        const w = 40 + Math.random() * 60;
+        const h = 40 + Math.random() * 60;
+        const x = 20 + Math.random() * (canvas.width - w - 40);
+        const y = 20 + Math.random() * (canvas.height - h - 40);
+        obstacles.push({ x, y, w, h });
+      }
+    }
+
+   function startLevel() {
+     bullets.length = 0;
+     mine = null;
+      airRaidAvailable = 1;
+      airRaidExplosion = null;
+     createObstacles();
+      enemies = [];
+      for (let i = 0; i < level + 1; i++) {
+        let x = 30 + Math.random() * (canvas.width - 60);
+        let y = 30 + Math.random() * (canvas.height - 60);
+        let tries = 0;
+        while ((obstacleCollision(x, y) || (Math.hypot(x - player.x, y - player.y) < 120)) && tries < 50) {
+          x = 30 + Math.random() * (canvas.width - 60);
+          y = 30 + Math.random() * (canvas.height - 60);
+          tries++;
+        }
+        enemies.push({ x, y, angle: Math.PI, shootTimer: 80, color: '#f00', alive: true, explosion: 0 });
+      }
+      respawnPlayer();
+      document.getElementById('message').textContent = '';
+      running = true;
+      updateInfo();
+    }
+
+    function shoot(tank) {
+      if (bullets.filter(b => b.owner === tank).length >= 2) return;
+      bullets.push({ x: tank.x + Math.cos(tank.angle) * 20,
+                    y: tank.y + Math.sin(tank.angle) * 20,
+                    angle: tank.angle,
+                    owner: tank,
+                    bounces: 0 });
+    }
+
+   function updateInfo() {
+     const remaining = enemies.filter(e => e.alive).length;
+      document.getElementById('info').textContent = `Level: ${level} | Lives: ${lives} | Enemies Left: ${remaining} | Air Raids: ${airRaidAvailable}`;
+   }
+
+    function update() {
+      if (!running) return;
+      const bounce = true;
+
+      if (player.alive) {
+        let nx = player.x, ny = player.y, na = player.angle;
+        if (keys['ArrowLeft']) na -= 0.05;
+        if (keys['ArrowRight']) na += 0.05;
+        if (keys['ArrowUp']) { nx += Math.cos(na) * 2; ny += Math.sin(na) * 2; }
+        if (keys['ArrowDown']) { nx -= Math.cos(na) * 2; ny -= Math.sin(na) * 2; }
+        nx = Math.max(15, Math.min(canvas.width - 15, nx));
+        ny = Math.max(15, Math.min(canvas.height - 15, ny));
+        if (!obstacleCollision(nx, ny)) { player.x = nx; player.y = ny; }
+        player.angle = na;
+      } else if (player.explosion > 0) {
+        player.explosion--;
+        if (player.explosion === 0 && running) respawnPlayer();
+      }
+
+      for (const e of enemies) {
+        if (!e.alive) { if (e.explosion > 0) e.explosion--; continue; }
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+        const desired = Math.atan2(dy, dx);
+        let diff = ((desired - e.angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+        if (Math.abs(diff) > 0.02) e.angle += Math.sign(diff) * 0.02;
+        let ex = e.x + Math.cos(e.angle) * 1.5;
+        let ey = e.y + Math.sin(e.angle) * 1.5;
+        ex = Math.max(15, Math.min(canvas.width - 15, ex));
+        ey = Math.max(15, Math.min(canvas.height - 15, ey));
+        if (!obstacleCollision(ex, ey)) { e.x = ex; e.y = ey; }
+        e.shootTimer--;
+        if (e.shootTimer <= 0 && player.alive) { shoot(e); e.shootTimer = 80; }
+      }
+
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += Math.cos(b.angle) * 4;
+        b.y += Math.sin(b.angle) * 4;
+
+        let bounced = false;
+        let removed = false;
+        if (bounce) {
+          if (b.x <= 0 || b.x >= canvas.width) {
+            b.angle = Math.PI - b.angle;
+            b.x = Math.max(0, Math.min(canvas.width, b.x));
+            b.bounces++;
+            bounced = true;
+          }
+          if (b.y <= 0 || b.y >= canvas.height) {
+            b.angle = -b.angle;
+            b.y = Math.max(0, Math.min(canvas.height, b.y));
+            b.bounces++;
+            bounced = true;
+          }
+        } else {
+          if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) { bullets.splice(i, 1); continue; }
+        }
+
+        if (bounce) {
+          for (const o of obstacles) {
+            if (b.x > o.x && b.x < o.x + o.w && b.y > o.y && b.y < o.y + o.h) {
+              const left = Math.abs(b.x - o.x);
+              const right = Math.abs(o.x + o.w - b.x);
+              const top = Math.abs(b.y - o.y);
+              const bottom = Math.abs(o.y + o.h - b.y);
+              const min = Math.min(left, right, top, bottom);
+              if (min === left || min === right) {
+                b.angle = Math.PI - b.angle;
+                b.x += min === left ? -2 : 2;
+              } else {
+                b.angle = -b.angle;
+                b.y += min === top ? -2 : 2;
+              }
+              b.bounces++;
+              bounced = true;
+              break;
+            }
+          }
+        } else {
+          for (const o of obstacles) {
+            if (b.x > o.x && b.x < o.x + o.w && b.y > o.y && b.y < o.y + o.h) { bullets.splice(i, 1); removed = true; break; }
+          }
+          if (removed) continue;
+        }
+
+        if (bounced && b.bounces >= 2) { bullets.splice(i, 1); continue; }
+        if (player.alive && b.owner !== player && Math.hypot(b.x - player.x, b.y - player.y) < 15) {
+          player.alive = false; player.explosion = 30; lives--; updateInfo();
+          if (lives <= 0) {
+            running = false;
+            document.getElementById('message').textContent = 'Game Over';
+          }
+          if (!bounce) { bullets.splice(i, 1); } else { b.angle = Math.atan2(b.y - player.y, b.x - player.x); }
+          continue;
+        }
+        for (const e of enemies) {
+          if (e.alive && b.owner !== e && Math.hypot(b.x - e.x, b.y - e.y) < 15) {
+            e.alive = false; e.explosion = 30;
+            if (!bounce) { bullets.splice(i, 1); }
+            else { b.angle = Math.atan2(b.y - e.y, b.x - e.x); }
+            removed = true; break;
+          }
+        }
+        if (removed && !bounce) continue;
+      }
+
+      if (mine) {
+        if (mine.explosion > 0) {
+          mine.explosion--;
+          if (mine.explosion === 0) mine = null;
+        } else {
+          mine.timer--;
+          let triggered = false;
+          const inRange = t => Math.hypot(t.x - mine.x, t.y - mine.y) < 15;
+          if (player.alive && inRange(player)) {
+            player.alive = false; player.explosion = 30; lives--; updateInfo();
+            triggered = true;
+          }
+          for (const e of enemies) {
+            if (e.alive && inRange(e)) { e.alive = false; e.explosion = 30; triggered = true; }
+          }
+          if (mine.timer <= 0) triggered = true;
+          if (triggered) mine.explosion = 30;
+        }
+      }
+
+      if (airRaidExplosion) {
+        airRaidExplosion.timer--;
+        if (airRaidExplosion.timer <= 0) airRaidExplosion = null;
+      }
+
+      updateInfo();
+
+      if (enemies.every(e => !e.alive && e.explosion === 0)) {
+        running = false;
+        document.getElementById('message').textContent = 'Next Level';
+        setTimeout(() => {
+          level++;
+          if (level === 4) { lives++; }
+          startLevel();
+        }, 1000);
+      }
+    }
+
+    function drawTank(t) {
+      ctx.save();
+      ctx.translate(t.x, t.y);
+      ctx.rotate(t.angle);
+      ctx.fillStyle = t.color;
+      ctx.fillRect(-15, -10, 30, 20);
+      ctx.fillRect(0, -3, 20, 6);
+      ctx.restore();
+    }
+
+    function drawExplosion(t) {
+      const r = 30 - t.explosion;
+      ctx.fillStyle = 'orange';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#666';
+      for (const o of obstacles) ctx.fillRect(o.x, o.y, o.w, o.h);
+      if (player.alive) drawTank(player); else if (player.explosion > 0) drawExplosion(player);
+      for (const e of enemies) {
+        if (e.alive) drawTank(e); else if (e.explosion > 0) drawExplosion(e);
+      }
+      if (mine) {
+        if (mine.explosion > 0) {
+          drawExplosion(mine);
+        } else {
+          ctx.fillStyle = '#ff0';
+          ctx.beginPath();
+          ctx.arc(mine.x, mine.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.fillStyle = '#fff';
+      for (const b of bullets) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (airRaidExplosion) {
+        ctx.fillStyle = 'rgba(255,165,0,0.5)';
+        ctx.beginPath();
+        ctx.arc(airRaidExplosion.x, airRaidExplosion.y, airRaidExplosion.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if (e.key === ' ' && running && player.alive) { shoot(player); }
+      if ((e.key === 'm' || e.key === 'M') && running && player.alive && !mine) {
+        const offset = 16; // place mine just behind the tank with 1px gap
+        mine = {
+          x: player.x - Math.cos(player.angle) * offset,
+          y: player.y - Math.sin(player.angle) * offset,
+          timer: 180,
+          explosion: 0
+        };
+      }
+    });
+    canvas.addEventListener('click', e => {
+      if (!running || airRaidAvailable <= 0) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const r = Math.sqrt(0.2 * canvas.width * canvas.height / Math.PI);
+      airRaidExplosion = { x, y, r, timer: 30 };
+      airRaidAvailable--;
+      if (player.alive && Math.hypot(player.x - x, player.y - y) < r) {
+        player.alive = false; player.explosion = 30; lives--; updateInfo();
+      }
+      for (const eTank of enemies) {
+        if (eTank.alive && Math.hypot(eTank.x - x, eTank.y - y) < r) {
+          eTank.alive = false; eTank.explosion = 30;
+        }
+      }
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        if (Math.hypot(bullets[i].x - x, bullets[i].y - y) < r) bullets.splice(i, 1);
+      }
+      updateInfo();
+    });
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    window.addEventListener('load', () => {
+      startLevel();
+      loop();
+      document.getElementById('restartBtn').addEventListener('click', () => {
+        level = 1;
+        lives = 3;
+        startLevel();
+      });
+    });
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if(placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>

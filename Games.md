@@ -16,5 +16,6 @@ This repository hosts simple arcade-style video games.
 - [Missile Command](missile-command.html) - Defend your base from incoming missiles.
 - [Tetris](tetris.html) - Arrange falling blocks to clear lines.
 - [Tanks](tanks.html) - Duel enemy armor in top-down combat.
+- [Ultra Tanks](ultra-tanks.html) - Bouncing bullets and massive air raids.
 - [Boxing](boxing.html) - Step into a 3D ring and dodge telegraphed punches from varied opponents.
 
