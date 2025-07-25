@@ -207,15 +207,12 @@
       });
     }
 
-    let last = performance.now();
+    const FRAME_TIME = 1000/60;
     function loop() {
-      const now = performance.now();
-      const dt = (now - last) / 1000;
-      last = now;
-      update(dt);
+      update(1/60);
       draw();
-      requestAnimationFrame(loop);
     }
+    setInterval(loop, FRAME_TIME);
 
     function updateInfo() {
       document.getElementById('info').textContent = `Score: ${score} | Lives: ${lives}`;

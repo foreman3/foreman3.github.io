@@ -250,13 +250,13 @@ function draw(){
   document.getElementById('message').textContent=message;
 }
 
+const FRAME_TIME = 1000/60;
 function gameLoop(){
   updatePacman();
   ghosts.forEach(updateGhost);
   checkCollisions();
   if(frightTimer>0) frightTimer--;
   draw();
-  requestAnimationFrame(gameLoop);
 }
 
 document.addEventListener('keydown',e=>{
@@ -268,7 +268,7 @@ document.addEventListener('keydown',e=>{
 });
 
 resetGame();
-requestAnimationFrame(gameLoop);
+setInterval(gameLoop, FRAME_TIME);
 </script>
 <script>
   fetch('sidebar.html')
