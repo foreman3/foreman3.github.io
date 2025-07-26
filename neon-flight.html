@@ -128,7 +128,7 @@
           running = false;
           document.getElementById('message').textContent = 'Crash! Press Space';
         }
-        if(back <= -FOV){
+        if(back <= 0){
           buildings.splice(i, 1);
         }
       }
@@ -176,7 +176,9 @@
       ctx.clearRect(0,0,canvas.width,canvas.height);
       ctx.strokeStyle = '#0f0';
       ctx.lineWidth = 2;
-      for(const b of buildings) drawBuilding(b);
+      for(const b of buildings){
+        if(b.z + b.depth/2 >= 0) drawBuilding(b);
+      }
     }
 
     function loop(){
