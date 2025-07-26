@@ -68,21 +68,29 @@
     const logImg = new Image();
     logImg.src = 'images/log.svg';
     let obstacles = [];
+    const birdImg = new Image();
+    birdImg.src = 'images/flappy.svg';
     let lastSpawn = 0;
     let score = 0;
     let gameState = 'start';
+    let jumpHeld = false;
 
-    document.addEventListener('keydown', e => {
-      if(e.code === 'Space') {
-        if(gameState === 'play') {
+    document.addEventListener("keydown", e => {
+      if(e.code === "Space") {
+        jumpHeld = true;
+        if(gameState === "play") {
           if(player.y >= groundY - player.height - 1) player.vy = JUMP_STRENGTH;
         } else {
           restart();
         }
       }
     });
-
-    function restart() {
+    document.addEventListener("keyup", e => {
+      if(e.code === "Space") {
+        jumpHeld = false;
+        if(player.vy < -3) player.vy = -3;
+      }
+    });
       obstacles = [];
       player.y = groundY - player.height;
       player.vy = 0;
@@ -93,24 +101,36 @@
     }
 
     function spawnObstacle() {
-      const type = Math.random() < 0.5 ? 'pit' : 'log';
+      const r = Math.random();
       const x = canvas.width + Math.random() * 200;
-      if(type === 'pit') {
-        const width = 60 + Math.random()*60;
-        obstacles.push({type, x, width});
+      if(r < 0.4) {
+        const type = Math.random() < 0.5 ? "pit" : "log";
+        if(type === "pit") {
+          const width = 60 + Math.random()*60;
+          obstacles.push({type, x, width});
+        } else {
+          const width = 40;
+          const height = 30;
+          obstacles.push({type, x, width, height});
+        }
+      } else if(r < 0.7) {
+        const height = 40;
+        const width = 60;
+        const y = Math.random() < 0.5 ? groundY - 150 : groundY - 80;
+        obstacles.push({type:"bird", x, y, width, height});
       } else {
         const width = 40;
-        const height = 30;
-        obstacles.push({type, x, width, height});
+        const height = 20;
+        obstacles.push({type:"snake", x, width, height, y: groundY - height});
       }
     }
 
-    function isOverPit(x) {
+  function isOverPit(x) {
       for(const o of obstacles) {
         if(o.type==='pit' && x > o.x && x < o.x + o.width) return true;
       }
       return false;
-    }
+  }
 
     function update(dt) {
       if(gameState !== 'play') return;
@@ -121,7 +141,8 @@
       }
 
       for(const o of obstacles) {
-        o.x -= 3;
+        if(o.type === 'bird') o.x -= 4;
+        else o.x -= 3;
       }
       obstacles = obstacles.filter(o => o.x + (o.width||50) > -50);
 
@@ -136,6 +157,16 @@
         if(o.type==='log') {
           if(player.x + player.width > o.x && player.x < o.x + o.width &&
              player.y + player.height > groundY - o.height) {
+            gameOver();
+          }
+        } else if(o.type==='bird') {
+          if(player.x + player.width > o.x && player.x < o.x + o.width &&
+             player.y < o.y + o.height && player.y + player.height > o.y) {
+            gameOver();
+          }
+        } else if(o.type==='snake') {
+          if(player.x + player.width > o.x && player.x < o.x + o.width &&
+             player.y + player.height > o.y) {
             gameOver();
           }
         }
@@ -158,8 +189,14 @@
       for(const o of obstacles) {
         if(o.type==='pit') {
           ctx.clearRect(o.x, groundY, o.width, canvas.height-groundY);
-        } else {
+        } else if(o.type==='log') {
           ctx.drawImage(logImg, o.x, groundY - o.height, o.width, o.height);
+        } else if(o.type==='bird') {
+          ctx.drawImage(birdImg, o.x, o.y, o.width, o.height);
+        } else if(o.type==='snake') {
+          ctx.fillStyle = '#4caf50';
+          ctx.fillRect(o.x, groundY - o.height, o.width, o.height);
+          ctx.fillStyle = '#8b4513';
         }
       }
       ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
