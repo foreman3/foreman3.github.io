@@ -70,6 +70,8 @@
     let obstacles = [];
     const birdImg = new Image();
     birdImg.src = 'images/flappy.svg';
+    const snakeImg = new Image();
+    snakeImg.src = 'images/snake.svg';
     let lastSpawn = 0;
     let score = 0;
     let gameState = 'start';
@@ -195,9 +197,7 @@
         } else if(o.type==='bird') {
           ctx.drawImage(birdImg, o.x, o.y, o.width, o.height);
         } else if(o.type==='snake') {
-          ctx.fillStyle = '#4caf50';
-          ctx.fillRect(o.x, groundY - o.height, o.width, o.height);
-          ctx.fillStyle = '#8b4513';
+          ctx.drawImage(snakeImg, o.x, groundY - o.height, o.width, o.height);
         }
       }
       ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
