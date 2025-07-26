@@ -97,7 +97,7 @@
       distance = 0;
       running = true;
       document.getElementById('message').textContent = '';
-      for(let i=0;i<20;i++) spawnBuilding();
+        for(let i=0;i<10;i++) spawnBuilding();
     }
 
     function spawnBuilding(){
@@ -133,7 +133,7 @@
           buildings.splice(i, 1);
         }
       }
-      while(buildings.length < 20) spawnBuilding();
+        while(buildings.length < 10) spawnBuilding();
       distance += plane.speed;
       document.getElementById('info').textContent = `Distance: ${Math.floor(distance)}`;
     }
