@@ -150,11 +150,19 @@
       const w = b.width/2;
       const d = b.depth/2;
       const h = b.height;
+      const frontLeft = project(b.x - w, 0, b.z - d);
+      const frontRight = project(b.x + w, 0, b.z - d);
+      const backLeft = project(b.x - w, 0, b.z + d);
+      const backRight = project(b.x + w, 0, b.z + d);
+
+      // Skip drawing if the building has flipped orientation
+      if(frontLeft.x > frontRight.x || backLeft.x > backRight.x) return;
+
       const pts = [
-        project(b.x - w, 0, b.z - d),
-        project(b.x + w, 0, b.z - d),
-        project(b.x - w, 0, b.z + d),
-        project(b.x + w, 0, b.z + d),
+        frontLeft,
+        frontRight,
+        backLeft,
+        backRight,
         project(b.x - w, h, b.z - d),
         project(b.x + w, h, b.z - d),
         project(b.x - w, h, b.z + d),
