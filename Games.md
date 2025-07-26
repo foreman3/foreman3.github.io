@@ -10,6 +10,7 @@ This repository hosts simple arcade-style video games.
 - [Pinball](pinball.html) - Classic arcade action with bumpers and flippers.
 - [Burger Builder](burger.html) - Assemble towering burgers while avoiding enemies.
 - [Pac-Man](pacman.html) - Eat pellets and avoid ghosts.
+- [Qbert Clone](qbert.html) - Hop across pyramids and change block colors.
 - [Pitfall](pitfall.html) - Run, jump, and avoid pits
 - [Pole Position](pole.html) - Steer and dodge rival racers.
 - [Asteroids](asteroids.html) - Blast space rocks and avoid collisions.
