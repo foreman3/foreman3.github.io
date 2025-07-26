@@ -67,8 +67,8 @@
     let lives = 3;
     let tiles;
     let visited;
-    const qbert = {row:0,col:0};
-    const enemy = {row:ROWS-1,col:ROWS-1};
+    const qbert = {row:0,col:0, moving:false};
+    const enemy = {row:ROWS-1,col:ROWS-1, moving:false};
     const leftPlatform = {used:false};
     const rightPlatform = {used:false};
     let enemyTimer;
@@ -111,14 +111,63 @@
     }
 
     function drawPlatforms(){
-      if(!leftPlatform.used){
-        const p = platformPos('left');
+      if(!leftPlatform.used || leftPlatform.flyX !== undefined){
+        const p = leftPlatform.flyX !== undefined ? {x:leftPlatform.flyX,y:leftPlatform.flyY} : platformPos('left');
         ctx.drawImage(platformImg,p.x,p.y,TILE,TILE*0.6);
       }
-      if(!rightPlatform.used){
-        const p = platformPos('right');
+      if(!rightPlatform.used || rightPlatform.flyX !== undefined){
+        const p = rightPlatform.flyX !== undefined ? {x:rightPlatform.flyX,y:rightPlatform.flyY} : platformPos('right');
         ctx.drawImage(platformImg,p.x,p.y,TILE,TILE*0.6);
       }
+    }
+
+    function animateJump(entity, sr, sc, er, ec, cb){
+      entity.moving = true;
+      const start = tilePos(sr,sc);
+      const end = tilePos(er,ec);
+      const startTime = performance.now();
+      const duration = 200;
+      function step(t){
+        const p = Math.min((t-startTime)/duration,1);
+        const h = Math.sin(p*Math.PI)*20;
+        entity.drawX = start.x + (end.x-start.x)*p;
+        entity.drawY = start.y + (end.y-start.y)*p - h;
+        draw();
+        if(p<1){
+          requestAnimationFrame(step);
+        }else{
+          entity.drawX = undefined;
+          entity.drawY = undefined;
+          entity.moving = false;
+          cb && cb();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function animatePlatform(p, side, cb){
+      const start = platformPos(side);
+      const end = tilePos(0,0);
+      const startTime = performance.now();
+      const duration = 600;
+      qbert.moving = true;
+      function step(t){
+        const prog = Math.min((t-startTime)/duration,1);
+        p.flyX = start.x + (end.x-start.x)*prog;
+        p.flyY = start.y + (end.y-start.y)*prog;
+        qbert.drawX = p.flyX;
+        qbert.drawY = p.flyY - 10;
+        draw();
+        if(prog<1){
+          requestAnimationFrame(step);
+        } else {
+          p.flyX = undefined; p.flyY = undefined; p.used = true;
+          qbert.drawX = undefined; qbert.drawY = undefined;
+          qbert.moving = false;
+          cb && cb();
+        }
+      }
+      requestAnimationFrame(step);
     }
 
     function draw(){
@@ -129,10 +178,10 @@
         }
       }
       drawPlatforms();
-      const q = tilePos(qbert.row,qbert.col);
-      ctx.drawImage(qbertImg,q.x+TILE/2-16,q.y+TILE/2-16,32,32);
-      const e = tilePos(enemy.row,enemy.col);
-      ctx.drawImage(enemyImg,e.x+TILE/2-16,e.y+TILE/2-16,32,32);
+      const qpos = (qbert.drawX !== undefined) ? {x:qbert.drawX,y:qbert.drawY} : tilePos(qbert.row,qbert.col);
+      ctx.drawImage(qbertImg,qpos.x+TILE/2-16,qpos.y+TILE/2-16,32,32);
+      const epos = (enemy.drawX !== undefined) ? {x:enemy.drawX,y:enemy.drawY} : tilePos(enemy.row,enemy.col);
+      ctx.drawImage(enemyImg,epos.x+TILE/2-16,epos.y+TILE/2-16,32,32);
       infoEl.textContent = `Level: ${level} Lives: ${lives} - ${visited}/${ROWS*(ROWS+1)/2}`;
     }
 
@@ -149,13 +198,14 @@
       if(lives <= 0){
         messageEl.textContent = 'Game Over';
       } else {
-        qbert.row=0; qbert.col=0;
-        enemy.row=ROWS-1; enemy.col=ROWS-1;
+        qbert.row=0; qbert.col=0; qbert.moving=false; qbert.drawX=undefined; qbert.drawY=undefined;
+        enemy.row=ROWS-1; enemy.col=ROWS-1; enemy.moving=false; enemy.drawX=undefined; enemy.drawY=undefined;
       }
       draw();
     }
 
     function enemyMove(){
+      if(enemy.moving) return;
       let bestR = enemy.row;
       let bestC = enemy.col;
       let bestDist = Infinity;
@@ -170,8 +220,13 @@
       if(options.length === 0) return;
       if(Math.random() < errorRate){
         const [nr,nc] = options[Math.floor(Math.random()*options.length)];
-        enemy.row = nr;
-        enemy.col = nc;
+        const sr = enemy.row, sc = enemy.col;
+        enemy.row = nr; enemy.col = nc;
+        animateJump(enemy, sr, sc, nr, nc, () => {
+          if(enemy.row === qbert.row && enemy.col === qbert.col && !qbert.moving){
+            loseLife();
+          }
+        });
         return;
       }
       for(const [nr,nc] of options){
@@ -179,28 +234,36 @@
         const d = (pos.x-target.x)**2 + (pos.y-target.y)**2;
         if(d < bestDist){ bestDist=d; bestR=nr; bestC=nc; }
       }
+      const sr = enemy.row, sc = enemy.col;
       enemy.row = bestR;
       enemy.col = bestC;
+      animateJump(enemy, sr, sc, bestR, bestC, () => {
+        if(enemy.row === qbert.row && enemy.col === qbert.col && !qbert.moving){
+          loseLife();
+        }
+      });
     }
 
-    function usePlatform(p){
-      p.used = true;
-      qbert.row = 0; qbert.col = 0;
+    function usePlatform(p, side){
+      if(qbert.moving) return;
+      animatePlatform(p, side, () => {
+        qbert.row = 0; qbert.col = 0;
+        visitTile(0,0);
+        checkWin();
+      });
     }
 
     function move(dr,dc){
-      if(lives <= 0) return;
+      if(lives <= 0 || qbert.moving) return;
       let nr = qbert.row + dr;
       let nc = qbert.col + dc;
       if(qbert.row === ROWS-2 && dr === 1){
         if(dc === 0 && qbert.col === 0 && !leftPlatform.used){
-          usePlatform(leftPlatform);
-          draw();
+          usePlatform(leftPlatform,'left');
           return;
         }
         if(dc === 1 && qbert.col === ROWS-2 && !rightPlatform.used){
-          usePlatform(rightPlatform);
-          draw();
+          usePlatform(rightPlatform,'right');
           return;
         }
       }
@@ -208,13 +271,15 @@
         loseLife();
         return;
       }
+      const sr = qbert.row, sc = qbert.col;
       qbert.row = nr; qbert.col = nc;
       visitTile(nr,nc);
-      draw();
-      if(enemy.row === qbert.row && enemy.col === qbert.col){
-        loseLife();
-      }
-      checkWin();
+      animateJump(qbert, sr, sc, nr, nc, () => {
+        if(enemy.row === qbert.row && enemy.col === qbert.col){
+          loseLife();
+        }
+        checkWin();
+      });
     }
 
     function startLevel(){
@@ -224,10 +289,10 @@
         for(let c=0;c<=r;c++) tiles[r][c]=0;
       }
       visited = 0;
-      leftPlatform.used = false;
-      rightPlatform.used = false;
-      qbert.row = 0; qbert.col = 0;
-      enemy.row = ROWS-1; enemy.col = ROWS-1;
+      leftPlatform.used = false; leftPlatform.flyX = undefined; leftPlatform.flyY = undefined;
+      rightPlatform.used = false; rightPlatform.flyX = undefined; rightPlatform.flyY = undefined;
+      qbert.row = 0; qbert.col = 0; qbert.moving = false; qbert.drawX = undefined; qbert.drawY = undefined;
+      enemy.row = ROWS-1; enemy.col = ROWS-1; enemy.moving = false; enemy.drawX = undefined; enemy.drawY = undefined;
       visitTile(0,0);
       messageEl.textContent = '';
       const interval = Math.max(300, 1000 - (level-1)*100);
@@ -236,10 +301,6 @@
       enemyTimer = setInterval(() => {
         if(lives > 0){
           enemyMove();
-          draw();
-          if(enemy.row === qbert.row && enemy.col === qbert.col){
-            loseLife();
-          }
         }
       }, interval);
       draw();
