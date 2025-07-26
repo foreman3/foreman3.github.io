@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon Flight</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: #000;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul { list-style:none; padding:0; margin:0; }
+    #sidebar li { margin:15px 0; }
+    #sidebar a { color:#fff; text-decoration:none; transition:color 0.3s; }
+    #sidebar a:hover { color:#0f0; }
+    #game-container {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding:20px;
+    }
+    canvas {
+      background:#000;
+      border:2px solid #0f0;
+      border-radius:8px;
+      width:100%;
+      height:auto;
+      max-height:80vh;
+    }
+    #info {
+      margin-top:10px;
+      font-size:20px;
+      color:#0f0;
+    }
+    #message {
+      margin-top:10px;
+      font-size:24px;
+      color:#0f0;
+      text-shadow:1px 1px 3px rgba(0,255,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Neon Flight</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info">Distance: 0</div>
+    <div id="message">Use arrow keys to dodge buildings</div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeGame(){
+      const sidebar = document.getElementById('sidebar');
+      const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
+      const header = document.querySelector('#game-container h1');
+      const info = document.getElementById('info');
+      const message = document.getElementById('message');
+      const aspect = 4/3;
+      const availableWidth = window.innerWidth - sidebarWidth - 40;
+      const availableHeight = window.innerHeight -
+            header.offsetHeight - info.offsetHeight - message.offsetHeight - 40;
+      let width = availableWidth;
+      let height = width / aspect;
+      if(height > availableHeight){
+        height = availableHeight;
+        width = height * aspect;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+    }
+
+    const FOV = 300;
+    let plane, buildings, distance, running;
+    let left=false, right=false, up=false, down=false;
+
+    function resetGame(){
+      plane = { x:0, y:50, speed:8 };
+      buildings = [];
+      distance = 0;
+      running = true;
+      document.getElementById('message').textContent = '';
+      for(let i=0;i<20;i++) spawnBuilding();
+    }
+
+    function spawnBuilding(){
+      const cityWidth = 600;
+      const x = (Math.random()-0.5) * cityWidth;
+      const width = 40 + Math.random()*60;
+      const depth = 40 + Math.random()*60;
+      const height = 80 + Math.random()*150;
+      const z = 400 + Math.random()*1200;
+      buildings.push({x,width,depth,height,z});
+    }
+
+    function update(){
+      if(!running) return;
+      if(left) plane.x -= 5;
+      if(right) plane.x += 5;
+      if(up) plane.y += 5;
+      if(down) plane.y -= 5;
+      plane.x = Math.max(-300, Math.min(300, plane.x));
+      plane.y = Math.max(20, Math.min(150, plane.y));
+      for(const b of buildings) b.z -= plane.speed;
+      while(buildings.length && buildings[0].z < -100) buildings.shift();
+      if(buildings.length < 20) spawnBuilding();
+      distance += plane.speed;
+      document.getElementById('info').textContent = `Distance: ${Math.floor(distance)}`;
+      for(const b of buildings){
+        if(b.z - b.depth/2 < 20 && Math.abs(plane.x - b.x) < b.width/2 && plane.y < b.height){
+          running = false;
+          document.getElementById('message').textContent = 'Crash! Press Space';
+        }
+      }
+    }
+
+    function project(x,y,z){
+      const scale = FOV / (FOV + z);
+      return {
+        x: canvas.width/2 + x*scale,
+        y: canvas.height*0.7 - y*scale
+      };
+    }
+
+    function drawBuilding(b){
+      const w = b.width/2;
+      const d = b.depth/2;
+      const h = b.height;
+      const pts = [
+        project(b.x - w, 0, b.z - d),
+        project(b.x + w, 0, b.z - d),
+        project(b.x - w, 0, b.z + d),
+        project(b.x + w, 0, b.z + d),
+        project(b.x - w, h, b.z - d),
+        project(b.x + w, h, b.z - d),
+        project(b.x - w, h, b.z + d),
+        project(b.x + w, h, b.z + d)
+      ];
+      const edges = [
+        [0,1],[0,2],[1,3],[2,3],
+        [4,5],[4,6],[5,7],[6,7],
+        [0,4],[1,5],[2,6],[3,7]
+      ];
+      ctx.beginPath();
+      for(const [a,b] of edges){
+        ctx.moveTo(pts[a].x, pts[a].y);
+        ctx.lineTo(pts[b].x, pts[b].y);
+      }
+      ctx.stroke();
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.strokeStyle = '#0f0';
+      ctx.lineWidth = 2;
+      for(const b of buildings) drawBuilding(b);
+    }
+
+    function loop(){
+      update();
+      draw();
+    }
+
+    window.addEventListener('keydown', e => {
+      if(e.code === 'ArrowLeft') left = true;
+      if(e.code === 'ArrowRight') right = true;
+      if(e.code === 'ArrowUp') up = true;
+      if(e.code === 'ArrowDown') down = true;
+      if(e.code === 'Space' && !running) resetGame();
+    });
+    window.addEventListener('keyup', e => {
+      if(e.code === 'ArrowLeft') left = false;
+      if(e.code === 'ArrowRight') right = false;
+      if(e.code === 'ArrowUp') up = false;
+      if(e.code === 'ArrowDown') down = false;
+    });
+
+    window.addEventListener('load', () => {
+      resizeGame();
+      resetGame();
+      setInterval(loop, 1000/60);
+    });
+    window.addEventListener('resize', resizeGame);
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
