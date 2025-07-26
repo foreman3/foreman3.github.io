@@ -60,7 +60,13 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const groundY = canvas.height - 60;
+    const GRAVITY = 0.48; // slightly lower gravity for longer jumps
+    const JUMP_STRENGTH = -14.4; // 20% more jump power
     const player = {x:100, y:groundY-40, vy:0, width:20, height:40};
+    const playerImg = new Image();
+    playerImg.src = 'images/adventurer.svg';
+    const logImg = new Image();
+    logImg.src = 'images/log.svg';
     let obstacles = [];
     let lastSpawn = 0;
     let score = 0;
@@ -69,7 +75,7 @@
     document.addEventListener('keydown', e => {
       if(e.code === 'Space') {
         if(gameState === 'play') {
-          if(player.y >= groundY - player.height - 1) player.vy = -12;
+          if(player.y >= groundY - player.height - 1) player.vy = JUMP_STRENGTH;
         } else {
           restart();
         }
@@ -119,7 +125,7 @@
       }
       obstacles = obstacles.filter(o => o.x + (o.width||50) > -50);
 
-      player.vy += 0.6;
+      player.vy += GRAVITY;
       player.y += player.vy;
       const overPit = isOverPit(player.x + player.width/2);
       if(!overPit && player.y > groundY - player.height) {
@@ -153,11 +159,10 @@
         if(o.type==='pit') {
           ctx.clearRect(o.x, groundY, o.width, canvas.height-groundY);
         } else {
-          ctx.fillRect(o.x, groundY - o.height, o.width, o.height);
+          ctx.drawImage(logImg, o.x, groundY - o.height, o.width, o.height);
         }
       }
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+      ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
     }
 
     let lastTime = 0;
