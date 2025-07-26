@@ -72,7 +72,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-const TILE = 20; // each tile is 20x20
+// Each tile is 40x40 so the base map fills the canvas
+const TILE = 40;
 
 // base map layout using characters:
 // # wall, . pellet, o power pellet, ' ' empty
@@ -96,12 +97,7 @@ const baseMap = [
   '####################'
 ];
 
-function makeSymmetricalMap(map) {
-  const horiz = map.map(row => row + row.split('').reverse().join(''));
-  return horiz.concat(horiz.slice().reverse());
-}
-
-let initialMap = makeSymmetricalMap(baseMap);
+let initialMap = baseMap.map(row => row);
 let map = initialMap.map(r => r);
 let ROWS = map.length;
 let COLS = map[0].length;
