@@ -79,6 +79,10 @@
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const playerImg = new Image();
+    playerImg.src = 'images/player_car.svg';
+    const enemyImg = new Image();
+    enemyImg.src = 'images/opponent_car.svg';
     let horizon;
     let trackPos = 0;
     const segmentLength = 50;
@@ -181,8 +185,7 @@
       const carHeight = 60;
       const x = canvas.width/2 + carOffset * roadWidth/2 - carWidth/2;
       const y = canvas.height - carHeight - 20;
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(x, y, carWidth, carHeight);
+      ctx.drawImage(playerImg, x, y, carWidth, carHeight);
     }
 
     function drawEnemies() {
@@ -194,15 +197,15 @@
         const segIndex = Math.floor((trackPos + rel)/segmentLength) % segments.length;
         const curve = segments[segIndex] * canvas.width * 0.25 * depth;
         const lineWidth = roadWidth * (1 - depth*0.8);
-        const carWidth = 40 * (0.5 + depth/2);
-        const carHeight = 60 * (0.5 + depth/2);
+        const size = 0.2 + depth*0.8;
+        const carWidth = 40 * size;
+        const carHeight = 60 * size;
         const maxOffset = lineWidth/2 - carWidth/2;
         const laneOffset = lanes[e.lane] * lineWidth/2;
         const clamped = Math.max(-maxOffset, Math.min(maxOffset, laneOffset));
         const x = canvas.width/2 + curve + clamped - carWidth/2;
         const y = horizon + depth*(canvas.height-horizon) - carHeight;
-        ctx.fillStyle = '#00ff00';
-        ctx.fillRect(x, y, carWidth, carHeight);
+        ctx.drawImage(enemyImg, x, y, carWidth, carHeight);
       }
     }
 
