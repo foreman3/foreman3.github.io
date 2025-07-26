@@ -73,6 +73,9 @@
     const rightPlatform = {used:false};
     let enemyTimer;
     let errorRate = 0.3;
+    let falling = false;
+    let fallPos = {x:0, y:0};
+    let fallTimer;
 
     const infoEl = document.getElementById('info');
     const messageEl = document.getElementById('message');
@@ -130,7 +133,11 @@
       }
       drawPlatforms();
       const q = tilePos(qbert.row,qbert.col);
-      ctx.drawImage(qbertImg,q.x+TILE/2-16,q.y+TILE/2-16,32,32);
+      if(!falling){
+        ctx.drawImage(qbertImg,q.x+TILE/2-16,q.y+TILE/2-16,32,32);
+      } else {
+        ctx.drawImage(qbertImg,fallPos.x,fallPos.y,32,32);
+      }
       const e = tilePos(enemy.row,enemy.col);
       ctx.drawImage(enemyImg,e.x+TILE/2-16,e.y+TILE/2-16,32,32);
       infoEl.textContent = `Level: ${level} Lives: ${lives} - ${visited}/${ROWS*(ROWS+1)/2}`;
@@ -155,7 +162,8 @@
       draw();
     }
 
-    function enemyMove(){
+   function enemyMove(){
+      if(falling) return;
       let bestR = enemy.row;
       let bestC = enemy.col;
       let bestDist = Infinity;
@@ -188,8 +196,26 @@
       qbert.row = 0; qbert.col = 0;
     }
 
+    function fallOff(dr,dc){
+      falling = true;
+      const target = tilePos(qbert.row + dr, qbert.col + dc);
+      fallPos.x = target.x + TILE/2 - 16;
+      fallPos.y = target.y + TILE/2 - 16;
+      if(fallTimer) clearInterval(fallTimer);
+      draw();
+      fallTimer = setInterval(() => {
+        fallPos.y += 8;
+        draw();
+        if(fallPos.y > canvas.height){
+          clearInterval(fallTimer);
+          falling = false;
+          loseLife();
+        }
+      }, 30);
+    }
+
     function move(dr,dc){
-      if(lives <= 0) return;
+      if(lives <= 0 || falling) return;
       let nr = qbert.row + dr;
       let nc = qbert.col + dc;
       if(qbert.row === ROWS-2 && dr === 1){
@@ -205,7 +231,7 @@
         }
       }
       if(nr<0 || nr>=ROWS || nc<0 || nc>nr){
-        loseLife();
+        fallOff(dr,dc);
         return;
       }
       qbert.row = nr; qbert.col = nc;
@@ -228,6 +254,8 @@
       rightPlatform.used = false;
       qbert.row = 0; qbert.col = 0;
       enemy.row = ROWS-1; enemy.col = ROWS-1;
+      falling = false;
+      if(fallTimer) clearInterval(fallTimer);
       visitTile(0,0);
       messageEl.textContent = '';
       const interval = Math.max(300, 1000 - (level-1)*100);
@@ -237,7 +265,7 @@
         if(lives > 0){
           enemyMove();
           draw();
-          if(enemy.row === qbert.row && enemy.col === qbert.col){
+          if(!falling && enemy.row === qbert.row && enemy.col === qbert.col){
             loseLife();
           }
         }
