@@ -119,19 +119,20 @@
       if(down) plane.y -= ctrl;
       plane.x = Math.max(-300, Math.min(300, plane.x));
       plane.y = Math.max(20, Math.min(150, plane.y));
-      for(const b of buildings) b.z -= plane.speed;
-      while(buildings.length && buildings[0].z < -100) buildings.shift();
-      if(buildings.length < 20) spawnBuilding();
-      distance += plane.speed;
-      document.getElementById('info').textContent = `Distance: ${Math.floor(distance)}`;
-      for(const b of buildings){
-        const screen = project(b.x, 0, b.z);
-        const inCenter = screen.x > canvas.width/3 && screen.x < canvas.width*2/3;
-        if(b.z - b.depth/2 < 20 && Math.abs(plane.x - b.x) < b.width/2 && plane.y < b.height && inCenter){
-          running = false;
-          document.getElementById('message').textContent = 'Crash! Press Space';
+      for(let i = buildings.length - 1; i >= 0; i--){
+        const b = buildings[i];
+        b.z -= plane.speed;
+        if(b.z <= 0){
+          if(Math.abs(b.x - plane.x) < b.width/2 && plane.y < b.height){
+            running = false;
+            document.getElementById('message').textContent = 'Crash! Press Space';
+          }
+          buildings.splice(i, 1);
         }
       }
+      while(buildings.length < 20) spawnBuilding();
+      distance += plane.speed;
+      document.getElementById('info').textContent = `Distance: ${Math.floor(distance)}`;
     }
 
     function project(x,y,z){
