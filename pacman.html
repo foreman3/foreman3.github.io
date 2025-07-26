@@ -187,19 +187,31 @@ function drawMap(){
   }
 }
 
+function snapToGrid(entity){
+  const threshold = (entity.speed || 1) / 2;
+  if(Math.abs(entity.x - Math.round(entity.x)) < threshold) entity.x = Math.round(entity.x);
+  if(Math.abs(entity.y - Math.round(entity.y)) < threshold) entity.y = Math.round(entity.y);
+}
+
 function move(entity,dir){
   const speed = entity.speed || 1;
   const nx = entity.x + dir.x * speed;
   const ny = entity.y + dir.y * speed;
   if(nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return false;
   if(isWall(nx, ny)) return false;
-  entity.x = nx; entity.y = ny; return true;
+  entity.x = nx; entity.y = ny; snapToGrid(entity); return true;
 }
 
 function updatePacman(){
   if(pacman.nextDir.x!==pacman.dir.x||pacman.nextDir.y!==pacman.dir.y){
-    if(!isWall(pacman.x + pacman.nextDir.x, pacman.y + pacman.nextDir.y)){
-      pacman.dir = pacman.nextDir;
+    const alignedX = Math.abs(pacman.x - Math.round(pacman.x)) < pacman.speed;
+    const alignedY = Math.abs(pacman.y - Math.round(pacman.y)) < pacman.speed;
+    if((pacman.nextDir.x===0 || alignedX) && (pacman.nextDir.y===0 || alignedY)){
+      if(!isWall(Math.round(pacman.x) + pacman.nextDir.x, Math.round(pacman.y) + pacman.nextDir.y)){
+        pacman.x = Math.round(pacman.x);
+        pacman.y = Math.round(pacman.y);
+        pacman.dir = pacman.nextDir;
+      }
     }
   }
   move(pacman,pacman.dir);
@@ -219,6 +231,7 @@ function ghostTarget(g){
   return {x:pacman.x,y:pacman.y};
 }
 function updateGhost(g){
+  snapToGrid(g);
   const target=ghostTarget(g);
   const choices=[{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}].filter(d=>!isWall(g.x+d.x,g.y+d.y));
   if(choices.length===0) return;
@@ -258,12 +271,21 @@ function checkCollisions(){
 function draw(){
   drawMap();
   ctx.fillStyle='yellow';
+  ctx.save();
+  ctx.translate(pacman.x*TILE+TILE/2,pacman.y*TILE+TILE/2);
+  let rot=0;
+  if(pacman.dir.x===1) rot=0;
+  else if(pacman.dir.x===-1) rot=Math.PI;
+  else if(pacman.dir.y===-1) rot=-Math.PI/2;
+  else if(pacman.dir.y===1) rot=Math.PI/2;
+  ctx.rotate(rot);
   ctx.beginPath();
   const a=(Date.now()/100)%360; // mouth animation
-  ctx.moveTo(pacman.x*TILE+TILE/2,pacman.y*TILE+TILE/2);
-  ctx.arc(pacman.x*TILE+TILE/2,pacman.y*TILE+TILE/2,TILE/2-1,(a/180*Math.PI)/2,(360-a)/180*Math.PI/2,false);
+  ctx.moveTo(0,0);
+  ctx.arc(0,0,TILE/2-1,(a/180*Math.PI)/2,(360-a)/180*Math.PI/2,false);
   ctx.closePath();
   ctx.fill();
+  ctx.restore();
   for(const g of ghosts){
     ctx.fillStyle=frightTimer>0?'blue':g.color;
     ctx.fillRect(g.x*TILE+2,g.y*TILE+2,TILE-4,TILE-4);
