@@ -111,10 +111,12 @@
 
     function update(){
       if(!running) return;
-      if(left) plane.x -= 5;
-      if(right) plane.x += 5;
-      if(up) plane.y += 5;
-      if(down) plane.y -= 5;
+      // Increased control responsiveness
+      const ctrl = 8;
+      if(left) plane.x -= ctrl;
+      if(right) plane.x += ctrl;
+      if(up) plane.y += ctrl;
+      if(down) plane.y -= ctrl;
       plane.x = Math.max(-300, Math.min(300, plane.x));
       plane.y = Math.max(20, Math.min(150, plane.y));
       for(const b of buildings) b.z -= plane.speed;
@@ -123,7 +125,9 @@
       distance += plane.speed;
       document.getElementById('info').textContent = `Distance: ${Math.floor(distance)}`;
       for(const b of buildings){
-        if(b.z - b.depth/2 < 20 && Math.abs(plane.x - b.x) < b.width/2 && plane.y < b.height){
+        const screen = project(b.x, 0, b.z);
+        const inCenter = screen.x > canvas.width/3 && screen.x < canvas.width*2/3;
+        if(b.z - b.depth/2 < 20 && Math.abs(plane.x - b.x) < b.width/2 && plane.y < b.height && inCenter){
           running = false;
           document.getElementById('message').textContent = 'Crash! Press Space';
         }
@@ -133,8 +137,8 @@
     function project(x,y,z){
       const scale = FOV / (FOV + z);
       return {
-        x: canvas.width/2 + x*scale,
-        y: canvas.height*0.7 - y*scale
+        x: canvas.width/2 + (x - plane.x)*scale,
+        y: canvas.height*0.7 - (y - plane.y)*scale
       };
     }
 
