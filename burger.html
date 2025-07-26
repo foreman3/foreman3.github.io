@@ -57,27 +57,27 @@
 
   // tile and level setup
   const COLS = 20;
-  const ROWS = 15;
+  const ROWS = 18;
   const TILE = 32;
   canvas.width = COLS * TILE;
   canvas.height = ROWS * TILE;
 
   const levels = [
     {
-      floors: [3,7,11,15],
+      floors: [3,6,9,12,15,18],
       ladders: [
-        {x:4, top:3, bottom:15},
-        {x:10, top:3, bottom:15},
-        {x:16, top:3, bottom:15}
+        {x:4, top:3, bottom:18},
+        {x:10, top:3, bottom:18},
+        {x:16, top:3, bottom:18}
       ],
       burgerX: [6,10,14]
     },
     {
-      floors: [3,6,9,12],
+      floors: [3,6,9,12,15,18],
       ladders: [
-        {x:5, top:3, bottom:12},
-        {x:11, top:3, bottom:12},
-        {x:17, top:3, bottom:12}
+        {x:5, top:3, bottom:18},
+        {x:11, top:3, bottom:18},
+        {x:17, top:3, bottom:18}
       ],
       burgerX: [4,10,16]
     }
@@ -110,10 +110,7 @@
         });
       }
     }
-    player.x = burgerX[0];
-    player.y = floors[0];
-    player.pepper = 3;
-    enemies = [ {x:18, y:floors[2], vx:-0.02, vy:0, width:1, height:1, stunned:0} ];
+    resetActors();
     gameOver = false;
     win = false;
     document.getElementById('message').textContent='';
@@ -124,6 +121,17 @@
 
   let gameOver=false;
   let win=false;
+  let lives = 3;
+  const explosions = [];
+
+  function resetActors(){
+    player.x = burgerX[0];
+    player.y = floors[0];
+    player.vx = 0;
+    player.vy = 0;
+    player.pepper = 3;
+    enemies = [ {x:18, y:floors[2], vx:-0.02, vy:0, width:1, height:1, stunned:0} ];
+  }
 
   loadLevel(0);
 
@@ -184,6 +192,7 @@
 
   function update(){
     if(gameOver || win) return;
+    updateExplosions();
     // player movement
     if(isSupported(player)){
       if(keys.left) player.vx=-0.1; else if(keys.right) player.vx=0.1; else player.vx=0;
@@ -206,50 +215,55 @@
     for(const p of pieces){
       if(!p.falling) continue;
 
-      if(p.support){
-        p.y = p.support.y - 1;
-        if(!p.support.falling){
-          p.floorIndex = p.support.floorIndex;
+      let loops = 0;
+      while(p.falling && loops < floors.length){
+        loops++;
+
+        if(p.support){
+          p.y = p.support.y - 1;
+          if(!p.support.falling){
+            p.floorIndex = p.support.floorIndex;
+            if(p.remaining>0) p.remaining--;
+            if(p.remaining<=0){
+              p.falling=false;
+              if(p.y >= ROWS) p.complete=true;
+            } else {
+              p.support=null;
+            }
+          }
+          continue;
+        }
+
+        p.y += 0.2;
+
+        const belowPiece = pieces.find(o=>o!==p && !o.complete && Math.abs(p.y - (o.y-1)) < 0.05 && p.x+2>o.x && p.x<o.x+2);
+        if(belowPiece){
+          p.y = belowPiece.y - 1;
+          p.floorIndex = belowPiece.floorIndex;
+          if(p.remaining>0) p.remaining--;
+          p.support = belowPiece;
+          triggerFall(belowPiece);
+          continue;
+        }
+
+        const nextFloor = floors[p.floorIndex+1];
+        if(nextFloor!==undefined && p.y >= nextFloor){
+          p.y = nextFloor;
+          p.floorIndex++;
           if(p.remaining>0) p.remaining--;
           if(p.remaining<=0){
             p.falling=false;
             if(p.y >= ROWS) p.complete=true;
-          } else {
-            p.support=null;
-            p.y += 0.1;
           }
+          continue;
         }
-        continue;
-      }
 
-      p.y += 0.1;
-
-      const belowPiece = pieces.find(o=>o!==p && !o.complete && Math.abs(p.y - (o.y-1)) < 0.05 && p.x+2>o.x && p.x<o.x+2);
-      if(belowPiece){
-        p.y = belowPiece.y - 1;
-        p.floorIndex = belowPiece.floorIndex;
-        if(p.remaining>0) p.remaining--;
-        p.support = belowPiece;
-        triggerFall(belowPiece);
-        continue;
-      }
-
-      const nextFloor = floors[p.floorIndex+1];
-      if(nextFloor!==undefined && p.y >= nextFloor){
-        p.y = nextFloor;
-        p.floorIndex++;
-        if(p.remaining>0) p.remaining--;
-        if(p.remaining<=0){
+        if(p.floorIndex>=floors.length-1 && p.y>=ROWS){
+          p.y=ROWS;
           p.falling=false;
-          if(p.y >= ROWS) p.complete=true;
+          p.complete=true;
         }
-        continue;
-      }
-
-      if(p.floorIndex>=floors.length-1 && p.y>=ROWS){
-        p.y=ROWS;
-        p.falling=false;
-        p.complete=true;
+        break;
       }
     }
     ridePieces(player);
@@ -276,8 +290,14 @@
       }
       const ex=Math.round(e.x), ey=Math.round(e.y);
       if(ex===px && ey===py){
-        gameOver=true;
-        document.getElementById('message').textContent='Game Over';
+        createExplosion(player.x, player.y);
+        lives--;
+        if(lives>0){
+          resetActors();
+        } else {
+          gameOver=true;
+          document.getElementById('message').textContent='Game Over';
+        }
       }
       ridePieces(e);
       applyGravity(e);
@@ -291,7 +311,7 @@
       }, 1500);
     }
 
-    document.getElementById('info').textContent=`Pepper: ${player.pepper}`;
+    document.getElementById('info').textContent=`Pepper: ${player.pepper} | Lives: ${lives}`;
   }
 
   function ladderAt(x,y){
@@ -309,6 +329,19 @@
       if(Math.abs(e.x-player.x)<=1 && Math.abs(e.y-player.y)<=1){
         e.stunned=100; // frames
       }
+    }
+  }
+
+  function createExplosion(x, y){
+    explosions.push({x, y, r:0, alpha:1});
+  }
+
+  function updateExplosions(){
+    for(let i=explosions.length-1;i>=0;i--){
+      const ex = explosions[i];
+      ex.r += 0.2;
+      ex.alpha -= 0.02;
+      if(ex.alpha<=0) explosions.splice(i,1);
     }
   }
 
@@ -355,6 +388,15 @@
         if(img.complete) ctx.drawImage(img, e.x, e.y-1, 1, 1);
         ctx.globalAlpha = 1;
       }
+    }
+    // explosions
+    ctx.strokeStyle = 'rgba(255,0,0,0.8)';
+    for(const ex of explosions){
+      ctx.globalAlpha = ex.alpha;
+      ctx.beginPath();
+      ctx.arc(ex.x + 0.5, ex.y - 0.5, ex.r, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
     }
     ctx.restore();
   }
