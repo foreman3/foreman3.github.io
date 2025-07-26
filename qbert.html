@@ -71,6 +71,8 @@
     const enemy = {row:ROWS-1,col:ROWS-1};
     const leftPlatform = {used:false};
     const rightPlatform = {used:false};
+    let enemyTimer;
+    let errorRate = 0.3;
 
     const infoEl = document.getElementById('info');
     const messageEl = document.getElementById('message');
@@ -158,14 +160,21 @@
       let bestC = enemy.col;
       let bestDist = Infinity;
       const target = tilePos(qbert.row,qbert.col);
-      const options = [
+      let options = [
         [enemy.row+1, enemy.col],
         [enemy.row+1, enemy.col+1],
         [enemy.row-1, enemy.col],
         [enemy.row-1, enemy.col-1]
       ];
+      options = options.filter(([nr,nc]) => nr>=0 && nr<ROWS && nc>=0 && nc<=nr);
+      if(options.length === 0) return;
+      if(Math.random() < errorRate){
+        const [nr,nc] = options[Math.floor(Math.random()*options.length)];
+        enemy.row = nr;
+        enemy.col = nc;
+        return;
+      }
       for(const [nr,nc] of options){
-        if(nr<0 || nr>=ROWS || nc<0 || nc>nr) continue;
         const pos = tilePos(nr,nc);
         const d = (pos.x-target.x)**2 + (pos.y-target.y)**2;
         if(d < bestDist){ bestDist=d; bestR=nr; bestC=nc; }
@@ -201,7 +210,6 @@
       }
       qbert.row = nr; qbert.col = nc;
       visitTile(nr,nc);
-      enemyMove();
       draw();
       if(enemy.row === qbert.row && enemy.col === qbert.col){
         loseLife();
@@ -222,6 +230,18 @@
       enemy.row = ROWS-1; enemy.col = ROWS-1;
       visitTile(0,0);
       messageEl.textContent = '';
+      const interval = Math.max(300, 1000 - (level-1)*100);
+      errorRate = Math.max(0, 0.30 - 0.05*(level-1));
+      if(enemyTimer) clearInterval(enemyTimer);
+      enemyTimer = setInterval(() => {
+        if(lives > 0){
+          enemyMove();
+          draw();
+          if(enemy.row === qbert.row && enemy.col === qbert.col){
+            loseLife();
+          }
+        }
+      }, interval);
       draw();
     }
 
@@ -235,15 +255,6 @@
     });
 
     startLevel();
-    setInterval(() => {
-      if(lives > 0){
-        enemyMove();
-        draw();
-        if(enemy.row === qbert.row && enemy.col === qbert.col){
-          loseLife();
-        }
-      }
-    }, 800);
   </script>
   <script>
     fetch('sidebar.html')
