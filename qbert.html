@@ -69,13 +69,23 @@
     let visited;
     const qbert = {row:0,col:0};
     const enemy = {row:ROWS-1,col:ROWS-1};
-    const leftPlatform = {used:false};
-    const rightPlatform = {used:false};
+    const leftPlatform = {side:'left',used:false,x:0,y:0,lifting:false,t:0};
+    const rightPlatform = {side:'right',used:false,x:0,y:0,lifting:false,t:0};
     let enemyTimer;
     let errorRate = 0.3;
     let falling = false;
     let fallPos = {x:0, y:0};
     let fallTimer;
+
+    const JUMP_TIME = 300;
+    const JUMP_HEIGHT = TILE * 0.6;
+    const PLATFORM_TIME = 600;
+    let qbertJump = null;
+    let enemyJump = null;
+    let qbertOnPlatform = false;
+    let qbertPlatform = null;
+    let started = false;
+    let lastTime = 0;
 
     const infoEl = document.getElementById('info');
     const messageEl = document.getElementById('message');
@@ -89,6 +99,15 @@
     function platformPos(side){
       const base = tilePos(ROWS-2, side==='left'?0:ROWS-2);
       return {x: base.x + (side==='left'? -TILE : TILE), y: base.y};
+    }
+
+    function resetPlatform(p){
+      const pos = platformPos(p.side);
+      p.x = pos.x;
+      p.y = pos.y;
+      p.lifting = false;
+      p.t = 0;
+      p.used = false;
     }
 
     function visitTile(r,c){
@@ -114,14 +133,11 @@
     }
 
     function drawPlatforms(){
-      if(!leftPlatform.used){
-        const p = platformPos('left');
-        ctx.drawImage(platformImg,p.x,p.y,TILE,TILE*0.6);
-      }
-      if(!rightPlatform.used){
-        const p = platformPos('right');
-        ctx.drawImage(platformImg,p.x,p.y,TILE,TILE*0.6);
-      }
+      [leftPlatform,rightPlatform].forEach(p=>{
+        if(!p.used || p.lifting || qbertPlatform===p){
+          ctx.drawImage(platformImg,p.x,p.y,TILE,TILE*0.6);
+        }
+      });
     }
 
     function draw(){
@@ -132,13 +148,37 @@
         }
       }
       drawPlatforms();
-      const q = tilePos(qbert.row,qbert.col);
+      let q;
+      if(qbertJump){
+        const t = Math.min(qbertJump.t / JUMP_TIME, 1);
+        const start = tilePos(qbertJump.start.row, qbertJump.start.col);
+        const end = qbertJump.platform ? {x:qbertJump.platform.x,y:qbertJump.platform.y} : tilePos(qbertJump.end.row,qbertJump.end.col);
+        q = {
+          x: start.x + (end.x - start.x) * t,
+          y: start.y + (end.y - start.y) * t - Math.sin(t*Math.PI)*JUMP_HEIGHT
+        };
+      } else if(qbertOnPlatform && qbertPlatform){
+        q = {x:qbertPlatform.x, y:qbertPlatform.y};
+      } else {
+        q = tilePos(qbert.row,qbert.col);
+      }
       if(!falling){
         ctx.drawImage(qbertImg,q.x+TILE/2-16,q.y+TILE/2-16,32,32);
       } else {
         ctx.drawImage(qbertImg,fallPos.x,fallPos.y,32,32);
       }
-      const e = tilePos(enemy.row,enemy.col);
+      let e;
+      if(enemyJump){
+        const t = Math.min(enemyJump.t / JUMP_TIME, 1);
+        const start = tilePos(enemyJump.start.row, enemyJump.start.col);
+        const end = tilePos(enemy.row, enemy.col);
+        e = {
+          x: start.x + (end.x - start.x) * t,
+          y: start.y + (end.y - start.y) * t - Math.sin(t*Math.PI)*JUMP_HEIGHT
+        };
+      } else {
+        e = tilePos(enemy.row,enemy.col);
+      }
       ctx.drawImage(enemyImg,e.x+TILE/2-16,e.y+TILE/2-16,32,32);
       infoEl.textContent = `Level: ${level} Lives: ${lives} - ${visited}/${ROWS*(ROWS+1)/2}`;
     }
@@ -163,7 +203,7 @@
     }
 
    function enemyMove(){
-      if(falling) return;
+      if(falling || enemyJump) return;
       let bestR = enemy.row;
       let bestC = enemy.col;
       let bestDist = Infinity;
@@ -178,6 +218,7 @@
       if(options.length === 0) return;
       if(Math.random() < errorRate){
         const [nr,nc] = options[Math.floor(Math.random()*options.length)];
+        enemyJump = {start:{row:enemy.row,col:enemy.col},end:{row:nr,col:nc},t:0};
         enemy.row = nr;
         enemy.col = nc;
         return;
@@ -187,13 +228,19 @@
         const d = (pos.x-target.x)**2 + (pos.y-target.y)**2;
         if(d < bestDist){ bestDist=d; bestR=nr; bestC=nc; }
       }
+      enemyJump = {start:{row:enemy.row,col:enemy.col},end:{row:bestR,col:bestC},t:0};
       enemy.row = bestR;
       enemy.col = bestC;
-    }
+   }
 
     function usePlatform(p){
-      p.used = true;
-      qbert.row = 0; qbert.col = 0;
+      qbertOnPlatform = true;
+      qbertPlatform = p;
+      p.lifting = true;
+      p.t = 0;
+      const dest = tilePos(0,0);
+      p.start = {x:p.x, y:p.y};
+      p.end = {x:dest.x, y:dest.y};
     }
 
     function fallOff(dr,dc){
@@ -214,19 +261,57 @@
       }, 30);
     }
 
+    function update(dt){
+      if(qbertJump){
+        qbertJump.t += dt;
+        if(qbertJump.t >= JUMP_TIME){
+          if(qbertJump.platform){
+            usePlatform(qbertJump.platform);
+          } else {
+            visitTile(qbert.row,qbert.col);
+            if(enemy.row === qbert.row && enemy.col === qbert.col) loseLife();
+            checkWin();
+          }
+          qbertJump = null;
+        }
+      }
+      if(enemyJump){
+        enemyJump.t += dt;
+        if(enemyJump.t >= JUMP_TIME){
+          enemyJump = null;
+          if(enemy.row === qbert.row && enemy.col === qbert.col && !qbertJump && !falling && !qbertOnPlatform) loseLife();
+        }
+      }
+      [leftPlatform,rightPlatform].forEach(p=>{
+        if(p.lifting){
+          p.t += dt;
+          const t = Math.min(p.t/PLATFORM_TIME,1);
+          p.x = p.start.x + (p.end.x - p.start.x)*t;
+          p.y = p.start.y + (p.end.y - p.start.y)*t;
+          if(t>=1){
+            p.lifting = false;
+            p.used = true;
+            qbertOnPlatform = false;
+            qbertPlatform = null;
+            qbert.row = 0; qbert.col = 0;
+            visitTile(0,0);
+            checkWin();
+          }
+        }
+      });
+    }
+
     function move(dr,dc){
-      if(lives <= 0 || falling) return;
+      if(lives <= 0 || falling || qbertJump || qbertOnPlatform) return;
       let nr = qbert.row + dr;
       let nc = qbert.col + dc;
       if(qbert.row === ROWS-2 && dr === 1){
         if(dc === 0 && qbert.col === 0 && !leftPlatform.used){
-          usePlatform(leftPlatform);
-          draw();
+          qbertJump = {start:{row:qbert.row,col:qbert.col}, platform:leftPlatform, t:0};
           return;
         }
         if(dc === 1 && qbert.col === ROWS-2 && !rightPlatform.used){
-          usePlatform(rightPlatform);
-          draw();
+          qbertJump = {start:{row:qbert.row,col:qbert.col}, platform:rightPlatform, t:0};
           return;
         }
       }
@@ -234,13 +319,8 @@
         fallOff(dr,dc);
         return;
       }
+      qbertJump = {start:{row:qbert.row,col:qbert.col}, end:{row:nr,col:nc}, t:0};
       qbert.row = nr; qbert.col = nc;
-      visitTile(nr,nc);
-      draw();
-      if(enemy.row === qbert.row && enemy.col === qbert.col){
-        loseLife();
-      }
-      checkWin();
     }
 
     function startLevel(){
@@ -250,10 +330,11 @@
         for(let c=0;c<=r;c++) tiles[r][c]=0;
       }
       visited = 0;
-      leftPlatform.used = false;
-      rightPlatform.used = false;
+      resetPlatform(leftPlatform);
+      resetPlatform(rightPlatform);
       qbert.row = 0; qbert.col = 0;
       enemy.row = ROWS-1; enemy.col = ROWS-1;
+      qbertJump = null; enemyJump = null; qbertOnPlatform=false; qbertPlatform=null;
       falling = false;
       if(fallTimer) clearInterval(fallTimer);
       visitTile(0,0);
@@ -264,13 +345,22 @@
       enemyTimer = setInterval(() => {
         if(lives > 0){
           enemyMove();
-          draw();
-          if(!falling && enemy.row === qbert.row && enemy.col === qbert.col){
-            loseLife();
-          }
         }
       }, interval);
+      if(!started){
+        started = true;
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+      }
       draw();
+    }
+
+    function gameLoop(timestamp){
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
+      update(dt);
+      draw();
+      if(started) requestAnimationFrame(gameLoop);
     }
 
     document.addEventListener('keydown', e => {
