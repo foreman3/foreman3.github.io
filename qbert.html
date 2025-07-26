@@ -142,12 +142,6 @@
 
     function draw(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      for(let r=ROWS-1;r>=0;r--){
-        for(let c=0;c<=r;c++){
-          drawTile(r,c);
-        }
-      }
-      drawPlatforms();
       let q;
       if(qbertJump){
         const t = Math.min(qbertJump.t / JUMP_TIME, 1);
@@ -162,10 +156,20 @@
       } else {
         q = tilePos(qbert.row,qbert.col);
       }
+
+      if(falling){
+        ctx.drawImage(qbertImg,fallPos.x,fallPos.y,32,32);
+      }
+
+      for(let r=ROWS-1;r>=0;r--){
+        for(let c=0;c<=r;c++){
+          drawTile(r,c);
+        }
+      }
+      drawPlatforms();
+
       if(!falling){
         ctx.drawImage(qbertImg,q.x+TILE/2-16,q.y+TILE/2-16,32,32);
-      } else {
-        ctx.drawImage(qbertImg,fallPos.x,fallPos.y,32,32);
       }
       let e;
       if(enemyJump){
