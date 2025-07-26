@@ -60,7 +60,7 @@
   <div id="game-container">
     <h1>Missile Command</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="info">Score: 0 | Lives: 3</div>
+    <div id="info">Score: 0 | Lives: 3 | EMPs: 3</div>
     <div id="message"></div>
   </div>
   <script>
@@ -74,6 +74,7 @@
     let spawnTimer = 0;
     let score = 0;
     let lives = 3;
+    let empCount = 3;
     let gameOver = false;
 
     function resetGame() {
@@ -83,6 +84,7 @@
       spawnTimer = 0;
       score = 0;
       lives = 3;
+      empCount = 3;
       gameOver = false;
       document.getElementById('message').textContent = '';
       updateInfo();
@@ -94,6 +96,21 @@
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       playerMissiles.push({ x: base.x, y: base.y, sx: base.x, sy: base.y, tx: x, ty: y });
+    });
+
+    function useEMP() {
+      if (gameOver) { resetGame(); return; }
+      if (empCount <= 0) return;
+      empCount--;
+      explosions.push({ x: base.x, y: base.y, r: 0, max: Math.hypot(canvas.width, canvas.height), hold: 0.1, speed: 20 });
+      updateInfo();
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        useEMP();
+      }
     });
 
     function spawnEnemy() {
@@ -143,8 +160,9 @@
     function updateExplosions(dt) {
       for (let i = explosions.length - 1; i >= 0; i--) {
         const ex = explosions[i];
+        const speed = ex.speed || 1.5;
         if (ex.r < ex.max) {
-          ex.r += 1.5;
+          ex.r += speed;
           if (ex.r > ex.max) ex.r = ex.max;
         } else {
           ex.hold -= dt;
@@ -220,7 +238,7 @@
     setInterval(loop, FRAME_TIME);
 
     function updateInfo() {
-      document.getElementById('info').textContent = `Score: ${score} | Lives: ${lives}`;
+      document.getElementById('info').textContent = `Score: ${score} | Lives: ${lives} | EMPs: ${empCount}`;
     }
 
     updateInfo();
