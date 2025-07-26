@@ -38,7 +38,7 @@
       width:100%;
       height:auto;
       max-height:80vh;
-      cursor: crosshair;
+      cursor: default;
     }
     #info { margin-top:10px; font-size:20px; }
     #message { margin-top:10px; font-size:24px; color:#ffeb3b; }
@@ -59,10 +59,15 @@
 
     const keys = {};
     const bullets = [];
+    const guidedMissiles = [];
     const obstacles = [];
     let mine = null;
     let airRaidAvailable = 1;
+    let guidedMissilesRemaining = 5;
     let airRaidExplosion = null;
+    let airRaidCountdown = 0;
+    let pointerX = 0;
+    let pointerY = 0;
 
     const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0};
     let enemies = [];
@@ -100,12 +105,18 @@
       }
     }
 
-   function startLevel() {
-     bullets.length = 0;
-     mine = null;
-      airRaidAvailable = 1;
-      airRaidExplosion = null;
-     createObstacles();
+  function startLevel() {
+    bullets.length = 0;
+    mine = null;
+     airRaidAvailable = 1;
+     airRaidExplosion = null;
+     guidedMissilesRemaining = 5;
+     guidedMissiles.length = 0;
+     airRaidCountdown = 0;
+     canvas.style.cursor = 'default';
+     pointerX = canvas.width / 2;
+     pointerY = canvas.height / 2;
+    createObstacles();
       enemies = [];
       for (let i = 0; i < level + 1; i++) {
         let x = 30 + Math.random() * (canvas.width - 60);
@@ -135,12 +146,12 @@
 
    function updateInfo() {
      const remaining = enemies.filter(e => e.alive).length;
-      document.getElementById('info').textContent = `Level: ${level} | Lives: ${lives} | Enemies Left: ${remaining} | Air Raids: ${airRaidAvailable}`;
+      document.getElementById('info').textContent = `Level: ${level} | Lives: ${lives} | Enemies Left: ${remaining} | Air Raids: ${airRaidAvailable} | Guided Missiles: ${guidedMissilesRemaining}`;
    }
 
     function update() {
       if (!running) return;
-      const bounce = true;
+      const bounce = false;
 
       if (player.alive) {
         let nx = player.x, ny = player.y, na = player.angle;
@@ -245,6 +256,40 @@
         if (removed && !bounce) continue;
       }
 
+      for (let i = guidedMissiles.length - 1; i >= 0; i--) {
+        const m = guidedMissiles[i];
+        if (m.explosion > 0) {
+          m.explosion--;
+          if (m.explosion === 0) {
+            guidedMissiles.splice(i, 1);
+            if (guidedMissiles.length === 0 && airRaidCountdown === 0) canvas.style.cursor = 'default';
+          }
+          continue;
+        }
+        const dx = pointerX - m.x;
+        const dy = pointerY - m.y;
+        const dist = Math.hypot(dx, dy);
+        const speed = 3;
+        if (dist < speed) {
+          m.explosion = 30;
+        } else {
+          m.x += dx / dist * speed;
+          m.y += dy / dist * speed;
+        }
+        if (m.explosion === 0) {
+          if (m.x < 0 || m.x > canvas.width || m.y < 0 || m.y > canvas.height) { m.explosion = 30; }
+          for (const o of obstacles) {
+            if (m.x > o.x && m.x < o.x + o.w && m.y > o.y && m.y < o.y + o.h) { m.explosion = 30; break; }
+          }
+          if (player.alive && Math.hypot(m.x - player.x, m.y - player.y) < 15) {
+            player.alive = false; player.explosion = 30; lives--; updateInfo(); m.explosion = 30;
+          }
+          for (const e of enemies) {
+            if (e.alive && Math.hypot(m.x - e.x, m.y - e.y) < 15) { e.alive = false; e.explosion = 30; m.explosion = 30; break; }
+          }
+        }
+      }
+
       if (mine) {
         if (mine.explosion > 0) {
           mine.explosion--;
@@ -268,6 +313,30 @@
       if (airRaidExplosion) {
         airRaidExplosion.timer--;
         if (airRaidExplosion.timer <= 0) airRaidExplosion = null;
+      }
+
+      if (airRaidCountdown > 0) {
+        airRaidCountdown--;
+        const sec = Math.ceil(airRaidCountdown / 60);
+        document.getElementById('message').textContent = sec > 0 ? sec.toString() : '';
+        if (airRaidCountdown === 0) {
+          const r = Math.sqrt(0.2 * canvas.width * canvas.height / Math.PI);
+          airRaidExplosion = { x: pointerX, y: pointerY, r, timer: 30 };
+          airRaidAvailable--;
+          canvas.style.cursor = guidedMissiles.length > 0 ? 'none' : 'default';
+          document.getElementById('message').textContent = '';
+          if (player.alive && Math.hypot(player.x - pointerX, player.y - pointerY) < r) {
+            player.alive = false; player.explosion = 30; lives--; updateInfo();
+          }
+          for (const eTank of enemies) {
+            if (eTank.alive && Math.hypot(eTank.x - pointerX, eTank.y - pointerY) < r) {
+              eTank.alive = false; eTank.explosion = 30;
+            }
+          }
+          for (let i = bullets.length - 1; i >= 0; i--) {
+            if (Math.hypot(bullets[i].x - pointerX, bullets[i].y - pointerY) < r) bullets.splice(i, 1);
+          }
+        }
       }
 
       updateInfo();
@@ -325,10 +394,25 @@
         ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.fillStyle = '#0ff';
+      for (const m of guidedMissiles) {
+        if (m.explosion > 0) { drawExplosion(m); }
+        else {
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
       if (airRaidExplosion) {
         ctx.fillStyle = 'rgba(255,165,0,0.5)';
         ctx.beginPath();
         ctx.arc(airRaidExplosion.x, airRaidExplosion.y, airRaidExplosion.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (guidedMissiles.length > 0) {
+        ctx.fillStyle = '#f00';
+        ctx.beginPath();
+        ctx.arc(pointerX, pointerY, 4, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -352,30 +436,27 @@
           explosion: 0
         };
       }
+      if ((e.key === 'a' || e.key === 'A') && running && airRaidAvailable > 0 && airRaidCountdown === 0) {
+        airRaidCountdown = 180; // 3 seconds
+        canvas.style.cursor = 'crosshair';
+        document.getElementById('message').textContent = '3';
+      }
+      if ((e.key === 'g' || e.key === 'G') && running && player.alive && guidedMissilesRemaining > 0) {
+        guidedMissiles.push({ x: player.x + Math.cos(player.angle) * 20, y: player.y + Math.sin(player.angle) * 20, explosion: 0 });
+        guidedMissilesRemaining--;
+        canvas.style.cursor = 'none';
+        updateInfo();
+      }
     });
-      canvas.addEventListener('click', e => {
-        if (!running || airRaidAvailable <= 0) return;
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
-      const r = Math.sqrt(0.2 * canvas.width * canvas.height / Math.PI);
-      airRaidExplosion = { x, y, r, timer: 30 };
-      airRaidAvailable--;
-      if (player.alive && Math.hypot(player.x - x, player.y - y) < r) {
-        player.alive = false; player.explosion = 30; lives--; updateInfo();
-      }
-      for (const eTank of enemies) {
-        if (eTank.alive && Math.hypot(eTank.x - x, eTank.y - y) < r) {
-          eTank.alive = false; eTank.explosion = 30;
-        }
-      }
-      for (let i = bullets.length - 1; i >= 0; i--) {
-        if (Math.hypot(bullets[i].x - x, bullets[i].y - y) < r) bullets.splice(i, 1);
-      }
-      updateInfo();
+
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      pointerX = (e.clientX - rect.left) * scaleX;
+      pointerY = (e.clientY - rect.top) * scaleY;
     });
+
     window.addEventListener('keyup', e => { keys[e.key] = false; });
 
     window.addEventListener('load', () => {
