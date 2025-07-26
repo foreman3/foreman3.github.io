@@ -179,9 +179,7 @@
       const roadWidth = canvas.width * 0.6;
       const carWidth = 40;
       const carHeight = 60;
-      const segIndex = Math.floor(trackPos/segmentLength) % segments.length;
-      const curve = segments[segIndex] * canvas.width * 0.25;
-      const x = canvas.width/2 + curve + carOffset * roadWidth/2 - carWidth/2;
+      const x = canvas.width/2 + carOffset * roadWidth/2 - carWidth/2;
       const y = canvas.height - carHeight - 20;
       ctx.fillStyle = '#ff0000';
       ctx.fillRect(x, y, carWidth, carHeight);
@@ -198,7 +196,10 @@
         const lineWidth = roadWidth * (1 - depth*0.8);
         const carWidth = 40 * (0.5 + depth/2);
         const carHeight = 60 * (0.5 + depth/2);
-        const x = canvas.width/2 + curve + lanes[e.lane]*lineWidth/2 - carWidth/2;
+        const maxOffset = lineWidth/2 - carWidth/2;
+        const laneOffset = lanes[e.lane] * lineWidth/2;
+        const clamped = Math.max(-maxOffset, Math.min(maxOffset, laneOffset));
+        const x = canvas.width/2 + curve + clamped - carWidth/2;
         const y = horizon + depth*(canvas.height-horizon) - carHeight;
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(x, y, carWidth, carHeight);
