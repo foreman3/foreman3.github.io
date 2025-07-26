@@ -84,6 +84,8 @@
     let enemyJump = null;
     let qbertOnPlatform = false;
     let qbertPlatform = null;
+    const EXPLOSION_TIME = 600;
+    let explosion = null;
     let started = false;
     let lastTime = 0;
 
@@ -162,9 +164,9 @@
       } else {
         q = tilePos(qbert.row,qbert.col);
       }
-      if(!falling){
+      if(!falling && !explosion){
         ctx.drawImage(qbertImg,q.x+TILE/2-16,q.y+TILE/2-16,32,32);
-      } else {
+      } else if(falling){
         ctx.drawImage(qbertImg,fallPos.x,fallPos.y,32,32);
       }
       let e;
@@ -180,6 +182,12 @@
         e = tilePos(enemy.row,enemy.col);
       }
       ctx.drawImage(enemyImg,e.x+TILE/2-16,e.y+TILE/2-16,32,32);
+      if(explosion){
+        ctx.fillStyle = `rgba(255,165,0,${1 - explosion.t/EXPLOSION_TIME})`;
+        ctx.beginPath();
+        ctx.arc(explosion.x, explosion.y, explosion.r, 0, Math.PI*2);
+        ctx.fill();
+      }
       infoEl.textContent = `Level: ${level} Lives: ${lives} - ${visited}/${ROWS*(ROWS+1)/2}`;
     }
 
@@ -189,6 +197,12 @@
         level++;
         setTimeout(startLevel, 1000);
       }
+    }
+
+    function startExplosion(){
+      if(explosion) return;
+      const pos = tilePos(qbert.row, qbert.col);
+      explosion = {x: pos.x + TILE/2, y: pos.y + TILE/2, t: 0, r: 0};
     }
 
     function loseLife(){
@@ -262,6 +276,15 @@
     }
 
     function update(dt){
+      if(explosion){
+        explosion.t += dt;
+        explosion.r = 30 * (explosion.t / EXPLOSION_TIME);
+        if(explosion.t >= EXPLOSION_TIME){
+          explosion = null;
+          loseLife();
+        }
+        return;
+      }
       if(qbertJump){
         qbertJump.t += dt;
         if(qbertJump.t >= JUMP_TIME){
@@ -269,7 +292,7 @@
             usePlatform(qbertJump.platform);
           } else {
             visitTile(qbert.row,qbert.col);
-            if(enemy.row === qbert.row && enemy.col === qbert.col) loseLife();
+            if(enemy.row === qbert.row && enemy.col === qbert.col) startExplosion();
             checkWin();
           }
           qbertJump = null;
@@ -279,7 +302,7 @@
         enemyJump.t += dt;
         if(enemyJump.t >= JUMP_TIME){
           enemyJump = null;
-          if(enemy.row === qbert.row && enemy.col === qbert.col && !qbertJump && !falling && !qbertOnPlatform) loseLife();
+          if(enemy.row === qbert.row && enemy.col === qbert.col && !qbertJump && !falling && !qbertOnPlatform) startExplosion();
         }
       }
       [leftPlatform,rightPlatform].forEach(p=>{
@@ -302,20 +325,20 @@
     }
 
     function move(dr,dc){
-      if(lives <= 0 || falling || qbertJump || qbertOnPlatform) return;
+      if(lives <= 0 || falling || qbertJump || qbertOnPlatform || explosion) return;
       let nr = qbert.row + dr;
       let nc = qbert.col + dc;
-      if(qbert.row === ROWS-2 && dr === 1){
-        if(dc === 0 && qbert.col === 0 && !leftPlatform.used){
-          qbertJump = {start:{row:qbert.row,col:qbert.col}, platform:leftPlatform, t:0};
-          return;
-        }
-        if(dc === 1 && qbert.col === ROWS-2 && !rightPlatform.used){
-          qbertJump = {start:{row:qbert.row,col:qbert.col}, platform:rightPlatform, t:0};
-          return;
-        }
-      }
       if(nr<0 || nr>=ROWS || nc<0 || nc>nr){
+        if(qbert.row === ROWS-2 && dr === -1){
+          if(dc === -1 && qbert.col === 0 && !leftPlatform.used){
+            qbertJump = {start:{row:qbert.row,col:qbert.col}, platform:leftPlatform, t:0};
+            return;
+          }
+          if(dc === 0 && qbert.col === ROWS-2 && !rightPlatform.used){
+            qbertJump = {start:{row:qbert.row,col:qbert.col}, platform:rightPlatform, t:0};
+            return;
+          }
+        }
         fallOff(dr,dc);
         return;
       }
@@ -336,6 +359,7 @@
       enemy.row = ROWS-1; enemy.col = ROWS-1;
       qbertJump = null; enemyJump = null; qbertOnPlatform=false; qbertPlatform=null;
       falling = false;
+      explosion = null;
       if(fallTimer) clearInterval(fallTimer);
       visitTile(0,0);
       messageEl.textContent = '';
