@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Qbert Clone</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg,#222 0%,#444 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul { list-style:none; padding:0; }
+    #sidebar li { margin:15px 0; }
+    #sidebar a { color:#fff; text-decoration:none; }
+    #sidebar a:hover{ color:#ffea00; }
+    #game-container {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:20px;
+    }
+    canvas {
+      background:#000;
+      border:2px solid #fff;
+      border-radius:8px;
+    }
+    #info { margin-top:10px; font-size:20px; }
+    #message { margin-top:10px; font-size:24px; color:#ffeb3b; }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Qbert Clone</h1>
+    <canvas id="gameCanvas" width="500" height="500"></canvas>
+    <div id="info"></div>
+    <div id="message"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const ROWS = 5;
+    const TILE = 40;
+    const START_X = canvas.width/2;
+    const START_Y = 60;
+
+    const tiles = [];
+    for(let r=0;r<ROWS;r++){
+      tiles[r]=[];
+      for(let c=0;c<=r;c++) tiles[r][c]=false;
+    }
+    let visited = 0;
+    tiles[0][0]=true;
+    visited++;
+
+    const qbert = {row:0,col:0};
+    const infoEl = document.getElementById('info');
+    const messageEl = document.getElementById('message');
+
+    function tilePos(r,c){
+      const x = START_X - (r*TILE)/2 + c*TILE;
+      const y = START_Y + r*(TILE*0.75);
+      return {x,y};
+    }
+
+    function drawTile(r,c){
+      const {x,y} = tilePos(r,c);
+      ctx.beginPath();
+      ctx.moveTo(x+TILE/2,y);
+      ctx.lineTo(x+TILE,y+TILE/2);
+      ctx.lineTo(x+TILE/2,y+TILE);
+      ctx.lineTo(x,y+TILE/2);
+      ctx.closePath();
+      ctx.fillStyle = tiles[r][c] ? '#ff9800' : '#2196f3';
+      ctx.fill();
+      ctx.strokeStyle = '#555';
+      ctx.stroke();
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      for(let r=ROWS-1;r>=0;r--){
+        for(let c=0;c<=r;c++){
+          drawTile(r,c);
+        }
+      }
+      const {x,y} = tilePos(qbert.row,qbert.col);
+      ctx.beginPath();
+      ctx.arc(x+TILE/2,y+TILE/2,12,0,Math.PI*2);
+      ctx.fillStyle = '#ffeb3b';
+      ctx.fill();
+      infoEl.textContent = `Tiles changed: ${visited}/${ROWS*(ROWS+1)/2}`;
+    }
+
+    function checkWin(){
+      if(visited === ROWS*(ROWS+1)/2){
+        messageEl.textContent = 'You win!';
+      }
+    }
+
+    function move(dr,dc){
+      const nr = qbert.row+dr;
+      const nc = qbert.col+dc;
+      if(nr<0 || nr>=ROWS || nc<0 || nc>nr) return;
+      qbert.row=nr; qbert.col=nc;
+      if(!tiles[nr][nc]){ tiles[nr][nc]=true; visited++; }
+      draw();
+      checkWin();
+    }
+
+    document.addEventListener('keydown',e=>{
+      switch(e.key){
+        case 'ArrowUp': move(-1,-1); break; // up-left
+        case 'ArrowRight': move(-1,0); break; // up-right
+        case 'ArrowLeft': move(1,0); break; // down-left
+        case 'ArrowDown': move(1,1); break; // down-right
+      }
+    });
+
+    draw();
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if(placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
