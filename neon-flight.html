@@ -58,7 +58,7 @@
     <h1>Neon Flight</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div id="info">Distance: 0 | Score: 0</div>
-    <div id="message">Use arrow keys to dodge buildings</div>
+    <div id="message">Use arrow keys to dodge buildings and bridges</div>
   </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -106,12 +106,21 @@
 
     function spawnBuilding(){
       const cityWidth = 600;
-      const x = (Math.random()-0.5) * cityWidth;
-      const width = 40 + Math.random()*60;
-      const depth = 40 + Math.random()*60;
-      const height = 80 + Math.random()*150;
-      const z = 400 + Math.random()*1200;
-      buildings.push({x,width,depth,height,z});
+      if(Math.random() < 0.03){
+        const width = cityWidth;
+        const depth = 60 + Math.random()*40;
+        const bottom = 90 + Math.random()*30;
+        const height = bottom + 20;
+        const z = 400 + Math.random()*1200;
+        buildings.push({type:'bridge', x:0, width, depth, bottom, height, z});
+      } else {
+        const x = (Math.random()-0.5) * cityWidth;
+        const width = 40 + Math.random()*60;
+        const depth = 40 + Math.random()*60;
+        const height = 80 + Math.random()*150;
+        const z = 400 + Math.random()*1200;
+        buildings.push({type:'building', x, width, depth, bottom:0, height, z});
+      }
     }
 
     function spawnRing(){
@@ -123,7 +132,11 @@
         x = (Math.random()-0.5) * 600;
         let overlap = false;
         for(const b of buildings){
-          if(Math.abs(b.z - z) < b.depth && Math.abs(x - b.x) < b.width/2 + radius*2){
+          const withinZ = Math.abs(b.z - z) < b.depth;
+          const withinX = Math.abs(x - b.x) < b.width/2 + radius*2;
+          const bottom = b.bottom || 0;
+          const withinY = y > bottom - radius*2 && y < b.height + radius*2;
+          if(withinZ && withinX && withinY){
             overlap = true;
             break;
           }
@@ -148,7 +161,11 @@
         b.z -= plane.speed;
         const front = b.z - b.depth/2;
         const back = b.z + b.depth/2;
-        if(front <= plane.z && back >= plane.z && Math.abs(b.x - plane.x) < b.width/2 && plane.y < b.height){
+        const withinZ = front <= plane.z && back >= plane.z;
+        const withinX = Math.abs(b.x - plane.x) < b.width/2;
+        const bottom = b.bottom || 0;
+        const withinY = plane.y < b.height && plane.y > bottom;
+        if(withinZ && withinX && withinY){
           running = false;
           document.getElementById('message').textContent = 'Crash! Press Space';
         }
@@ -193,11 +210,12 @@
     function drawBuilding(b){
       const w = b.width/2;
       const d = b.depth/2;
-      const h = b.height;
-      const frontLeft = project(b.x - w, 0, b.z - d);
-      const frontRight = project(b.x + w, 0, b.z - d);
-      const backLeft = project(b.x - w, 0, b.z + d);
-      const backRight = project(b.x + w, 0, b.z + d);
+      const bottom = b.bottom || 0;
+      const top = b.height;
+      const frontLeft = project(b.x - w, bottom, b.z - d);
+      const frontRight = project(b.x + w, bottom, b.z - d);
+      const backLeft = project(b.x - w, bottom, b.z + d);
+      const backRight = project(b.x + w, bottom, b.z + d);
 
       // Skip drawing if the building has flipped orientation
       if(frontLeft.x > frontRight.x || backLeft.x > backRight.x) return;
@@ -207,10 +225,10 @@
         frontRight,
         backLeft,
         backRight,
-        project(b.x - w, h, b.z - d),
-        project(b.x + w, h, b.z - d),
-        project(b.x - w, h, b.z + d),
-        project(b.x + w, h, b.z + d)
+        project(b.x - w, top, b.z - d),
+        project(b.x + w, top, b.z - d),
+        project(b.x - w, top, b.z + d),
+        project(b.x + w, top, b.z + d)
       ];
       const edges = [
         [0,1],[0,2],[1,3],[2,3],
