@@ -109,10 +109,10 @@
       if(Math.random() < 0.03){
         const width = cityWidth;
         const depth = 60 + Math.random()*40;
-        const bottom = 90 + Math.random()*30;
-        const height = bottom + 20;
+        const arch = 70 + Math.random()*20; // highest point of the arch
+        const height = arch + 200; // tall enough so plane cannot fly over
         const z = 400 + Math.random()*1200;
-        buildings.push({type:'bridge', x:0, width, depth, bottom, height, z});
+        buildings.push({type:'bridge', x:0, width, depth, bottom:0, arch, height, z});
       } else {
         const x = (Math.random()-0.5) * cityWidth;
         const width = 40 + Math.random()*60;
@@ -134,7 +134,12 @@
         for(const b of buildings){
           const withinZ = Math.abs(b.z - z) < b.depth;
           const withinX = Math.abs(x - b.x) < b.width/2 + radius*2;
-          const bottom = b.bottom || 0;
+          let bottom = b.bottom || 0;
+          if(b.type === 'bridge'){
+            const w = b.width/2;
+            const rel = Math.abs(x - b.x);
+            bottom = b.arch * (1 - (rel*rel)/(w*w));
+          }
           const withinY = y > bottom - radius*2 && y < b.height + radius*2;
           if(withinZ && withinX && withinY){
             overlap = true;
@@ -163,7 +168,12 @@
         const back = b.z + b.depth/2;
         const withinZ = front <= plane.z && back >= plane.z;
         const withinX = Math.abs(b.x - plane.x) < b.width/2;
-        const bottom = b.bottom || 0;
+        let bottom = b.bottom || 0;
+        if(b.type === 'bridge'){
+          const w = b.width/2;
+          const rel = Math.abs(plane.x - b.x);
+          bottom = b.arch * (1 - (rel*rel)/(w*w));
+        }
         const withinY = plane.y < b.height && plane.y > bottom;
         if(withinZ && withinX && withinY){
           running = false;
@@ -208,6 +218,7 @@
     }
 
     function drawBuilding(b){
+      if(b.type === 'bridge') return drawBridge(b);
       const w = b.width/2;
       const d = b.depth/2;
       const bottom = b.bottom || 0;
@@ -239,6 +250,57 @@
       for(const [a,b] of edges){
         ctx.moveTo(pts[a].x, pts[a].y);
         ctx.lineTo(pts[b].x, pts[b].y);
+      }
+      ctx.stroke();
+    }
+
+    function drawBridge(b){
+      const w = b.width/2;
+      const d = b.depth/2;
+      const top = b.height;
+      const segs = 16;
+
+      const leftBaseFront = project(b.x - w, 0, b.z - d);
+      const leftBaseBack = project(b.x - w, 0, b.z + d);
+      const leftTopFront = project(b.x - w, top, b.z - d);
+      const leftTopBack = project(b.x - w, top, b.z + d);
+
+      const rightBaseFront = project(b.x + w, 0, b.z - d);
+      const rightBaseBack = project(b.x + w, 0, b.z + d);
+      const rightTopFront = project(b.x + w, top, b.z - d);
+      const rightTopBack = project(b.x + w, top, b.z + d);
+
+      ctx.beginPath();
+      // vertical sides
+      ctx.moveTo(leftBaseFront.x, leftBaseFront.y);
+      ctx.lineTo(leftTopFront.x, leftTopFront.y);
+      ctx.moveTo(leftBaseBack.x, leftBaseBack.y);
+      ctx.lineTo(leftTopBack.x, leftTopBack.y);
+
+      ctx.moveTo(rightBaseFront.x, rightBaseFront.y);
+      ctx.lineTo(rightTopFront.x, rightTopFront.y);
+      ctx.moveTo(rightBaseBack.x, rightBaseBack.y);
+      ctx.lineTo(rightTopBack.x, rightTopBack.y);
+
+      // top edges
+      ctx.moveTo(leftTopFront.x, leftTopFront.y);
+      ctx.lineTo(rightTopFront.x, rightTopFront.y);
+      ctx.moveTo(leftTopBack.x, leftTopBack.y);
+      ctx.lineTo(rightTopBack.x, rightTopBack.y);
+
+      // arch front
+      for(let i=0;i<=segs;i++){
+        const x = -w + (2*w*i)/segs;
+        const y = b.arch * (1 - (x*x)/(w*w));
+        const p = project(b.x + x, y, b.z - d);
+        if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+      }
+      // arch back
+      for(let i=0;i<=segs;i++){
+        const x = -w + (2*w*i)/segs;
+        const y = b.arch * (1 - (x*x)/(w*w));
+        const p = project(b.x + x, y, b.z + d);
+        if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
       }
       ctx.stroke();
     }
