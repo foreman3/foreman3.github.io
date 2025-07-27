@@ -225,27 +225,42 @@
       ctx.stroke();
     }
 
-    function drawRing(r){
-      const center = project(r.x, r.y, r.z);
-      const scale = FOV / (FOV + r.z);
-      const rad = r.radius * scale;
-      ctx.beginPath();
-      ctx.arc(center.x, center.y, rad, 0, Math.PI*2);
-      ctx.stroke();
-    }
+  function drawRing(r){
+    const center = project(r.x, r.y, r.z);
+    const scale = FOV / (FOV + r.z);
+    const rad = r.radius * scale;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, rad, 0, Math.PI*2);
+    ctx.stroke();
+  }
 
-    function draw(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.strokeStyle = '#0f0';
-      ctx.lineWidth = 2;
-      for(const b of buildings){
-        if(b.z + b.depth/2 >= plane.z) drawBuilding(b);
-      }
-      ctx.strokeStyle = '#ff0';
-      for(const r of rings){
-        if(r.z + r.radius >= plane.z && !r.collected) drawRing(r);
-      }
+  function drawCrosshair(){
+    const len = 10;
+    const x = canvas.width/2;
+    const y = canvas.height*0.7;
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x - len, y);
+    ctx.lineTo(x + len, y);
+    ctx.moveTo(x, y - len);
+    ctx.lineTo(x, y + len);
+    ctx.stroke();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle = '#0f0';
+    ctx.lineWidth = 2;
+    for(const b of buildings){
+      if(b.z + b.depth/2 >= plane.z) drawBuilding(b);
     }
+    ctx.strokeStyle = '#ff0';
+    for(const r of rings){
+      if(r.z + r.radius >= plane.z && !r.collected) drawRing(r);
+    }
+    drawCrosshair();
+  }
 
     function loop(){
       update();
