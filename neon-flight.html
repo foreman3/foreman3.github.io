@@ -57,7 +57,7 @@
   <div id="game-container">
     <h1>Neon Flight</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="info">Distance: 0</div>
+    <div id="info">Distance: 0 | Score: 0</div>
     <div id="message">Use arrow keys to dodge buildings</div>
   </div>
   <script>
@@ -88,16 +88,20 @@
 
     const FOV = 300;
     const PLANE_Z = -FOV * 0.8; // place the plane further down the z-axis
-    let plane, buildings, distance, running;
+    let plane, buildings, rings, distance, score, nextRing, running;
     let left=false, right=false, up=false, down=false;
 
     function resetGame(){
       plane = { x:0, y:50, z:PLANE_Z, speed:8 };
       buildings = [];
+      rings = [];
       distance = 0;
+      score = 0;
+      nextRing = 1000;
       running = true;
       document.getElementById('message').textContent = '';
-        for(let i=0;i<10;i++) spawnBuilding();
+      for(let i=0;i<10;i++) spawnBuilding();
+      document.getElementById('info').textContent = 'Distance: 0 | Score: 0';
     }
 
     function spawnBuilding(){
@@ -108,6 +112,25 @@
       const height = 80 + Math.random()*150;
       const z = 400 + Math.random()*1200;
       buildings.push({x,width,depth,height,z});
+    }
+
+    function spawnRing(){
+      const radius = 20;
+      const z = 1600;
+      const y = 60 + Math.random()*80;
+      let x;
+      for(let attempts=0; attempts<10; attempts++){
+        x = (Math.random()-0.5) * 600;
+        let overlap = false;
+        for(const b of buildings){
+          if(Math.abs(b.z - z) < b.depth && Math.abs(x - b.x) < b.width/2 + radius*2){
+            overlap = true;
+            break;
+          }
+        }
+        if(!overlap) break;
+      }
+      rings.push({x,y,z,radius,collected:false});
     }
 
     function update(){
@@ -133,9 +156,30 @@
           buildings.splice(i, 1);
         }
       }
-        while(buildings.length < 10) spawnBuilding();
+      while(buildings.length < 10) spawnBuilding();
+
+      for(let i = rings.length - 1; i >= 0; i--){
+        const r = rings[i];
+        r.z -= plane.speed;
+        if(!r.collected &&
+           Math.abs(r.z - plane.z) < r.radius &&
+           Math.abs(r.x - plane.x) < r.radius &&
+           Math.abs(r.y - plane.y) < r.radius){
+          r.collected = true;
+          score += 100;
+        }
+        if(r.z + r.radius <= plane.z){
+          rings.splice(i,1);
+        }
+      }
+
+      if(distance >= nextRing){
+        spawnRing();
+        nextRing += 1000;
+      }
+
       distance += plane.speed;
-      document.getElementById('info').textContent = `Distance: ${Math.floor(distance)}`;
+      document.getElementById('info').textContent = `Distance: ${Math.floor(distance)} | Score: ${score}`;
     }
 
     function project(x,y,z){
@@ -181,12 +225,25 @@
       ctx.stroke();
     }
 
+    function drawRing(r){
+      const center = project(r.x, r.y, r.z);
+      const scale = FOV / (FOV + r.z);
+      const rad = r.radius * scale;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, rad, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
     function draw(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
       ctx.strokeStyle = '#0f0';
       ctx.lineWidth = 2;
       for(const b of buildings){
         if(b.z + b.depth/2 >= plane.z) drawBuilding(b);
+      }
+      ctx.strokeStyle = '#ff0';
+      for(const r of rings){
+        if(r.z + r.radius >= plane.z && !r.collected) drawRing(r);
       }
     }
 
