@@ -90,13 +90,44 @@
       updateInfo();
     }
 
-    canvas.addEventListener('click', e => {
+    let firing = false;
+    let fireInterval = null;
+    let lastTarget = { x: 0, y: 0 };
+
+    function fireMissile(x, y) {
+      playerMissiles.push({ x: base.x, y: base.y, sx: base.x, sy: base.y, tx: x, ty: y });
+    }
+
+    function startFiring(e) {
       if (gameOver) { resetGame(); return; }
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      playerMissiles.push({ x: base.x, y: base.y, sx: base.x, sy: base.y, tx: x, ty: y });
+      lastTarget.x = e.clientX - rect.left;
+      lastTarget.y = e.clientY - rect.top;
+      fireMissile(lastTarget.x, lastTarget.y);
+      firing = true;
+      if (!fireInterval) {
+        fireInterval = setInterval(() => {
+          if (firing && !gameOver) fireMissile(lastTarget.x, lastTarget.y);
+        }, 50);
+      }
+    }
+
+    function stopFiring() {
+      firing = false;
+      if (fireInterval) {
+        clearInterval(fireInterval);
+        fireInterval = null;
+      }
+    }
+
+    canvas.addEventListener('mousedown', startFiring);
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      lastTarget.x = e.clientX - rect.left;
+      lastTarget.y = e.clientY - rect.top;
     });
+    document.addEventListener('mouseup', stopFiring);
+    canvas.addEventListener('mouseleave', stopFiring);
 
     function useEMP() {
       if (gameOver) { resetGame(); return; }
