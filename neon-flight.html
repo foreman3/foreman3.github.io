@@ -107,7 +107,7 @@
     function spawnBuilding(){
       const cityWidth = 600;
       if(Math.random() < 0.03){
-        const width = cityWidth;
+        const width = cityWidth + 80; // extend slightly beyond plane range
         const depth = 60 + Math.random()*40;
         const arch = 70 + Math.random()*20; // highest point of the arch
         const height = arch + 200; // tall enough so plane cannot fly over
@@ -128,15 +128,17 @@
       const z = 1600;
       const y = 60 + Math.random()*80;
       let x;
-      for(let attempts=0; attempts<10; attempts++){
+      let attempts;
+      for(attempts=0; attempts<10; attempts++){
         x = (Math.random()-0.5) * 600;
         let overlap = false;
         for(const b of buildings){
           const withinZ = Math.abs(b.z - z) < b.depth;
-          const withinX = Math.abs(x - b.x) < b.width/2 + radius*2;
+          const width = b.type === 'bridge' ? 600 : b.width;
+          const withinX = Math.abs(x - b.x) < width/2 + radius*2;
           let bottom = b.bottom || 0;
           if(b.type === 'bridge'){
-            const w = b.width/2;
+            const w = 300; // playable area half-width
             const rel = Math.abs(x - b.x);
             bottom = b.arch * (1 - (rel*rel)/(w*w));
           }
@@ -148,7 +150,11 @@
         }
         if(!overlap) break;
       }
-      rings.push({x,y,z,radius,collected:false});
+      if(attempts < 10){
+        rings.push({x,y,z,radius,collected:false});
+        return true;
+      }
+      return false;
     }
 
     function update(){
@@ -201,8 +207,7 @@
       }
 
       if(distance >= nextRing){
-        spawnRing();
-        nextRing += 1000;
+        if(spawnRing()) nextRing += 1000;
       }
 
       distance += plane.speed;
