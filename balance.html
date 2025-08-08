@@ -18,6 +18,22 @@
       padding: 20px;
       box-shadow: 2px 0 8px rgba(0,0,0,0.2);
     }
+    #sidebar ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    #sidebar li {
+      margin: 15px 0;
+    }
+    #sidebar a {
+      color: #fff;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    #sidebar a:hover {
+      color: #ffea00;
+    }
     #game-container {
       flex: 1;
       display: flex;
@@ -184,15 +200,17 @@
     });
 
     const blocks = [];
+    const blockColors = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#e67e22'];
     let score = 0;
     function spawnBlock() {
       const size = 40;
       const x = Math.random() * (800 - size) + size/2;
+      const color = blockColors[Math.floor(Math.random() * blockColors.length)];
       const block = Bodies.rectangle(x, -size, size, size, {
         label: 'block',
         friction: 0.6,
         restitution: 0.1,
-        render: { fillStyle: '#8e44ad' }
+        render: { fillStyle: color }
       });
       blocks.push(block);
       World.add(world, block);
