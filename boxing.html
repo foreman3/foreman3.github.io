@@ -53,7 +53,7 @@
   <div id="game-container">
     <h1>Boxing</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="info">Use F/J to punch, Space to block, A/D to dodge</div>
+    <div id="info">Use F/J to punch, Space to block, A/D to dodge, R to restart</div>
   </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -67,9 +67,9 @@
     };
 
     const opponents = [
-      {name:'Rookie',color:'#0f0',health:3,cooldown:2000,punchSpeed:500,twitch:300,avoid:0.1},
-      {name:'Striker',color:'#fa0',health:5,cooldown:1500,punchSpeed:400,twitch:250,avoid:0.3},
-      {name:'Champion',color:'#f00',health:7,cooldown:1200,punchSpeed:350,twitch:200,avoid:0.5}
+      {name:'Rookie',color:'#0f0',maxHealth:80,cooldown:2000,punchSpeed:500,twitch:300,block:0.2,dodge:0.1},
+      {name:'Striker',color:'#fa0',maxHealth:100,cooldown:1500,punchSpeed:400,twitch:250,block:0.3,dodge:0.2},
+      {name:'Champion',color:'#f00',maxHealth:120,cooldown:1200,punchSpeed:350,twitch:200,block:0.4,dodge:0.3}
     ];
 
     let opponentIndex=0;
@@ -79,7 +79,14 @@
     let oppArm='left';
     let oppPunch=0;
     let oppHit=false;
-    let playerHealth=5;
+    let oppX=0;
+    let oppXTarget=0;
+    let oppDodgeTime=0;
+
+    let playerHealth=100;
+    let playerStamina=100;
+    let combo=0;
+    let comboTimer=0;
     let playerX=0;
     let leftPunch=0;
     let rightPunch=0;
@@ -88,12 +95,16 @@
     let playerHitRight=false;
     let moveLeft=false,moveRight=false;
     let message='';
+    let gameOver=false;
+    let roundTime=60000;
 
     function newOpponent(){
       const base=opponents[opponentIndex];
-      opponent={...base};
+      opponent={...base,health:base.maxHealth};
       oppState='idle';
       oppTimer=base.cooldown;
+      oppHit=false;
+      oppX=0;
       playerHitLeft=false;
       playerHitRight=false;
       message='Opponent '+(opponentIndex+1)+'/'+opponents.length+': '+opponent.name;
@@ -101,9 +112,11 @@
     newOpponent();
 
     document.addEventListener('keydown',e=>{
-      if(e.code==='KeyF') leftPunch=1;
-      if(e.code==='KeyJ') rightPunch=1;
-      if(e.code==='Space') blocking=400;
+      if(gameOver && e.code==='KeyR') restart();
+      if(gameOver) return;
+      if(e.code==='KeyF' && leftPunch<=0 && playerStamina>=10){ leftPunch=1; playerStamina-=10; }
+      if(e.code==='KeyJ' && rightPunch<=0 && playerStamina>=10){ rightPunch=1; playerStamina-=10; }
+      if(e.code==='Space' && blocking<=0 && playerStamina>=5){ blocking=400; playerStamina-=5; }
       if(e.code==='ArrowLeft'||e.code==='KeyA') moveLeft=true;
       if(e.code==='ArrowRight'||e.code==='KeyD') moveRight=true;
     });
@@ -112,24 +125,51 @@
       if(e.code==='ArrowRight'||e.code==='KeyD') moveRight=false;
     });
 
+    function restart(){
+      playerHealth=100;
+      playerStamina=100;
+      combo=0;
+      comboTimer=0;
+      playerX=0;
+      leftPunch=0;
+      rightPunch=0;
+      blocking=0;
+      opponentIndex=0;
+      roundTime=60000;
+      gameOver=false;
+      newOpponent();
+    }
+
     let last=performance.now();
     function gameLoop(now){
       const dt=now-last; last=now;
       ctx.clearRect(0,0,canvas.width,canvas.height);
 
-      updateOpponent(dt);
-      updatePlayer(dt);
-      checkOpponentHits();
+      if(!gameOver){
+        roundTime-=dt;
+        updateOpponent(dt);
+        updatePlayer(dt);
+        checkOpponentHits();
+
+        if(roundTime<=0){
+          gameOver=true;
+          message=playerHealth>opponent.health?'Time! You win!':'Time! You lose!';
+        }
+        if(playerHealth<=0){ playerHealth=0; gameOver=true; message='You lose!'; }
+        if(opponent.health<=0){
+          opponentIndex++;
+          if(opponentIndex<opponents.length){
+            newOpponent();
+          }else{
+            gameOver=true; message='You win!';
+          }
+        }
+      }
 
       drawRing();
       drawOpponent();
       drawPlayer();
-
-      ctx.fillStyle='#fff';
-      ctx.font='20px sans-serif';
-      ctx.fillText('Opponent: '+opponent.name+' HP:'+opponent.health,10,20);
-      ctx.fillText('Player HP:'+playerHealth,10,40);
-      if(message) ctx.fillText(message,10,60);
+      drawHUD();
 
       requestAnimationFrame(gameLoop);
     }
@@ -139,6 +179,8 @@
       if(leftPunch>0){ leftPunch-=dt/200; if(leftPunch<0) leftPunch=0; }
       if(rightPunch>0){ rightPunch-=dt/200; if(rightPunch<0) rightPunch=0; }
       if(blocking>0) blocking-=dt; else blocking=0;
+      playerStamina+=dt/50; if(playerStamina>100) playerStamina=100;
+      if(comboTimer>0){ comboTimer-=dt; if(comboTimer<=0) combo=0; }
 
       const speed=dt/400;
       if(moveLeft) playerX-=speed;
@@ -156,10 +198,20 @@
         case 'idle':
           oppTimer-=dt;
           if(oppTimer<=0){
-            oppArm=Math.random()<0.5?'left':'right';
-            oppState='twitch';
-            oppTimer=opponent.twitch;
-            oppHit=false;
+            if((leftPunch>0.3||rightPunch>0.3) && Math.random()<opponent.block){
+              oppState='block';
+              oppTimer=400;
+            }else if((leftPunch>0.3||rightPunch>0.3) && Math.random()<opponent.dodge){
+              oppState='dodge';
+              oppTimer=300;
+              oppXTarget=Math.random()<0.5?-80:80;
+              oppDodgeTime=0;
+            }else{
+              oppArm=Math.random()<0.5?'left':'right';
+              oppState='twitch';
+              oppTimer=opponent.twitch;
+              oppHit=false;
+            }
           }
           break;
         case 'twitch':
@@ -187,37 +239,57 @@
             oppTimer=opponent.cooldown;
           }
           break;
+        case 'block':
+          oppTimer-=dt;
+          if(oppTimer<=0){
+            oppState='idle';
+            oppTimer=opponent.cooldown;
+          }
+          break;
+        case 'dodge':
+          oppDodgeTime+=dt;
+          const progress=oppDodgeTime/oppTimer;
+          oppX=Math.sin(Math.min(progress,1)*Math.PI)*oppXTarget;
+          if(oppDodgeTime>=oppTimer){
+            oppX=0;
+            oppState='idle';
+            oppTimer=opponent.cooldown;
+          }
+          break;
       }
     }
 
     function checkPlayerHit(){
       const headX=canvas.width/2 + playerX*80;
       const headY=canvas.height-100;
-      const x=canvas.width/2 + (oppArm==='left'?-40:40);
+      const x=canvas.width/2 + oppX + (oppArm==='left'?-40:40);
       const y=canvas.height/2 + 40 + 150*oppPunch;
-      const dodged=(oppArm==='left' && playerX>0.3)||(oppArm==='right' && playerX<-0.3);
-      if(distance(headX,headY,x,y)<30 && blocking<=0 && !dodged) playerHealth--;
+      const dodged=oppState==='dodge';
+      if(distance(headX,headY,x,y)<30 && blocking<=0 && !dodged){
+        playerHealth-=10;
+        message='Ouch!';
+      }else if(dodged){
+        message='Dodged!';
+      }else if(blocking>0){
+        message='Blocked!';
+      }
     }
 
     function checkOpponentHits(){
-      const hx=canvas.width/2;
+      const hx=canvas.width/2 + oppX;
       const hy=canvas.height/2 - 50;
+      const baseDamage=10;
 
       if(leftPunch>0.5 && !playerHitLeft){
         const p=punchPos('left');
         if(distance(p.x,p.y,hx,hy)<40){
-          if(Math.random()<opponent.avoid){
-            message='Blocked!';
+          if(oppState==='block'){
+            message='Opponent blocked!';
           }else{
-            opponent.health--; message='Hit!';
-            if(opponent.health<=0){
-              opponentIndex++;
-              if(opponentIndex<opponents.length){
-                newOpponent();
-              }else{
-                message='You win!';
-              }
-            }
+            const dmg=baseDamage + combo*5;
+            opponent.health-=dmg;
+            combo++; comboTimer=1500;
+            message='Hit! Combo x'+combo;
           }
           playerHitLeft=true;
         }
@@ -227,18 +299,13 @@
       if(rightPunch>0.5 && !playerHitRight){
         const p=punchPos('right');
         if(distance(p.x,p.y,hx,hy)<40){
-          if(Math.random()<opponent.avoid){
-            message='Blocked!';
+          if(oppState==='block'){
+            message='Opponent blocked!';
           }else{
-            opponent.health--; message='Hit!';
-            if(opponent.health<=0){
-              opponentIndex++;
-              if(opponentIndex<opponents.length){
-                newOpponent();
-              }else{
-                message='You win!';
-              }
-            }
+            const dmg=baseDamage + combo*5;
+            opponent.health-=dmg;
+            combo++; comboTimer=1500;
+            message='Hit! Combo x'+combo;
           }
           playerHitRight=true;
         }
@@ -296,17 +363,39 @@
       if(opponent.health<=0) return;
       ctx.strokeStyle=opponent.color;
       ctx.lineWidth=2;
-      const x=canvas.width/2, y=canvas.height/2;
+      const x=canvas.width/2 + oppX, y=canvas.height/2;
       ctx.beginPath();
       ctx.arc(x,y-50,30,0,Math.PI*2);
       ctx.moveTo(x,y-20); ctx.lineTo(x,y+60);
-      const lp=oppState==='punch'&&oppArm==='left'?oppPunch*150:oppState==='twitch'&&oppArm==='left'?10:0;
-      ctx.moveTo(x,y); ctx.lineTo(x-40,y+40+lp);
-      const rp=oppState==='punch'&&oppArm==='right'?oppPunch*150:oppState==='twitch'&&oppArm==='right'?10:0;
-      ctx.moveTo(x,y); ctx.lineTo(x+40,y+40+rp);
+      if(oppState==='block'){
+        ctx.moveTo(x-40,y+40); ctx.lineTo(x+40,y+40);
+      }else{
+        const lp=oppState==='punch'&&oppArm==='left'?oppPunch*150:oppState==='twitch'&&oppArm==='left'?10:0;
+        ctx.moveTo(x,y); ctx.lineTo(x-40,y+40+lp);
+        const rp=oppState==='punch'&&oppArm==='right'?oppPunch*150:oppState==='twitch'&&oppArm==='right'?10:0;
+        ctx.moveTo(x,y); ctx.lineTo(x+40,y+40+rp);
+      }
       ctx.moveTo(x,y+60); ctx.lineTo(x-30,y+120);
       ctx.moveTo(x,y+60); ctx.lineTo(x+30,y+120);
       ctx.stroke();
+    }
+
+    function drawHUD(){
+      ctx.fillStyle='#f00';
+      ctx.fillRect(20,20,200*(opponent.health/opponent.maxHealth),20);
+      ctx.strokeStyle='#fff';
+      ctx.strokeRect(20,20,200,20);
+      ctx.fillStyle='#00f';
+      ctx.fillRect(canvas.width-220,20,200*(playerHealth/100),20);
+      ctx.strokeRect(canvas.width-220,20,200,20);
+      ctx.fillStyle='#0f0';
+      ctx.fillRect(canvas.width-220,45,200*(playerStamina/100),10);
+      ctx.strokeRect(canvas.width-220,45,200,10);
+      ctx.fillStyle='#fff';
+      ctx.font='20px sans-serif';
+      ctx.fillText('Time:'+Math.ceil(roundTime/1000),canvas.width/2-40,40);
+      if(message) ctx.fillText(message,canvas.width/2-ctx.measureText(message).width/2,canvas.height-20);
+      if(gameOver) ctx.fillText('Press R to Restart',canvas.width/2-90,canvas.height-50);
     }
 
     function distance(x1,y1,x2,y2){
