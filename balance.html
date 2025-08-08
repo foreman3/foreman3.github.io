@@ -87,6 +87,10 @@
     });
     World.add(world, platform);
 
+    // Track platform movement for friction
+    let lastPlatformX = platform.position.x;
+    const blocksOnPlatform = new Set();
+
     let moveLeft = false;
     let moveRight = false;
     const moveSpeed = 7;
@@ -99,6 +103,26 @@
       if (e.key === 'ArrowRight' || e.key === 'd') moveRight = false;
     });
 
+    Events.on(engine, 'collisionStart', event => {
+      for (const pair of event.pairs) {
+        if (pair.bodyA === platform && pair.bodyB.label === 'block') {
+          blocksOnPlatform.add(pair.bodyB);
+        } else if (pair.bodyB === platform && pair.bodyA.label === 'block') {
+          blocksOnPlatform.add(pair.bodyA);
+        }
+      }
+    });
+
+    Events.on(engine, 'collisionEnd', event => {
+      for (const pair of event.pairs) {
+        if (pair.bodyA === platform && pair.bodyB.label === 'block') {
+          blocksOnPlatform.delete(pair.bodyB);
+        } else if (pair.bodyB === platform && pair.bodyA.label === 'block') {
+          blocksOnPlatform.delete(pair.bodyA);
+        }
+      }
+    });
+
     Events.on(engine, 'beforeUpdate', () => {
       if (moveLeft && platform.position.x - platformWidth/2 > 0) {
         Body.translate(platform, { x: -moveSpeed, y: 0 });
@@ -106,6 +130,13 @@
       if (moveRight && platform.position.x + platformWidth/2 < 800) {
         Body.translate(platform, { x: moveSpeed, y: 0 });
       }
+
+      // Apply simple friction so blocks move with the platform
+      const dx = platform.position.x - lastPlatformX;
+      blocksOnPlatform.forEach(block => {
+        Body.translate(block, { x: dx * 0.9, y: 0 });
+      });
+      lastPlatformX = platform.position.x;
     });
 
     const blocks = [];
