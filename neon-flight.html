@@ -90,6 +90,12 @@
     const PLANE_Z = -FOV * 0.8; // place the plane further down the z-axis
     let plane, buildings, rings, distance, score, nextRing, running;
     let left=false, right=false, up=false, down=false;
+    let stars = [];
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+    let engineOsc;
+    let audioStarted = false;
 
     function resetGame(){
       plane = { x:0, y:50, z:PLANE_Z, speed:8 };
@@ -100,26 +106,32 @@
       nextRing = 1000;
       running = true;
       document.getElementById('message').textContent = '';
+      stars = Array.from({length:100}, () => ({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height,
+        size: 1 + Math.random()*2
+      }));
       for(let i=0;i<10;i++) spawnBuilding();
       document.getElementById('info').textContent = 'Distance: 0 | Score: 0';
     }
 
     function spawnBuilding(){
       const cityWidth = 600;
+      const color = ['#0f0','#0ff','#f0f','#ff0'][Math.floor(Math.random()*4)];
       if(Math.random() < 0.03){
         const width = cityWidth + 80; // extend slightly beyond plane range
         const depth = 60 + Math.random()*40;
         const arch = 70 + Math.random()*20; // highest point of the arch
         const height = arch + 200; // tall enough so plane cannot fly over
         const z = 400 + Math.random()*1200;
-        buildings.push({type:'bridge', x:0, width, depth, bottom:0, arch, height, z});
+        buildings.push({type:'bridge', x:0, width, depth, bottom:0, arch, height, z, color});
       } else {
         const x = (Math.random()-0.5) * cityWidth;
         const width = 40 + Math.random()*60;
         const depth = 40 + Math.random()*60;
         const height = 80 + Math.random()*150;
         const z = 400 + Math.random()*1200;
-        buildings.push({type:'building', x, width, depth, bottom:0, height, z});
+        buildings.push({type:'building', x, width, depth, bottom:0, height, z, color});
       }
     }
 
@@ -150,12 +162,99 @@
         }
         if(!overlap) break;
       }
-      if(attempts < 10){
-        rings.push({x,y,z,radius,collected:false});
-        return true;
-      }
-      return false;
+    if(attempts < 10){
+      rings.push({x,y,z,radius,collected:false});
+      return true;
     }
+    return false;
+  }
+
+  function initAudio(){
+    if(audioStarted) return;
+    audioStarted = true;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    startEngine();
+    playMusic();
+  }
+
+  function startEngine(){
+    engineOsc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    engineOsc.type = 'sawtooth';
+    engineOsc.frequency.value = 120;
+    gain.gain.value = 0.05;
+    engineOsc.connect(gain).connect(audioCtx.destination);
+    engineOsc.start();
+  }
+
+  function updateEngine(){
+    if(engineOsc){
+      const freq = 120 + plane.speed*5 + (up?50:0) + (down?-50:0);
+      engineOsc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+    }
+  }
+
+  function playWhoosh(){
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 600;
+    gain.gain.value = 0.2;
+    osc.connect(gain).connect(audioCtx.destination);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.2);
+  }
+
+  function playRing(){
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  }
+
+  function playCrash(){
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.5);
+    gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+  }
+
+  function playMusic(){
+    const notes = [220,0,330,0,392,0,330,0];
+    let i = 0;
+    function step(){
+      if(!audioStarted) return;
+      const freq = notes[i];
+      if(freq){
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      }
+      i = (i+1)%notes.length;
+      setTimeout(step,250);
+    }
+    step();
+  }
 
     function update(){
       if(!running) return;
@@ -167,6 +266,14 @@
       if(down) plane.y -= ctrl;
       plane.x = Math.max(-300, Math.min(300, plane.x));
       plane.y = Math.max(20, Math.min(150, plane.y));
+      updateEngine();
+      for(const s of stars){
+        s.y += plane.speed*0.3;
+        if(s.y > canvas.height){
+          s.y = 0;
+          s.x = Math.random()*canvas.width;
+        }
+      }
       for(let i = buildings.length - 1; i >= 0; i--){
         const b = buildings[i];
         b.z -= plane.speed;
@@ -184,6 +291,7 @@
         if(withinZ && withinX && withinY){
           running = false;
           document.getElementById('message').textContent = 'Crash! Press Space';
+          playCrash();
         }
         if(back <= plane.z){
           buildings.splice(i, 1);
@@ -200,6 +308,7 @@
            Math.abs(r.y - plane.y) < r.radius){
           r.collected = true;
           score += 100;
+          playRing();
         }
         if(r.z + r.radius <= plane.z){
           rings.splice(i,1);
@@ -333,19 +442,29 @@
     ctx.stroke();
   }
 
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.strokeStyle = '#0f0';
-    ctx.lineWidth = 2;
-    for(const b of buildings){
-      if(b.z + b.depth/2 >= plane.z) drawBuilding(b);
+    function draw(){
+      const grad = ctx.createLinearGradient(0,0,0,canvas.height);
+      grad.addColorStop(0,'#001');
+      grad.addColorStop(1,'#000');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.lineWidth = 2;
+      ctx.fillStyle = '#0ff';
+      for(const s of stars){
+        ctx.fillRect(s.x, s.y, s.size, s.size);
+      }
+      for(const b of buildings){
+        if(b.z + b.depth/2 >= plane.z){
+          ctx.strokeStyle = b.color;
+          drawBuilding(b);
+        }
+      }
+      ctx.strokeStyle = '#ff0';
+      for(const r of rings){
+        if(r.z + r.radius >= plane.z && !r.collected) drawRing(r);
+      }
+      drawCrosshair();
     }
-    ctx.strokeStyle = '#ff0';
-    for(const r of rings){
-      if(r.z + r.radius >= plane.z && !r.collected) drawRing(r);
-    }
-    drawCrosshair();
-  }
 
     function loop(){
       update();
@@ -353,12 +472,14 @@
     }
 
     window.addEventListener('keydown', e => {
-      if(e.code === 'ArrowLeft') left = true;
-      if(e.code === 'ArrowRight') right = true;
-      if(e.code === 'ArrowUp') up = true;
-      if(e.code === 'ArrowDown') down = true;
+      initAudio();
+      if(e.code === 'ArrowLeft'){ left = true; playWhoosh(); }
+      if(e.code === 'ArrowRight'){ right = true; playWhoosh(); }
+      if(e.code === 'ArrowUp'){ up = true; playWhoosh(); }
+      if(e.code === 'ArrowDown'){ down = true; playWhoosh(); }
       if(e.code === 'Space' && !running) resetGame();
     });
+    window.addEventListener('mousedown', initAudio);
     window.addEventListener('keyup', e => {
       if(e.code === 'ArrowLeft') left = false;
       if(e.code === 'ArrowRight') right = false;
