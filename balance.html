@@ -63,6 +63,7 @@
     const { Engine, Render, Runner, Bodies, World, Body, Events } = Matter;
     const engine = Engine.create();
     const world = engine.world;
+    world.gravity.y = 0.25;
     const canvas = document.getElementById('world');
     const render = Render.create({
       canvas: canvas,
@@ -90,6 +91,18 @@
     // Track platform movement for friction
     let lastPlatformX = platform.position.x;
     const blocksOnPlatform = new Set();
+    const blockContacts = new Map();
+
+    function addBlockContact(a, b) {
+      if (!blockContacts.has(a)) blockContacts.set(a, new Set());
+      blockContacts.get(a).add(b);
+    }
+    function removeBlockContact(a, b) {
+      if (!blockContacts.has(a)) return;
+      const set = blockContacts.get(a);
+      set.delete(b);
+      if (set.size === 0) blockContacts.delete(a);
+    }
 
     let moveLeft = false;
     let moveRight = false;
@@ -109,6 +122,9 @@
           blocksOnPlatform.add(pair.bodyB);
         } else if (pair.bodyB === platform && pair.bodyA.label === 'block') {
           blocksOnPlatform.add(pair.bodyA);
+        } else if (pair.bodyA.label === 'block' && pair.bodyB.label === 'block') {
+          addBlockContact(pair.bodyA, pair.bodyB);
+          addBlockContact(pair.bodyB, pair.bodyA);
         }
       }
     });
@@ -119,6 +135,9 @@
           blocksOnPlatform.delete(pair.bodyB);
         } else if (pair.bodyB === platform && pair.bodyA.label === 'block') {
           blocksOnPlatform.delete(pair.bodyA);
+        } else if (pair.bodyA.label === 'block' && pair.bodyB.label === 'block') {
+          removeBlockContact(pair.bodyA, pair.bodyB);
+          removeBlockContact(pair.bodyB, pair.bodyA);
         }
       }
     });
@@ -133,9 +152,20 @@
 
       // Apply simple friction so blocks move with the platform
       const dx = platform.position.x - lastPlatformX;
-      blocksOnPlatform.forEach(block => {
+      const visited = new Set();
+      const queue = Array.from(blocksOnPlatform);
+      while (queue.length) {
+        const block = queue.shift();
+        if (visited.has(block)) continue;
+        visited.add(block);
         Body.translate(block, { x: dx * 0.9, y: 0 });
-      });
+        const neighbors = blockContacts.get(block);
+        if (neighbors) {
+          neighbors.forEach(n => {
+            if (!visited.has(n)) queue.push(n);
+          });
+        }
+      }
       lastPlatformX = platform.position.x;
     });
 
