@@ -88,11 +88,12 @@
     });
     World.add(world, platform);
 
-    // Track platform movement and block friction
+    // Track platform movement for friction
     let lastPlatformX = platform.position.x;
+    let lastDx = 0;
+    let followFactor = 1;
     const blocksOnPlatform = new Set();
     const blockContacts = new Map();
-    const blockFriction = new Map();
 
     function addBlockContact(a, b) {
       if (!blockContacts.has(a)) blockContacts.set(a, new Set());
@@ -151,40 +152,35 @@
         Body.translate(platform, { x: moveSpeed, y: 0 });
       }
 
-      const dt = engine.timing.delta / 1000;
-      const platformVelocity = (platform.position.x - lastPlatformX) / dt;
+      // Apply friction so blocks initially slide then catch up to the platform
+      const dx = platform.position.x - lastPlatformX;
+      if (dx !== 0) {
+        if (lastDx === 0 || Math.sign(dx) !== Math.sign(lastDx)) {
+          followFactor = 0.9;
+        } else {
+          followFactor += (1 - followFactor) * 0.2;
+        }
+      } else {
+        followFactor = 1;
+      }
+      const carry = dx * followFactor;
 
       const visited = new Set();
-      const queue = Array.from(blocksOnPlatform).map(b => ({ block: b, baseVel: platformVelocity }));
-
+      const queue = Array.from(blocksOnPlatform);
       while (queue.length) {
-        const { block, baseVel } = queue.shift();
+        const block = queue.shift();
         if (visited.has(block)) continue;
         visited.add(block);
-
-        const flat = Math.abs(Math.sin(block.angle)) < 0.1;
-        const targetTime = flat ? 0.5 : 2;
-        let info = blockFriction.get(block);
-        if (!info || Math.abs(info.targetVel - baseVel) > 0.01) {
-          info = { targetVel: baseVel, startTime: 0, initialDiff: baseVel - block.velocity.x };
-          blockFriction.set(block, info);
-        } else {
-          info.startTime += dt;
-          info.targetVel = baseVel;
-        }
-        const progress = Math.min(1, info.startTime / targetTime);
-        const newVX = info.targetVel - info.initialDiff * (1 - progress);
-        Body.setVelocity(block, { x: newVX, y: block.velocity.y });
-
+        Body.translate(block, { x: carry, y: 0 });
         const neighbors = blockContacts.get(block);
         if (neighbors) {
           neighbors.forEach(n => {
-            if (!visited.has(n)) queue.push({ block: n, baseVel: newVX });
+            if (!visited.has(n)) queue.push(n);
           });
         }
       }
-
       lastPlatformX = platform.position.x;
+      lastDx = dx;
     });
 
     const blocks = [];
