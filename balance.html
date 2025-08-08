@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Block Balance</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: #222;
+      color: #fff;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 3em;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    }
+    canvas {
+      background: #000;
+      border: 2px solid #fff;
+      border-radius: 8px;
+    }
+    #score {
+      margin-top: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ff3333;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Block Balance</h1>
+    <canvas id="world" width="800" height="600"></canvas>
+    <div id="score">Blocks: 0</div>
+    <div id="message"></div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script>
+    const { Engine, Render, Runner, Bodies, World, Body, Events } = Matter;
+    const engine = Engine.create();
+    const world = engine.world;
+    const canvas = document.getElementById('world');
+    const render = Render.create({
+      canvas: canvas,
+      engine: engine,
+      options: {
+        width: 800,
+        height: 600,
+        wireframes: false,
+        background: '#000'
+      }
+    });
+    Render.run(render);
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+    const platformWidth = 180;
+    const platformHeight = 20;
+    const platform = Bodies.rectangle(400, 560, platformWidth, platformHeight, {
+      isStatic: true,
+      friction: 0.8,
+      render: { fillStyle: '#fff' }
+    });
+    World.add(world, platform);
+
+    let moveLeft = false;
+    let moveRight = false;
+    const moveSpeed = 7;
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft = true;
+      if (e.key === 'ArrowRight' || e.key === 'd') moveRight = true;
+    });
+    document.addEventListener('keyup', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft = false;
+      if (e.key === 'ArrowRight' || e.key === 'd') moveRight = false;
+    });
+
+    Events.on(engine, 'beforeUpdate', () => {
+      if (moveLeft && platform.position.x - platformWidth/2 > 0) {
+        Body.translate(platform, { x: -moveSpeed, y: 0 });
+      }
+      if (moveRight && platform.position.x + platformWidth/2 < 800) {
+        Body.translate(platform, { x: moveSpeed, y: 0 });
+      }
+    });
+
+    const blocks = [];
+    let score = 0;
+    function spawnBlock() {
+      const size = 40;
+      const x = Math.random() * (800 - size) + size/2;
+      const block = Bodies.rectangle(x, -size, size, size, {
+        label: 'block',
+        friction: 0.6,
+        restitution: 0.1,
+        render: { fillStyle: '#8e44ad' }
+      });
+      blocks.push(block);
+      World.add(world, block);
+      score++;
+      document.getElementById('score').textContent = 'Blocks: ' + score;
+    }
+
+    const spawnInterval = setInterval(() => {
+      if (!gameOver) spawnBlock();
+    }, 2000);
+
+    let gameOver = false;
+    Events.on(engine, 'afterUpdate', () => {
+      if (gameOver) return;
+      for (const block of blocks) {
+        const { x, y } = block.position;
+        if (y > 650 || x < -60 || x > 860) {
+          gameOver = true;
+          document.getElementById('message').textContent = 'Game Over!';
+          clearInterval(spawnInterval);
+          Runner.stop(runner);
+          break;
+        }
+      }
+    });
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
