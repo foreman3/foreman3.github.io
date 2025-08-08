@@ -304,6 +304,63 @@
       update();
     }
 
+    // --- Tetris theme music ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const tempo = 120;
+    const theme = [
+      ['E5', 1], ['B4', 0.5], ['C5', 0.5], ['D5', 1], ['C5', 0.5], ['B4', 0.5], ['A4', 1],
+      ['A4', 0.5], ['C5', 0.5], ['E5', 1], ['D5', 0.5], ['C5', 0.5], ['B4', 1],
+      ['C5', 0.5], ['D5', 0.5], ['E5', 1], ['C5', 0.5], ['A4', 0.5], ['A4', 1],
+      ['D5', 1], ['F5', 0.5], ['A5', 1], ['G5', 0.5], ['F5', 0.5], ['E5', 1],
+      ['C5', 0.5], ['E5', 1], ['D5', 0.5], ['C5', 0.5], ['B4', 1], ['B4', 0.5], ['C5', 0.5],
+      ['D5', 1], ['E5', 1], ['C5', 0.5], ['A4', 0.5], ['A4', 1]
+    ];
+
+    const noteFreq = {
+      'A4': 440.0,
+      'B4': 493.88,
+      'C5': 523.25,
+      'D5': 587.33,
+      'E5': 659.25,
+      'F5': 698.46,
+      'G5': 783.99,
+      'A5': 880.0
+    };
+
+    function playTheme() {
+      let time = audioCtx.currentTime;
+      theme.forEach(([note, beat]) => {
+        const duration = (60 / tempo) * beat;
+        if (note) {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'square';
+          osc.frequency.value = noteFreq[note];
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          gain.gain.setValueAtTime(0.1, time);
+          gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+          osc.start(time);
+          osc.stop(time + duration);
+        }
+        time += duration;
+      });
+      setTimeout(playTheme, (time - audioCtx.currentTime) * 1000);
+    }
+
+    function startMusic() {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      playTheme();
+    }
+
+    function initMusic() {
+      document.addEventListener('keydown', startMusic, { once: true });
+      document.addEventListener('click', startMusic, { once: true });
+    }
+
+    initMusic();
     resetGame();
   </script>
   <script>
