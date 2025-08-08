@@ -90,6 +90,8 @@
 
     // Track platform movement for friction
     let lastPlatformX = platform.position.x;
+    let lastDx = 0;
+    let followFactor = 1;
     const blocksOnPlatform = new Set();
     const blockContacts = new Map();
 
@@ -143,22 +145,33 @@
     });
 
     Events.on(engine, 'beforeUpdate', () => {
-      if (moveLeft && platform.position.x - platformWidth/2 > 0) {
+      if (moveLeft && platform.position.x - platformWidth / 2 > 0) {
         Body.translate(platform, { x: -moveSpeed, y: 0 });
       }
-      if (moveRight && platform.position.x + platformWidth/2 < 800) {
+      if (moveRight && platform.position.x + platformWidth / 2 < 800) {
         Body.translate(platform, { x: moveSpeed, y: 0 });
       }
 
-      // Apply simple friction so blocks move with the platform
+      // Apply friction so blocks initially slide then catch up to the platform
       const dx = platform.position.x - lastPlatformX;
+      if (dx !== 0) {
+        if (lastDx === 0 || Math.sign(dx) !== Math.sign(lastDx)) {
+          followFactor = 0.9;
+        } else {
+          followFactor += (1 - followFactor) * 0.2;
+        }
+      } else {
+        followFactor = 1;
+      }
+      const carry = dx * followFactor;
+
       const visited = new Set();
       const queue = Array.from(blocksOnPlatform);
       while (queue.length) {
         const block = queue.shift();
         if (visited.has(block)) continue;
         visited.add(block);
-        Body.translate(block, { x: dx * 0.9, y: 0 });
+        Body.translate(block, { x: carry, y: 0 });
         const neighbors = blockContacts.get(block);
         if (neighbors) {
           neighbors.forEach(n => {
@@ -167,6 +180,7 @@
         }
       }
       lastPlatformX = platform.position.x;
+      lastDx = dx;
     });
 
     const blocks = [];
