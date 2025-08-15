@@ -74,11 +74,11 @@
     };
 
     const opponents = [
-      {name:'Rookie',color:'#0f0',maxHealth:80,cooldown:1500,punchSpeed:350,twitch:250,block:0.2,dodge:0.1},
-      {name:'Striker',color:'#fa0',maxHealth:100,cooldown:1100,punchSpeed:300,twitch:200,block:0.3,dodge:0.2},
-      {name:'Champion',color:'#f00',maxHealth:120,cooldown:900,punchSpeed:250,twitch:150,block:0.4,dodge:0.3},
-      {name:'Bruiser',color:'#f0f',maxHealth:150,cooldown:800,punchSpeed:220,twitch:130,block:0.5,dodge:0.35},
-      {name:'Legend',color:'#ff0',maxHealth:200,cooldown:700,punchSpeed:200,twitch:120,block:0.6,dodge:0.4}
+      {name:'Rookie',color:'#0f0',maxHealth:80,cooldown:750,punchSpeed:175,twitch:250,block:0.1,dodge:0.05,power:8},
+      {name:'Striker',color:'#fa0',maxHealth:100,cooldown:650,punchSpeed:150,twitch:200,block:0.2,dodge:0.35,power:12},
+      {name:'Champion',color:'#f00',maxHealth:130,cooldown:600,punchSpeed:140,twitch:150,block:0.3,dodge:0.2,power:20},
+      {name:'The Viper',color:'#f0f',maxHealth:160,cooldown:550,punchSpeed:120,twitch:130,block:0.4,dodge:0.5,power:22},
+      {name:'Iron Titan',color:'#ff0',maxHealth:220,cooldown:500,punchSpeed:110,twitch:120,block:0.5,dodge:0.3,power:28}
     ];
 
     let opponentIndex=0;
@@ -123,9 +123,9 @@
     document.addEventListener('keydown',e=>{
       if(gameOver && e.code==='KeyR') restart();
       if(gameOver) return;
-      if(e.code==='KeyF' && leftPunch<=0 && playerStamina>=10){ leftPunch=1; playerStamina-=10; }
-      if(e.code==='KeyJ' && rightPunch<=0 && playerStamina>=10){ rightPunch=1; playerStamina-=10; }
-      if(e.code==='Space' && blocking<=0 && playerStamina>=5){ blocking=400; playerStamina-=5; }
+      if(e.code==='KeyF' && leftPunch<=0 && playerStamina>=20){ leftPunch=1; playerStamina-=20; }
+      if(e.code==='KeyJ' && rightPunch<=0 && playerStamina>=20){ rightPunch=1; playerStamina-=20; }
+      if(e.code==='Space' && blocking<=0 && playerStamina>=10){ blocking=400; playerStamina-=10; }
       if(e.code==='ArrowLeft'||e.code==='KeyA') moveLeft=true;
       if(e.code==='ArrowRight'||e.code==='KeyD') moveRight=true;
     });
@@ -189,7 +189,7 @@
       if(leftPunch>0){ leftPunch-=dt/200; if(leftPunch<0) leftPunch=0; }
       if(rightPunch>0){ rightPunch-=dt/200; if(rightPunch<0) rightPunch=0; }
       if(blocking>0) blocking-=dt; else blocking=0;
-      playerStamina+=dt/50; if(playerStamina>100) playerStamina=100;
+      playerStamina+=dt/100; if(playerStamina>100) playerStamina=100;
       if(comboTimer>0){ comboTimer-=dt; if(comboTimer<=0) combo=0; }
 
       const speed=dt/400;
@@ -276,7 +276,10 @@
       const y=canvas.height/2 + 40 + 200*oppPunch;
       const dodged=oppState==='dodge';
       if(distance(headX,headY,x,y)<30 && blocking<=0 && !dodged){
-        playerHealth-=10;
+        const damage = opponent.power * oppPunch;
+        playerHealth-=damage;
+        playerStamina-=damage*1.2;
+        if(playerStamina<0) playerStamina=0;
         message='Ouch!';
       }else if(dodged){
         message='Dodged!';
