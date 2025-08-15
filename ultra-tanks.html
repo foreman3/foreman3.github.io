@@ -76,6 +76,8 @@
 
     const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0};
     let enemies = [];
+    let totalSpawned = 0;
+    let smartCount = 0;
     let level = 1;
     let lives = 3;
     let running = false;
@@ -134,8 +136,23 @@
           y = 30 + Math.random() * (canvas.height - 60);
           tries++;
         }
-        enemies.push({ x, y, angle: Math.PI, shootTimer: 80, color: '#f00', alive: true, explosion: 0 });
+        totalSpawned++;
+        let type = 'normal';
+        let color = '#f00';
+        let turretColor = '#f00';
+        if (totalSpawned % 8 === 0) {
+          type = 'smart';
+          color = '#888';
+          turretColor = '#888';
+        } else if (Math.random() < 0.5) {
+          turretColor = '#ff0';
+        }
+        const timer = type === 'smart' ? 60 : 80;
+        enemies.push({ x, y, angle: Math.PI, shootTimer: timer, color, turretColor, alive: true, explosion: 0, type, stuck: 0 });
       }
+      const smartList = enemies.filter(e => e.type === 'smart');
+      smartCount = smartList.length;
+      smartList.forEach((e, idx) => e.smartIndex = idx);
       respawnPlayer();
       document.getElementById('message').textContent = '';
       running = true;
@@ -179,21 +196,40 @@
         if (player.explosion === 0 && running) respawnPlayer();
       }
 
-      for (const e of enemies) {
-        if (!e.alive) { if (e.explosion > 0) e.explosion--; continue; }
-        const dx = player.x - e.x;
-        const dy = player.y - e.y;
-        const desired = Math.atan2(dy, dx);
-        let diff = ((desired - e.angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-        if (Math.abs(diff) > 0.02) e.angle += Math.sign(diff) * 0.02;
-        let ex = e.x + Math.cos(e.angle) * 1.5;
-        let ey = e.y + Math.sin(e.angle) * 1.5;
-        ex = Math.max(15, Math.min(canvas.width - 15, ex));
-        ey = Math.max(15, Math.min(canvas.height - 15, ey));
-        if (!obstacleCollision(ex, ey)) { e.x = ex; e.y = ey; }
-        e.shootTimer--;
-        if (e.shootTimer <= 0 && player.alive) { shoot(e); e.shootTimer = 80; }
+    for (const e of enemies) {
+      if (!e.alive) { if (e.explosion > 0) e.explosion--; continue; }
+      const dx = player.x - e.x;
+      const dy = player.y - e.y;
+      let desired = Math.atan2(dy, dx);
+      let speed = 1.5;
+      let fireRate = 80;
+      if (e.type === 'smart') {
+        for (const b of bullets) {
+          if (b.owner !== e && Math.hypot(b.x - e.x, b.y - e.y) < 80) {
+            desired = Math.atan2(e.y - b.y, e.x - b.x) + Math.PI / 2;
+            break;
+          }
+        }
+        desired += (e.smartIndex - (smartCount - 1) / 2) * 0.4;
+        speed = 2;
+        fireRate = 60;
       }
+      let diff = ((desired - e.angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      if (Math.abs(diff) > 0.02) e.angle += Math.sign(diff) * 0.02;
+      let ex = e.x + Math.cos(e.angle) * speed;
+      let ey = e.y + Math.sin(e.angle) * speed;
+      ex = Math.max(15, Math.min(canvas.width - 15, ex));
+      ey = Math.max(15, Math.min(canvas.height - 15, ey));
+      if (!obstacleCollision(ex, ey)) {
+        e.x = ex; e.y = ey; e.stuck = 0;
+      } else {
+        e.stuck++;
+        e.angle += 0.1;
+        if (e.stuck > 20) { e.angle += Math.PI / 2; e.stuck = 0; }
+      }
+      e.shootTimer--;
+      if (e.shootTimer <= 0 && player.alive) { shoot(e); e.shootTimer = fireRate; }
+    }
 
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
@@ -363,15 +399,16 @@
       }
     }
 
-    function drawTank(t) {
-      ctx.save();
-      ctx.translate(t.x, t.y);
-      ctx.rotate(t.angle);
-      ctx.fillStyle = t.color;
-      ctx.fillRect(-15, -10, 30, 20);
-      ctx.fillRect(0, -3, 20, 6);
-      ctx.restore();
-    }
+  function drawTank(t) {
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    ctx.rotate(t.angle);
+    ctx.fillStyle = t.color;
+    ctx.fillRect(-15, -10, 30, 20);
+    ctx.fillStyle = t.turretColor || t.color;
+    ctx.fillRect(0, -3, 20, 6);
+    ctx.restore();
+  }
 
     function drawExplosion(t) {
       const r = 30 - t.explosion;
