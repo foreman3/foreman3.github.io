@@ -74,7 +74,7 @@
     const specialWeapons = ['Guided Missile', 'Mine', 'Air Raid'];
     let specialWeaponIndex = 0;
 
-    const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0};
+    const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0,invuln:0};
     let enemies = [];
     let totalSpawned = 0;
     let smartCount = 0;
@@ -94,11 +94,11 @@
         const x = 30 + Math.random() * (canvas.width - 60);
         const y = 30 + Math.random() * (canvas.height - 60);
         if (!obstacleCollision(x, y) && enemies.every(e => !e.alive || Math.hypot(x - e.x, y - e.y) > 120)) {
-          player.x = x; player.y = y; player.angle = 0; player.alive = true; player.explosion = 0;
+          player.x = x; player.y = y; player.angle = 0; player.alive = true; player.explosion = 0; player.invuln = 120;
           return;
         }
       }
-      player.x = 100; player.y = canvas.height / 2; player.angle = 0; player.alive = true; player.explosion = 0;
+      player.x = 100; player.y = canvas.height / 2; player.angle = 0; player.alive = true; player.explosion = 0; player.invuln = 120;
     }
 
     function createObstacles() {
@@ -191,6 +191,7 @@
         ny = Math.max(15, Math.min(canvas.height - 15, ny));
         if (!obstacleCollision(nx, ny)) { player.x = nx; player.y = ny; }
         player.angle = na;
+        if (player.invuln > 0) player.invuln--;
       } else if (player.explosion > 0) {
         player.explosion--;
         if (player.explosion === 0 && running) respawnPlayer();
@@ -283,7 +284,7 @@
         }
 
         if (bounced && b.bounces >= 2) { bullets.splice(i, 1); continue; }
-        if (player.alive && b.owner !== player && Math.hypot(b.x - player.x, b.y - player.y) < 15) {
+        if (player.alive && player.invuln <= 0 && b.owner !== player && Math.hypot(b.x - player.x, b.y - player.y) < 15) {
           player.alive = false; player.explosion = 30; lives--; updateInfo();
           if (lives <= 0) {
             running = false;
@@ -328,7 +329,7 @@
           for (const o of obstacles) {
             if (m.x > o.x && m.x < o.x + o.w && m.y > o.y && m.y < o.y + o.h) { m.explosion = 30; break; }
           }
-          if (player.alive && Math.hypot(m.x - player.x, m.y - player.y) < 15) {
+          if (player.alive && player.invuln <= 0 && Math.hypot(m.x - player.x, m.y - player.y) < 15) {
             player.alive = false; player.explosion = 30; lives--; updateInfo(); m.explosion = 30;
           }
           for (const e of enemies) {
@@ -345,7 +346,7 @@
           mine.timer--;
           let triggered = false;
           const inRange = t => Math.hypot(t.x - mine.x, t.y - mine.y) < 15;
-          if (player.alive && inRange(player)) {
+          if (player.alive && player.invuln <= 0 && inRange(player)) {
             player.alive = false; player.explosion = 30; lives--; updateInfo();
             triggered = true;
           }
@@ -372,7 +373,7 @@
           airRaidAvailable--;
           canvas.style.cursor = guidedMissiles.length > 0 ? 'none' : 'default';
           document.getElementById('message').textContent = '';
-          if (player.alive && Math.hypot(player.x - pointerX, player.y - pointerY) < r) {
+          if (player.alive && player.invuln <= 0 && Math.hypot(player.x - pointerX, player.y - pointerY) < r) {
             player.alive = false; player.explosion = 30; lives--; updateInfo();
           }
           for (const eTank of enemies) {
@@ -402,6 +403,12 @@
   function drawTank(t) {
     ctx.save();
     ctx.translate(t.x, t.y);
+    if (t.invuln && t.invuln > 0) {
+      ctx.fillStyle = 'rgba(255,215,0,0.5)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 20, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.rotate(t.angle);
     ctx.fillStyle = t.color;
     ctx.fillRect(-15, -10, 30, 20);
