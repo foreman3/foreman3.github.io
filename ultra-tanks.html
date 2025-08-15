@@ -314,6 +314,7 @@
           }
           continue;
         }
+        if (m.safeTime > 0) m.safeTime--;
         const dx = pointerX - m.x;
         const dy = pointerY - m.y;
         const dist = Math.hypot(dx, dy);
@@ -329,11 +330,13 @@
           for (const o of obstacles) {
             if (m.x > o.x && m.x < o.x + o.w && m.y > o.y && m.y < o.y + o.h) { m.explosion = 30; break; }
           }
-          if (player.alive && player.invuln <= 0 && Math.hypot(m.x - player.x, m.y - player.y) < 15) {
+          if (m.safeTime <= 0 && player.alive && player.invuln <= 0 && Math.hypot(m.x - player.x, m.y - player.y) < 15) {
             player.alive = false; player.explosion = 30; lives--; updateInfo(); m.explosion = 30;
           }
-          for (const e of enemies) {
-            if (e.alive && Math.hypot(m.x - e.x, m.y - e.y) < 15) { e.alive = false; e.explosion = 30; m.explosion = 30; break; }
+          if (m.safeTime <= 0) {
+            for (const e of enemies) {
+              if (e.alive && Math.hypot(m.x - e.x, m.y - e.y) < 15) { e.alive = false; e.explosion = 30; m.explosion = 30; break; }
+            }
           }
         }
       }
@@ -488,7 +491,7 @@
       if (!running || !player.alive) return;
       const weapon = specialWeapons[specialWeaponIndex];
       if (weapon === 'Guided Missile' && guidedMissilesRemaining > 0) {
-        guidedMissiles.push({ x: player.x + Math.cos(player.angle) * 20, y: player.y + Math.sin(player.angle) * 20, explosion: 0 });
+        guidedMissiles.push({ x: player.x + Math.cos(player.angle) * 20, y: player.y + Math.sin(player.angle) * 20, explosion: 0, safeTime: 30 });
         guidedMissilesRemaining--;
         canvas.style.cursor = 'none';
         updateInfo();
