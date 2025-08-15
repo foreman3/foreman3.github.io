@@ -15,6 +15,7 @@ This repository hosts simple arcade-style video games.
 - [Pole Position](pole.html) - Steer and dodge rival racers.
 - [Asteroids](asteroids.html) - Blast space rocks and avoid collisions.
 - [Space Invaders](space-invaders.html) - Battle waves of alien foes.
+- [Space Invaders Command](space-invaders-command.html) - Fusion of invaders and exploding missiles.
 - [Missile Command](missile-command.html) - Defend your base from incoming missiles.
 - [Tetris](tetris.html) - Arrange falling blocks to clear lines.
 - [Tanks](tanks.html) - Duel enemy armor in top-down combat.
