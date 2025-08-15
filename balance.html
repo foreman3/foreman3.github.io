@@ -95,7 +95,7 @@
     const runner = Runner.create();
     Runner.run(runner, engine);
 
-    const platformWidth = 180;
+    const platformWidth = 270;
     const platformHeight = 20;
     const platform = Bodies.rectangle(400, 560, platformWidth, platformHeight, {
       isStatic: true,
@@ -204,14 +204,33 @@
     let score = 0;
     function spawnBlock() {
       const size = 40;
-      const x = Math.random() * (800 - size) + size/2;
+      const x = Math.random() * (800 - size) + size / 2;
       const color = blockColors[Math.floor(Math.random() * blockColors.length)];
-      const block = Bodies.rectangle(x, -size, size, size, {
+      const options = {
         label: 'block',
         friction: 0.6,
         restitution: 0.1,
         render: { fillStyle: color }
-      });
+      };
+      let block;
+      const shape = Math.random();
+      if (shape < 0.25) {
+        block = Bodies.rectangle(x, -size, size, size, options);
+      } else if (shape < 0.5) {
+        block = Bodies.polygon(x, -size, 3, size / 2, options);
+      } else if (shape < 0.75) {
+        block = Bodies.polygon(x, -size, 6, size / 2, options);
+      } else {
+        const vertices = [];
+        const sides = Math.floor(Math.random() * 3) + 5;
+        for (let i = 0; i < sides; i++) {
+          const angle = (Math.PI * 2 / sides) * i;
+          const radius = size / 2 + Math.random() * size / 3;
+          vertices.push({ x: radius * Math.cos(angle), y: radius * Math.sin(angle) });
+        }
+        block = Bodies.fromVertices(x, -size, vertices, options, true);
+        if (Array.isArray(block)) block = block[0];
+      }
       blocks.push(block);
       World.add(world, block);
       score++;
