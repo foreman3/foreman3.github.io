@@ -67,9 +67,9 @@
     };
 
     const opponents = [
-      {name:'Rookie',color:'#0f0',maxHealth:80,cooldown:2000,punchSpeed:500,twitch:300,block:0.2,dodge:0.1},
-      {name:'Striker',color:'#fa0',maxHealth:100,cooldown:1500,punchSpeed:400,twitch:250,block:0.3,dodge:0.2},
-      {name:'Champion',color:'#f00',maxHealth:120,cooldown:1200,punchSpeed:350,twitch:200,block:0.4,dodge:0.3}
+      {name:'Rookie',color:'#0f0',maxHealth:80,cooldown:1500,punchSpeed:350,twitch:250,block:0.2,dodge:0.1},
+      {name:'Striker',color:'#fa0',maxHealth:100,cooldown:1100,punchSpeed:300,twitch:200,block:0.3,dodge:0.2},
+      {name:'Champion',color:'#f00',maxHealth:120,cooldown:900,punchSpeed:250,twitch:150,block:0.4,dodge:0.3}
     ];
 
     let opponentIndex=0;
@@ -223,7 +223,7 @@
           break;
         case 'punch':
           oppPunch+=dt/opponent.punchSpeed;
-          if(oppPunch>=0.5 && !oppHit){
+          if(oppPunch>=0.75 && !oppHit){
             checkPlayerHit();
             oppHit=true;
           }
@@ -263,7 +263,7 @@
       const headX=canvas.width/2 + playerX*80;
       const headY=canvas.height-100;
       const x=canvas.width/2 + oppX + (oppArm==='left'?-40:40);
-      const y=canvas.height/2 + 40 + 150*oppPunch;
+      const y=canvas.height/2 + 40 + 200*oppPunch;
       const dodged=oppState==='dodge';
       if(distance(headX,headY,x,y)<30 && blocking<=0 && !dodged){
         playerHealth-=10;
@@ -323,15 +323,19 @@
 
     function drawRing(){
       const {fl,fr,bl,br}=ring;
-      ctx.fillStyle='#333';
+      const matGrad=ctx.createLinearGradient(bl.x,bl.y,bl.x,bl.y-180);
+      matGrad.addColorStop(0,'#2b2b2b');
+      matGrad.addColorStop(1,'#666');
+      ctx.fillStyle=matGrad;
       ctx.beginPath();
       ctx.moveTo(fl.x,fl.y); ctx.lineTo(bl.x,bl.y);
       ctx.lineTo(br.x,br.y); ctx.lineTo(fr.x,fr.y);
       ctx.closePath(); ctx.fill();
 
-      ctx.strokeStyle='#888';
+      const ropeColors=['#f00','#fff','#00f'];
       for(let i=1;i<=3;i++){
         const h=i*10;
+        ctx.strokeStyle=ropeColors[i-1];
         ctx.beginPath();
         ctx.moveTo(bl.x,bl.y - h); ctx.lineTo(br.x,br.y - h); ctx.lineTo(fr.x,fr.y - h);
         ctx.stroke();
@@ -339,19 +343,33 @@
         ctx.moveTo(bl.x,bl.y - h); ctx.lineTo(fl.x,fl.y - h);
         ctx.stroke();
       }
+
+      ctx.fillStyle='#555';
+      [fl,fr,bl,br].forEach(c=>{
+        ctx.fillRect(c.x-5,c.y-40,10,40);
+      });
     }
 
     function drawPlayer(){
       ctx.strokeStyle='#0ff';
-      ctx.lineWidth=2;
+      ctx.fillStyle='#0ff';
+      ctx.lineWidth=4;
       const base=canvas.width/2 + playerX*80;
       let p=punchPos('left');
       ctx.beginPath(); ctx.moveTo(base-60,canvas.height); ctx.lineTo(p.x,p.y); ctx.stroke();
-      ctx.beginPath(); ctx.arc(p.x,p.y,15,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x,p.y,15,0,Math.PI*2); ctx.fill();
 
       p=punchPos('right');
       ctx.beginPath(); ctx.moveTo(base+60,canvas.height); ctx.lineTo(p.x,p.y); ctx.stroke();
-      ctx.beginPath(); ctx.arc(p.x,p.y,15,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x,p.y,15,0,Math.PI*2); ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(base,canvas.height-100,25,0,Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(base,canvas.height-100);
+      ctx.lineTo(base,canvas.height);
+      ctx.stroke();
 
       if(blocking>0){
         ctx.strokeStyle='#ff0';
@@ -362,17 +380,22 @@
     function drawOpponent(){
       if(opponent.health<=0) return;
       ctx.strokeStyle=opponent.color;
-      ctx.lineWidth=2;
+      ctx.fillStyle=opponent.color;
+      ctx.lineWidth=4;
       const x=canvas.width/2 + oppX, y=canvas.height/2;
       ctx.beginPath();
       ctx.arc(x,y-50,30,0,Math.PI*2);
-      ctx.moveTo(x,y-20); ctx.lineTo(x,y+60);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.rect(x-20,y-20,40,80);
+      ctx.stroke();
+      ctx.beginPath();
       if(oppState==='block'){
         ctx.moveTo(x-40,y+40); ctx.lineTo(x+40,y+40);
       }else{
-        const lp=oppState==='punch'&&oppArm==='left'?oppPunch*150:oppState==='twitch'&&oppArm==='left'?10:0;
+        const lp=oppState==='punch'&&oppArm==='left'?oppPunch*200:oppState==='twitch'&&oppArm==='left'?10:0;
         ctx.moveTo(x,y); ctx.lineTo(x-40,y+40+lp);
-        const rp=oppState==='punch'&&oppArm==='right'?oppPunch*150:oppState==='twitch'&&oppArm==='right'?10:0;
+        const rp=oppState==='punch'&&oppArm==='right'?oppPunch*200:oppState==='twitch'&&oppArm==='right'?10:0;
         ctx.moveTo(x,y); ctx.lineTo(x+40,y+40+rp);
       }
       ctx.moveTo(x,y+60); ctx.lineTo(x-30,y+120);
