@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Excitebike</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul { list-style: none; padding: 0; margin: 0; }
+    #sidebar li { margin: 15px 0; }
+    #sidebar a { color: #fff; text-decoration: none; transition: color 0.3s; }
+    #sidebar a:hover { color: #ffea00; }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px;
+    }
+    canvas {
+      background: #87CEEB;
+      border: 2px solid #fff;
+      margin-top: 20px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ffeb3b;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Excitebike</h1>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="message">Arrow Up/Down to change speed, Space to jump.</div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const groundY = canvas.height - 40;
+
+    const player = { x: 100, y: groundY - 20, w: 40, h: 20, vy: 0, jumping: false };
+    const keys = {};
+    let speed = 4;
+    let distance = 0;
+    let gameOver = false;
+    const obstacles = [];
+
+    function createObstacle() {
+      const height = 20 + Math.random() * 30;
+      const width = 20 + Math.random() * 30;
+      obstacles.push({ x: canvas.width + Math.random() * 200, y: groundY - height, w: width, h: height });
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      if (obstacles.length < 5 && Math.random() < 0.02) createObstacle();
+      obstacles.forEach(o => { o.x -= speed; });
+      if (obstacles.length && obstacles[0].x + obstacles[0].w < 0) obstacles.shift();
+
+      if (keys['ArrowUp']) speed = Math.min(speed + 0.1, 10);
+      if (keys['ArrowDown']) speed = Math.max(speed - 0.1, 2);
+
+      if (player.jumping) {
+        player.vy += 0.5;
+        player.y += player.vy;
+        if (player.y >= groundY - player.h) {
+          player.y = groundY - player.h;
+          player.vy = 0;
+          player.jumping = false;
+        }
+      }
+
+      obstacles.forEach(o => {
+        if (player.x < o.x + o.w && player.x + player.w > o.x &&
+            player.y < o.y + o.h && player.y + player.h > o.y) {
+          gameOver = true;
+          document.getElementById('message').textContent = `Game Over! Distance: ${Math.floor(distance)} - Press Enter to restart.`;
+        }
+      });
+
+      distance += speed;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#87CEEB';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#654321';
+      ctx.fillRect(0, groundY, canvas.width, 40);
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.fillStyle = '#333';
+      obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.w, o.h));
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if (e.key === ' ' && !player.jumping && !gameOver) {
+        player.vy = -10;
+        player.jumping = true;
+      }
+      if (e.key === 'Enter' && gameOver) {
+        obstacles.length = 0;
+        speed = 4;
+        distance = 0;
+        player.y = groundY - player.h;
+        player.vy = 0;
+        player.jumping = false;
+        gameOver = false;
+        document.getElementById('message').textContent = 'Arrow Up/Down to change speed, Space to jump.';
+      }
+    });
+
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    loop();
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>

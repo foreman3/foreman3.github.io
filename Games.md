@@ -21,4 +21,5 @@ This repository hosts simple arcade-style video games.
 - [Ultra Tanks](ultra-tanks.html) - Bouncing bullets and massive air raids.
 - [Boxing](boxing.html) - Step into a 3D ring and dodge telegraphed punches from varied opponents.
 - [Neon Flight](neon-flight.html) - Dodge wireframe skyscrapers in a glowing city.
+- [Excitebike](excitebike.html) - Race over jumps and dodge obstacles.
 
