@@ -79,7 +79,7 @@
     const { Engine, Render, Runner, Bodies, World, Body, Events } = Matter;
     const engine = Engine.create();
     const world = engine.world;
-    world.gravity.y = 0.25;
+    world.gravity.y = 0.125;
     const canvas = document.getElementById('world');
     const render = Render.create({
       canvas: canvas,
