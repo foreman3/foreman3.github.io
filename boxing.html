@@ -59,6 +59,13 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    const crowd = Array.from({length:80},()=>({
+      x:Math.random()*canvas.width,
+      y:Math.random()*200,
+      r:Math.random()*15+5,
+      a:Math.random()*0.5+0.2
+    }));
+
     const ring = {
       fl:{x:canvas.width*0.2,y:canvas.height-80},
       fr:{x:canvas.width*0.8,y:canvas.height-80},
@@ -69,7 +76,9 @@
     const opponents = [
       {name:'Rookie',color:'#0f0',maxHealth:80,cooldown:1500,punchSpeed:350,twitch:250,block:0.2,dodge:0.1},
       {name:'Striker',color:'#fa0',maxHealth:100,cooldown:1100,punchSpeed:300,twitch:200,block:0.3,dodge:0.2},
-      {name:'Champion',color:'#f00',maxHealth:120,cooldown:900,punchSpeed:250,twitch:150,block:0.4,dodge:0.3}
+      {name:'Champion',color:'#f00',maxHealth:120,cooldown:900,punchSpeed:250,twitch:150,block:0.4,dodge:0.3},
+      {name:'Bruiser',color:'#f0f',maxHealth:150,cooldown:800,punchSpeed:220,twitch:130,block:0.5,dodge:0.35},
+      {name:'Legend',color:'#ff0',maxHealth:200,cooldown:700,punchSpeed:200,twitch:120,block:0.6,dodge:0.4}
     ];
 
     let opponentIndex=0;
@@ -166,6 +175,7 @@
         }
       }
 
+      drawBackground();
       drawRing();
       drawOpponent();
       drawPlayer();
@@ -321,6 +331,22 @@
         return {x: base+40, y: canvas.height - rightPunch*300 - 60};
     }
 
+    function drawBackground(){
+      const grad=ctx.createRadialGradient(canvas.width/2,0,50,canvas.width/2,canvas.height,canvas.height);
+      grad.addColorStop(0,'#222');
+      grad.addColorStop(1,'#000');
+      ctx.fillStyle=grad;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#111';
+      crowd.forEach(c=>{
+        ctx.globalAlpha=c.a;
+        ctx.beginPath();
+        ctx.arc(c.x,c.y,c.r,0,Math.PI*2);
+        ctx.fill();
+      });
+      ctx.globalAlpha=1;
+    }
+
     function drawRing(){
       const {fl,fr,bl,br}=ring;
       const matGrad=ctx.createLinearGradient(bl.x,bl.y,bl.x,bl.y-180);
@@ -331,11 +357,15 @@
       ctx.moveTo(fl.x,fl.y); ctx.lineTo(bl.x,bl.y);
       ctx.lineTo(br.x,br.y); ctx.lineTo(fr.x,fr.y);
       ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#888';
+      ctx.lineWidth=4;
+      ctx.stroke();
 
       const ropeColors=['#f00','#fff','#00f'];
       for(let i=1;i<=3;i++){
         const h=i*10;
         ctx.strokeStyle=ropeColors[i-1];
+        ctx.lineWidth=3;
         ctx.beginPath();
         ctx.moveTo(bl.x,bl.y - h); ctx.lineTo(br.x,br.y - h); ctx.lineTo(fr.x,fr.y - h);
         ctx.stroke();
@@ -351,53 +381,69 @@
     }
 
     function drawPlayer(){
-      ctx.strokeStyle='#0ff';
-      ctx.fillStyle='#0ff';
-      ctx.lineWidth=4;
       const base=canvas.width/2 + playerX*80;
+      ctx.lineWidth=6;
+
       let p=punchPos('left');
+      ctx.strokeStyle='#00bfff';
       ctx.beginPath(); ctx.moveTo(base-60,canvas.height); ctx.lineTo(p.x,p.y); ctx.stroke();
-      ctx.beginPath(); ctx.arc(p.x,p.y,15,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#ff4444';
+      ctx.beginPath(); ctx.arc(p.x,p.y,18,0,Math.PI*2); ctx.fill();
 
       p=punchPos('right');
       ctx.beginPath(); ctx.moveTo(base+60,canvas.height); ctx.lineTo(p.x,p.y); ctx.stroke();
-      ctx.beginPath(); ctx.arc(p.x,p.y,15,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,18,0,Math.PI*2); ctx.fill();
 
+      const bodyGrad=ctx.createLinearGradient(base,canvas.height-160,base,canvas.height);
+      bodyGrad.addColorStop(0,'#00bfff');
+      bodyGrad.addColorStop(1,'#005f9e');
+      ctx.fillStyle=bodyGrad;
       ctx.beginPath();
       ctx.arc(base,canvas.height-100,25,0,Math.PI*2);
       ctx.fill();
+      ctx.strokeStyle='#00bfff';
       ctx.beginPath();
       ctx.moveTo(base,canvas.height-100);
-      ctx.lineTo(base,canvas.height);
+      ctx.lineTo(base,canvas.height-20);
       ctx.stroke();
 
       if(blocking>0){
         ctx.strokeStyle='#ff0';
+        ctx.lineWidth=3;
         ctx.strokeRect(base-40,canvas.height-120,80,80);
       }
     }
 
     function drawOpponent(){
       if(opponent.health<=0) return;
-      ctx.strokeStyle=opponent.color;
-      ctx.fillStyle=opponent.color;
-      ctx.lineWidth=4;
       const x=canvas.width/2 + oppX, y=canvas.height/2;
+      ctx.lineWidth=6;
+
+      const bodyGrad=ctx.createLinearGradient(x,y-80,x,y+60);
+      bodyGrad.addColorStop(0,opponent.color);
+      bodyGrad.addColorStop(1,'#222');
+      ctx.fillStyle=bodyGrad;
+      ctx.strokeStyle=opponent.color;
       ctx.beginPath();
       ctx.arc(x,y-50,30,0,Math.PI*2);
       ctx.fill();
       ctx.beginPath();
       ctx.rect(x-20,y-20,40,80);
       ctx.stroke();
-      ctx.beginPath();
+
+      ctx.fillStyle=opponent.color;
       if(oppState==='block'){
-        ctx.moveTo(x-40,y+40); ctx.lineTo(x+40,y+40);
+        ctx.fillRect(x-40,y+35,80,10);
       }else{
         const lp=oppState==='punch'&&oppArm==='left'?oppPunch*200:oppState==='twitch'&&oppArm==='left'?10:0;
-        ctx.moveTo(x,y); ctx.lineTo(x-40,y+40+lp);
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-40,y+40+lp); ctx.stroke();
+        ctx.beginPath(); ctx.arc(x-40,y+40+lp,12,0,Math.PI*2); ctx.fill();
         const rp=oppState==='punch'&&oppArm==='right'?oppPunch*200:oppState==='twitch'&&oppArm==='right'?10:0;
-        ctx.moveTo(x,y); ctx.lineTo(x+40,y+40+rp);
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+40,y+40+rp); ctx.stroke();
+        ctx.beginPath(); ctx.arc(x+40,y+40+rp,12,0,Math.PI*2); ctx.fill();
       }
+
+      ctx.beginPath();
       ctx.moveTo(x,y+60); ctx.lineTo(x-30,y+120);
       ctx.moveTo(x,y+60); ctx.lineTo(x+30,y+120);
       ctx.stroke();
