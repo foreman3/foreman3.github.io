@@ -94,7 +94,6 @@
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
-    let engineOsc;
     let audioStarted = false;
 
     function resetGame(){
@@ -173,27 +172,10 @@
     if(audioStarted) return;
     audioStarted = true;
     if(audioCtx.state === 'suspended') audioCtx.resume();
-    startEngine();
     playMusic();
   }
 
-  function startEngine(){
-    engineOsc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    engineOsc.type = 'sawtooth';
-    engineOsc.frequency.value = 120;
-    gain.gain.value = 0.05;
-    engineOsc.connect(gain).connect(audioCtx.destination);
-    engineOsc.start();
-  }
-
-  function updateEngine(){
-    if(engineOsc){
-      const freq = 120 + plane.speed*5 + (up?50:0) + (down?-50:0);
-      engineOsc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
-    }
-  }
-
+  
   function playWhoosh(){
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -266,7 +248,6 @@
       if(down) plane.y -= ctrl;
       plane.x = Math.max(-300, Math.min(300, plane.x));
       plane.y = Math.max(20, Math.min(150, plane.y));
-      updateEngine();
       for(const s of stars){
         s.y += plane.speed*0.3;
         if(s.y > canvas.height){
