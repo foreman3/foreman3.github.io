@@ -41,6 +41,7 @@
       cursor: default;
     }
     #info { margin-top:10px; font-size:20px; }
+    #specialWeapon { margin-top:10px; font-size:20px; color:#ffeb3b; }
     #message { margin-top:10px; font-size:24px; color:#ffeb3b; }
   </style>
 </head>
@@ -50,6 +51,7 @@
     <h1>Ultra Tanks</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div id="info"></div>
+    <div id="specialWeapon"></div>
     <div id="message"></div>
     <button id="restartBtn" style="margin-top:10px;">Restart</button>
   </div>
@@ -68,6 +70,9 @@
     let airRaidCountdown = 0;
     let pointerX = 0;
     let pointerY = 0;
+
+    const specialWeapons = ['Guided Missile', 'Mine', 'Air Raid'];
+    let specialWeaponIndex = 0;
 
     const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0};
     let enemies = [];
@@ -108,14 +113,16 @@
   function startLevel() {
     bullets.length = 0;
     mine = null;
-     airRaidAvailable = 1;
-     airRaidExplosion = null;
-     guidedMissilesRemaining = 5;
-     guidedMissiles.length = 0;
-     airRaidCountdown = 0;
-     canvas.style.cursor = 'default';
-     pointerX = canvas.width / 2;
-     pointerY = canvas.height / 2;
+    airRaidAvailable = 1;
+    airRaidExplosion = null;
+    guidedMissilesRemaining = 5;
+    guidedMissiles.length = 0;
+    airRaidCountdown = 0;
+    canvas.style.cursor = 'default';
+    pointerX = canvas.width / 2;
+    pointerY = canvas.height / 2;
+    specialWeaponIndex = 0;
+    updateSpecialWeaponDisplay();
     createObstacles();
       enemies = [];
       for (let i = 0; i < level + 1; i++) {
@@ -135,7 +142,7 @@
       updateInfo();
     }
 
-    function shoot(tank) {
+  function shoot(tank) {
       if (bullets.filter(b => b.owner === tank).length >= 2) return;
       bullets.push({ x: tank.x + Math.cos(tank.angle) * 20,
                     y: tank.y + Math.sin(tank.angle) * 20,
@@ -149,16 +156,20 @@
       document.getElementById('info').textContent = `Level: ${level} | Lives: ${lives} | Enemies Left: ${remaining} | Air Raids: ${airRaidAvailable} | Guided Missiles: ${guidedMissilesRemaining}`;
    }
 
+   function updateSpecialWeaponDisplay() {
+     document.getElementById('specialWeapon').textContent = `Special Weapon: ${specialWeapons[specialWeaponIndex]}`;
+   }
+
     function update() {
       if (!running) return;
       const bounce = false;
 
       if (player.alive) {
         let nx = player.x, ny = player.y, na = player.angle;
-        if (keys['ArrowLeft']) na -= 0.05;
-        if (keys['ArrowRight']) na += 0.05;
-        if (keys['ArrowUp']) { nx += Math.cos(na) * 2; ny += Math.sin(na) * 2; }
-        if (keys['ArrowDown']) { nx -= Math.cos(na) * 2; ny -= Math.sin(na) * 2; }
+        if (keys['ArrowLeft'] || keys['a'] || keys['A']) na -= 0.05;
+        if (keys['ArrowRight'] || keys['d'] || keys['D']) na += 0.05;
+        if (keys['ArrowUp'] || keys['w'] || keys['W']) { nx += Math.cos(na) * 2; ny += Math.sin(na) * 2; }
+        if (keys['ArrowDown'] || keys['s'] || keys['S']) { nx -= Math.cos(na) * 2; ny -= Math.sin(na) * 2; }
         nx = Math.max(15, Math.min(canvas.width - 15, nx));
         ny = Math.max(15, Math.min(canvas.height - 15, ny));
         if (!obstacleCollision(nx, ny)) { player.x = nx; player.y = ny; }
@@ -427,26 +438,39 @@
     window.addEventListener('keydown', e => {
       keys[e.key] = true;
       if (e.key === ' ' && running && player.alive) { shoot(player); }
-      if ((e.key === 'm' || e.key === 'M') && running && player.alive && !mine) {
-        const offset = 16; // place mine just behind the tank with 1px gap
+    });
+
+    canvas.addEventListener('click', () => {
+      if (!running || !player.alive) return;
+      const weapon = specialWeapons[specialWeaponIndex];
+      if (weapon === 'Guided Missile' && guidedMissilesRemaining > 0) {
+        guidedMissiles.push({ x: player.x + Math.cos(player.angle) * 20, y: player.y + Math.sin(player.angle) * 20, explosion: 0 });
+        guidedMissilesRemaining--;
+        canvas.style.cursor = 'none';
+        updateInfo();
+      } else if (weapon === 'Mine' && !mine) {
+        const offset = 16;
         mine = {
           x: player.x - Math.cos(player.angle) * offset,
           y: player.y - Math.sin(player.angle) * offset,
           timer: 180,
           explosion: 0
         };
-      }
-      if ((e.key === 'a' || e.key === 'A') && running && airRaidAvailable > 0 && airRaidCountdown === 0) {
-        airRaidCountdown = 180; // 3 seconds
+      } else if (weapon === 'Air Raid' && airRaidAvailable > 0 && airRaidCountdown === 0) {
+        airRaidCountdown = 180;
         canvas.style.cursor = 'crosshair';
         document.getElementById('message').textContent = '3';
       }
-      if ((e.key === 'g' || e.key === 'G') && running && player.alive && guidedMissilesRemaining > 0) {
-        guidedMissiles.push({ x: player.x + Math.cos(player.angle) * 20, y: player.y + Math.sin(player.angle) * 20, explosion: 0 });
-        guidedMissilesRemaining--;
-        canvas.style.cursor = 'none';
-        updateInfo();
+    });
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        specialWeaponIndex = (specialWeaponIndex + specialWeapons.length - 1) % specialWeapons.length;
+      } else {
+        specialWeaponIndex = (specialWeaponIndex + 1) % specialWeapons.length;
       }
+      updateSpecialWeaponDisplay();
     });
 
     canvas.addEventListener('mousemove', e => {
