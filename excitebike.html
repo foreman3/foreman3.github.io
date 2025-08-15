@@ -48,7 +48,7 @@
   <div id="game-container">
     <h1>Excitebike</h1>
     <canvas id="gameCanvas" width="800" height="400"></canvas>
-    <div id="message">Arrow Up/Down to change speed, Space to jump.</div>
+    <div id="message">Arrow Up/Down to change speed, Space to jump. Hit ramps for big air!</div>
   </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -61,11 +61,13 @@
     let distance = 0;
     let gameOver = false;
     const obstacles = [];
+    let trackOffset = 0;
 
     function createObstacle() {
+      const type = Math.random() < 0.3 ? 'ramp' : 'block';
       const height = 20 + Math.random() * 30;
-      const width = 20 + Math.random() * 30;
-      obstacles.push({ x: canvas.width + Math.random() * 200, y: groundY - height, w: width, h: height });
+      const width = type === 'ramp' ? 40 : 20 + Math.random() * 30;
+      obstacles.push({ x: canvas.width + Math.random() * 200, y: groundY - height, w: width, h: height, type });
     }
 
     function update() {
@@ -74,6 +76,7 @@
       if (obstacles.length < 5 && Math.random() < 0.02) createObstacle();
       obstacles.forEach(o => { o.x -= speed; });
       if (obstacles.length && obstacles[0].x + obstacles[0].w < 0) obstacles.shift();
+      trackOffset = (trackOffset - speed) % 40;
 
       if (keys['ArrowUp']) speed = Math.min(speed + 0.1, 10);
       if (keys['ArrowDown']) speed = Math.max(speed - 0.1, 2);
@@ -89,8 +92,13 @@
       }
 
       obstacles.forEach(o => {
-        if (player.x < o.x + o.w && player.x + player.w > o.x &&
-            player.y < o.y + o.h && player.y + player.h > o.y) {
+        if (o.type === 'ramp') {
+          if (!player.jumping && player.x + player.w > o.x && player.x < o.x + o.w && player.y + player.h >= o.y) {
+            player.vy = -12;
+            player.jumping = true;
+          }
+        } else if (player.x < o.x + o.w && player.x + player.w > o.x &&
+                   player.y < o.y + o.h && player.y + player.h > o.y) {
           gameOver = true;
           document.getElementById('message').textContent = `Game Over! Distance: ${Math.floor(distance)} - Press Enter to restart.`;
         }
@@ -105,10 +113,28 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#654321';
       ctx.fillRect(0, groundY, canvas.width, 40);
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(player.x, player.y, player.w, player.h);
-      ctx.fillStyle = '#333';
-      obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.w, o.h));
+      ctx.fillStyle = '#fff';
+      for (let x = trackOffset; x < canvas.width; x += 40) {
+        ctx.fillRect(x, groundY + 10, 20, 4);
+      }
+      drawBike();
+      obstacles.forEach(o => {
+        if (o.type === 'ramp') {
+          ctx.fillStyle = '#999';
+          ctx.beginPath();
+          ctx.moveTo(o.x, o.y + o.h);
+          ctx.lineTo(o.x + o.w, o.y + o.h);
+          ctx.lineTo(o.x + o.w, o.y);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          ctx.fillStyle = '#333';
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+        }
+      });
+      ctx.fillStyle = '#fff';
+      ctx.font = '20px sans-serif';
+      ctx.fillText(`Speed: ${speed.toFixed(1)}  Dist: ${Math.floor(distance)}`, 10, 25);
     }
 
     function loop() {
@@ -131,11 +157,24 @@
         player.vy = 0;
         player.jumping = false;
         gameOver = false;
-        document.getElementById('message').textContent = 'Arrow Up/Down to change speed, Space to jump.';
+        document.getElementById('message').textContent = 'Arrow Up/Down to change speed, Space to jump. Hit ramps for big air!';
       }
     });
 
     window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    function drawBike() {
+      const { x, y, w, h } = player;
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(x + 5, y + h, h / 2, 0, Math.PI * 2);
+      ctx.arc(x + w - 5, y + h, h / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#555';
+      ctx.fillRect(x + 5, y + 5, w - 10, h - 10);
+    }
 
     loop();
   </script>
