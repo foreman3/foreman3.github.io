@@ -220,7 +220,7 @@
 
     const spawnInterval = setInterval(() => {
       if (!gameOver) spawnBlock();
-    }, 2000);
+    }, 4000);
 
     let gameOver = false;
     Events.on(engine, 'afterUpdate', () => {
