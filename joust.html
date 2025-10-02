@@ -92,11 +92,13 @@
   const GROUND_FRICTION = 0.1;
 
   function baseEnemySpeed(){
-    return 1 + 0.5*(stage-1);
+    const earlyRamp = Math.min(stage-1, 6) * 0.3;
+    const lateRamp = Math.max(0, stage-7) * 0.1;
+    return 1 + earlyRamp + lateRamp;
   }
 
   function playerSpeed(){
-    const diff = Math.max(0, 0.3 - 0.05*(stage-1));
+    const diff = Math.max(0.18, 0.32 - 0.03*(stage-1));
     return baseEnemySpeed() * (1 + diff);
   }
   const BIRD_RADIUS = 18; // 50% larger bird/knight size
@@ -105,6 +107,37 @@
   let GROUND_Y = canvas.height - 30; // just above lava
   const ROOF_HEIGHT = 30; // roof thickness
   const ROOF_SPIKE_BUFFER = 40; // distance from roof to start avoiding spikes
+
+  function createStarField(count = 90){
+    return Array.from({length: count}, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      size: 0.5 + Math.random() * 1.8,
+      twinkle: Math.random() * Math.PI * 2
+    }));
+  }
+
+  function createEmbers(count = 45){
+    return Array.from({length: count}, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      drift: (Math.random()*2-1) * 0.3,
+      speed: 0.008 + Math.random() * 0.02,
+      size: 1 + Math.random() * 2,
+      offset: Math.random() * Math.PI * 2
+    }));
+  }
+
+  let starField = createStarField();
+  let embers = createEmbers();
+  const parallaxLayers = [
+    { speed: 0.05, height: 0.25, amplitude: 40, color: 'rgba(16,22,53,0.45)' },
+    { speed: 0.1, height: 0.35, amplitude: 55, color: 'rgba(25,34,74,0.55)' },
+    { speed: 0.16, height: 0.48, amplitude: 65, color: 'rgba(45,58,112,0.6)' }
+  ];
+
+  let lavaPhase = 0;
+  let glowPulse = 0;
 
   const playerImg = new Image();
   playerImg.src = 'images/player_knight.svg';
@@ -137,6 +170,8 @@
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
     GROUND_Y = canvas.height - 30;
+    starField = createStarField(starField.length);
+    embers = createEmbers(embers.length);
   }
 
   window.addEventListener('resize', () => { resizeGame(); resetPlayer(); });
@@ -167,12 +202,17 @@
 
   function createPlatforms() {
     const plats = [];
-    const num = 5;
+    const num = Math.min(7, 4 + Math.floor(stage / 2));
+    const verticalSpread = 160 + Math.min(stage * 35, 260);
     for(let i=0;i<num;i++){
-      const width = 100 + Math.random()*80;
+      const width = 110 + Math.random()*120 * (0.6 + Math.random()*0.6);
       const x = Math.random()*(canvas.width-width);
-      const y = 150 + Math.random()*400; // expanded range for taller field
-      plats.push({x,y,width,height:10});
+      const y = 140 + Math.random()*verticalSpread;
+      plats.push({x,y,width,height:12 + Math.random()*6});
+    }
+    if(stage % 3 === 0){
+      plats.push({x: canvas.width*0.1, y: 120 + Math.random()*80, width: 160, height: 14});
+      plats.push({x: canvas.width*0.75, y: 120 + Math.random()*80, width: 160, height: 14});
     }
     return plats;
   }
@@ -206,16 +246,24 @@
       this.isPlayer=isPlayer; this.alive=true; this.spawnTime=Date.now();
       this.flaps=[];
       this.onGround = (y >= GROUND_Y-BIRD_RADIUS);
+      this.intent = {dir:0, flap:false, dive:false};
+      this.decisionTimer = 0;
+      this.flapCooldown = 0;
+      this.skill = isPlayer ? 1 : 0.3;
+      this.stamina = 1;
       if(!isPlayer){
-        this.mode='attack';
-        this.modeTimer=stage;
-        this.restDir=Math.random()<0.5?1:-1;
+        const baseSkill = 0.25 + (stage-1) * 0.08;
+        this.skill = Math.max(0.18, Math.min(0.92, baseSkill + (Math.random()*0.3 - 0.1)));
+        this.intent.dir = Math.random()<0.5 ? -1 : 1;
+        this.aggression = 0.3 + this.skill * 0.55;
+        this.wanderBias = (Math.random()*2-1) * (0.3 + (1-this.skill)*0.4);
       }
     }
     update(){
       const walkSpeed = this.isPlayer ? playerSpeed() : baseEnemySpeed();
       const maxAir = walkSpeed * AIR_SPEED_FACTOR;
       const wasOnGround = this.onGround;
+      const dt = 1/60;
       if(this.isPlayer){
         if(wasOnGround){
           if(keys.left) this.vx = -walkSpeed;
@@ -234,51 +282,53 @@
           }
         }
       } else {
-        const speed = walkSpeed; // enemies get faster each stage
-        let dir = Math.sign(player.x - this.x);
-        const avoidRoof = nearRoofSpike(this.x, this.y) && Math.random() < 0.8;
-        if(avoidRoof){
-          this.flaps = [];
-          if(this.vy < 0) this.vy = 0;
-          this.vy += GRAVITY;
-          this.vx = dir * speed;
-        } else if(stage >= 3){
-          if(this.mode === 'attack'){
-            this.modeTimer -= 1/60;
-            if(this.y > player.y){
-              const flapChance = (stage >= 3 ? 0.15 : 0.01 * stage) * stage;
-              if(Math.random() < flapChance){
-                this.flaps.push({time:FLAP_DURATION, dir, force:FLAP_FORCE});
-              }
-              this.vx = dir * speed;
-            } else {
-              this.vy += GRAVITY * 0.4; // swoop down
-              let attackSpeedBonus = stage >= 4 ? 1 : 0.5; // staged curve
-              this.vx = dir * (speed + attackSpeedBonus);
-            }
-            if(this.modeTimer <= 0){
-              this.mode = 'rest';
-              const restMax = Math.max(1, 10 - stage);
-              this.modeTimer = Math.random() * restMax;
-              this.restDir = Math.random() < 0.5 ? 1 : -1;
-            }
-          } else {
-            this.modeTimer -= 1/60;
-            this.vx = this.restDir * speed;
-            if(this.modeTimer <= 0){
-              this.mode = 'attack';
-              this.modeTimer = stage;
-            }
+        const speed = walkSpeed * (0.85 + this.skill * 0.55);
+        this.decisionTimer -= dt;
+        this.flapCooldown -= dt;
+        this.stamina = Math.min(1, this.stamina + (0.22 + this.skill * 0.18) * dt);
+
+        const avoidRoof = nearRoofSpike(this.x, this.y);
+        if(this.decisionTimer <= 0 || (avoidRoof && this.vy < 0)){
+          this.decideIntent();
+        }
+
+        let dir = this.intent.dir;
+        if(Math.random() < 0.01 + (1-this.skill)*0.03){
+          dir *= -1;
+        }
+        if(Math.abs(player.x - this.x) < 160 && player.y < this.y && Math.random() < (0.08 + this.skill*0.12)){
+          dir = -Math.sign((player.x - this.x) || 1);
+        }
+
+        const targetSpeed = dir * speed;
+        if(this.onGround){
+          this.vx += (targetSpeed - this.vx) * (0.35 + this.skill * 0.25);
+          if(Math.abs(this.vx) < speed * 0.3){
+            this.vx = targetSpeed * 0.6;
           }
         } else {
-          if(stage >= 2 && this.y > player.y){
-            dir *= -1; // avoid player when lower
-          }
-          this.vx = dir * speed;
-          const flapChance = 0.01 * stage; // aggressiveness
-          if(player.y < this.y && Math.random() < flapChance){
-            this.flaps.push({time:FLAP_DURATION, dir, force:FLAP_FORCE});
-          }
+          this.vx += (targetSpeed - this.vx) * 0.05;
+        }
+
+        const shouldFlap = (this.intent.flap || (player.y < this.y && Math.random() < (0.04 + this.skill * 0.08)) || (this.onGround && Math.random() < 0.2)) && !avoidRoof;
+        if(shouldFlap && this.flapCooldown <= 0 && this.stamina > 0.35){
+          const forceBoost = 1 + this.skill * 0.6;
+          const dirForFlap = Math.abs(this.vx) > speed * 0.5 ? Math.sign(this.vx) : dir;
+          this.flaps.push({time:FLAP_DURATION * (0.85 + this.skill * 0.35), dir:dirForFlap, force:FLAP_FORCE * forceBoost});
+          this.flapCooldown = 0.55 - this.skill * 0.2 + Math.random() * 0.12;
+          this.stamina -= 0.35;
+        }
+
+        if(!this.onGround && this.intent.dive){
+          this.vy += GRAVITY * (0.3 + this.skill * 0.4);
+        }
+
+        if(avoidRoof && this.vy < 0){
+          this.vy *= 0.5;
+        }
+
+        if(Math.abs(this.vx) > speed * 1.2){
+          this.vx = Math.sign(this.vx) * speed * 1.2;
         }
       }
 
@@ -356,6 +406,18 @@
     }
     draw(){
       const img = this.isPlayer ? playerImg : enemyImg;
+      if(!this.isPlayer){
+        ctx.save();
+        ctx.globalAlpha = 0.2 + this.skill * 0.15;
+        const aura = ctx.createRadialGradient(this.x, this.y, 4, this.x, this.y, 32 + this.skill * 12);
+        aura.addColorStop(0, 'rgba(255, 214, 92, 0.6)');
+        aura.addColorStop(1, 'rgba(255, 214, 92, 0)');
+        ctx.fillStyle = aura;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 32 + this.skill * 12, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
       ctx.drawImage(img,this.x-24,this.y-48,48,48);
       if(this.isPlayer && Date.now() - this.spawnTime < 2000){
         ctx.save();
@@ -366,6 +428,34 @@
         ctx.stroke();
         ctx.restore();
       }
+    }
+    decideIntent(){
+      if(this.isPlayer) return;
+      const distX = player.x - this.x;
+      const heightDiff = player.y - this.y;
+      const caution = 0.45 + (1 - this.skill) * 0.35;
+      const pursuit = 0.35 + this.aggression * 0.6;
+      const noise = this.wanderBias * canvas.width * 0.04;
+      let dir = Math.sign(distX + noise);
+      if(dir === 0) dir = Math.random() < 0.5 ? -1 : 1;
+      if(Math.random() < 0.25 * (1 - this.skill)){
+        dir = Math.random() < 0.5 ? -1 : 1;
+      }
+      if(Math.abs(distX) < 140 && heightDiff > 30 && Math.random() < caution){
+        dir = -Math.sign(distX || 1);
+      }
+      const wantsDive = heightDiff < -60 && Math.abs(distX) < 220 && Math.random() < pursuit;
+      const wantsFlap = heightDiff < -20 || (player.y < this.y && Math.random() < pursuit * 0.4) || (this.onGround && Math.random() < 0.35);
+      const roamChance = Math.max(0.05, 0.25 + (1 - this.skill) * 0.35 - this.aggression * 0.2);
+      if(Math.random() < roamChance){
+        dir = Math.random() < 0.5 ? -1 : 1;
+      }
+      this.intent = {
+        dir,
+        flap: wantsFlap,
+        dive: wantsDive
+      };
+      this.decisionTimer = 0.55 - this.skill * 0.25 + Math.random() * 0.35;
     }
   }
 
@@ -430,15 +520,15 @@
     player = new Knight(x,GROUND_Y-BIRD_RADIUS,true);
   }
 
-  function createEffect(x,y){
-    effects.push({x,y,r:0,alpha:1});
+  function createEffect(x,y,color='yellow'){
+    effects.push({x,y,r:0,alpha:1,color});
   }
 
   function updateEffects(){
     for(let i=effects.length-1;i>=0;i--){
       const ef=effects[i];
-      ef.r+=2;
-      ef.alpha-=0.04;
+      ef.r+=2.5;
+      ef.alpha-=0.035;
       if(ef.alpha<=0) effects.splice(i,1);
     }
   }
@@ -447,8 +537,10 @@
     for(const ef of effects){
       ctx.save();
       ctx.globalAlpha=ef.alpha;
-      ctx.strokeStyle='yellow';
-      ctx.lineWidth=2;
+      ctx.strokeStyle=ef.color;
+      ctx.shadowColor = ef.color;
+      ctx.shadowBlur = 8;
+      ctx.lineWidth=2 + ef.r*0.04;
       ctx.beginPath();
       ctx.arc(ef.x,ef.y,ef.r,0,Math.PI*2);
       ctx.stroke();
@@ -477,7 +569,7 @@
               scheduleSpawn();
             }
           }
-          createEffect(k.x,k.y);
+          createEffect(k.x,k.y,'#ff8737');
           break;
         }
       }
@@ -516,7 +608,7 @@
                 scheduleSpawn();
               }
             }
-            createEffect(lower.x,lower.y);
+            createEffect(lower.x,lower.y,'#ffe066');
           } else {
             const tempVy=a.vy;
             a.vy=-Math.abs(b.vy);
@@ -568,41 +660,271 @@
     document.getElementById('info').textContent=`Lives: ${lives} | Stage: ${stage}`;
   }
 
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    // lava
-    ctx.fillStyle = '#ff3300';
-    ctx.fillRect(0,canvas.height-20,canvas.width,20);
-    // roof
-    ctx.fillStyle = '#228B22';
-    ctx.fillRect(0,0,canvas.width,ROOF_HEIGHT);
-    // ground
-    ctx.fillStyle = '#228B22';
-    ctx.fillRect(0,GROUND_Y,canvas.width,10);
-    // platforms
-    ctx.fillStyle = '#000000';
-    for(const p of platforms){
-      ctx.fillRect(p.x,p.y,p.width,p.height);
-    }
-    // spikes
-    ctx.fillStyle = 'grey';
-    for(const s of spikes){
+  function drawRoundedRect(context, x, y, width, height, radius){
+    context.beginPath();
+    context.moveTo(x + radius, y);
+    context.lineTo(x + width - radius, y);
+    context.quadraticCurveTo(x + width, y, x + width, y + radius);
+    context.lineTo(x + width, y + height - radius);
+    context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    context.lineTo(x + radius, y + height);
+    context.quadraticCurveTo(x, y + height, x, y + height - radius);
+    context.lineTo(x, y + radius);
+    context.quadraticCurveTo(x, y, x + radius, y);
+    context.closePath();
+  }
+
+  function drawLifeIcon(x, y, scale = 1){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#ffe27d';
+    ctx.beginPath();
+    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffcf56';
+    ctx.beginPath();
+    ctx.moveTo(-18, -2);
+    ctx.quadraticCurveTo(-4, -16, -2, -2);
+    ctx.quadraticCurveTo(-4, 8, -18, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(18, -2);
+    ctx.quadraticCurveTo(4, -16, 2, -2);
+    ctx.quadraticCurveTo(4, 8, 18, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBackgroundLayers(){
+    const hue = (stage * 37) % 360;
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, `hsl(${(hue + 28) % 360}, 70%, 26%)`);
+    gradient.addColorStop(0.4, `hsl(${(hue + 12) % 360}, 62%, 16%)`);
+    gradient.addColorStop(1, '#060812');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for(const star of starField){
+      const twinkle = (Math.sin(lavaPhase * 2 + star.twinkle) + 1) / 2;
+      ctx.save();
+      ctx.globalAlpha = 0.25 + twinkle * 0.55;
+      ctx.fillStyle = '#fffbe6';
       ctx.beginPath();
-      ctx.moveTo(s.x, s.y);
-      ctx.lineTo(s.x + s.width/2, s.y + s.height);
-      ctx.lineTo(s.x + s.width, s.y);
+      ctx.arc(star.x * canvas.width, star.y * canvas.height * 0.6, star.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    parallaxLayers.forEach((layer, index) => {
+      ctx.save();
+      ctx.fillStyle = layer.color;
+      ctx.beginPath();
+      const baseY = canvas.height * layer.height;
+      ctx.moveTo(0, baseY);
+      const segments = 18;
+      for(let i=0;i<=segments;i++){
+        const x = (i/segments) * canvas.width;
+        const offset = Math.sin((i/segments) * Math.PI * 2 + lavaPhase * (layer.speed * 6 + index)) * layer.amplitude;
+        ctx.lineTo(x, baseY + offset);
+      }
+      ctx.lineTo(canvas.width, canvas.height);
+      ctx.lineTo(0, canvas.height);
       ctx.closePath();
       ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function drawLava(){
+    ctx.save();
+    ctx.fillStyle = '#1b1528';
+    ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    const steps = 48;
+    for(let i=0;i<=steps;i++){
+      const x = (i/steps) * canvas.width;
+      const wave = Math.sin(lavaPhase + x * 0.035) * 6 + Math.sin(lavaPhase * 0.6 + x * 0.02) * 4 + 14;
+      ctx.lineTo(x, GROUND_Y - wave);
     }
+    ctx.lineTo(canvas.width, canvas.height);
+    ctx.lineTo(0, canvas.height);
+    ctx.closePath();
+    const lavaGradient = ctx.createLinearGradient(0, GROUND_Y - 40, 0, canvas.height);
+    lavaGradient.addColorStop(0, '#ffdf6b');
+    lavaGradient.addColorStop(0.45, '#ff8a3d');
+    lavaGradient.addColorStop(1, '#b91d1d');
+    ctx.fillStyle = lavaGradient;
+    ctx.fill();
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = 'rgba(255, 245, 214, 0.7)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawEmbers(){
+    for(const ember of embers){
+      ember.y -= ember.speed;
+      ember.x += ember.drift * 0.002;
+      if(ember.y < 0){
+        ember.y = 1;
+        ember.x = Math.random();
+      }
+      if(ember.x < 0) ember.x += 1;
+      if(ember.x > 1) ember.x -= 1;
+      const flicker = (Math.sin(lavaPhase * 2.3 + ember.offset) + 1) / 2;
+      const x = ember.x * canvas.width;
+      const y = GROUND_Y - ember.y * (canvas.height - GROUND_Y + 80);
+      ctx.save();
+      ctx.globalAlpha = 0.25 + flicker * 0.5;
+      ctx.fillStyle = 'rgba(255, 202, 120, 1)';
+      ctx.beginPath();
+      ctx.arc(x, y, ember.size * (0.7 + flicker * 0.6), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawCavern(){
+    const roofGradient = ctx.createLinearGradient(0, 0, 0, ROOF_HEIGHT);
+    roofGradient.addColorStop(0, 'rgba(12, 18, 38, 0.95)');
+    roofGradient.addColorStop(1, 'rgba(46, 55, 92, 0.8)');
+    ctx.fillStyle = roofGradient;
+    ctx.fillRect(0, 0, canvas.width, ROOF_HEIGHT);
+
+    drawLava();
+
+    ctx.save();
+    ctx.shadowColor = `rgba(255, 170, 90, ${0.35 + glowPulse * 0.25})`;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = `rgba(255, 206, 135, ${0.18 + glowPulse * 0.18})`;
+    ctx.fillRect(0, GROUND_Y - 10, canvas.width, 12);
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = '#2b223f';
+    ctx.fillRect(0, GROUND_Y - 6, canvas.width, 6);
+    ctx.restore();
+
+    drawEmbers();
+  }
+
+  function drawPlatformsVisual(){
+    for(const p of platforms){
+      ctx.save();
+      ctx.shadowColor = `rgba(255, 226, 170, ${0.25 + glowPulse * 0.25})`;
+      ctx.shadowBlur = 18;
+      const gradient = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.height + 20);
+      gradient.addColorStop(0, `rgba(255, 241, 194, ${0.6 + glowPulse * 0.2})`);
+      gradient.addColorStop(0.4, '#59508a');
+      gradient.addColorStop(1, '#27234c');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(p.x, p.y, p.width, p.height);
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fillRect(p.x, p.y, p.width, Math.max(2, p.height * 0.2));
+      ctx.fillStyle = 'rgba(18,14,34,0.6)';
+      ctx.fillRect(p.x, p.y + p.height - 3, p.width, 3);
+      ctx.restore();
+    }
+  }
+
+  function drawSpikesVisual(){
+    for(const s of spikes){
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 230, 200, 0.4)';
+      ctx.shadowBlur = 12;
+      const downward = s.y === ROOF_HEIGHT;
+      const spikeGradient = ctx.createLinearGradient(s.x, s.y - (downward ? s.height : 0), s.x, s.y + (downward ? 0 : s.height));
+      spikeGradient.addColorStop(0, '#fef4d7');
+      spikeGradient.addColorStop(1, '#9ea6c0');
+      ctx.fillStyle = spikeGradient;
+      ctx.beginPath();
+      if(downward){
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(s.x + s.width/2, s.y - s.height);
+        ctx.lineTo(s.x + s.width, s.y);
+      } else {
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(s.x + s.width/2, s.y + s.height);
+        ctx.lineTo(s.x + s.width, s.y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawHUD(){
+    const panelX = 20;
+    const panelY = 20;
+    const panelWidth = 220;
+    const panelHeight = 58;
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = 'rgba(10, 14, 32, 0.7)';
+    ctx.strokeStyle = 'rgba(255, 224, 170, 0.45)';
+    ctx.lineWidth = 2;
+    drawRoundedRect(ctx, panelX, panelY, panelWidth, panelHeight, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    for(let i=0;i<lives;i++){
+      drawLifeIcon(panelX + 38 + i * 52, panelY + panelHeight/2 + 2, 0.85);
+    }
+
+    ctx.font = `600 ${Math.max(18, canvas.width * 0.018)}px 'Segoe UI', sans-serif`;
+    ctx.fillStyle = '#ffe07d';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 6;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    const stageX = Math.max(panelX + panelWidth + 30, canvas.width - 180);
+    ctx.fillText(`Stage ${stage}`, stageX, panelY + panelHeight/2);
+    ctx.restore();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    lavaPhase += 0.03;
+    glowPulse = (Math.sin(lavaPhase * 1.4) + 1) / 2;
+    drawBackgroundLayers();
+    drawCavern();
+    drawPlatformsVisual();
+    drawSpikesVisual();
     player.draw();
     enemies.forEach(e=>e.draw());
     drawEffects();
     if(stagePause>0){
+      ctx.save();
+      const bannerWidth = Math.min(420, canvas.width * 0.6);
+      const bannerHeight = 140;
+      const bannerX = canvas.width/2 - bannerWidth/2;
+      const bannerY = canvas.height/2 - bannerHeight/2;
+      ctx.fillStyle = `rgba(6, 8, 20, ${0.55 + glowPulse * 0.2})`;
+      ctx.strokeStyle = 'rgba(255, 214, 130, 0.7)';
+      ctx.lineWidth = 4;
+      drawRoundedRect(ctx, bannerX, bannerY, bannerWidth, bannerHeight, 28);
+      ctx.fill();
+      ctx.stroke();
       ctx.fillStyle='gold';
-      ctx.font='bold 72px sans-serif';
+      ctx.font=`bold ${Math.max(48, canvas.width * 0.06)}px "Segoe UI", sans-serif`;
       ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 18;
       ctx.fillText(`Stage ${stage}`, canvas.width/2, canvas.height/2);
+      ctx.restore();
     }
+    drawHUD();
   }
 
   const FRAME_TIME = 1000/60;
