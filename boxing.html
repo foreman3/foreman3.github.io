@@ -776,6 +776,77 @@
       return `rgba(${r},${g},${b},${alpha})`;
     }
 
+    function drawStylizedGlove(x, y, size, baseColor, accentColor, energyColor, rotation = 0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+
+      const radius = size;
+      const glowRadius = radius * 1.55;
+
+      const bodyGradient = ctx.createRadialGradient(-radius * 0.35, -radius * 0.5, radius * 0.3, 0, 0, radius * 1.1);
+      bodyGradient.addColorStop(0, hexToRgba(accentColor, 0.95));
+      bodyGradient.addColorStop(0.45, hexToRgba(baseColor, 0.95));
+      bodyGradient.addColorStop(1, hexToRgba(baseColor, 0.6));
+
+      ctx.fillStyle = bodyGradient;
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.95, -radius * 0.1);
+      ctx.quadraticCurveTo(-radius * 0.88, -radius * 1.1, radius * 0.1, -radius * 1.2);
+      ctx.quadraticCurveTo(radius * 1.25, -radius * 0.95, radius * 1.25, -radius * 0.2);
+      ctx.quadraticCurveTo(radius * 1.22, radius * 0.85, radius * 0.15, radius * 1.05);
+      ctx.quadraticCurveTo(-radius * 0.95, radius * 0.85, -radius * 0.95, -radius * 0.1);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = hexToRgba(accentColor, 0.75);
+      ctx.lineWidth = radius * 0.22;
+      ctx.stroke();
+
+      ctx.strokeStyle = hexToRgba(energyColor, 0.35);
+      ctx.lineWidth = radius * 0.14;
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.5, -radius * 0.65);
+      ctx.quadraticCurveTo(radius * 0.05, -radius * 0.95, radius * 0.8, -radius * 0.4);
+      ctx.stroke();
+
+      ctx.strokeStyle = hexToRgba(accentColor, 0.8);
+      ctx.lineWidth = radius * 0.12;
+      const knuckles = 3;
+      for (let i = 0; i < knuckles; i++) {
+        const t = (i + 1) / (knuckles + 1);
+        const nx = -radius * 0.65 + radius * 1.3 * t;
+        ctx.beginPath();
+        ctx.moveTo(nx, -radius * 0.2);
+        ctx.quadraticCurveTo(nx + radius * 0.12, -radius * 0.38, nx + radius * 0.24, -radius * 0.18);
+        ctx.stroke();
+      }
+
+      const highlight = ctx.createRadialGradient(-radius * 0.4, -radius * 0.55, 0, -radius * 0.4, -radius * 0.55, radius * 0.9);
+      highlight.addColorStop(0, hexToRgba('#ffffff', 0.85));
+      highlight.addColorStop(0.45, hexToRgba('#ffffff', 0.2));
+      highlight.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = highlight;
+      ctx.beginPath();
+      ctx.ellipse(-radius * 0.3, -radius * 0.55, radius * 0.65, radius * 0.58, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = hexToRgba(energyColor, 0.25);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, glowRadius, glowRadius * 0.9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = hexToRgba(energyColor, 0.6);
+      ctx.lineWidth = radius * 0.08;
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.4, radius * 0.5);
+      ctx.quadraticCurveTo(0, radius * 0.95, radius * 0.5, radius * 0.45);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
     function update(dt) {
       game.overlay = Math.max(0, game.overlay - dt / 3200);
       if (game.messageTimer > 0) {
@@ -1005,24 +1076,97 @@
       ctx.ellipse(baseX, head.y + 60, 160, 90, 0, 0, Math.PI);
       ctx.fill();
 
-      ctx.fillStyle = hexToRgba(opp.color, 0.95);
+      const headGradient = ctx.createLinearGradient(head.x, head.y - 56, head.x, head.y + 62);
+      headGradient.addColorStop(0, hexToRgba('#ffffff', 0.18));
+      headGradient.addColorStop(0.35, hexToRgba(opp.color, 0.95));
+      headGradient.addColorStop(1, hexToRgba(opp.secondary, 0.88));
+      ctx.fillStyle = headGradient;
       ctx.beginPath();
-      ctx.arc(head.x, head.y, 46, 0, Math.PI * 2);
+      ctx.ellipse(head.x, head.y, 48, 54, 0, 0, Math.PI * 2);
       ctx.fill();
-
-      ctx.fillStyle = 'rgba(10,16,26,0.78)';
-      ctx.fillRect(head.x - 24, head.y - 12, 18, 8);
-      ctx.fillRect(head.x + 6, head.y - 12, 18, 8);
-      ctx.strokeStyle = 'rgba(18,24,34,0.82)';
+      ctx.strokeStyle = hexToRgba(opp.secondary, 0.65);
       ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(head.x, head.y + 16, 22, 0, Math.PI);
       ctx.stroke();
 
-      ctx.fillStyle = hexToRgba(opp.secondary, 0.85);
-      ctx.fillRect(baseX - 110, baseY + 40 + slump * 0.6, 220, 34);
+      const visorGradient = ctx.createLinearGradient(head.x, head.y - 10, head.x, head.y + 24);
+      visorGradient.addColorStop(0, hexToRgba('#0b0f18', 0.85));
+      visorGradient.addColorStop(1, hexToRgba(opp.secondary, 0.85));
+      ctx.fillStyle = visorGradient;
+      ctx.beginPath();
+      ctx.moveTo(head.x - 36, head.y - 6);
+      ctx.quadraticCurveTo(head.x, head.y - 28, head.x + 36, head.y - 6);
+      ctx.quadraticCurveTo(head.x + 30, head.y + 24, head.x, head.y + 26);
+      ctx.quadraticCurveTo(head.x - 30, head.y + 24, head.x - 36, head.y - 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = hexToRgba(opp.color, 0.8);
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = hexToRgba(opp.secondary, 0.45);
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(head.x - 22, head.y + 12);
+      ctx.quadraticCurveTo(head.x, head.y + 26, head.x + 22, head.y + 12);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.strokeStyle = hexToRgba('#ffffff', 0.25);
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(head.x, head.y - 44);
+      ctx.quadraticCurveTo(head.x + 10, head.y - 62, head.x + 4, head.y - 78);
+      ctx.stroke();
+
+      const collarGradient = ctx.createLinearGradient(baseX, head.y + 10, baseX, head.y + 140);
+      collarGradient.addColorStop(0, hexToRgba(opp.secondary, 0.85));
+      collarGradient.addColorStop(1, hexToRgba(opp.color, 0.4));
+      ctx.fillStyle = collarGradient;
+      ctx.beginPath();
+      ctx.ellipse(baseX, head.y + 68, 150, 72, 0, 0, Math.PI);
+      ctx.fill();
+
+      ctx.fillStyle = hexToRgba(opp.secondary, 0.82);
+      ctx.beginPath();
+      ctx.moveTo(baseX - 118, baseY + 44 + slump * 0.6);
+      ctx.lineTo(baseX + 118, baseY + 44 + slump * 0.6);
+      ctx.lineTo(baseX + 96, baseY + 86 + slump * 0.6);
+      ctx.lineTo(baseX - 96, baseY + 86 + slump * 0.6);
+      ctx.closePath();
+      ctx.fill();
+
       ctx.fillStyle = hexToRgba(opp.color, 0.78);
-      ctx.fillRect(baseX - 96, baseY + 36 + slump * 0.6, 192, 38);
+      ctx.beginPath();
+      ctx.moveTo(baseX - 96, baseY + 40 + slump * 0.6);
+      ctx.lineTo(baseX + 96, baseY + 40 + slump * 0.6);
+      ctx.quadraticCurveTo(baseX + 60, baseY + 96 + slump * 0.5, baseX, baseY + 108 + slump * 0.6);
+      ctx.quadraticCurveTo(baseX - 60, baseY + 96 + slump * 0.5, baseX - 96, baseY + 40 + slump * 0.6);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = hexToRgba(opp.secondary, 0.55);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(baseX - 84, baseY + 54 + slump * 0.6);
+      ctx.lineTo(baseX - 32, baseY + 96 + slump * 0.4);
+      ctx.lineTo(baseX, baseY + 60 + slump * 0.4);
+      ctx.lineTo(baseX + 32, baseY + 96 + slump * 0.4);
+      ctx.lineTo(baseX + 84, baseY + 54 + slump * 0.6);
+      ctx.stroke();
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const coreGlow = ctx.createRadialGradient(baseX, baseY + 74 + slump * 0.5, 0, baseX, baseY + 74 + slump * 0.5, 110);
+      coreGlow.addColorStop(0, hexToRgba('#ffffff', 0.55));
+      coreGlow.addColorStop(0.35, hexToRgba(opp.color, 0.45));
+      coreGlow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = coreGlow;
+      ctx.beginPath();
+      ctx.ellipse(baseX, baseY + 74 + slump * 0.4, 110, 86, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
 
       drawOpponentArm('left', head, baseX, baseY, slump);
       drawOpponentArm('right', head, baseX, baseY, slump);
@@ -1072,20 +1216,32 @@
         gloveY += 46;
       }
 
-      ctx.strokeStyle = hexToRgba(opp.secondary, 0.88);
-      ctx.lineWidth = 14;
+      const elbowX = (shoulderX + gloveX) / 2 + dir * 26;
+      const elbowY = (shoulderY + gloveY) / 2 - 28;
+      const limbGrad = ctx.createLinearGradient(shoulderX, shoulderY, gloveX, gloveY);
+      limbGrad.addColorStop(0, hexToRgba(opp.secondary, 0.92));
+      limbGrad.addColorStop(1, hexToRgba(opp.color, 0.7));
+
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = limbGrad;
+      ctx.lineWidth = 22;
       ctx.beginPath();
       ctx.moveTo(shoulderX, shoulderY);
-      ctx.lineTo(gloveX, gloveY);
+      ctx.quadraticCurveTo(elbowX, elbowY, gloveX, gloveY);
       ctx.stroke();
 
-      ctx.fillStyle = hexToRgba(opp.color, attacking ? 0.97 : 0.9);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = hexToRgba(opp.secondary, attacking ? 0.7 : 0.45);
+      ctx.lineWidth = 9;
       ctx.beginPath();
-      ctx.arc(gloveX, gloveY, size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = hexToRgba(opp.secondary, 0.5);
-      ctx.lineWidth = 4;
+      ctx.moveTo(shoulderX, shoulderY);
+      ctx.quadraticCurveTo(elbowX, elbowY, gloveX, gloveY);
       ctx.stroke();
+      ctx.restore();
+
+      const orientation = Math.atan2(gloveY - elbowY, gloveX - elbowX);
+      drawStylizedGlove(gloveX, gloveY, size * 1.15, opp.color, opp.secondary, opp.attack && opp.attack.phase === 'swing' ? '#ffdba6' : '#ffffff', orientation);
     }
     function drawPlayer() {
       const dodgeOffset = player.dodge.active ? Math.sin(player.dodge.progress * Math.PI) * 110 * player.dodge.dir : 0;
@@ -1141,6 +1297,87 @@
       }
       ctx.restore();
 
+      ctx.save();
+      buildSilhouettePath();
+      ctx.clip();
+
+      const chestGradient = ctx.createRadialGradient(baseX, waistY - 90, 0, baseX, waistY - 90, 240);
+      chestGradient.addColorStop(0, 'rgba(150,230,255,0.42)');
+      chestGradient.addColorStop(0.45, 'rgba(60,150,255,0.24)');
+      chestGradient.addColorStop(1, 'rgba(10,20,30,0.02)');
+      ctx.fillStyle = chestGradient;
+      ctx.beginPath();
+      ctx.ellipse(baseX, waistY - 80, span * 0.65, 200, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const harnessColor = 'rgba(160,220,255,0.25)';
+      ctx.fillStyle = harnessColor;
+      ctx.beginPath();
+      ctx.moveTo(baseX - span * 0.35, torsoTop + 40);
+      ctx.lineTo(baseX - span * 0.12, torsoTop + 140);
+      ctx.quadraticCurveTo(baseX, torsoTop + 120, baseX + span * 0.12, torsoTop + 140);
+      ctx.lineTo(baseX + span * 0.35, torsoTop + 40);
+      ctx.lineTo(baseX + span * 0.2, torsoTop + 20);
+      ctx.lineTo(baseX - span * 0.2, torsoTop + 20);
+      ctx.closePath();
+      ctx.fill();
+
+      const coreGradient = ctx.createRadialGradient(baseX, waistY - 40, 0, baseX, waistY - 40, 120);
+      coreGradient.addColorStop(0, 'rgba(255,220,140,0.55)');
+      coreGradient.addColorStop(0.45, 'rgba(130,220,255,0.35)');
+      coreGradient.addColorStop(1, 'rgba(20,40,70,0)');
+      ctx.fillStyle = coreGradient;
+      ctx.beginPath();
+      ctx.ellipse(baseX, waistY - 40, span * 0.28, 120, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(255,240,210,0.28)';
+      ctx.beginPath();
+      ctx.ellipse(baseX, waistY - 40, span * 0.18, 80, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(210,245,255,0.28)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(baseX, torsoTop + 18);
+      ctx.lineTo(baseX, waistY + 40);
+      ctx.stroke();
+
+      const headGlow = ctx.createRadialGradient(baseX, torsoTop - 70, 0, baseX, torsoTop - 70, 140);
+      headGlow.addColorStop(0, 'rgba(120,220,255,0.4)');
+      headGlow.addColorStop(0.35, 'rgba(60,120,240,0.18)');
+      headGlow.addColorStop(1, 'rgba(4,6,12,0.05)');
+      ctx.fillStyle = headGlow;
+      ctx.beginPath();
+      ctx.ellipse(baseX, torsoTop - 60, span * 0.4, 120, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(100,190,255,0.22)';
+      ctx.beginPath();
+      ctx.moveTo(baseX - span * 0.24, torsoTop - 36);
+      ctx.quadraticCurveTo(baseX, torsoTop - 126, baseX + span * 0.24, torsoTop - 36);
+      ctx.quadraticCurveTo(baseX + span * 0.18, torsoTop - 6, baseX, torsoTop + 6);
+      ctx.quadraticCurveTo(baseX - span * 0.18, torsoTop - 6, baseX - span * 0.24, torsoTop - 36);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(210,245,255,0.32)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(baseX - span * 0.16, torsoTop - 24);
+      ctx.quadraticCurveTo(baseX, torsoTop - 64, baseX + span * 0.16, torsoTop - 24);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(200,245,255,0.28)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(baseX - span * 0.48, waistY + 10);
+      ctx.quadraticCurveTo(baseX, waistY - 70, baseX + span * 0.48, waistY + 10);
+      ctx.stroke();
+      ctx.restore();
+
       buildSilhouettePath();
       ctx.strokeStyle = 'rgba(150,230,255,0.55)';
       ctx.lineWidth = 3;
@@ -1153,31 +1390,50 @@
       ctx.quadraticCurveTo(baseX, torsoTop + 26, baseX + span * 0.4, torsoTop + 70);
       ctx.stroke();
 
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
+      const gloves = {
+        left: getPlayerHandPosition('left'),
+        right: getPlayerHandPosition('right')
+      };
+
       ['left', 'right'].forEach(hand => {
-        const glove = getPlayerHandPosition(hand);
+        const glove = gloves[hand];
         const anchorX = baseX + (hand === 'left' ? -150 : 150);
-        const anchorY = canvas.height - 180;
-        const curveControlX = baseX + (hand === 'left' ? -70 : 70);
-        const lineColor = hand === 'left' ? 'rgba(120,220,255,0.38)' : 'rgba(255,150,220,0.38)';
-        const glowColor = hand === 'left' ? 'rgba(150,240,255,0.55)' : 'rgba(255,190,240,0.55)';
-        ctx.strokeStyle = lineColor;
-        ctx.lineWidth = 9;
+        const anchorY = canvas.height - 200;
+        const elbowX = (anchorX + glove.x) / 2 + (hand === 'left' ? -50 : 50);
+        const elbowY = (anchorY + glove.y) / 2 - 80;
+        const armGradient = ctx.createLinearGradient(anchorX, anchorY, glove.x, glove.y);
+        if (hand === 'left') {
+          armGradient.addColorStop(0, 'rgba(90,210,255,0.85)');
+          armGradient.addColorStop(1, 'rgba(26,110,255,0.6)');
+        } else {
+          armGradient.addColorStop(0, 'rgba(255,170,240,0.85)');
+          armGradient.addColorStop(1, 'rgba(255,90,190,0.6)');
+        }
+
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = armGradient;
+        ctx.lineWidth = 28;
         ctx.beginPath();
         ctx.moveTo(anchorX, anchorY);
-        ctx.quadraticCurveTo(curveControlX, canvas.height - 280, glove.x, glove.y);
+        ctx.quadraticCurveTo(elbowX, elbowY, glove.x, glove.y);
         ctx.stroke();
 
-        ctx.fillStyle = lineColor;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = hand === 'left' ? 'rgba(170,245,255,0.7)' : 'rgba(255,190,245,0.7)';
+        ctx.lineWidth = 10;
         ctx.beginPath();
-        ctx.arc(glove.x, glove.y, glove.size + 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = glowColor;
-        ctx.lineWidth = 2.5;
+        ctx.moveTo(anchorX, anchorY);
+        ctx.quadraticCurveTo(elbowX, elbowY, glove.x, glove.y);
         ctx.stroke();
+        ctx.restore();
+
+        const orientation = Math.atan2(glove.y - elbowY, glove.x - elbowX);
+        const baseColor = hand === 'left' ? '#4cf5ff' : '#ff8be8';
+        const accentColor = hand === 'left' ? '#3285ff' : '#ff4fbc';
+        const energyColor = hand === 'left' ? '#c5fbff' : '#ffd8ff';
+        drawStylizedGlove(glove.x, glove.y, glove.size + 10, baseColor, accentColor, energyColor, orientation);
       });
-      ctx.restore();
 
       if (player.blocking) {
         const shieldAlpha = 0.25 + player.guard * 0.4;
