@@ -149,6 +149,16 @@
   let spikes = [];
   let stagePause = 0; // frames to pause with stage text
 
+  let stage = 1;
+  let lives = 3;
+  let enemies = [];
+  let effects = [];
+  let totalToSpawn = 3;
+  let spawned = 0;
+  let nextSpawn = 0;
+  let player = null;
+  let platforms = [];
+
   function resizeGame(){
     const sidebar = document.getElementById('sidebar');
     const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
@@ -238,7 +248,7 @@
   }
 
   resizeGame();
-  let platforms = createPlatforms();
+  platforms = createPlatforms();
 
   class Knight {
     constructor(x,y,isPlayer=false){
@@ -459,14 +469,7 @@
     }
   }
 
-  let player = new Knight(canvas.width/2,GROUND_Y-BIRD_RADIUS,true);
-  let lives = 3;
-  let stage = 1;
-  let enemies = [];
-  let effects = [];
-  let totalToSpawn = 3;
-  let spawned = 0;
-  let nextSpawn = 0;
+  player = new Knight(canvas.width/2,GROUND_Y-BIRD_RADIUS,true);
 
   function startStage(){
     platforms = createPlatforms();
