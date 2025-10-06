@@ -1,11 +1,42 @@
-<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" fill="none"/>
-  <ellipse cx="16" cy="20" rx="10" ry="6" fill="#795548"/>
-  <line x1="12" y1="26" x2="12" y2="32" stroke="#795548" stroke-width="2"/>
-  <line x1="20" y1="26" x2="20" y2="32" stroke="#795548" stroke-width="2"/>
-  <line x1="16" y1="14" x2="16" y2="8" stroke="#795548" stroke-width="2"/>
-  <circle cx="16" cy="6" r="2" fill="#795548"/>
-  <rect x="13" y="12" width="6" height="6" fill="#2196f3"/>
-  <rect x="14" y="9" width="4" height="3" fill="#cfd8dc"/>
-  <line x1="17" y1="12" x2="24" y2="9" stroke="#cfd8dc" stroke-width="1.5"/>
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="playerWing" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fbe9e7"/>
+      <stop offset="100%" stop-color="#ffccbc"/>
+    </linearGradient>
+    <linearGradient id="playerArmor" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c5d8ff"/>
+      <stop offset="100%" stop-color="#5b7bd9"/>
+    </linearGradient>
+    <linearGradient id="playerPlume" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffeb3b"/>
+      <stop offset="100%" stop-color="#ffc107"/>
+    </linearGradient>
+    <linearGradient id="saddle" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8d6e63"/>
+      <stop offset="100%" stop-color="#4e342e"/>
+    </linearGradient>
+    <linearGradient id="playerBird" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f48fb1"/>
+      <stop offset="100%" stop-color="#c2185b"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="36" cy="42" rx="20" ry="14" fill="url(#playerBird)" stroke="#7b1fa2" stroke-width="2"/>
+    <path d="M20 36c-6 2-10 6-12 11 6-2 12-1 16 2" fill="none" stroke="#7b1fa2" stroke-width="2"/>
+    <path d="M54 44c4-2 6-6 7-10-5 1-9 3-11 6" fill="none" stroke="#7b1fa2" stroke-width="2"/>
+    <path d="M22 36c-2-6 4-14 12-16 9-2 15 3 18 8" fill="url(#playerWing)" stroke="#e1bee7" stroke-width="2"/>
+    <ellipse cx="44" cy="36" rx="6" ry="6" fill="#fff3e0" stroke="#7b1fa2" stroke-width="1.5"/>
+    <circle cx="46.5" cy="35" r="1.5" fill="#311b92"/>
+    <path d="M48 36c3 0 6 1 7 4" stroke="#311b92" stroke-width="1.5"/>
+    <path d="M32 20l-4 10c4 4 10 4 14 0l-3-10" fill="url(#playerArmor)" stroke="#1a237e" stroke-width="2"/>
+    <path d="M34 12l-2 8 8 4 2-10" fill="#263238" stroke="#000" stroke-width="1.5"/>
+    <path d="M32 8c2-3 6-4 9-2 3 2 4 6 1 9" fill="url(#playerPlume)" stroke="#ff6f00" stroke-width="1.5"/>
+    <path d="M28 28l-5 8 7 2" fill="url(#saddle)" stroke="#3e2723" stroke-width="2"/>
+    <path d="M18 50l-2 9" stroke="#4e342e" stroke-width="3"/>
+    <path d="M52 50l3 10" stroke="#4e342e" stroke-width="3"/>
+    <path d="M40 28l18-6" stroke="#ffeb3b" stroke-width="3"/>
+    <path d="M24 30l-14 6" stroke="#ffcc80" stroke-width="3"/>
+    <path d="M38 24l4-2" stroke="#ffeb3b" stroke-width="3"/>
+  </g>
 </svg>
