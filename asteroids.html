@@ -8,15 +8,18 @@
       margin: 0;
       display: flex;
       min-height: 100vh;
-      background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);
+      background: radial-gradient(circle at top, #1e215c 0%, #090b1a 45%, #03040d 100%);
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       color: #fff;
+      overflow: hidden;
     }
     #sidebar {
       width: 220px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(7, 10, 28, 0.82);
+      backdrop-filter: blur(6px);
       padding: 20px;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+      box-shadow: 2px 0 18px rgba(0, 0, 0, 0.55);
+      border-right: 1px solid rgba(120, 150, 255, 0.2);
     }
     #sidebar ul {
       list-style: none;
@@ -39,31 +42,52 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
+      padding: 30px;
+      position: relative;
+    }
+    #game-container::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(90, 133, 255, 0.15) 0%, rgba(9, 12, 33, 0) 60%);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(30px);
     }
     h1 {
       margin-top: 0;
-      font-size: 3em;
-      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+      font-size: 3.4em;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px rgba(120, 190, 255, 0.85), 0 0 6px rgba(0,0,0,0.8);
+      z-index: 1;
     }
     canvas {
-      background: #000;
-      border: 2px solid #fff;
+      background: transparent;
+      border: 2px solid rgba(120, 190, 255, 0.45);
       margin-top: 20px;
-      border-radius: 8px;
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(120, 190, 255, 0.25), inset 0 0 20px rgba(40, 60, 130, 0.35);
+      z-index: 1;
+    }
+    #info, #message {
+      position: relative;
+      z-index: 1;
     }
     #info {
-      margin-top: 10px;
+      margin-top: 14px;
       font-size: 20px;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-      border-radius: 5px;
+      background: linear-gradient(135deg, rgba(12, 18, 46, 0.9), rgba(12, 31, 74, 0.65));
+      padding: 8px 18px;
+      border-radius: 999px;
+      box-shadow: 0 0 12px rgba(120, 190, 255, 0.45);
     }
     #message {
-      margin-top: 10px;
+      margin-top: 14px;
       font-size: 24px;
-      color: #ff3333;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      color: #ff8686;
+      text-shadow: 0 0 12px rgba(255, 86, 86, 0.7);
+      min-height: 28px;
     }
   </style>
 </head>
@@ -96,9 +120,25 @@
     });
 
     let score = 0, lives = 3;
+    let time = 0;
     const bullets = [];
     const asteroids = [];
     const explosions = [];
+    const stars = Array.from({length: 160}, () => ({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      size: Math.random()*1.5 + 0.5,
+      speed: Math.random()*20 + 20,
+      twinkle: Math.random()*Math.PI*2
+    }));
+    const nebulae = Array.from({length: 4}, () => ({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      r: Math.random()*180 + 140,
+      hue: Math.random()*360,
+      alpha: Math.random()*0.25 + 0.1
+    }));
+    const thruster = [];
     const ship = {
       x: canvas.width/2,
       y: canvas.height/2,
@@ -110,16 +150,38 @@
       deadTime: 0
     };
 
-    function createExplosion(x,y){
-      explosions.push({x,y,r:0,alpha:1});
+    function createExplosion(x,y,color='#ffb347'){
+      explosions.push({x,y,r:0,alpha:1,color});
     }
 
     function updateExplosions(dt){
       for(let i=explosions.length-1;i>=0;i--){
         const ex = explosions[i];
-        ex.r += 100*dt;
-        ex.alpha -= dt;
+        ex.r += 260*dt;
+        ex.alpha -= dt*0.8;
         if(ex.alpha<=0) explosions.splice(i,1);
+      }
+    }
+
+    function updateStars(dt){
+      for(const s of stars){
+        s.y += s.speed*dt;
+        s.twinkle += dt*2;
+        if(s.y>canvas.height){
+          s.y = -10;
+          s.x = Math.random()*canvas.width;
+        }
+      }
+    }
+
+    function updateThruster(dt){
+      for(let i=thruster.length-1;i>=0;i--){
+        const p = thruster[i];
+        p.x += p.vx*dt;
+        p.y += p.vy*dt;
+        p.life -= dt;
+        p.size += dt*18;
+        if(p.life<=0) thruster.splice(i,1);
       }
     }
 
@@ -153,7 +215,10 @@
     }
 
     function update(dt){
+      time += dt;
       updateExplosions(dt);
+      updateStars(dt);
+      updateThruster(dt);
       if(lives<=0) return;
 
       if(ship.deadTime>0){
@@ -171,6 +236,17 @@
         if(KEY.up){
           ship.vx += Math.cos(ship.angle)*200*dt;
           ship.vy += Math.sin(ship.angle)*200*dt;
+          const rearX = ship.x - Math.cos(ship.angle)*ship.radius;
+          const rearY = ship.y - Math.sin(ship.angle)*ship.radius;
+          const jitter = (Math.random()-0.5)*0.4;
+          thruster.push({
+            x: rearX + Math.cos(ship.angle+Math.PI/2)*jitter*ship.radius,
+            y: rearY + Math.sin(ship.angle+Math.PI/2)*jitter*ship.radius,
+            vx: ship.vx - Math.cos(ship.angle)*(80 + Math.random()*40),
+            vy: ship.vy - Math.sin(ship.angle)*(80 + Math.random()*40),
+            life: 0.4 + Math.random()*0.2,
+            size: 4 + Math.random()*2
+          });
         }
         ship.vx *= 0.99;
         ship.vy *= 0.99;
@@ -180,8 +256,15 @@
         if(ship.invincible>0) ship.invincible -= dt;
 
         if(KEY.space){
-          if(bullets.length===0 || bullets[bullets.length-1].life<0.9){
-            bullets.push({x:ship.x,y:ship.y,vx:Math.cos(ship.angle)*400,vy:Math.sin(ship.angle)*400,life:1});
+          if(bullets.length===0 || bullets[bullets.length-1].life<0.7){
+            bullets.push({
+              x:ship.x,
+              y:ship.y,
+              vx:Math.cos(ship.angle)*520,
+              vy:Math.sin(ship.angle)*520,
+              life:1,
+              hue:(time*120)%360
+            });
           }
         }
       }
@@ -208,6 +291,7 @@
             bullets.splice(j,1);
             asteroids.splice(i,1);
             score += 100;
+            createExplosion(a.x,a.y,'#9fd3ff');
             if(a.size>1){
               asteroids.push(createAsteroid(a.x,a.y,a.size-1));
               asteroids.push(createAsteroid(a.x,a.y,a.size-1));
@@ -223,7 +307,7 @@
         for(const a of asteroids){
           if(Math.hypot(a.x-ship.x,a.y-ship.y) < a.size*10 + ship.radius){
             lives--;
-            createExplosion(ship.x, ship.y);
+            createExplosion(ship.x, ship.y,'#ff6f6f');
             ship.deadTime = 1;
             updateInfo();
             if(lives<=0){
@@ -237,50 +321,134 @@
       if(asteroids.length===0) spawnWave();
     }
 
+    function drawBackdrop(){
+      const gradient = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+      gradient.addColorStop(0,'rgba(9,11,32,0.96)');
+      gradient.addColorStop(1,'rgba(2,4,10,0.96)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      for(const neb of nebulae){
+        const g = ctx.createRadialGradient(neb.x, neb.y, neb.r*0.1, neb.x, neb.y, neb.r);
+        g.addColorStop(0, `hsla(${neb.hue}, 80%, 60%, ${neb.alpha})`);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(neb.x, neb.y, neb.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      for(const s of stars){
+        const sparkle = (Math.sin(s.twinkle + time*3)+1)/2;
+        ctx.fillStyle = `rgba(255,255,255,${0.3 + sparkle*0.7})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size + sparkle*0.7, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
     function drawShip(){
       if(ship.deadTime>0) return;
       ctx.save();
       ctx.translate(ship.x,ship.y);
       ctx.rotate(ship.angle+Math.PI/2);
+      const gradient = ctx.createLinearGradient(0,-ship.radius,0,ship.radius);
+      gradient.addColorStop(0,'#8de1ff');
+      gradient.addColorStop(1,'#3867ff');
+      ctx.lineWidth = 2;
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = '#78beff';
+      ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.moveTo(0,-ship.radius);
+      ctx.moveTo(0,-ship.radius-2);
       ctx.lineTo(ship.radius,ship.radius);
       ctx.lineTo(-ship.radius,ship.radius);
       ctx.closePath();
-      ctx.strokeStyle = '#fff';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
       ctx.stroke();
       ctx.restore();
     }
 
     function drawExplosions(){
       for(const ex of explosions){
-        ctx.strokeStyle = `rgba(255,165,0,${ex.alpha})`;
+        ctx.save();
+        ctx.globalAlpha = ex.alpha;
+        const g = ctx.createRadialGradient(ex.x, ex.y, ex.r*0.2, ex.x, ex.y, ex.r);
+        g.addColorStop(0, `${ex.color}`);
+        g.addColorStop(0.6, 'rgba(255,255,255,0.4)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(ex.x,ex.y,ex.r,0,Math.PI*2);
-        ctx.stroke();
+        ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawThruster(){
+      for(const p of thruster){
+        ctx.save();
+        ctx.globalAlpha = Math.max(p.life,0);
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+        g.addColorStop(0, 'rgba(255,219,112,0.9)');
+        g.addColorStop(0.4, 'rgba(255,112,67,0.7)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
       }
     }
 
     function draw(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+      drawBackdrop();
+      drawThruster();
       drawShip();
       drawExplosions();
-      ctx.strokeStyle = '#fff';
       asteroids.forEach(a=>{
+        ctx.save();
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(150, 200, 255, 0.6)';
         if(asteroidImg.complete){
-          ctx.drawImage(asteroidImg, a.x - a.size*10, a.y - a.size*10, a.size*20, a.size*20);
-        } else {
-          ctx.beginPath();
-          ctx.arc(a.x,a.y,a.size*10,0,Math.PI*2);
-          ctx.stroke();
+          ctx.globalAlpha = 0.85;
+          ctx.drawImage(asteroidImg, a.x - a.size*12, a.y - a.size*12, a.size*24, a.size*24);
         }
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(150, 200, 255, 0.5)';
+        ctx.arc(a.x,a.y,a.size*10,0,Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
       });
       bullets.forEach(b=>{
-        ctx.fillStyle = '#fff';
+        ctx.save();
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = `hsla(${b.hue}, 100%, 70%, 0.8)`;
+        ctx.fillStyle = `hsla(${b.hue}, 100%, 70%, 1)`;
         ctx.beginPath();
-        ctx.arc(b.x,b.y,2,0,Math.PI*2);
+        ctx.arc(b.x,b.y,3,0,Math.PI*2);
         ctx.fill();
+        ctx.restore();
       });
+      drawHUD();
+    }
+
+    function drawHUD(){
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = 'rgba(15, 26, 58, 0.6)';
+      ctx.fillRect(20, 20, 200, 70);
+      ctx.globalAlpha = 1;
+      ctx.font = '18px "Segoe UI", sans-serif';
+      ctx.fillStyle = '#9fb8ff';
+      ctx.fillText(`Score: ${score}`, 32, 48);
+      ctx.fillText(`Lives: ${lives}`, 32, 72);
+      ctx.restore();
     }
 
     let last = performance.now();
