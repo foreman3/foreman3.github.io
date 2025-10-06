@@ -64,6 +64,42 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    function clamp(value, min, max){
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function hexToRgb(hex){
+      const clean = hex.replace('#','');
+      const value = clean.length === 3
+        ? clean.split('').map(c => c + c).join('')
+        : clean.padEnd(6, '0');
+      const r = parseInt(value.slice(0,2),16);
+      const g = parseInt(value.slice(2,4),16);
+      const b = parseInt(value.slice(4,6),16);
+      return {r,g,b};
+    }
+
+    function adjustColor(hex, amount){
+      const {r,g,b} = hexToRgb(hex);
+      return `rgb(${clamp(r+amount,0,255)},${clamp(g+amount,0,255)},${clamp(b+amount,0,255)})`;
+    }
+
+    function withAlpha(hex, alpha){
+      const {r,g,b} = hexToRgb(hex);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function lerp(a,b,t){
+      return a + (b-a)*t;
+    }
+
+    function lerpPoint(p1,p2,t){
+      return {
+        x: lerp(p1.x, p2.x, t),
+        y: lerp(p1.y, p2.y, t)
+      };
+    }
+
     function resizeGame(){
       const sidebar = document.getElementById('sidebar');
       const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
@@ -88,9 +124,18 @@
 
     const FOV = 300;
     const PLANE_Z = -FOV * 0.8; // place the plane further down the z-axis
+    const palettes = [
+      { base:'#06f2ff', accent:'#25a8ff', glow:'#7dffff', windows:'#b9f9ff' },
+      { base:'#ff3be7', accent:'#ff6ab3', glow:'#ff9df2', windows:'#ffd6fa' },
+      { base:'#6bff8a', accent:'#30ffa7', glow:'#9affc3', windows:'#d2ffe6' },
+      { base:'#ffd166', accent:'#ffa733', glow:'#ffe9ab', windows:'#fff2cf' }
+    ];
+
     let plane, buildings, rings, distance, score, nextRing, running;
     let left=false, right=false, up=false, down=false;
     let stars = [];
+    let nebulae = [];
+    let auroraBands = [];
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
@@ -105,10 +150,26 @@
       nextRing = 1000;
       running = true;
       document.getElementById('message').textContent = '';
-      stars = Array.from({length:100}, () => ({
+      stars = Array.from({length:160}, () => ({
         x: Math.random()*canvas.width,
         y: Math.random()*canvas.height,
-        size: 1 + Math.random()*2
+        size: 1 + Math.random()*2,
+        speed: 0.4 + Math.random()*0.6,
+        phase: Math.random()*Math.PI*2,
+        color: ['#8affff','#9d9dff','#ff92ff','#ffe3a2'][Math.floor(Math.random()*4)]
+      }));
+      nebulae = Array.from({length:3}, (_,i) => ({
+        xRatio: 0.2 + 0.3*i + Math.random()*0.15,
+        yRatio: 0.1 + Math.random()*0.2,
+        radiusRatio: 0.18 + Math.random()*0.12,
+        inner: ['#1d8bff','#8c2fff','#1fff9e'][Math.floor(Math.random()*3)]
+      }));
+      auroraBands = Array.from({length:2}, () => ({
+        amplitudeRatio: 0.05 + Math.random()*0.07,
+        offsetRatio: 0.2 + Math.random()*0.1,
+        speed: 0.002 + Math.random()*0.003,
+        phase: Math.random()*Math.PI*2,
+        color: ['#20ffd5','#9b4dff','#58ff83'][Math.floor(Math.random()*3)]
       }));
       for(let i=0;i<10;i++) spawnBuilding();
       document.getElementById('info').textContent = 'Distance: 0 | Score: 0';
@@ -116,21 +177,57 @@
 
     function spawnBuilding(){
       const cityWidth = 600;
-      const color = ['#0f0','#0ff','#f0f','#ff0'][Math.floor(Math.random()*4)];
+      const palette = palettes[Math.floor(Math.random()*palettes.length)];
       if(Math.random() < 0.03){
         const width = cityWidth + 80; // extend slightly beyond plane range
         const depth = 60 + Math.random()*40;
         const arch = 70 + Math.random()*20; // highest point of the arch
         const height = arch + 200; // tall enough so plane cannot fly over
         const z = 400 + Math.random()*1200;
-        buildings.push({type:'bridge', x:0, width, depth, bottom:0, arch, height, z, color});
+        buildings.push({type:'bridge', x:0, width, depth, bottom:0, arch, height, z, palette});
       } else {
         const x = (Math.random()-0.5) * cityWidth;
         const width = 40 + Math.random()*60;
         const depth = 40 + Math.random()*60;
-        const height = 80 + Math.random()*150;
+        const coreHeight = 90 + Math.random()*160;
+        let totalHeight = coreHeight;
         const z = 400 + Math.random()*1200;
-        buildings.push({type:'building', x, width, depth, bottom:0, height, z, color});
+        const windows = 3 + Math.floor(Math.random()*4);
+        const windowCols = 2 + Math.floor(Math.random()*3);
+        const accentPositions = [];
+        if(Math.random() < 0.65){
+          const accentCount = 1 + Math.floor(Math.random()*2);
+          for(let i=0;i<accentCount;i++){
+            accentPositions.push(0.2 + Math.random()*0.55);
+          }
+        }
+        const segments = [];
+        if(Math.random() < 0.45){
+          const levels = 1 + Math.floor(Math.random()*3);
+          let currentTop = coreHeight;
+          for(let i=0;i<levels;i++){
+            const segHeight = 20 + Math.random()*45;
+            const segWidth = width * (0.6 - i*0.1);
+            const segDepth = depth * (0.7 - i*0.1);
+            const bottom = currentTop - 5;
+            const top = bottom + segHeight;
+            const segAccents = Math.random() < 0.5 ? [0.35 + Math.random()*0.4] : [];
+            segments.push({width: segWidth, depth: segDepth, bottom, top, color: palette.accent, windows: Math.max(1, Math.floor(windows*0.6) - i), accents: segAccents});
+            currentTop = top;
+          }
+          totalHeight = segments.length ? segments[segments.length-1].top : totalHeight;
+        }
+        let topper = null;
+        if(Math.random() < 0.35){
+          const topperHeight = 20 + Math.random()*35;
+          topper = {height: topperHeight, color: palette.glow};
+          totalHeight += topperHeight;
+        }
+        buildings.push({
+          type:'building', x, width, depth, bottom:0, coreHeight,
+          height: totalHeight, z, palette, windows, windowCols,
+          segments, topper, accentPositions
+        });
       }
     }
 
@@ -249,11 +346,16 @@
       plane.x = Math.max(-300, Math.min(300, plane.x));
       plane.y = Math.max(20, Math.min(150, plane.y));
       for(const s of stars){
-        s.y += plane.speed*0.3;
+        s.y += plane.speed*0.25 * s.speed;
+        s.phase += 0.02;
         if(s.y > canvas.height){
           s.y = 0;
           s.x = Math.random()*canvas.width;
+          s.speed = 0.4 + Math.random()*0.6;
         }
+      }
+      for(const band of auroraBands){
+        band.phase += band.speed * plane.speed;
       }
       for(let i = buildings.length - 1; i >= 0; i--){
         const b = buildings[i];
@@ -312,48 +414,338 @@
       };
     }
 
-    function drawBuilding(b){
-      if(b.type === 'bridge') return drawBridge(b);
-      const w = b.width/2;
-      const d = b.depth/2;
-      const bottom = b.bottom || 0;
-      const top = b.height;
-      const frontLeft = project(b.x - w, bottom, b.z - d);
-      const frontRight = project(b.x + w, bottom, b.z - d);
-      const backLeft = project(b.x - w, bottom, b.z + d);
-      const backRight = project(b.x + w, bottom, b.z + d);
+    function drawBackground(){
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#040012');
+      grad.addColorStop(0.3, '#0b0630');
+      grad.addColorStop(0.65, '#001e2c');
+      grad.addColorStop(1, '#000000');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
-      // Skip drawing if the building has flipped orientation
-      if(frontLeft.x > frontRight.x || backLeft.x > backRight.x) return;
+    function drawNebulae(){
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      for(const n of nebulae){
+        const x = n.xRatio * canvas.width;
+        const y = n.yRatio * canvas.height;
+        const radius = n.radiusRatio * canvas.width;
+        const gradient = ctx.createRadialGradient(x, y, radius*0.2, x, y, radius);
+        gradient.addColorStop(0, withAlpha(n.inner, 0.45));
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
 
-      const pts = [
-        frontLeft,
-        frontRight,
-        backLeft,
-        backRight,
-        project(b.x - w, top, b.z - d),
-        project(b.x + w, top, b.z - d),
-        project(b.x - w, top, b.z + d),
-        project(b.x + w, top, b.z + d)
-      ];
-      const edges = [
-        [0,1],[0,2],[1,3],[2,3],
-        [4,5],[4,6],[5,7],[6,7],
-        [0,4],[1,5],[2,6],[3,7]
-      ];
+    function drawAurora(){
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.lineJoin = 'round';
+      for(const band of auroraBands){
+        const baseY = band.offsetRatio * canvas.height;
+        const amplitude = band.amplitudeRatio * canvas.height;
+        const gradient = ctx.createLinearGradient(0, baseY - 40, 0, baseY + 120);
+        gradient.addColorStop(0, withAlpha(band.color, 0.35));
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(0, baseY + amplitude);
+        const segments = 32;
+        for(let i=0;i<=segments;i++){
+          const t = i/segments;
+          const x = t * canvas.width;
+          const wave = Math.sin(band.phase + t * Math.PI * 4) * amplitude;
+          ctx.lineTo(x, baseY + wave);
+        }
+        ctx.lineTo(canvas.width, baseY + amplitude*2);
+        ctx.lineTo(0, baseY + amplitude*2);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawStars(){
+      ctx.save();
+      for(const s of stars){
+        const twinkle = 0.5 + 0.5 * Math.sin(s.phase);
+        ctx.globalAlpha = 0.3 + twinkle*0.7;
+        ctx.fillStyle = s.color;
+        ctx.fillRect(s.x, s.y, s.size, s.size);
+      }
+      ctx.restore();
+    }
+
+    function drawDistantCity(){
+      const horizonY = canvas.height * 0.72;
+      ctx.save();
+      ctx.fillStyle = 'rgba(12,32,58,0.55)';
       ctx.beginPath();
+      ctx.moveTo(0, horizonY);
+      const segments = 18;
+      for(let i=0;i<=segments;i++){
+        const t = i/segments;
+        const x = t * canvas.width;
+        const wave = Math.sin(distance*0.0004 + t*Math.PI*3) * 35;
+        ctx.lineTo(x, horizonY - 70 - wave);
+      }
+      ctx.lineTo(canvas.width, horizonY);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(20,54,86,0.45)';
+      ctx.beginPath();
+      ctx.moveTo(0, horizonY + 4);
+      for(let i=0;i<=segments;i++){
+        const t = i/segments;
+        const x = t * canvas.width;
+        const wave = Math.sin(distance*0.00055 + 1.1 + t*Math.PI*4) * 28;
+        ctx.lineTo(x, horizonY - 40 - wave);
+      }
+      ctx.lineTo(canvas.width, horizonY + 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawHorizonGlow(){
+      const horizonY = canvas.height * 0.72;
+      const glow = ctx.createLinearGradient(0, horizonY - 120, 0, horizonY + 120);
+      glow.addColorStop(0, 'rgba(0,0,0,0)');
+      glow.addColorStop(0.5, 'rgba(40,255,210,0.18)');
+      glow.addColorStop(1, 'rgba(0,0,0,0.6)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, horizonY - 120, canvas.width, 240);
+    }
+
+    function drawGroundGrid(){
+      ctx.save();
+      ctx.strokeStyle = 'rgba(100,255,190,0.25)';
+      ctx.lineWidth = 1;
+      for(let i=1;i<16;i++){
+        const z = plane.z + i*120;
+        const left = project(-450, 0, z);
+        const right = project(450, 0, z);
+        ctx.beginPath();
+        ctx.moveTo(left.x, left.y);
+        ctx.lineTo(right.x, right.y);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = 'rgba(100,255,190,0.18)';
+      for(let i=-6;i<=6;i++){
+        const x = i * 90;
+        const near = project(x, 0, plane.z + 40);
+        const far = project(x, 0, plane.z + 900);
+        ctx.beginPath();
+        ctx.moveTo(near.x, near.y);
+        ctx.lineTo(far.x, far.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawPrism({x, width, depth, bottom, top, z, palette, windows=0, windowCols=0, baseColor, accentColor, accents=[]}){
+      const w = width/2;
+      const d = depth/2;
+      const frontBottomLeft = project(x - w, bottom, z - d);
+      const frontBottomRight = project(x + w, bottom, z - d);
+      const backBottomLeft = project(x - w, bottom, z + d);
+      const backBottomRight = project(x + w, bottom, z + d);
+      const frontTopLeft = project(x - w, top, z - d);
+      const frontTopRight = project(x + w, top, z - d);
+      const backTopLeft = project(x - w, top, z + d);
+      const backTopRight = project(x + w, top, z + d);
+
+      if(frontBottomLeft.x > frontBottomRight.x || backBottomLeft.x > backBottomRight.x) return;
+
+      const base = baseColor || palette.base;
+      const accent = accentColor || palette.accent;
+      const glow = palette.glow;
+      const windowColor = palette.windows;
+
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      const frontGradient = ctx.createLinearGradient(frontBottomLeft.x, frontBottomLeft.y, frontBottomRight.x, frontBottomRight.y);
+      frontGradient.addColorStop(0, adjustColor(base, 35));
+      frontGradient.addColorStop(1, adjustColor(base, -15));
+      ctx.beginPath();
+      ctx.moveTo(frontBottomLeft.x, frontBottomLeft.y);
+      ctx.lineTo(frontBottomRight.x, frontBottomRight.y);
+      ctx.lineTo(frontTopRight.x, frontTopRight.y);
+      ctx.lineTo(frontTopLeft.x, frontTopLeft.y);
+      ctx.closePath();
+      ctx.fillStyle = frontGradient;
+      ctx.fill();
+
+      const sideGradient = ctx.createLinearGradient(frontBottomRight.x, frontBottomRight.y, backBottomRight.x, backBottomRight.y);
+      sideGradient.addColorStop(0, adjustColor(base, -5));
+      sideGradient.addColorStop(1, adjustColor(base, -45));
+      ctx.beginPath();
+      ctx.moveTo(frontBottomRight.x, frontBottomRight.y);
+      ctx.lineTo(backBottomRight.x, backBottomRight.y);
+      ctx.lineTo(backTopRight.x, backTopRight.y);
+      ctx.lineTo(frontTopRight.x, frontTopRight.y);
+      ctx.closePath();
+      ctx.fillStyle = sideGradient;
+      ctx.fill();
+
+      const topGradient = ctx.createLinearGradient(frontTopLeft.x, frontTopLeft.y, backTopLeft.x, backTopLeft.y);
+      topGradient.addColorStop(0, adjustColor(base, 60));
+      topGradient.addColorStop(1, adjustColor(base, 10));
+      ctx.beginPath();
+      ctx.moveTo(frontTopLeft.x, frontTopLeft.y);
+      ctx.lineTo(frontTopRight.x, frontTopRight.y);
+      ctx.lineTo(backTopRight.x, backTopRight.y);
+      ctx.lineTo(backTopLeft.x, backTopLeft.y);
+      ctx.closePath();
+      ctx.fillStyle = topGradient;
+      ctx.fill();
+
+      ctx.shadowColor = withAlpha(glow, 0.4);
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = withAlpha(glow, 0.9);
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      const edges = [
+        [frontBottomLeft, frontBottomRight],
+        [frontBottomLeft, backBottomLeft],
+        [frontBottomRight, backBottomRight],
+        [backBottomLeft, backBottomRight],
+        [frontTopLeft, frontTopRight],
+        [frontTopLeft, backTopLeft],
+        [frontTopRight, backTopRight],
+        [backTopLeft, backTopRight],
+        [frontBottomLeft, frontTopLeft],
+        [frontBottomRight, frontTopRight],
+        [backBottomLeft, backTopLeft],
+        [backBottomRight, backTopRight]
+      ];
       for(const [a,b] of edges){
-        ctx.moveTo(pts[a].x, pts[a].y);
-        ctx.lineTo(pts[b].x, pts[b].y);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
       }
       ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      if(accents && accents.length){
+        ctx.strokeStyle = withAlpha(accent, 0.75);
+        ctx.lineWidth = 1.2;
+        for(const pos of accents){
+          const t = clamp(pos, 0.05, 0.95);
+          const left = lerpPoint(frontBottomLeft, frontTopLeft, t);
+          const right = lerpPoint(frontBottomRight, frontTopRight, t);
+          ctx.beginPath();
+          ctx.moveTo(left.x, left.y);
+          ctx.lineTo(right.x, right.y);
+          ctx.stroke();
+        }
+      }
+
+      if(windows > 0){
+        ctx.strokeStyle = withAlpha(windowColor, 0.6);
+        ctx.lineWidth = 1;
+        for(let i=1;i<=windows;i++){
+          const t = i/(windows+1);
+          const left = lerpPoint(frontBottomLeft, frontTopLeft, t);
+          const right = lerpPoint(frontBottomRight, frontTopRight, t);
+          ctx.beginPath();
+          ctx.moveTo(left.x, left.y);
+          ctx.lineTo(right.x, right.y);
+          ctx.stroke();
+        }
+      }
+
+      if(windowCols > 0){
+        ctx.strokeStyle = withAlpha(windowColor, 0.35);
+        ctx.lineWidth = 0.8;
+        for(let i=1;i<=windowCols;i++){
+          const t = i/(windowCols+1);
+          const bottomPoint = lerpPoint(frontBottomLeft, frontBottomRight, t);
+          const topPoint = lerpPoint(frontTopLeft, frontTopRight, t);
+          ctx.beginPath();
+          ctx.moveTo(bottomPoint.x, bottomPoint.y);
+          ctx.lineTo(topPoint.x, topPoint.y);
+          ctx.stroke();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawTopper(b){
+      if(!b.topper) return;
+      const basePoint = project(b.x, b.height - b.topper.height, b.z);
+      const tipPoint = project(b.x, b.height, b.z);
+      const glow = b.topper.color || b.palette.glow;
+      ctx.save();
+      ctx.strokeStyle = withAlpha(glow, 0.9);
+      ctx.lineWidth = 2;
+      ctx.shadowColor = withAlpha(glow, 0.7);
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.moveTo(basePoint.x, basePoint.y);
+      ctx.lineTo(tipPoint.x, tipPoint.y);
+      ctx.stroke();
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = withAlpha(glow, 0.95);
+      ctx.beginPath();
+      ctx.arc(tipPoint.x, tipPoint.y, 4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBuilding(b){
+      if(b.type === 'bridge') return drawBridge(b);
+      const bottom = b.bottom || 0;
+      drawPrism({
+        x: b.x,
+        width: b.width,
+        depth: b.depth,
+        bottom,
+        top: b.coreHeight,
+        z: b.z,
+        palette: b.palette,
+        windows: b.windows,
+        windowCols: b.windowCols,
+        baseColor: b.palette.base,
+        accentColor: b.palette.accent,
+        accents: b.accentPositions
+      });
+      if(b.segments){
+        for(const seg of b.segments){
+          drawPrism({
+            x: b.x,
+            width: seg.width,
+            depth: seg.depth,
+            bottom: seg.bottom,
+            top: seg.top,
+            z: b.z,
+            palette: b.palette,
+            windows: seg.windows || 0,
+            windowCols: Math.max(0, b.windowCols - 1),
+            baseColor: seg.color,
+            accentColor: seg.color,
+            accents: seg.accents || []
+          });
+        }
+      }
+      drawTopper(b);
     }
 
     function drawBridge(b){
       const w = b.width/2;
       const d = b.depth/2;
       const top = b.height;
-      const segs = 16;
+      const palette = b.palette;
+      const glow = palette.glow;
+      const segs = 20;
 
       const leftBaseFront = project(b.x - w, 0, b.z - d);
       const leftBaseBack = project(b.x - w, 0, b.z + d);
@@ -365,32 +757,96 @@
       const rightTopFront = project(b.x + w, top, b.z - d);
       const rightTopBack = project(b.x + w, top, b.z + d);
 
+      ctx.save();
+      ctx.lineJoin = 'round';
+
+      const walkwayGrad = ctx.createLinearGradient(leftBaseFront.x, leftBaseFront.y, rightBaseFront.x, rightBaseFront.y);
+      walkwayGrad.addColorStop(0, adjustColor(palette.base, -20));
+      walkwayGrad.addColorStop(1, adjustColor(palette.base, -45));
       ctx.beginPath();
-      // vertical sides
+      ctx.moveTo(leftBaseFront.x, leftBaseFront.y);
+      ctx.lineTo(rightBaseFront.x, rightBaseFront.y);
+      ctx.lineTo(rightBaseBack.x, rightBaseBack.y);
+      ctx.lineTo(leftBaseBack.x, leftBaseBack.y);
+      ctx.closePath();
+      ctx.fillStyle = walkwayGrad;
+      ctx.fill();
+
+      const frontGrad = ctx.createLinearGradient(leftBaseFront.x, leftBaseFront.y, leftTopFront.x, leftTopFront.y);
+      frontGrad.addColorStop(0, adjustColor(palette.base, 30));
+      frontGrad.addColorStop(1, adjustColor(palette.base, 0));
+      ctx.beginPath();
+      ctx.moveTo(leftBaseFront.x, leftBaseFront.y);
+      ctx.lineTo(rightBaseFront.x, rightBaseFront.y);
+      ctx.lineTo(rightTopFront.x, rightTopFront.y);
+      ctx.lineTo(leftTopFront.x, leftTopFront.y);
+      ctx.closePath();
+      ctx.fillStyle = frontGrad;
+      ctx.fill();
+
+      const backGrad = ctx.createLinearGradient(leftBaseBack.x, leftBaseBack.y, leftTopBack.x, leftTopBack.y);
+      backGrad.addColorStop(0, adjustColor(palette.base, -5));
+      backGrad.addColorStop(1, adjustColor(palette.base, -35));
+      ctx.beginPath();
+      ctx.moveTo(leftBaseBack.x, leftBaseBack.y);
+      ctx.lineTo(rightBaseBack.x, rightBaseBack.y);
+      ctx.lineTo(rightTopBack.x, rightTopBack.y);
+      ctx.lineTo(leftTopBack.x, leftTopBack.y);
+      ctx.closePath();
+      ctx.fillStyle = backGrad;
+      ctx.fill();
+
+      const roofGrad = ctx.createLinearGradient(leftTopFront.x, leftTopFront.y, leftTopBack.x, leftTopBack.y);
+      roofGrad.addColorStop(0, adjustColor(palette.base, 55));
+      roofGrad.addColorStop(1, adjustColor(palette.base, 10));
+      ctx.beginPath();
+      ctx.moveTo(leftTopFront.x, leftTopFront.y);
+      ctx.lineTo(rightTopFront.x, rightTopFront.y);
+      ctx.lineTo(rightTopBack.x, rightTopBack.y);
+      ctx.lineTo(leftTopBack.x, leftTopBack.y);
+      ctx.closePath();
+      ctx.fillStyle = roofGrad;
+      ctx.fill();
+
+      ctx.shadowColor = withAlpha(glow, 0.5);
+      ctx.shadowBlur = 14;
+      ctx.strokeStyle = withAlpha(glow, 0.9);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
       ctx.moveTo(leftBaseFront.x, leftBaseFront.y);
       ctx.lineTo(leftTopFront.x, leftTopFront.y);
-      ctx.moveTo(leftBaseBack.x, leftBaseBack.y);
       ctx.lineTo(leftTopBack.x, leftTopBack.y);
-
+      ctx.lineTo(leftBaseBack.x, leftBaseBack.y);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.beginPath();
       ctx.moveTo(rightBaseFront.x, rightBaseFront.y);
       ctx.lineTo(rightTopFront.x, rightTopFront.y);
-      ctx.moveTo(rightBaseBack.x, rightBaseBack.y);
       ctx.lineTo(rightTopBack.x, rightTopBack.y);
+      ctx.lineTo(rightBaseBack.x, rightBaseBack.y);
+      ctx.closePath();
+      ctx.stroke();
 
-      // top edges
+      ctx.beginPath();
       ctx.moveTo(leftTopFront.x, leftTopFront.y);
       ctx.lineTo(rightTopFront.x, rightTopFront.y);
       ctx.moveTo(leftTopBack.x, leftTopBack.y);
       ctx.lineTo(rightTopBack.x, rightTopBack.y);
+      ctx.stroke();
 
-      // arch front
+      ctx.shadowBlur = 18;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = withAlpha(palette.accent, 0.9);
+      ctx.beginPath();
       for(let i=0;i<=segs;i++){
         const x = -w + (2*w*i)/segs;
         const y = b.arch * (1 - (x*x)/(w*w));
         const p = project(b.x + x, y, b.z - d);
         if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
       }
-      // arch back
+      ctx.stroke();
+
+      ctx.beginPath();
       for(let i=0;i<=segs;i++){
         const x = -w + (2*w*i)/segs;
         const y = b.arch * (1 - (x*x)/(w*w));
@@ -398,52 +854,89 @@
         if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
       }
       ctx.stroke();
+
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = withAlpha(palette.glow, 0.85);
+      for(let i=0;i<=segs;i+=2){
+        const x = -w + (2*w*i)/segs;
+        const y = b.arch * (1 - (x*x)/(w*w));
+        const pFront = project(b.x + x, y, b.z - d);
+        ctx.beginPath();
+        ctx.arc(pFront.x, pFront.y, 2.5, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      ctx.shadowBlur = 0;
+      ctx.restore();
     }
 
   function drawRing(r){
     const center = project(r.x, r.y, r.z);
     const scale = FOV / (FOV + r.z);
     const rad = r.radius * scale;
+    ctx.save();
+    const glow = ctx.createRadialGradient(center.x, center.y, rad*0.2, center.x, center.y, rad);
+    glow.addColorStop(0, 'rgba(255,255,200,0.7)');
+    glow.addColorStop(1, 'rgba(255,140,0,0)');
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(center.x, center.y, rad, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(255,230,130,0.95)';
+    ctx.shadowColor = 'rgba(255,220,160,0.85)';
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, rad*0.8, 0, Math.PI*2);
     ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 
   function drawCrosshair(){
-    const len = 10;
+    const len = 14;
     const x = canvas.width/2;
     const y = canvas.height*0.7;
-    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-    ctx.lineWidth = 1;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(120,255,210,0.9)';
+    ctx.lineWidth = 1.3;
+    ctx.shadowColor = 'rgba(120,255,210,0.6)';
+    ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.moveTo(x - len, y);
     ctx.lineTo(x + len, y);
     ctx.moveTo(x, y - len);
     ctx.lineTo(x, y + len);
     ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 
     function draw(){
-      const grad = ctx.createLinearGradient(0,0,0,canvas.height);
-      grad.addColorStop(0,'#001');
-      grad.addColorStop(1,'#000');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.lineWidth = 2;
-      ctx.fillStyle = '#0ff';
-      for(const s of stars){
-        ctx.fillRect(s.x, s.y, s.size, s.size);
+      drawBackground();
+      drawNebulae();
+      drawAurora();
+      drawStars();
+      drawDistantCity();
+      drawHorizonGlow();
+      drawGroundGrid();
+
+      const visibleBuildings = buildings
+        .filter(b => b.z + b.depth/2 >= plane.z)
+        .sort((a,b) => b.z - a.z);
+      for(const building of visibleBuildings){
+        drawBuilding(building);
       }
-      for(const b of buildings){
-        if(b.z + b.depth/2 >= plane.z){
-          ctx.strokeStyle = b.color;
-          drawBuilding(b);
-        }
+
+      const visibleRings = rings
+        .filter(r => r.z + r.radius >= plane.z && !r.collected)
+        .sort((a,b) => b.z - a.z);
+      for(const ring of visibleRings){
+        drawRing(ring);
       }
-      ctx.strokeStyle = '#ff0';
-      for(const r of rings){
-        if(r.z + r.radius >= plane.z && !r.collected) drawRing(r);
-      }
+
       drawCrosshair();
     }
 
