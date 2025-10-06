@@ -8,16 +8,18 @@
       margin: 0;
       display: flex;
       min-height: 100vh;
-      background: linear-gradient(135deg, #000428 0%, #004e92 100%);
+      background: radial-gradient(circle at 30% 20%, #142965 0%, #050713 45%, #02030a 100%);
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       color: #fff;
       overflow: hidden;
     }
     #sidebar {
       width: 220px;
-      background: rgba(0,0,0,0.7);
+      background: rgba(5, 7, 18, 0.82);
+      backdrop-filter: blur(6px);
       padding: 20px;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+      box-shadow: 2px 0 18px rgba(0,0,0,0.55);
+      border-right: 1px solid rgba(0, 200, 255, 0.2);
     }
     #sidebar ul {
       list-style: none;
@@ -41,23 +43,48 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
+      padding: 30px;
+      position: relative;
+    }
+    #game-container::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(0, 174, 255, 0.18) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(24px);
+    }
+    h1 {
+      z-index: 1;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 22px rgba(0, 255, 198, 0.6);
     }
     canvas {
-      background: #000;
-      border: 2px solid #fff;
+      background: transparent;
+      border: 2px solid rgba(0, 174, 255, 0.5);
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0, 174, 255, 0.35), inset 0 0 20px rgba(4, 20, 68, 0.6);
+      z-index: 1;
     }
     #info {
-      margin-top: 10px;
+      margin-top: 12px;
       font-size: 20px;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-      border-radius: 5px;
+      background: linear-gradient(135deg, rgba(4, 20, 68, 0.9), rgba(3, 51, 89, 0.6));
+      padding: 8px 18px;
+      border-radius: 999px;
+      box-shadow: 0 0 12px rgba(0, 174, 255, 0.5);
+      position: relative;
+      z-index: 1;
     }
     #message {
-      margin-top: 10px;
+      margin-top: 14px;
       font-size: 24px;
-      color: #ffeb3b;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      color: #ffd93b;
+      text-shadow: 0 0 14px rgba(255, 217, 59, 0.7);
+      min-height: 28px;
+      position: relative;
+      z-index: 1;
     }
   </style>
 </head>
@@ -73,13 +100,28 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    const player = { x: canvas.width/2, y: canvas.height - 30, w: 40, h: 20 };
+    const player = { x: canvas.width/2, y: canvas.height - 30, w: 40, h: 20, pulse: 0 };
     let bullet = null;
     const aliens = [];
     const alienImg = new Image();
     alienImg.src = 'images/alien.svg';
     const bombs = [];
     const explosions = [];
+    const sparks = [];
+    const starfield = Array.from({length: 140}, () => ({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      speed: Math.random()*25 + 20,
+      size: Math.random()*1.5 + 0.5,
+      twinkle: Math.random()*Math.PI*2
+    }));
+    const auroras = Array.from({length: 3}, () => ({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height*0.5,
+      r: Math.random()*220 + 120,
+      hue: Math.random()*120 + 160,
+      alpha: Math.random()*0.25 + 0.1
+    }));
     let shields = [];
     let score = 0;
     let lives = 3;
@@ -119,17 +161,52 @@
       }
     }
 
-    function createExplosion(x, y){
-      explosions.push({x, y, r: 0, alpha: 1});
+    function createExplosion(x, y, color = 'rgba(0, 255, 198, 1)'){
+      explosions.push({x, y, r: 0, alpha: 1, color});
+      for(let i=0;i<12;i++){
+        const angle = Math.random()*Math.PI*2;
+        sparks.push({
+          x,
+          y,
+          vx: Math.cos(angle)*(40 + Math.random()*80),
+          vy: Math.sin(angle)*(40 + Math.random()*80),
+          life: 0.6 + Math.random()*0.4,
+          size: Math.random()*2 + 1,
+          color
+        });
+      }
     }
 
-    function updateExplosions(){
+    function updateExplosions(dt){
       for(let i=explosions.length-1;i>=0;i--){
         const ex = explosions[i];
-        ex.r += 2;
-        ex.alpha -= 0.05;
+        ex.r += 240*dt;
+        ex.alpha -= dt*0.6;
         if(ex.alpha <= 0){
           explosions.splice(i,1);
+        }
+      }
+    }
+
+    function updateSparks(dt){
+      for(let i=sparks.length-1;i>=0;i--){
+        const s = sparks[i];
+        s.x += s.vx*dt;
+        s.y += s.vy*dt;
+        s.life -= dt;
+        s.vx *= 0.98;
+        s.vy *= 0.98;
+        if(s.life <= 0) sparks.splice(i,1);
+      }
+    }
+
+    function updateStars(dt){
+      for(const star of starfield){
+        star.y += star.speed*dt;
+        star.twinkle += dt*3;
+        if(star.y > canvas.height){
+          star.y = -5;
+          star.x = Math.random()*canvas.width;
         }
       }
     }
@@ -172,19 +249,28 @@
       }
     }
 
-    function update(){
-      if(gameOver) return;
-      if(keys['ArrowLeft']) player.x -= 5;
-      if(keys['ArrowRight']) player.x += 5;
+    function update(dt){
+      const playerSpeed = 360;
+      if(gameOver){
+        updateExplosions(dt);
+        updateSparks(dt);
+        updateStars(dt);
+        return;
+      }
+      if(keys['ArrowLeft']) player.x -= playerSpeed*dt;
+      if(keys['ArrowRight']) player.x += playerSpeed*dt;
       player.x = Math.max(player.w/2, Math.min(canvas.width-player.w/2, player.x));
+      player.pulse += 0.08;
 
       if(bullet){
-        bullet.y -= 8;
+        bullet.y -= 480*dt;
         if(bullet.y < 0) bullet = null;
       }
 
-      bombs.forEach(b => b.y += 3);
-      updateExplosions();
+      bombs.forEach(b => b.y += 180*dt);
+      updateExplosions(dt);
+      updateSparks(dt);
+      updateStars(dt);
 
       // Alien movement
       moveCounter++;
@@ -241,6 +327,7 @@
             score += 10;
             alienSpeed *= 1.04;
             updateInfo();
+            createExplosion(a.x, a.y, 'rgba(0, 255, 198, 1)');
             break;
           }
         }
@@ -254,6 +341,7 @@
             if(brick.alive && Math.abs(bullet.x - brick.x) < 5 && Math.abs(bullet.y - brick.y) < 5){
               brick.alive = false;
               bullet = null;
+              createExplosion(brick.x, brick.y, 'rgba(0, 174, 255, 1)');
               break bulletLoop;
             }
           }
@@ -270,13 +358,13 @@
         }
         if(Math.abs(b.x - player.x) < player.w/2 && Math.abs(b.y - player.y) < player.h/2){
           bombs.splice(i,1);
-          createExplosion(player.x, player.y);
+          createExplosion(player.x, player.y, 'rgba(255, 90, 90, 1)');
           lives--;
           updateInfo();
           if(lives <= 0){
             gameOver = true;
             nextLevel = false;
-            createExplosion(player.x, player.y);
+            createExplosion(player.x, player.y, 'rgba(255, 120, 120, 1)');
             document.getElementById('message').textContent = 'Game Over - Press Enter';
           }
           continue;
@@ -286,6 +374,7 @@
             if(brick.alive && Math.abs(b.x - brick.x) < 5 && Math.abs(b.y - brick.y) < 5){
               brick.alive = false;
               bombs.splice(i,1);
+              createExplosion(brick.x, brick.y, 'rgba(255, 196, 0, 1)');
               continue bombLoop;
             }
           }
@@ -297,7 +386,7 @@
         if(a.alive && a.y + a.h/2 >= player.y - player.h){
           gameOver = true;
           nextLevel = false;
-          createExplosion(player.x, player.y);
+          createExplosion(player.x, player.y, 'rgba(255, 120, 120, 1)');
           document.getElementById('message').textContent = 'Game Over - Press Enter';
           break;
         }
@@ -312,53 +401,159 @@
     }
 
     function draw(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      // draw player
-      ctx.fillStyle = '#0f0';
-      ctx.fillRect(player.x-player.w/2, player.y-player.h/2, player.w, player.h);
+      drawBackground();
+      drawPlayer();
 
       // draw bullet
       if(bullet){
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(bullet.x-2, bullet.y-8, 4, 8);
+        ctx.save();
+        const gradient = ctx.createLinearGradient(bullet.x, bullet.y-12, bullet.x, bullet.y+4);
+        gradient.addColorStop(0,'rgba(0,255,198,0.1)');
+        gradient.addColorStop(0.4,'rgba(0,255,198,0.4)');
+        gradient.addColorStop(1,'rgba(255,255,255,0.9)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(bullet.x-2, bullet.y-12, 4, 14);
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = 'rgba(0,255,198,0.7)';
+        ctx.fillRect(bullet.x-1, bullet.y-18, 2, 18);
+        ctx.restore();
       }
 
       // draw aliens
       for(const a of aliens){
         if(a.alive){
-          ctx.drawImage(alienImg, a.x - a.w/2, a.y - a.h/2, a.w, a.h);
+          ctx.save();
+          ctx.shadowBlur = 14;
+          ctx.shadowColor = 'rgba(0,255,198,0.7)';
+          ctx.globalAlpha = 0.85;
+          ctx.drawImage(alienImg, a.x - a.w/2 - 4, a.y - a.h/2 - 4, a.w + 8, a.h + 8);
+          ctx.globalAlpha = 1;
+          const gradient = ctx.createLinearGradient(a.x, a.y-a.h/2, a.x, a.y+a.h/2);
+          gradient.addColorStop(0,'rgba(0,255,198,0.8)');
+          gradient.addColorStop(1,'rgba(0,157,255,0.8)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(a.x - a.w/2, a.y - a.h/2, a.w, a.h);
+          ctx.restore();
         }
       }
 
       // draw bombs
-      ctx.fillStyle = '#ff0';
       for(const b of bombs){
+        ctx.save();
+        const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r*2.4);
+        g.addColorStop(0,'rgba(255,255,255,1)');
+        g.addColorStop(0.5,'rgba(255,196,0,0.9)');
+        g.addColorStop(1,'rgba(255,0,0,0)');
+        ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+        ctx.arc(b.x, b.y, b.r*2.4, 0, Math.PI*2);
         ctx.fill();
+        ctx.restore();
       }
 
       // draw shields
-      ctx.fillStyle = '#0ff';
       for(const bricks of shields){
         for(const brick of bricks){
           if(brick.alive){
+            const gradient = ctx.createLinearGradient(brick.x-5, brick.y-5, brick.x+5, brick.y+5);
+            gradient.addColorStop(0,'rgba(0, 174, 255, 0.9)');
+            gradient.addColorStop(1,'rgba(0, 255, 198, 0.8)');
+            ctx.fillStyle = gradient;
             ctx.fillRect(brick.x-5, brick.y-5, 10, 10);
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.strokeRect(brick.x-5, brick.y-5, 10, 10);
           }
         }
       }
 
       // draw explosions
       for(const ex of explosions){
-        ctx.fillStyle = `rgba(255,165,0,${ex.alpha})`;
+        ctx.save();
+        ctx.globalAlpha = ex.alpha;
+        const g = ctx.createRadialGradient(ex.x, ex.y, ex.r*0.2, ex.x, ex.y, ex.r*2);
+        g.addColorStop(0, ex.color);
+        g.addColorStop(0.7, 'rgba(255,255,255,0.5)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI*2);
+        ctx.arc(ex.x, ex.y, ex.r*2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      drawSparks();
+    }
+
+    function drawBackground(){
+      const gradient = ctx.createLinearGradient(0,0,0,canvas.height);
+      gradient.addColorStop(0,'rgba(1, 7, 24, 0.95)');
+      gradient.addColorStop(1,'rgba(5, 14, 40, 0.95)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      for(const aurora of auroras){
+        const g = ctx.createRadialGradient(aurora.x, aurora.y, aurora.r*0.3, aurora.x, aurora.y, aurora.r);
+        g.addColorStop(0, `hsla(${aurora.hue}, 90%, 62%, ${aurora.alpha})`);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(aurora.x, aurora.y, aurora.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      for(const star of starfield){
+        const sparkle = (Math.sin(star.twinkle) + 1)/2;
+        ctx.fillStyle = `rgba(255,255,255,${0.3 + sparkle*0.7})`;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size + sparkle*0.6, 0, Math.PI*2);
         ctx.fill();
       }
     }
 
+    function drawPlayer(){
+      const baseY = player.y-player.h/2;
+      const pulse = (Math.sin(player.pulse)+1)/2;
+      ctx.save();
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = 'rgba(0, 255, 198, 0.8)';
+      const gradient = ctx.createLinearGradient(player.x, baseY, player.x, baseY+player.h);
+      gradient.addColorStop(0,'rgba(0,255,198,0.9)');
+      gradient.addColorStop(1,'rgba(0,157,255,0.9)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(player.x, baseY-4);
+      ctx.lineTo(player.x+player.w/2+6, baseY+player.h);
+      ctx.lineTo(player.x, baseY+player.h*0.6 + pulse*4);
+      ctx.lineTo(player.x-player.w/2-6, baseY+player.h);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawSparks(){
+      for(const s of sparks){
+        ctx.save();
+        ctx.globalAlpha = Math.max(s.life,0);
+        const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size*4);
+        g.addColorStop(0, s.color);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size*4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    let last = performance.now();
     function loop(){
-      update();
+      const now = performance.now();
+      const dt = Math.min(0.1, (now - last)/1000);
+      last = now;
+      update(dt);
       draw();
       requestAnimationFrame(loop);
     }
