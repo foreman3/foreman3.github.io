@@ -71,7 +71,7 @@
     <h1>Neon Showdown Boxing</h1>
     <canvas id="gameCanvas" width="960" height="640"></canvas>
     <div id="info">
-      <strong>Controls:</strong> F - Lightning Jab, J - Heavy Cross, K - Haymaker (requires full Hype), Space - Guard, A/D or ←/→ - Dash, R - Restart. Chain punches to build <strong>Hype</strong> and stun rivals!
+      <strong>Controls:</strong> F - Lightning Jab, J - Heavy Cross, K - Haymaker (needs full Hype). Hold Space to Guard (press W/↑ for high, S/↓ for low). Tap W/↑ to aim at the head, S/↓ for body shots. A/D or ←/→ - Dash, R - Restart. Chain punches to build <strong>Hype</strong> and stun rivals!
     </div>
   </div>
   <script>
@@ -151,7 +151,14 @@
         defense: { block: 0.45, dodge: 0.35 },
         power: 14,
         speed: 1.05,
-        intro: 'A rookie prodigy whose flurries light up the night.'
+        intro: 'A rookie prodigy whose flurries light up the night.',
+        tell: {
+          lead: 1.35,
+          flash: 1.05,
+          sway: 18,
+          color: '#33d9ff',
+          hint: "Flash vents a bright shoulder flare before launching high strikes."
+        }
       },
       {
         name: 'Mira Voss',
@@ -164,7 +171,14 @@
         defense: { block: 0.58, dodge: 0.42 },
         power: 18,
         speed: 1.08,
-        intro: 'Master of parries and punishing overextensions.'
+        intro: 'Master of parries and punishing overextensions.',
+        tell: {
+          lead: 1.15,
+          flash: 0.85,
+          sway: 14,
+          color: '#ff8ed0',
+          hint: "Mira dips her visor and shifts weight low before body counters."
+        }
       },
       {
         name: 'Harland “Brick” Kane',
@@ -177,7 +191,14 @@
         defense: { block: 0.5, dodge: 0.28 },
         power: 23,
         speed: 0.96,
-        intro: 'A walking fortress whose hooks shake the ropes.'
+        intro: 'A walking fortress whose hooks shake the ropes.',
+        tell: {
+          lead: 1.0,
+          flash: 0.65,
+          sway: 12,
+          color: '#ffa53d',
+          hint: "Brick rumbles his chassis and draws back wide before hooking."
+        }
       },
       {
         name: 'Vega Null',
@@ -190,7 +211,14 @@
         defense: { block: 0.52, dodge: 0.62 },
         power: 25,
         speed: 1.12,
-        intro: 'Slippery, sharp, and eager to vanish between punches.'
+        intro: 'Slippery, sharp, and eager to vanish between punches.',
+        tell: {
+          lead: 0.85,
+          flash: 0.5,
+          sway: 9,
+          color: '#c281ff',
+          hint: "Vega flickers a faint shoulder shimmer just before they disappear into a strike."
+        }
       },
       {
         name: 'Aurora Draegon',
@@ -203,7 +231,14 @@
         defense: { block: 0.6, dodge: 0.55 },
         power: 31,
         speed: 1.18,
-        intro: 'Undisputed champ of the circuit. Expect meteor storms.'
+        intro: 'Undisputed champ of the circuit. Expect meteor storms.',
+        tell: {
+          lead: 0.75,
+          flash: 0.35,
+          sway: 7,
+          color: '#ffe066',
+          hint: "Aurora's core glow tightens subtly—watch carefully or be caught sleeping."
+        }
       }
     ];
 
@@ -218,11 +253,13 @@
       guardHold: false,
       blocking: false,
       guard: 0,
+      aim: 'high',
+      guardLevel: 'high',
       combo: 0,
       comboTimer: 0,
       attacks: {
-        left: { active: false, progress: 0, def: null, hit: false },
-        right: { active: false, progress: 0, def: null, hit: false }
+        left: { active: false, progress: 0, def: null, hit: false, target: 'high' },
+        right: { active: false, progress: 0, def: null, hit: false, target: 'high' }
       },
       dodge: { active: false, dir: 0, progress: 0, cooldown: 0 }
     };
@@ -239,7 +276,10 @@
       shakePower: 0,
       floatingTexts: [],
       sparks: [],
-      celebrateTimer: 0
+      celebrateTimer: 0,
+      hint: '',
+      hintTimer: 0,
+      hintShown: false
     };
 
     const keys = new Set();
@@ -250,13 +290,15 @@
       jab: ['KeyF'],
       cross: ['KeyJ'],
       haymaker: ['KeyK'],
+      aimHigh: ['ArrowUp', 'KeyW'],
+      aimLow: ['ArrowDown', 'KeyS'],
       restart: ['KeyR']
     };
 
     const opponentAttacks = [
-      { key: 'jab', telegraph: 420, duration: 500, window: [0.46, 0.68], baseDamage: 12, reach: 150, lateral: -0.4 },
-      { key: 'cross', telegraph: 520, duration: 560, window: [0.5, 0.74], baseDamage: 20, reach: 170, lateral: 0.55 },
-      { key: 'hook', telegraph: 620, duration: 640, window: [0.52, 0.78], baseDamage: 24, reach: 160, lateral: 0.9 }
+      { key: 'jab', telegraph: 420, duration: 500, window: [0.46, 0.68], baseDamage: 12, reach: 150, lateral: -0.4, target: 'high' },
+      { key: 'cross', telegraph: 520, duration: 560, window: [0.5, 0.74], baseDamage: 20, reach: 170, lateral: 0.55, target: 'high' },
+      { key: 'hook', telegraph: 620, duration: 640, window: [0.52, 0.78], baseDamage: 24, reach: 160, lateral: 0.9, target: 'low' }
     ];
 
     const roundDuration = 90000;
@@ -297,6 +339,9 @@
 
     function bell() {
       setMessage('Ding! Ding! Fight!', 1200);
+      if (game.hint && !game.hintShown) {
+        game.hintTimer = 1600;
+      }
     }
 
     function resetPlayer() {
@@ -307,14 +352,17 @@
       player.velocity = 0;
       player.combo = 0;
       player.comboTimer = 0;
-      player.attacks.left = { active: false, progress: 0, def: null, hit: false };
-      player.attacks.right = { active: false, progress: 0, def: null, hit: false };
+      player.aim = 'high';
+      player.guardLevel = 'high';
+      player.attacks.left = { active: false, progress: 0, def: null, hit: false, target: 'high' };
+      player.attacks.right = { active: false, progress: 0, def: null, hit: false, target: 'high' };
       player.guard = 0;
       player.dodge = { active: false, dir: 0, progress: 0, cooldown: 0 };
     }
 
     function loadOpponent(index) {
       const data = fighters[index];
+      const tell = data.tell || { lead: 1, flash: 0.6, sway: 10, color: '#ffffff', hint: '' };
       game.opponent = {
         ...data,
         health: data.maxHealth,
@@ -323,15 +371,20 @@
         timer: 1500,
         x: 0,
         blockTimer: 0,
+        blockLevel: 'high',
         dodge: { active: false, dir: 0, progress: 0 },
         attack: null,
-        specialMeter: 0
+        specialMeter: 0,
+        tell
       };
       game.roundTime = roundDuration;
       game.state = 'intro';
       game.overlay = 1;
       game.bellTimer = 2200;
       setMessage(`${data.name} – ${data.nickname}`, 2200);
+      game.hint = tell.hint || '';
+      game.hintTimer = 0;
+      game.hintShown = false;
     }
 
     function nextOpponent() {
@@ -380,6 +433,7 @@
       attack.progress = 0;
       attack.def = def;
       attack.hit = false;
+      attack.target = player.aim;
       if (type !== 'haymaker') {
         setMessage(def.name + '!');
       } else {
@@ -389,15 +443,27 @@
     }
 
     function startOpponentAttack(type) {
+      const opp = game.opponent;
+      if (!opp) return;
+      const tell = opp.tell || { lead: 1, flash: 0.6, sway: 10, color: '#ffffff' };
+      const scaledTelegraph = (type.telegraph || 420) * tell.lead;
+      const target = type.target || 'high';
       game.opponent.attack = {
         ...type,
+        telegraph: scaledTelegraph,
+        window: [...type.window],
         progress: 0,
         phase: 'telegraph',
         hit: false,
-        hand: Math.random() > 0.5 ? 'left' : 'right'
+        hand: type.hand === 'both' ? 'both' : (Math.random() > 0.5 ? 'left' : 'right'),
+        target,
+        tellFlash: tell.flash,
+        tellColor: tell.color,
+        tellSway: tell.sway
       };
       game.opponent.state = 'attack';
-      setMessage(`${game.opponent.nickname} winding up!`);
+      const laneText = target === 'low' ? 'to the body' : 'up top';
+      setMessage(`${game.opponent.nickname} winding up ${laneText}!`);
     }
 
     function updatePlayer(dt) {
@@ -456,7 +522,7 @@
         attack.progress += dt / attack.def.duration;
         if (attack.progress >= attack.def.window[0] && attack.progress <= attack.def.window[1] && !attack.hit) {
           const glove = getPlayerHandPosition(hand);
-          resolvePlayerHit(glove, attack.def);
+          resolvePlayerHit(glove, attack);
           attack.hit = true;
         }
         if (attack.progress >= 1) {
@@ -466,35 +532,56 @@
       }
     }
 
-    function resolvePlayerHit(glove, def) {
+    function resolvePlayerHit(glove, attack) {
       const opp = game.opponent;
-      if (!opp || opp.health <= 0) return;
+      if (!opp || opp.health <= 0 || !attack || !attack.def) return;
+      const def = attack.def;
       if (opp.dodge.active && opp.dodge.progress > 0.18 && opp.dodge.progress < 0.82) {
         addFloatingText('Slip!', glove.x, glove.y - 20, '#66f9ff');
         setMessage(`${opp.nickname} slipped the shot!`);
         return;
       }
-      const target = getOpponentHead();
-      const dist = Math.hypot(glove.x - target.x, glove.y - target.y);
-      if (dist > 48) {
-        addFloatingText('Whiff', glove.x, glove.y - 20, '#8895ff', 700);
-        return;
+      const lane = attack.target === 'low' ? 'low' : 'high';
+      const target = lane === 'low' ? getOpponentBody() : getOpponentHead();
+      const radiusX = lane === 'low' ? 110 : 88;
+      const radiusY = lane === 'low' ? 90 : 78;
+      const dx = glove.x - target.x;
+      const dy = glove.y - target.y;
+      const inside = Math.abs(dx) <= radiusX && Math.abs(dy) <= radiusY;
+      if (!inside) {
+        const stationary = Math.abs(player.x) < 0.35 && (!opp.dodge.active || opp.dodge.progress <= 0.18 || opp.dodge.progress >= 0.82);
+        if (!(stationary && Math.abs(dx) <= radiusX * 1.35 && Math.abs(dy) <= radiusY * 1.35)) {
+          addFloatingText('Whiff', glove.x, glove.y - 20, '#8895ff', 700);
+          return;
+        }
       }
       let damage = def.damage;
-      let text = 'Crack!';
-      let color = '#ffe666';
+      let text = lane === 'low' ? 'Gut Shot!' : 'Crack!';
+      let color = lane === 'low' ? '#ffcf66' : '#ffe666';
       if (def === attackDefs.cross) {
-        text = 'Smash!';
+        text = lane === 'low' ? 'Rib Breaker!' : 'Smash!';
         color = '#ffb347';
       } else if (def === attackDefs.haymaker) {
-        text = 'Devastating!';
+        text = lane === 'low' ? 'Crusher!' : 'Devastating!';
         color = '#ff4f6d';
       }
       let mitigated = false;
       if (opp.blockTimer > 0) {
-        damage *= 0.35;
-        mitigated = true;
-        addFloatingText('Guarded', target.x + (Math.random() - 0.5) * 20, target.y - 40, '#7ab5ff');
+        const blockMatch = (opp.blockLevel || 'high') === lane;
+        const guardYOffset = lane === 'low' ? 10 : 40;
+        if (blockMatch) {
+          damage *= 0.35;
+          mitigated = true;
+          addFloatingText(lane === 'low' ? 'Body Guard' : 'High Guard', target.x + (Math.random() - 0.5) * 20, target.y - guardYOffset, '#7ab5ff');
+          setMessage(`${opp.nickname}'s guard held!`);
+          opp.blockTimer = Math.max(0, opp.blockTimer - 180);
+        } else {
+          damage *= 0.65;
+          mitigated = true;
+          addFloatingText('Split Guard', target.x + (Math.random() - 0.5) * 20, target.y - guardYOffset, '#ffdf8a');
+          setMessage(`${def.name} split the guard!`);
+          opp.blockTimer = Math.max(0, opp.blockTimer - 320);
+        }
       }
       damage *= 1 + Math.min(0.6, player.combo * 0.1);
       opp.health -= damage;
@@ -504,8 +591,12 @@
       player.hype = clamp(player.hype + def.hypeGain + player.combo * 2, 0, 120);
       game.shakePower = Math.min(18, game.shakePower + def.shake);
       addSparks(target.x, target.y, mitigated ? '#9bb8ff' : color, mitigated ? 6 : 10);
-      addFloatingText(text, target.x + (Math.random() - 0.5) * 40, target.y - 50, color, 900);
-      setMessage(mitigated ? 'Guard cracked!' : `${def.name} landed!`);
+      const textYOffset = lane === 'low' ? 30 : 50;
+      addFloatingText(text, target.x + (Math.random() - 0.5) * 40, target.y - textYOffset, color, 900);
+      if (!mitigated) {
+        const laneText = lane === 'low' ? 'Body shot landed!' : `${def.name} landed!`;
+        setMessage(laneText);
+      }
       if (opp.health <= 0) {
         opp.health = 0;
         game.state = 'opponent-down';
@@ -609,7 +700,9 @@
         startOpponentDodge();
       } else if (roll < blockChance) {
         opp.blockTimer = 360 + Math.random() * 240;
-        setMessage(`${opp.nickname} turtled up!`);
+        opp.blockLevel = urgent.target || 'high';
+        const guardText = opp.blockLevel === 'low' ? 'drops to guard the body!' : 'guards the head!';
+        setMessage(`${opp.nickname} ${guardText}`);
       }
     }
 
@@ -656,7 +749,8 @@
       const shouldSpecial = opp.specialMeter >= 100 && Math.random() < 0.35;
       if (shouldSpecial) {
         opp.specialMeter = 0;
-        opp.attack = {
+        const flurryTarget = Math.random() < 0.55 ? 'high' : 'low';
+        const type = {
           key: 'flurry',
           telegraph: 520,
           duration: 700,
@@ -664,14 +758,15 @@
           baseDamage: opp.power * 0.55,
           reach: 170,
           lateral: 0,
-          progress: 0,
-          phase: 'telegraph',
-          hit: false,
+          target: flurryTarget,
           flurry: true,
           hand: 'both'
         };
-        opp.state = 'attack';
-        setMessage(`${opp.nickname} unleashes a Blitz!`);
+        startOpponentAttack(type);
+        if (opp.attack) {
+          opp.attack.flurry = true;
+          setMessage(`${opp.nickname} unleashes a Blitz!`);
+        }
         return;
       }
       if (Math.random() < aggression * staminaFactor) {
@@ -688,16 +783,27 @@
         setMessage('You slipped past it!');
         return;
       }
+      const lane = attack.target === 'low' ? 'low' : 'high';
       const blocked = player.blocking;
+      const guardMatch = blocked && player.guardLevel === lane;
       let damage = attack.baseDamage + game.opponent.power * 0.35;
       if (attack.flurry) {
         damage *= 1.35;
         addSparks(canvas.width / 2 + Math.random() * 120 - 60, canvas.height - 220, '#ff7ba3', 12);
       }
+      const guardFloatY = lane === 'low' ? canvas.height - 120 : canvas.height - 150;
+      const wrongGuardY = lane === 'low' ? canvas.height - 130 : canvas.height - 170;
       if (blocked) {
-        damage *= 0.32 + (1 - player.guard) * 0.25;
-        addFloatingText('Guard!', canvas.width / 2 - 40 + player.x * 80, canvas.height - 140, '#99f9ff');
-        setMessage('Hold guard!');
+        if (guardMatch) {
+          damage *= 0.28 + (1 - player.guard) * 0.22;
+          const text = lane === 'low' ? 'Body Block!' : 'High Block!';
+          addFloatingText(text, canvas.width / 2 - 40 + player.x * 80, guardFloatY, '#99f9ff');
+          setMessage(lane === 'low' ? 'Body saved!' : 'Head protected!');
+        } else {
+          damage *= 0.6;
+          addFloatingText('Wrong Guard!', canvas.width / 2 - 40 + player.x * 80, wrongGuardY, '#ffb347');
+          setMessage(lane === 'low' ? 'Guard downstairs!' : 'Guard the head!');
+        }
       } else {
         addFloatingText('Hit!', canvas.width / 2 - 40 + player.x * 80, canvas.height - 180, '#ff6b6b');
         setMessage('You took a shot!');
@@ -733,16 +839,20 @@
       const dodgeOffset = player.dodge.active ? Math.sin(player.dodge.progress * Math.PI) * 110 * player.dodge.dir : 0;
       const baseX = canvas.width / 2 + player.x * 110 + dodgeOffset;
       const attack = player.attacks[hand];
-      let x = baseX + (hand === 'left' ? -150 : 150);
-      let y = canvas.height - 180;
+      let x = baseX + (hand === 'left' ? -130 : 130);
+      let y = canvas.height - 200;
       let size = 22;
       if (attack && attack.active) {
         const def = attack.def;
         const t = clamp(attack.progress, 0, 1);
         const extendPhase = t < 0.5 ? easeOutCubic(t / 0.5) : easeInCubic(1 - (t - 0.5) / 0.5);
         const reach = def.reach * extendPhase;
+        const lane = attack.target === 'low' ? 'low' : 'high';
+        const verticalFactor = lane === 'low' ? 0.75 : 1.1;
+        const targetLift = lane === 'low' ? 70 : 0;
         x += def.lateral * reach * 0.7;
-        y -= reach * 1.1;
+        y += targetLift;
+        y -= reach * verticalFactor;
         if (def.arc) {
           x += def.arc.x * 0.8 * Math.sin(Math.PI * t);
           y += def.arc.y * 0.6 * Math.sin(Math.PI * t);
@@ -750,8 +860,10 @@
         size += 6 * Math.sin(t * Math.PI);
       }
       if (player.blocking && (!attack || !attack.active)) {
-        y -= 120 * player.guard;
-        x += (hand === 'left' ? 50 : -50) * player.guard;
+        const guardYTarget = player.guardLevel === 'low' ? canvas.height - 140 : canvas.height - 260;
+        const guardXTarget = baseX + (hand === 'left' ? -80 : 80);
+        x += (guardXTarget - x) * player.guard;
+        y += (guardYTarget - y) * player.guard;
       }
       return { x, y, size };
     }
@@ -766,6 +878,18 @@
       return {
         x: canvas.width / 2 + dodgeOffset,
         y: canvas.height / 2 - 26 + slump
+      };
+    }
+    function getOpponentBody() {
+      const opp = game.opponent;
+      if (!opp) {
+        return { x: canvas.width / 2, y: canvas.height / 2 + 90 };
+      }
+      const dodgeOffset = opp.dodge.active ? Math.sin(opp.dodge.progress * Math.PI) * 70 * opp.dodge.dir : 0;
+      const slump = opp.state === 'stunned' ? Math.sin((1 - Math.max(0, opp.timer) / 2600) * Math.PI) * 20 : 0;
+      return {
+        x: canvas.width / 2 + dodgeOffset,
+        y: canvas.height / 2 + 88 + slump
       };
     }
     function hexToRgba(hex, alpha) {
@@ -853,6 +977,13 @@
         game.messageTimer -= dt;
         if (game.messageTimer <= 0) {
           game.message = '';
+        }
+      }
+      if (game.hintTimer > 0) {
+        game.hintTimer -= dt;
+        if (game.hintTimer <= 0 && !game.hintShown && game.hint) {
+          setMessage(`Tell: ${game.hint}`, 2600);
+          game.hintShown = true;
         }
       }
       game.shakePower *= 0.92;
@@ -1043,18 +1174,42 @@
       const opp = game.opponent;
       if (!opp) return;
       const head = getOpponentHead();
-      const forwardLean = opp.attack && opp.attack.phase === 'swing' ? Math.sin(clamp(opp.attack.progress, 0, 1) * Math.PI) * 18 : 0;
+      const telegraph = opp.attack && opp.attack.phase === 'telegraph' ? opp.attack : null;
+      const swingLean = opp.attack && opp.attack.phase === 'swing' ? Math.sin(clamp(opp.attack.progress, 0, 1) * Math.PI) * 18 : 0;
+      const telegraphTilt = telegraph ? Math.sin(clamp(telegraph.progress, 0, 1) * Math.PI) * (telegraph.tellSway || 0) : 0;
+      const forwardLean = swingLean + (telegraph ? telegraphTilt * (telegraph.target === 'low' ? 0.4 : -0.3) : 0);
       const baseX = head.x + forwardLean * 0.35;
-      const baseY = head.y + 120;
+      const baseY = head.y + 120 + (telegraph ? telegraphTilt * (telegraph.target === 'low' ? 0.4 : -0.25) : 0);
       const slump = opp.state === 'stunned' ? 36 : 0;
 
-      if (opp.attack && opp.attack.phase === 'telegraph') {
+      if (telegraph) {
         ctx.save();
-        const glowRadius = 100 + opp.attack.progress * 90;
-        ctx.fillStyle = hexToRgba(opp.secondary, 0.15 + opp.attack.progress * 0.2);
-        ctx.beginPath();
-        ctx.arc(baseX, head.y, glowRadius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.globalCompositeOperation = 'lighter';
+        const strength = clamp(Math.pow(clamp(telegraph.progress, 0, 1), 0.7) * (telegraph.tellFlash || 0.6), 0, 1.35);
+        const cueColor = telegraph.tellColor || opp.secondary;
+        if (telegraph.target === 'low') {
+          const body = getOpponentBody();
+          const width = 120 + strength * 70;
+          const height = 70 + strength * 36;
+          ctx.lineWidth = 8 + strength * 6;
+          ctx.strokeStyle = hexToRgba(cueColor, 0.42 * strength);
+          ctx.fillStyle = hexToRgba(cueColor, 0.18 * strength);
+          ctx.beginPath();
+          ctx.ellipse(body.x, body.y + 6, width, height, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          const radius = 70 + strength * 46;
+          ctx.lineWidth = 10 + strength * 5;
+          ctx.strokeStyle = hexToRgba(cueColor, 0.4 * strength);
+          ctx.beginPath();
+          ctx.arc(head.x, head.y, radius, -Math.PI * 0.9, Math.PI * 0.9, false);
+          ctx.stroke();
+          ctx.fillStyle = hexToRgba(cueColor, 0.16 * strength);
+          ctx.beginPath();
+          ctx.arc(head.x, head.y - 12, radius * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.restore();
       }
 
@@ -1193,8 +1348,13 @@
       const attacking = attack && opp.state === 'attack' && (attack.hand === hand || attack.hand === 'both');
 
       if (opp.blockTimer > 0) {
-        gloveX = head.x + dir * 44;
-        gloveY = head.y + 42;
+        if ((opp.blockLevel || 'high') === 'low') {
+          gloveX = baseX + dir * 92;
+          gloveY = baseY + 72;
+        } else {
+          gloveX = head.x + dir * 44;
+          gloveY = head.y + 42;
+        }
         size = 28;
       } else if (attacking && attack.phase === 'swing') {
         const t = clamp(attack.progress, 0, 1);
@@ -1212,6 +1372,12 @@
           gloveY += reach * 0.55;
         }
         size = 26 + 6 * Math.sin(t * Math.PI);
+      } else if (attacking && attack.phase === 'telegraph') {
+        const t = clamp(attack.progress, 0, 1);
+        const coil = Math.sin(t * Math.PI) * (attack.target === 'low' ? 40 : -30);
+        gloveX = baseX + dir * (110 + coil * 0.6);
+        gloveY = baseY + (attack.target === 'low' ? 70 : 10) + coil;
+        size = 26;
       } else if (opp.state === 'stunned') {
         gloveY += 46;
       }
@@ -1532,6 +1698,12 @@
       ctx.textAlign = 'left';
       ctx.textBaseline = 'top';
       ctx.fillText('You', 40, 24);
+      const aimText = player.aim === 'low' ? 'Body' : 'Head';
+      const guardText = player.guardLevel === 'low' ? 'Low' : 'High';
+      ctx.fillStyle = '#a3b8ff';
+      ctx.font = '13px "Segoe UI", sans-serif';
+      ctx.fillText(`Aim: ${aimText}`, 40, 126);
+      ctx.fillText(`Guard: ${guardText}`, 40, 142);
 
       if (game.opponent) {
         const opp = game.opponent;
@@ -1608,6 +1780,35 @@
       }
       if (controlMap.guard.includes(event.code)) {
         player.guardHold = true;
+      }
+      if (controlMap.aimHigh.includes(event.code)) {
+        let message = '';
+        if (player.guardHold) {
+          if (player.guardLevel !== 'high') {
+            player.guardLevel = 'high';
+            message = 'Guard high!';
+          }
+        } else if (player.aim !== 'high') {
+          player.aim = 'high';
+          message = 'Target head!';
+        }
+        if (message && game.state === 'fight') {
+          setMessage(message);
+        }
+      } else if (controlMap.aimLow.includes(event.code)) {
+        let message = '';
+        if (player.guardHold) {
+          if (player.guardLevel !== 'low') {
+            player.guardLevel = 'low';
+            message = 'Guard low!';
+          }
+        } else if (player.aim !== 'low') {
+          player.aim = 'low';
+          message = 'Target body!';
+        }
+        if (message && game.state === 'fight') {
+          setMessage(message);
+        }
       }
       if (controlMap.jab.includes(event.code)) {
         tryPunch('left', 'jab');
