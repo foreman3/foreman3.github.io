@@ -1,0 +1,15 @@
+<svg width="90" height="100" viewBox="0 0 90 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cheese" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe873"/>
+      <stop offset="1" stop-color="#ffb347"/>
+    </linearGradient>
+  </defs>
+  <path d="M6 70l28-50c2-4 6-6 10-6h2c4 0 8 2 10 6l28 50c6 10-2 22-14 22H20c-12 0-20-12-14-22z" fill="url(#cheese)" stroke="#ff9d2f" stroke-width="6" stroke-linejoin="round"/>
+  <g fill="#ffcf5d" stroke="#ffb347" stroke-width="4">
+    <circle cx="30" cy="70" r="6"/>
+    <circle cx="44" cy="54" r="5"/>
+    <circle cx="58" cy="70" r="6"/>
+  </g>
+  <path d="M24 86c10 6 18 8 21 8s11-2 21-8" stroke="#fff1a6" stroke-width="6" stroke-linecap="round" fill="none"/>
+</svg>

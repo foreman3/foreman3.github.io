@@ -1,7 +1,31 @@
-<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" fill="none"/>
-  <rect x="12" y="18" width="8" height="10" fill="#fff8e1" stroke="#795548" stroke-width="1"/>
-  <rect x="14" y="10" width="4" height="8" fill="#ffcc80"/>
-  <rect x="13" y="8" width="6" height="3" fill="#fff"/>
-  <circle cx="16" cy="6" r="2" fill="#fff"/>
+<svg width="120" height="140" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="chefHat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dfe8ff"/>
+    </linearGradient>
+    <linearGradient id="chefCoat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f9fbff"/>
+      <stop offset="0.6" stop-color="#d7e6ff"/>
+      <stop offset="1" stop-color="#a5c3ff"/>
+    </linearGradient>
+    <linearGradient id="chefApron" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff6f91"/>
+      <stop offset="1" stop-color="#ff9472"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M38 28c0-12 8-22 22-22s22 10 22 22c8 0 14 6 14 14s-6 14-14 14H38c-8 0-14-6-14-14s6-14 14-14z" fill="url(#chefHat)" stroke="#cad3ff" stroke-width="4"/>
+    <path d="M46 58h28c12 0 22 10 22 22v28c0 16-12 28-28 28H52c-16 0-28-12-28-28V80c0-12 10-22 22-22z" fill="url(#chefCoat)" stroke="#91a9ff" stroke-width="4"/>
+    <path d="M40 70h40v28c0 10-8 18-18 18H58c-10 0-18-8-18-18V70z" fill="url(#chefApron)" stroke="#ff6f91" stroke-width="4"/>
+    <path d="M54 118l-6 14M66 118l6 14" stroke="#2f1b10" stroke-width="6"/>
+    <path d="M40 94l-12 20M80 94l12 20" stroke="#2f1b10" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <circle cx="60" cy="46" r="18" fill="#ffd7ba"/>
+  <g fill="#2f1b10">
+    <circle cx="50" cy="44" r="3"/>
+    <circle cx="70" cy="44" r="3"/>
+    <path d="M48 54c4 4 8 6 12 6s8-2 12-6" stroke="#2f1b10" stroke-width="4" stroke-linecap="round" fill="none"/>
+  </g>
+  <path d="M42 36c4 4 10 6 18 6s14-2 18-6" stroke="#ff9d2f" stroke-width="4" stroke-linecap="round" fill="none"/>
 </svg>

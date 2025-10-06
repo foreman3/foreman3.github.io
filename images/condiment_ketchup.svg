@@ -1,0 +1,12 @@
+<svg width="80" height="120" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ketchupBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff6272"/>
+      <stop offset="1" stop-color="#b31237"/>
+    </linearGradient>
+  </defs>
+  <path d="M34 4h12l6 18H28z" fill="#ffdede" stroke="#ff9aa2" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M20 20h40c6 0 10 4 10 10l-6 52c-2 14-12 24-24 24s-22-10-24-24L10 30c0-6 4-10 10-10z" fill="url(#ketchupBody)" stroke="#850e2a" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="40" cy="54" r="14" fill="#ffe7f2" stroke="#ff9aac" stroke-width="6"/>
+  <path d="M32 82c6 8 12 10 16 10s10-2 16-10" stroke="#ffb3c1" stroke-width="6" stroke-linecap="round" fill="none"/>
+</svg>

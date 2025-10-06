@@ -1,0 +1,25 @@
+<svg width="120" height="140" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd39a"/>
+      <stop offset="1" stop-color="#e08a33"/>
+    </linearGradient>
+    <linearGradient id="dog" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff6b6b"/>
+      <stop offset="1" stop-color="#c5293d"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 16h56c14 0 24 10 24 24v60c0 14-10 24-24 24H32c-14 0-24-10-24-24V40c0-14 10-24 24-24z" fill="url(#bun)" stroke="#cc7125" stroke-width="6" stroke-linecap="round"/>
+  <path d="M44 20h32c14 0 24 10 24 24v52c0 14-10 24-24 24H44c-14 0-24-10-24-24V44c0-14 10-24 24-24z" fill="url(#dog)" stroke="#8e1b2e" stroke-width="6"/>
+  <path d="M32 54c12 8 24 12 28 12s16-4 28-12" stroke="#ffe27a" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <g fill="#ffd7ba">
+    <ellipse cx="50" cy="82" rx="12" ry="10"/>
+    <ellipse cx="70" cy="82" rx="12" ry="10"/>
+  </g>
+  <g fill="#2f1b10">
+    <circle cx="50" cy="82" r="4"/>
+    <circle cx="70" cy="82" r="4"/>
+    <path d="M48 98c6 8 12 10 20 10s14-2 20-10" stroke="#2f1b10" stroke-width="6" stroke-linecap="round" fill="none"/>
+  </g>
+  <path d="M40 110c10 6 20 10 24 10s14-4 24-10" stroke="#ffba5c" stroke-width="6" stroke-linecap="round" fill="none"/>
+</svg>

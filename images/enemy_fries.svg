@@ -1,0 +1,32 @@
+<svg width="120" height="140" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="carton" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff7878"/>
+      <stop offset="1" stop-color="#d42050"/>
+    </linearGradient>
+    <linearGradient id="fry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe08a"/>
+      <stop offset="1" stop-color="#ffac3f"/>
+    </linearGradient>
+  </defs>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <g fill="url(#fry)" stroke="#f9c86b" stroke-width="4">
+      <rect x="28" y="12" width="12" height="60" rx="6"/>
+      <rect x="44" y="8" width="12" height="64" rx="6"/>
+      <rect x="60" y="10" width="12" height="62" rx="6"/>
+      <rect x="76" y="14" width="12" height="58" rx="6"/>
+      <rect x="52" y="4" width="12" height="68" rx="6"/>
+    </g>
+    <path d="M26 46l68 0c10 0 18 8 18 18l-8 40c-4 18-18 28-44 28s-40-10-44-28l-8-40c0-10 8-18 18-18z" fill="url(#carton)" stroke="#8c1234" stroke-width="6"/>
+  </g>
+  <g fill="#ffe9f5">
+    <ellipse cx="44" cy="88" rx="10" ry="8"/>
+    <ellipse cx="76" cy="88" rx="10" ry="8"/>
+  </g>
+  <g fill="#2f1b10">
+    <circle cx="44" cy="88" r="4"/>
+    <circle cx="76" cy="88" r="4"/>
+    <path d="M42 104c6 6 12 8 18 8s12-2 18-8" stroke="#2f1b10" stroke-width="6" stroke-linecap="round" fill="none"/>
+  </g>
+  <path d="M30 110c12 8 24 12 30 12s18-4 30-12" stroke="#ffba5c" stroke-width="6" stroke-linecap="round" fill="none"/>
+</svg>

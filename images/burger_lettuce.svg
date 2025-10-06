@@ -1,4 +1,16 @@
-<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" fill="none"/>
-  <path d="M4 16 Q8 12 12 16 T20 16 T28 16" fill="#8fbc8f" stroke="#3e8e41"/>
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lettuceBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c4ff87"/>
+      <stop offset="0.5" stop-color="#62d36d"/>
+      <stop offset="1" stop-color="#3f9f4c"/>
+    </linearGradient>
+    <linearGradient id="lettuceShine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(255,255,255,0.45)"/>
+      <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+  <path d="M14 36c10 10 18 14 34 14 12 0 24-6 40-6s28 6 40 6c16 0 24-4 34-14l12 36c-10 14-24 26-46 26-18 0-30-8-40-8s-22 8-40 8c-22 0-36-12-46-26z" fill="url(#lettuceBody)"/>
+  <path d="M18 44c12 8 22 12 30 12 16 0 28-10 52-10 22 0 32 10 52 10 8 0 18-4 30-12" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="6" stroke-linecap="round"/>
+  <path d="M14 36c10 10 18 14 34 14 12 0 24-6 40-6s28 6 40 6c16 0 24-4 34-14" fill="url(#lettuceShine)"/>
 </svg>

@@ -1,5 +1,23 @@
-<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" fill="none"/>
-  <path d="M4 16 Q16 4 28 16" fill="#f4a460" stroke="#d2691e"/>
-  <ellipse cx="16" cy="14" rx="12" ry="3" fill="#d2b48c"/>
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bunHighlight" cx="50%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#ffe9b5"/>
+      <stop offset="0.55" stop-color="#f9b24a"/>
+      <stop offset="1" stop-color="#db7a2a"/>
+    </radialGradient>
+    <linearGradient id="bunShadow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(0,0,0,0.15)"/>
+      <stop offset="1" stop-color="rgba(0,0,0,0)"/>
+    </linearGradient>
+  </defs>
+  <path d="M20 70c0-38 34-60 80-60s80 22 80 60v16c0 12-10 22-22 22H42c-12 0-22-10-22-22V70z" fill="url(#bunHighlight)"/>
+  <path d="M24 76c12-22 44-36 76-36s64 14 76 36" fill="none" stroke="#fff0c8" stroke-width="6" stroke-opacity="0.35" stroke-linecap="round"/>
+  <ellipse cx="100" cy="98" rx="78" ry="16" fill="url(#bunShadow)"/>
+  <g fill="#fff7d6" transform="translate(0,5)">
+    <ellipse cx="58" cy="52" rx="8" ry="4" transform="rotate(-12 58 52)"/>
+    <ellipse cx="90" cy="42" rx="9" ry="4" transform="rotate(14 90 42)"/>
+    <ellipse cx="126" cy="54" rx="7" ry="3" transform="rotate(-18 126 54)"/>
+    <ellipse cx="146" cy="40" rx="6" ry="3" transform="rotate(24 146 40)"/>
+    <ellipse cx="74" cy="34" rx="7" ry="3" transform="rotate(-24 74 34)"/>
+  </g>
 </svg>
