@@ -1,0 +1,20 @@
+<svg width="140" height="120" viewBox="0 0 140 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="scout-body" x1="70" y1="8" x2="70" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7AFFF3"/>
+      <stop offset="0.5" stop-color="#1CD4FF"/>
+      <stop offset="1" stop-color="#1B37FF"/>
+    </linearGradient>
+    <radialGradient id="scout-core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(70 60) rotate(90) scale(48 46)">
+      <stop stop-color="#E4FBFF"/>
+      <stop offset="0.45" stop-color="#12F3FF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0A4EFF" stop-opacity="0.7"/>
+    </radialGradient>
+  </defs>
+  <path d="M70 10L118 40C123 43 123 50 118 54L96 70L122 96C126 100 125 108 119 110L104 114L92 90H48L36 114L21 110C15 108 14 100 18 96L44 70L22 54C17 50 17 43 22 40L70 10Z" fill="url(#scout-body)"/>
+  <path d="M70 24L108 48C111 50 111 55 108 58L86 74L102 98H38L54 74L32 58C29 55 29 50 32 48L70 24Z" fill="url(#scout-core)" opacity="0.88"/>
+  <path d="M70 36C83 36 94 45 94 58C94 71 83 80 70 80C57 80 46 71 46 58C46 45 57 36 70 36Z" fill="#051441" opacity="0.55"/>
+  <path d="M62 52H78V68H62V52Z" fill="#8AFFF9" opacity="0.8"/>
+  <path d="M70 18L88 36H52L70 18Z" fill="#FFFFFF" opacity="0.35"/>
+  <path d="M52 90H88L78 108H62L52 90Z" fill="#24F5FF" opacity="0.55"/>
+</svg>

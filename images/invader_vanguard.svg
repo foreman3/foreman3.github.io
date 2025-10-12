@@ -1,0 +1,20 @@
+<svg width="160" height="120" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="vanguard-body" x1="80" y1="12" x2="80" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFEE9F"/>
+      <stop offset="0.4" stop-color="#FF8D66"/>
+      <stop offset="1" stop-color="#8B1F6A"/>
+    </linearGradient>
+    <radialGradient id="vanguard-core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(80 60) rotate(90) scale(52 50)">
+      <stop offset="0" stop-color="#FFF8E8"/>
+      <stop offset="0.5" stop-color="#FFBB70"/>
+      <stop offset="1" stop-color="#811C56"/>
+    </radialGradient>
+  </defs>
+  <path d="M32 46L64 18C68 14 76 12 80 12C84 12 92 14 96 18L128 46C132 50 132 56 128 60L112 74L126 100C130 108 124 116 116 114L92 108L80 118L68 108L44 114C36 116 30 108 34 100L48 74L32 60C28 56 28 50 32 46Z" fill="url(#vanguard-body)"/>
+  <path d="M48 32L112 32L132 50L112 68L118 86H42L48 68L28 50L48 32Z" fill="url(#vanguard-core)"/>
+  <path d="M60 50H84V74H60V50Z" fill="#FFF3D4" opacity="0.85"/>
+  <path d="M92 50H108V74H92V50Z" fill="#FFD58C" opacity="0.75"/>
+  <path d="M50 88H110L96 106H64L50 88Z" fill="#FF9A7C" opacity="0.6"/>
+  <path d="M52 28H108L96 36H64L52 28Z" fill="#FFFFFF" opacity="0.28"/>
+</svg>
