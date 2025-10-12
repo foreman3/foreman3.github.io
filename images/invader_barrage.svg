@@ -1,0 +1,20 @@
+<svg width="150" height="120" viewBox="0 0 150 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="barrage-body" x1="75" y1="12" x2="75" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF8DF0"/>
+      <stop offset="0.4" stop-color="#725BFF"/>
+      <stop offset="1" stop-color="#0A0C56"/>
+    </linearGradient>
+    <linearGradient id="barrage-core" x1="75" y1="38" x2="75" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFEFFF"/>
+      <stop offset="0.6" stop-color="#7A7DFF"/>
+      <stop offset="1" stop-color="#242C80"/>
+    </linearGradient>
+  </defs>
+  <path d="M22 42L68 14C72 12 78 12 82 14L128 42C133 45 134 52 129 56L108 72L120 96C123 102 119 109 112 108L94 104L80 116C77 118 73 118 70 116L56 104L38 108C31 109 27 102 30 96L42 72L21 56C16 52 17 45 22 42Z" fill="url(#barrage-body)"/>
+  <path d="M50 32L100 32L126 50L104 66L118 94H32L46 66L24 50L50 32Z" fill="url(#barrage-core)" opacity="0.9"/>
+  <path d="M60 54H90V78H60V54Z" fill="#F8D0FF" opacity="0.85"/>
+  <path d="M96 54H108V78H96V54Z" fill="#E8A3FF" opacity="0.75"/>
+  <path d="M42 88H108L96 102H54L42 88Z" fill="#8AFFE7" opacity="0.5"/>
+  <path d="M74 18L96 30H54L74 18Z" fill="#FFFFFF" opacity="0.3"/>
+</svg>

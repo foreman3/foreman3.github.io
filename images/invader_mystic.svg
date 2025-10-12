@@ -1,0 +1,21 @@
+<svg width="150" height="120" viewBox="0 0 150 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="mystic-aura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(75 60) rotate(90) scale(60 58)">
+      <stop offset="0" stop-color="#D8FFF4"/>
+      <stop offset="0.45" stop-color="#28FFE3" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#1B0F66" stop-opacity="0.9"/>
+    </radialGradient>
+    <linearGradient id="mystic-core" x1="75" y1="36" x2="75" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9FFFFC"/>
+      <stop offset="0.5" stop-color="#2ADBD5"/>
+      <stop offset="1" stop-color="#162E80"/>
+    </linearGradient>
+  </defs>
+  <path d="M30 40C30 29 39 20 50 20H100C111 20 120 29 120 40V50L134 62C138 66 138 74 133 78L114 94L120 108H30L36 94L17 78C12 74 12 66 16 62L30 50V40Z" fill="url(#mystic-aura)"/>
+  <path d="M46 36C46 31 50 28 54 28H96C100 28 104 31 104 36V52L120 64L108 82H42L30 64L46 52V36Z" fill="url(#mystic-core)"/>
+  <path d="M56 50H72V70H56V50Z" fill="#E0FFFA" opacity="0.85"/>
+  <path d="M78 50H94V70H78V50Z" fill="#BBFFF6" opacity="0.85"/>
+  <path d="M54 86H96L86 102H64L54 86Z" fill="#52FFE7" opacity="0.6"/>
+  <path d="M42 32H108L98 40H52L42 32Z" fill="#FFFFFF" opacity="0.3"/>
+  <path d="M38 64H112L98 76H52L38 64Z" fill="#0AFFDF" opacity="0.35"/>
+</svg>

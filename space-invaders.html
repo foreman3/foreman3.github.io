@@ -100,20 +100,33 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    const player = { x: canvas.width/2, y: canvas.height - 30, w: 40, h: 20, pulse: 0 };
+    const player = { x: canvas.width/2, y: canvas.height - 38, w: 54, h: 32, pulse: 0 };
+    const playerImg = new Image();
+    playerImg.src = 'images/player_ship.svg';
     let bullet = null;
     const aliens = [];
-    const alienImg = new Image();
-    alienImg.src = 'images/alien.svg';
+    const alienSpriteSources = [
+      'images/invader_scout.svg',
+      'images/invader_barrage.svg',
+      'images/invader_mystic.svg',
+      'images/invader_vanguard.svg',
+      'images/invader_overlord.svg'
+    ];
+    const alienSprites = alienSpriteSources.map(src => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    });
     const bombs = [];
     const explosions = [];
     const sparks = [];
-    const starfield = Array.from({length: 140}, () => ({
+    const starfield = Array.from({length: 160}, () => ({
       x: Math.random()*canvas.width,
       y: Math.random()*canvas.height,
       speed: Math.random()*25 + 20,
-      size: Math.random()*1.5 + 0.5,
-      twinkle: Math.random()*Math.PI*2
+      size: Math.random()*1.8 + 0.4,
+      twinkle: Math.random()*Math.PI*2,
+      trail: Math.random() < 0.1
     }));
     const auroras = Array.from({length: 3}, () => ({
       x: Math.random()*canvas.width,
@@ -122,6 +135,28 @@
       hue: Math.random()*120 + 160,
       alpha: Math.random()*0.25 + 0.1
     }));
+    const parallaxClouds = Array.from({length: 4}, () => ({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height*0.7,
+      r: Math.random()*240 + 240,
+      hue: Math.random()*80 + 180,
+      alpha: Math.random()*0.25 + 0.15,
+      speed: Math.random()*12 + 6
+    }));
+    const constellations = Array.from({length: 6}, () => ({
+      points: Array.from({length: 5 + Math.floor(Math.random()*4)}, () => ({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height*0.55,
+      })).sort((a,b) => a.x - b.x),
+      glow: Math.random()*0.4 + 0.4
+    }));
+    const horizonGlow = { hue: 205, alpha: 0.35 };
+    const planet = {
+      x: canvas.width*0.18,
+      y: canvas.height*0.32,
+      r: 180,
+      ringTilt: -0.35
+    };
     let shields = [];
     let score = 0;
     let lives = 3;
@@ -141,7 +176,15 @@
       const cols = 10;
       for(let r=0;r<rows;r++){
         for(let c=0;c<cols;c++){
-          aliens.push({x: 80 + c*60, y: 60 + r*40, w: 30, h: 20, alive: true});
+          aliens.push({
+            x: 80 + c*64,
+            y: 80 + r*56,
+            w: 42,
+            h: 32,
+            alive: true,
+            row: r,
+            wobble: Math.random()*Math.PI*2
+          });
         }
       }
     }
@@ -203,12 +246,29 @@
     function updateStars(dt){
       for(const star of starfield){
         star.y += star.speed*dt;
-        star.twinkle += dt*3;
+        star.twinkle += dt*4;
         if(star.y > canvas.height){
           star.y = -5;
           star.x = Math.random()*canvas.width;
+          star.speed = Math.random()*25 + 20;
+          star.size = Math.random()*1.8 + 0.4;
+          star.trail = Math.random() < 0.12;
         }
       }
+      for(const cloud of parallaxClouds){
+        cloud.x += cloud.speed*dt;
+        if(cloud.x - cloud.r > canvas.width + 80){
+          cloud.x = -cloud.r - 80;
+          cloud.y = Math.random()*canvas.height*0.7;
+          cloud.hue = Math.random()*80 + 180;
+          cloud.alpha = Math.random()*0.25 + 0.15;
+          cloud.speed = Math.random()*12 + 6;
+        }
+      }
+      for(const aurora of auroras){
+        aurora.hue += dt*8;
+      }
+      horizonGlow.alpha = 0.28 + Math.sin(performance.now()/1200)*0.08;
     }
 
     function resetGame(){
@@ -420,19 +480,34 @@
       }
 
       // draw aliens
+      const time = performance.now();
       for(const a of aliens){
         if(a.alive){
+          const wobble = Math.sin(time/540 + a.x*0.03 + a.wobble)*6;
+          const breathe = 1 + Math.sin(time/820 + a.wobble)*0.08;
+          const sprite = alienSprites[a.row % alienSprites.length];
           ctx.save();
-          ctx.shadowBlur = 14;
-          ctx.shadowColor = 'rgba(0,255,198,0.7)';
-          ctx.globalAlpha = 0.85;
-          ctx.drawImage(alienImg, a.x - a.w/2 - 4, a.y - a.h/2 - 4, a.w + 8, a.h + 8);
+          ctx.translate(a.x, a.y + wobble);
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = `hsla(${180 + a.row*18}, 100%, 60%, 0.9)`;
+          ctx.globalAlpha = 0.92;
+          const drawW = a.w * breathe;
+          const drawH = a.h * breathe;
+          if(sprite && sprite.complete){
+            ctx.drawImage(sprite, -drawW/2 - 12, -drawH/2 - 12, drawW + 24, drawH + 24);
+          } else {
+            const gradient = ctx.createLinearGradient(0, -drawH/2, 0, drawH/2);
+            gradient.addColorStop(0,'rgba(0,255,198,0.8)');
+            gradient.addColorStop(1,'rgba(0,157,255,0.8)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(-drawW/2, -drawH/2, drawW, drawH);
+          }
           ctx.globalAlpha = 1;
-          const gradient = ctx.createLinearGradient(a.x, a.y-a.h/2, a.x, a.y+a.h/2);
-          gradient.addColorStop(0,'rgba(0,255,198,0.8)');
-          gradient.addColorStop(1,'rgba(0,157,255,0.8)');
-          ctx.fillStyle = gradient;
-          ctx.fillRect(a.x - a.w/2, a.y - a.h/2, a.w, a.h);
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+          ctx.beginPath();
+          ctx.ellipse(0, drawH*0.38, drawW*0.46, drawH*0.2, 0, 0, Math.PI*2);
+          ctx.stroke();
           ctx.restore();
         }
       }
@@ -486,14 +561,55 @@
 
     function drawBackground(){
       const gradient = ctx.createLinearGradient(0,0,0,canvas.height);
-      gradient.addColorStop(0,'rgba(1, 7, 24, 0.95)');
-      gradient.addColorStop(1,'rgba(5, 14, 40, 0.95)');
+      gradient.addColorStop(0,'rgba(2, 8, 30, 1)');
+      gradient.addColorStop(0.55,'rgba(4, 14, 44, 1)');
+      gradient.addColorStop(1,'rgba(8, 10, 22, 1)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0,0,canvas.width,canvas.height);
 
+      const horizon = ctx.createLinearGradient(0, canvas.height*0.55, 0, canvas.height);
+      horizon.addColorStop(0, `rgba(0, 180, 255, ${horizonGlow.alpha})`);
+      horizon.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = horizon;
+      ctx.fillRect(0, canvas.height*0.45, canvas.width, canvas.height*0.55);
+
+      ctx.save();
+      ctx.translate(planet.x, planet.y);
+      const planetGradient = ctx.createRadialGradient(-planet.r*0.25, -planet.r*0.3, planet.r*0.1, 0, 0, planet.r);
+      planetGradient.addColorStop(0, 'rgba(120, 220, 255, 0.95)');
+      planetGradient.addColorStop(0.45, 'rgba(36, 90, 180, 0.95)');
+      planetGradient.addColorStop(1, 'rgba(8, 12, 28, 0.95)');
+      ctx.fillStyle = planetGradient;
+      ctx.beginPath();
+      ctx.arc(0, 0, planet.r, 0, Math.PI*2);
+      ctx.fill();
+      ctx.rotate(planet.ringTilt);
+      const ringGradient = ctx.createLinearGradient(-planet.r*1.7, 0, planet.r*1.7, 0);
+      ringGradient.addColorStop(0,'rgba(0,0,0,0)');
+      ringGradient.addColorStop(0.2,'rgba(0, 255, 198, 0.25)');
+      ringGradient.addColorStop(0.5,'rgba(120, 200, 255, 0.45)');
+      ringGradient.addColorStop(0.8,'rgba(0, 255, 198, 0.25)');
+      ringGradient.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.strokeStyle = ringGradient;
+      ctx.lineWidth = 18;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, planet.r*1.4, planet.r*0.36, 0, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+
+      for(const cloud of parallaxClouds){
+        const g = ctx.createRadialGradient(cloud.x, cloud.y, cloud.r*0.2, cloud.x, cloud.y, cloud.r);
+        g.addColorStop(0, `hsla(${cloud.hue}, 85%, 62%, ${cloud.alpha})`);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(cloud.x, cloud.y, cloud.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+
       for(const aurora of auroras){
-        const g = ctx.createRadialGradient(aurora.x, aurora.y, aurora.r*0.3, aurora.x, aurora.y, aurora.r);
-        g.addColorStop(0, `hsla(${aurora.hue}, 90%, 62%, ${aurora.alpha})`);
+        const g = ctx.createRadialGradient(aurora.x, aurora.y, aurora.r*0.2, aurora.x, aurora.y, aurora.r*1.2);
+        g.addColorStop(0, `hsla(${aurora.hue % 360}, 90%, 65%, ${aurora.alpha})`);
         g.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g;
         ctx.beginPath();
@@ -501,35 +617,85 @@
         ctx.fill();
       }
 
+      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      for(const constellation of constellations){
+        ctx.beginPath();
+        constellation.points.forEach((p, idx) => {
+          if(idx === 0){
+            ctx.moveTo(p.x, p.y);
+          } else {
+            ctx.lineTo(p.x, p.y);
+          }
+        });
+        ctx.stroke();
+        for(const p of constellation.points){
+          const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 6);
+          glow.addColorStop(0, `rgba(255,255,255,${0.5 + constellation.glow*0.5})`);
+          glow.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 6, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+
       for(const star of starfield){
         const sparkle = (Math.sin(star.twinkle) + 1)/2;
-        ctx.fillStyle = `rgba(255,255,255,${0.3 + sparkle*0.7})`;
+        ctx.fillStyle = `rgba(255,255,255,${0.25 + sparkle*0.75})`;
         ctx.beginPath();
-        ctx.arc(star.x, star.y, star.size + sparkle*0.6, 0, Math.PI*2);
+        ctx.arc(star.x, star.y, star.size + sparkle*0.7, 0, Math.PI*2);
         ctx.fill();
+        if(star.trail){
+          const tail = ctx.createLinearGradient(star.x, star.y-12, star.x, star.y+18);
+          tail.addColorStop(0,'rgba(255,255,255,0)');
+          tail.addColorStop(0.5,'rgba(0,255,198,0.5)');
+          tail.addColorStop(1,'rgba(0,119,255,0)');
+          ctx.fillStyle = tail;
+          ctx.fillRect(star.x-1, star.y-12, 2, 24);
+        }
       }
     }
 
     function drawPlayer(){
-      const baseY = player.y-player.h/2;
-      const pulse = (Math.sin(player.pulse)+1)/2;
+      const pulse = (Math.sin(player.pulse*1.4)+1)/2;
       ctx.save();
-      ctx.shadowBlur = 16;
-      ctx.shadowColor = 'rgba(0, 255, 198, 0.8)';
-      const gradient = ctx.createLinearGradient(player.x, baseY, player.x, baseY+player.h);
-      gradient.addColorStop(0,'rgba(0,255,198,0.9)');
-      gradient.addColorStop(1,'rgba(0,157,255,0.9)');
-      ctx.fillStyle = gradient;
+      ctx.translate(player.x, player.y - 6);
+      const hover = Math.sin(player.pulse*1.2) * 4;
+      ctx.translate(0, hover);
+      ctx.shadowBlur = 24;
+      ctx.shadowColor = 'rgba(0, 255, 198, 0.85)';
+
+      // engine trail
+      const flameLength = 26 + pulse*20;
+      const flameGradient = ctx.createLinearGradient(0, player.h/2, 0, player.h/2 + flameLength);
+      flameGradient.addColorStop(0,'rgba(0,255,198,0.0)');
+      flameGradient.addColorStop(0.35,'rgba(0,255,198,0.45)');
+      flameGradient.addColorStop(0.7,'rgba(255,180,0,0.65)');
+      flameGradient.addColorStop(1,'rgba(255,64,0,0)');
+      ctx.fillStyle = flameGradient;
       ctx.beginPath();
-      ctx.moveTo(player.x, baseY-4);
-      ctx.lineTo(player.x+player.w/2+6, baseY+player.h);
-      ctx.lineTo(player.x, baseY+player.h*0.6 + pulse*4);
-      ctx.lineTo(player.x-player.w/2-6, baseY+player.h);
+      ctx.moveTo(-6, player.h/2);
+      ctx.lineTo(-2, player.h/2 + flameLength);
+      ctx.lineTo(2, player.h/2 + flameLength);
+      ctx.lineTo(6, player.h/2);
       ctx.closePath();
       ctx.fill();
+
+      // ship body
+      const shipGlow = ctx.createRadialGradient(0, -player.h*0.2, player.w*0.1, 0, 0, player.w*0.9);
+      shipGlow.addColorStop(0,'rgba(255,255,255,0.6)');
+      shipGlow.addColorStop(1,'rgba(0, 200, 255, 0.18)');
+      ctx.fillStyle = shipGlow;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, player.w*0.72, player.h*0.68, 0, 0, Math.PI*2);
+      ctx.fill();
+
       ctx.shadowBlur = 0;
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-      ctx.stroke();
+      if(playerImg.complete){
+        ctx.drawImage(playerImg, -player.w/2 - 16, -player.h/2 - 18, player.w + 32, player.h + 36);
+      }
+
       ctx.restore();
     }
 

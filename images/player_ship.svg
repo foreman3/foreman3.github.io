@@ -1,0 +1,40 @@
+<svg width="200" height="160" viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wing" x1="0" y1="0" x2="200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#16E0FF"/>
+      <stop offset="50%" stop-color="#6B5CFF"/>
+      <stop offset="100%" stop-color="#16E0FF"/>
+    </linearGradient>
+    <linearGradient id="hull" x1="100" y1="0" x2="100" y2="160" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#12D1FF" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#043D8E" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="cockpit" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(100 58) rotate(90) scale(42 38)">
+      <stop stop-color="#E7F6FF"/>
+      <stop offset="0.4" stop-color="#2DEBFF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#2157FF" stop-opacity="0.9"/>
+    </radialGradient>
+    <linearGradient id="trim" x1="100" y1="90" x2="100" y2="158" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#69FFF5" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0A244E" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#glow)">
+    <path d="M100 8L184 72C189 76 187 85 180 86L138 92L156 140C158 146 153 152 146 151L104 146L96 146L54 151C47 152 42 146 44 140L62 92L20 86C13 85 11 76 16 72L100 8Z" fill="url(#hull)"/>
+    <path d="M100 18L174 74L134 80L148 124C149 129 145 134 140 134L100 130L60 134C55 134 51 129 52 124L66 80L26 74L100 18Z" fill="url(#wing)" opacity="0.85"/>
+    <path d="M100 40C124 40 144 56 144 76C144 96 124 112 100 112C76 112 56 96 56 76C56 56 76 40 100 40Z" fill="url(#cockpit)"/>
+    <path d="M100 84L128 134L100 128L72 134L100 84Z" fill="url(#trim)" opacity="0.8"/>
+    <path d="M84 118L100 88L116 118H84Z" fill="#EAFBFF" opacity="0.4"/>
+    <path d="M100 8L120 58H80L100 8Z" fill="#FFFFFF" opacity="0.35"/>
+  </g>
+  <defs>
+    <filter id="glow" x="0" y="0" width="200" height="160" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>

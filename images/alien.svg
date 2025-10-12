@@ -1,11 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <g fill="#7fff00">
-    <rect x="6" y="6" width="20" height="4"/>
-    <rect x="4" y="10" width="24" height="6"/>
-    <rect x="2" y="16" width="28" height="6"/>
-    <rect x="4" y="22" width="6" height="4"/>
-    <rect x="22" y="22" width="6" height="4"/>
-    <rect x="4" y="26" width="6" height="4"/>
-    <rect x="22" y="26" width="6" height="4"/>
-  </g>
+<svg width="160" height="120" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="alien-shell" x1="80" y1="14" x2="80" y2="114" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A8FF76"/>
+      <stop offset="0.45" stop-color="#40FFB6"/>
+      <stop offset="1" stop-color="#0F5B3C"/>
+    </linearGradient>
+    <radialGradient id="alien-core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(80 60) rotate(90) scale(60 58)">
+      <stop offset="0" stop-color="#EBFFE0"/>
+      <stop offset="0.5" stop-color="#64FF8E" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#0A3D22" stop-opacity="0.95"/>
+    </radialGradient>
+  </defs>
+  <path d="M30 44L66 16C70 13 76 12 80 12C84 12 90 13 94 16L130 44C135 48 135 56 130 60L114 74L126 100C130 108 124 116 116 114L94 108L80 118L66 108L44 114C36 116 30 108 34 100L46 74L30 60C25 56 25 48 30 44Z" fill="url(#alien-shell)"/>
+  <path d="M46 32H114L134 50L114 68L120 88H40L46 68L26 50L46 32Z" fill="url(#alien-core)"/>
+  <path d="M54 50H80V74H54V50Z" fill="#D0FFD8" opacity="0.85"/>
+  <path d="M88 50H106V74H88V50Z" fill="#A2FFC0" opacity="0.78"/>
+  <path d="M48 86H112L98 104H62L48 86Z" fill="#58FFA6" opacity="0.58"/>
+  <path d="M50 28H110L98 38H62L50 28Z" fill="#FFFFFF" opacity="0.3"/>
 </svg>

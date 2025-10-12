@@ -1,0 +1,21 @@
+<svg width="170" height="130" viewBox="0 0 170 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="overlord-body" x1="85" y1="14" x2="85" y2="118" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D6F2FF"/>
+      <stop offset="0.45" stop-color="#37B8FF"/>
+      <stop offset="1" stop-color="#1A0F5A"/>
+    </linearGradient>
+    <radialGradient id="overlord-core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(85 68) rotate(90) scale(58 54)">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.55" stop-color="#3DD8FF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#171D7C" stop-opacity="0.9"/>
+    </radialGradient>
+  </defs>
+  <path d="M36 48L70 18C74 14 80 12 85 12C90 12 96 14 100 18L134 48L150 46C158 45 163 54 158 60L132 90L140 114C143 123 135 131 126 128L100 120L85 130L70 120L44 128C35 131 27 123 30 114L38 90L12 60C7 54 12 45 20 46L36 48Z" fill="url(#overlord-body)"/>
+  <path d="M52 36L118 36L140 56L118 80L126 100H44L52 80L30 56L52 36Z" fill="url(#overlord-core)"/>
+  <path d="M64 54H90V80H64V54Z" fill="#E7FDFF" opacity="0.85"/>
+  <path d="M98 54H118V80H98V54Z" fill="#C0F6FF" opacity="0.8"/>
+  <path d="M50 88H120L106 110H64L50 88Z" fill="#70F5FF" opacity="0.55"/>
+  <path d="M60 30H110L96 40H74L60 30Z" fill="#FFFFFF" opacity="0.32"/>
+  <path d="M40 60H130L112 74H58L40 60Z" fill="#35D5FF" opacity="0.4"/>
+</svg>
