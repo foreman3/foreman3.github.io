@@ -73,6 +73,15 @@
       letter-spacing:0.18em;
       color:#b2c6ff;
     }
+    #goal {
+      margin-top:8px;
+      font-size:16px;
+      text-transform:none;
+      letter-spacing:0.05em;
+      color:#f7cfff;
+      max-width:520px;
+      text-align:center;
+    }
     #message {
       margin-top:12px;
       font-size:24px;
@@ -88,6 +97,7 @@
     <h1>Hyper Qbert</h1>
     <canvas id="gameCanvas" width="640" height="640"></canvas>
     <div id="info"></div>
+    <div id="goal"></div>
     <div id="message"></div>
   </div>
   <script>
@@ -97,12 +107,57 @@
     const TILE = 58;
     const START_X = canvas.width / 2;
     const START_Y = 80;
-    const LEVEL_PALETTES = [
-      ['#00fbff','#00c0ff','#0078ff'],
-      ['#ffe066','#ff964f','#ff4f4f'],
-      ['#adff9b','#53f6d6','#27b6ff'],
-      ['#ff9dfa','#c774ff','#715bff'],
-      ['#ffef9d','#ffad66','#ff5f87']
+    const LEVEL_RULES = [
+      {
+        name: 'Neon Flip',
+        description: 'Touch each tile once to light it up.',
+        behavior: 'progressive',
+        completionStage: 1,
+        sequence: ['#142442', '#38f9ff', '#0ab0ff'],
+        isComplete(tile){
+          return tile.stage >= this.completionStage;
+        }
+      },
+      {
+        name: 'Double Charge',
+        description: 'Charge each tile twice to lock it in place.',
+        behavior: 'progressive',
+        completionStage: 2,
+        sequence: ['#1a0f24', '#ffd166', '#ff6f59', '#ef476f'],
+        isComplete(tile){
+          return tile.stage >= this.completionStage;
+        }
+      },
+      {
+        name: 'Flux Toggle',
+        description: 'Second bounce locks a tile, a third knocks it loose again.',
+        behavior: 'toggle',
+        completionStage: 2,
+        sequence: ['#0f1f1a', '#7affc3', '#1ad3b3'],
+        isComplete(tile){
+          return tile.stage === this.completionStage;
+        }
+      },
+      {
+        name: 'Tri-Sequence',
+        description: 'Pulse each tile three times to stabilize it.',
+        behavior: 'progressive',
+        completionStage: 3,
+        sequence: ['#1b0f38', '#c09bff', '#8a5dff', '#4f3dff'],
+        isComplete(tile){
+          return tile.stage >= this.completionStage;
+        }
+      },
+      {
+        name: 'Phase Loop',
+        description: 'Tiles cycle through colors—stop on the highlight hue to score.',
+        behavior: 'cycle',
+        completionStage: 2,
+        sequence: ['#24120f', '#ffc971', '#ff6f91', '#ff1d58', '#7c2bff'],
+        isComplete(tile){
+          return tile.stage === this.completionStage;
+        }
+      }
     ];
 
     let level = 1;
@@ -132,6 +187,7 @@
     let lastTime = 0;
 
     const infoEl = document.getElementById('info');
+    const goalEl = document.getElementById('goal');
     const messageEl = document.getElementById('message');
 
     const sliderPath = [];
@@ -181,10 +237,37 @@
       platform.used = false;
     }
 
+    function getLevelRule(){
+      return LEVEL_RULES[(level-1) % LEVEL_RULES.length];
+    }
+
+    function advanceTileStage(tile, rule){
+      if(rule.behavior === 'toggle'){
+        if(tile.stage < rule.completionStage){
+          tile.stage++;
+        } else {
+          tile.stage = 1;
+        }
+        return;
+      }
+      if(rule.behavior === 'cycle'){
+        tile.stage = (tile.stage + 1) % rule.sequence.length;
+        return;
+      }
+      // default progressive behavior
+      tile.stage = Math.min(tile.stage + 1, Math.min(rule.completionStage, rule.sequence.length - 1));
+    }
+
     function visitTile(r,c){
-      if(tiles[r][c] < level){
-        tiles[r][c]++;
-        if(tiles[r][c] === level) visited++;
+      const tile = tiles[r][c];
+      const rule = getLevelRule();
+      const wasComplete = tile.complete;
+      advanceTileStage(tile, rule);
+      tile.complete = rule.isComplete(tile);
+      if(tile.complete && !wasComplete){
+        visited++;
+      } else if(!tile.complete && wasComplete){
+        visited--;
       }
     }
 
@@ -196,15 +279,19 @@
       ctx.lineTo(x+TILE/2,y+TILE);
       ctx.lineTo(x,y+TILE/2);
       ctx.closePath();
-      const palette = LEVEL_PALETTES[(level-1) % LEVEL_PALETTES.length];
-      const stage = Math.min(tiles[r][c], palette.length-1);
+      const rule = getLevelRule();
+      const palette = rule.sequence;
+      const tile = tiles[r][c];
+      const stage = Math.min(tile.stage, palette.length-1);
       const gradient = ctx.createLinearGradient(x, y, x+TILE, y+TILE);
-      gradient.addColorStop(0, palette[stage]);
-      gradient.addColorStop(0.6, palette[Math.max(stage-1,0)] || palette[0]);
+      const primary = palette[stage];
+      const secondary = palette[Math.max(stage-1,0)] || palette[0];
+      gradient.addColorStop(0, primary);
+      gradient.addColorStop(0.6, secondary);
       gradient.addColorStop(1, '#060c1f');
       ctx.fillStyle = gradient;
-      ctx.shadowColor = palette[stage];
-      ctx.shadowBlur = 18;
+      ctx.shadowColor = primary;
+      ctx.shadowBlur = tile.complete ? 20 : 6;
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.strokeStyle = 'rgba(14, 34, 68, 0.6)';
@@ -425,7 +512,11 @@
         ctx.fill();
       }
 
-      infoEl.textContent = `Level: ${level} Lives: ${lives} - ${visited}/${ROWS*(ROWS+1)/2}`;
+      const rule = getLevelRule();
+      infoEl.textContent = `Level ${level} — ${rule.name} | Lives: ${lives} | Tiles ${visited}/${ROWS*(ROWS+1)/2}`;
+      if(goalEl){
+        goalEl.textContent = `Goal: ${rule.description}`;
+      }
     }
 
     function checkWin(){
@@ -753,7 +844,7 @@
       for(let r=0;r<ROWS;r++){
         tiles[r] = [];
         for(let c=0;c<=r;c++){
-          tiles[r][c] = 0;
+          tiles[r][c] = {stage:0, complete:false};
         }
       }
       visited = 0;
