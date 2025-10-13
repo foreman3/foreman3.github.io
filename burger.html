@@ -459,7 +459,7 @@ function enemiesOnPiece(piece){
 function triggerFall(piece){
   if(piece.falling || piece.complete) return;
   piece.falling = true;
-  piece.remaining = 1 + enemiesOnPiece(piece) + combo;
+  piece.remaining = 1 + enemiesOnPiece(piece);
   piece.support = null;
   combo++;
   comboTimer = 240;
@@ -670,6 +670,13 @@ function handlePlayer(){
 
   if(keys.up && ladderAt(player.x, player.y)) player.y -= 0.12;
   if(keys.down && ladderAt(player.x, player.y)) player.y += 0.12;
+
+  if(ladderAt(player.x, player.y)){
+    const snapFloor = floors.find(f => Math.abs(player.y - f) < 0.18);
+    if(snapFloor !== undefined){
+      player.y = snapFloor;
+    }
+  }
 
   player.x = Math.max(0.2, Math.min(COLS - 1.2, player.x));
   player.y = Math.max(0.8, Math.min(ROWS, player.y));
