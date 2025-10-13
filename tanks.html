@@ -57,6 +57,21 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    function shadeColor(color, percent) {
+      if (!color || color[0] !== '#') return color;
+      let hex = color.slice(1);
+      if (hex.length === 3) {
+        hex = hex.split('').map(c => c + c).join('');
+      }
+      const num = parseInt(hex, 16);
+      if (Number.isNaN(num)) return color;
+      const amt = Math.round(2.55 * percent);
+      const r = Math.min(255, Math.max(0, (num >> 16) + amt));
+      const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amt));
+      const b = Math.min(255, Math.max(0, (num & 0xff) + amt));
+      return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    }
+
     const keys = {};
     const bullets = [];
     const obstacles = [];
@@ -278,9 +293,110 @@
       ctx.save();
       ctx.translate(t.x, t.y);
       ctx.rotate(t.angle);
-      ctx.fillStyle = t.color;
-      ctx.fillRect(-15, -10, 30, 20);
-      ctx.fillRect(0, -3, 20, 6);
+
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.ellipse(4, 12, 22, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      const baseColor = t.color;
+
+      const trackGradient = ctx.createLinearGradient(-20, 0, 20, 0);
+      trackGradient.addColorStop(0, '#101010');
+      trackGradient.addColorStop(0.5, '#252525');
+      trackGradient.addColorStop(1, '#101010');
+      ctx.fillStyle = trackGradient;
+      ctx.fillRect(-22, -13, 44, 6);
+      ctx.fillRect(-22, 7, 44, 6);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      for (let i = -16; i <= 16; i += 8) {
+        ctx.beginPath();
+        ctx.arc(i, -10, 1.5, 0, Math.PI * 2);
+        ctx.arc(i, 10, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const bodyGradient = ctx.createLinearGradient(-18, -10, 18, 10);
+      bodyGradient.addColorStop(0, shadeColor(baseColor, -25));
+      bodyGradient.addColorStop(0.5, shadeColor(baseColor, 12));
+      bodyGradient.addColorStop(1, shadeColor(baseColor, -15));
+      ctx.fillStyle = bodyGradient;
+      ctx.beginPath();
+      ctx.moveTo(-18, -7);
+      ctx.lineTo(18, -7);
+      ctx.quadraticCurveTo(21, -7, 21, -4);
+      ctx.lineTo(21, 4);
+      ctx.quadraticCurveTo(21, 7, 18, 7);
+      ctx.lineTo(-18, 7);
+      ctx.quadraticCurveTo(-21, 7, -21, 4);
+      ctx.lineTo(-21, -4);
+      ctx.quadraticCurveTo(-21, -7, -18, -7);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = shadeColor(baseColor, 25);
+      ctx.beginPath();
+      ctx.moveTo(-12, -5);
+      ctx.lineTo(12, -5);
+      ctx.quadraticCurveTo(14, -5, 14, -3);
+      ctx.lineTo(14, 3);
+      ctx.quadraticCurveTo(14, 5, 12, 5);
+      ctx.lineTo(-12, 5);
+      ctx.quadraticCurveTo(-14, 5, -14, 3);
+      ctx.lineTo(-14, -3);
+      ctx.quadraticCurveTo(-14, -5, -12, -5);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 9, 0, Math.PI * 2);
+      ctx.fill();
+
+      const turretGradient = ctx.createLinearGradient(-8, -8, 8, 8);
+      turretGradient.addColorStop(0, shadeColor(baseColor, 25));
+      turretGradient.addColorStop(1, shadeColor(baseColor, -20));
+      ctx.fillStyle = turretGradient;
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = shadeColor(baseColor, -35);
+      ctx.beginPath();
+      ctx.arc(0, 0, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      const barrelGradient = ctx.createLinearGradient(4, 0, 28, 0);
+      barrelGradient.addColorStop(0, shadeColor(baseColor, 30));
+      barrelGradient.addColorStop(1, shadeColor(baseColor, -30));
+      ctx.fillStyle = barrelGradient;
+      ctx.beginPath();
+      ctx.moveTo(4, -3);
+      ctx.lineTo(26, -3);
+      ctx.quadraticCurveTo(28, -3, 28, -1.5);
+      ctx.lineTo(28, 1.5);
+      ctx.quadraticCurveTo(28, 3, 26, 3);
+      ctx.lineTo(4, 3);
+      ctx.quadraticCurveTo(2.5, 3, 2, 1.5);
+      ctx.lineTo(2, -1.5);
+      ctx.quadraticCurveTo(2, -3, 4, -3);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#dcdcdc';
+      ctx.beginPath();
+      ctx.moveTo(26, -2);
+      ctx.lineTo(30, -2);
+      ctx.lineTo(30, 2);
+      ctx.lineTo(26, 2);
+      ctx.quadraticCurveTo(25, 2, 25, 0);
+      ctx.quadraticCurveTo(25, -2, 26, -2);
+      ctx.closePath();
+      ctx.fill();
+
       ctx.restore();
     }
 
