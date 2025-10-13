@@ -668,10 +668,13 @@ function handlePlayer(){
   player.x += player.vx;
   climbOntoPiece(player);
 
-  if(keys.up && ladderAt(player.x, player.y)) player.y -= 0.12;
-  if(keys.down && ladderAt(player.x, player.y)) player.y += 0.12;
+  const onLadder = ladderAt(player.x, player.y);
+  const movingVertically = (keys.up && onLadder) || (keys.down && onLadder);
 
-  if(ladderAt(player.x, player.y)){
+  if(keys.up && onLadder) player.y -= 0.12;
+  if(keys.down && onLadder) player.y += 0.12;
+
+  if(onLadder && !movingVertically){
     const snapFloor = floors.find(f => Math.abs(player.y - f) < 0.18);
     if(snapFloor !== undefined){
       player.y = snapFloor;
