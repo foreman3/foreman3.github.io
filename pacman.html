@@ -225,8 +225,16 @@ function updatePacman(){
   }
 }
 
+const GHOST_HOUSE_EXIT = {x:9.5, y:8};
+
+function inGhostHouse(entity){
+  const ch = tileAt(entity.x, entity.y);
+  return ch==='G' || ch==='-';
+}
+
 function ghostTarget(g){
   if(startTimer>0) return {x:COLS/2, y:ROWS/2};
+  if(inGhostHouse(g)) return GHOST_HOUSE_EXIT;
   if(frightTimer>0) return {x:g.scatter.x,y:g.scatter.y};
   return {x:pacman.x,y:pacman.y};
 }
