@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scorched Skies</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top, #1e2a3a 0%, #10141c 45%, #050608 100%);
+      color: #f1f7ff;
+      min-height: 100vh;
+      display: flex;
+    }
+    #sidebar-placeholder {
+      width: 220px;
+    }
+    #game-shell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px;
+      box-sizing: border-box;
+      gap: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    #hud {
+      width: 100%;
+      max-width: 1060px;
+      background: rgba(17, 27, 39, 0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 12px 18px;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #hud-top {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+    }
+    #controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+    }
+    select, input[type="range"], button {
+      font: inherit;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(15,25,35,0.9);
+      color: #f5faff;
+      padding: 6px 10px;
+    }
+    input[type="range"] {
+      accent-color: #5ad6ff;
+      width: 150px;
+    }
+    button {
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+    button:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(90, 214, 255, 0.25);
+    }
+    #gameCanvas {
+      width: 100%;
+      max-width: 1060px;
+      height: auto;
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,0.08);
+      background: linear-gradient(#0b1523, #090b0f 65%, #1c120c 100%);
+      box-shadow: 0 18px 38px rgba(0,0,0,0.5);
+    }
+    #status {
+      width: 100%;
+      max-width: 1060px;
+      font-size: 1rem;
+      min-height: 28px;
+    }
+    #inventory {
+      width: 100%;
+      max-width: 1060px;
+      background: rgba(15, 22, 32, 0.7);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      font-size: 0.9rem;
+    }
+    #inventory span {
+      background: rgba(255,255,255,0.04);
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    #shopOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 8, 15, 0.88);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    #shopOverlay.active {
+      display: flex;
+    }
+    #shopPanel {
+      width: min(720px, 90vw);
+      max-height: 85vh;
+      overflow: auto;
+      background: linear-gradient(160deg, rgba(19,34,46,0.96), rgba(10,16,24,0.92));
+      border-radius: 16px;
+      border: 1px solid rgba(90,214,255,0.3);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.45);
+      padding: 22px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    #shopHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    #shopItems {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .shop-card {
+      background: rgba(6,12,18,0.75);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .shop-card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      color: #88e5ff;
+    }
+    .shop-card p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: rgba(225,235,255,0.82);
+      line-height: 1.3;
+    }
+    .shop-card button {
+      align-self: flex-start;
+    }
+    #shopFooter {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    @media (max-width: 1024px) {
+      body { flex-direction: column; }
+      #sidebar-placeholder { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-shell">
+    <h1>Scorched Skies</h1>
+    <div id="hud">
+      <div id="hud-top">
+        <div>Round: <span id="roundDisplay">1</span></div>
+        <div>Wind: <span id="windDisplay">Calm</span></div>
+        <div>Credits: $<span id="moneyDisplay">0</span></div>
+        <div>Current Turn: <span id="turnDisplay">Commander</span></div>
+      </div>
+      <div id="controls">
+        <label>Weapon
+          <select id="weaponSelect"></select>
+        </label>
+        <label>Angle
+          <input type="range" id="angleSlider" min="5" max="175" value="60">
+          <span id="angleValue">60°</span>
+        </label>
+        <label>Power
+          <input type="range" id="powerSlider" min="25" max="120" value="65">
+          <span id="powerValue">65</span>
+        </label>
+        <button id="fireBtn">Fire!</button>
+        <button id="shopBtn">Field Depot</button>
+      </div>
+    </div>
+    <canvas id="gameCanvas" width="1060" height="560"></canvas>
+    <div id="status"></div>
+    <div id="inventory"></div>
+  </div>
+  <div id="shopOverlay">
+    <div id="shopPanel">
+      <div id="shopHeader">
+        <h2>Battlefield Depot</h2>
+        <div>Your Credits: $<span id="shopMoney">0</span></div>
+      </div>
+      <div id="shopItems"></div>
+      <div id="shopFooter">
+        <button id="closeShopBtn">Cancel</button>
+        <button id="nextRoundBtn">Deploy Next Round</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const GRAVITY = 0.18;
+    const SPEED_SCALE = 0.5;
+    const WIND_EFFECT = 0.04;
+    const tankWidth = 34;
+    const tankHeight = 20;
+
+    const weaponCatalog = {
+      'Baby Missile': { type: 'explosive', radius: 24, damage: 32, cost: 0 },
+      'Heavy Missile': { type: 'explosive', radius: 34, damage: 45, cost: 0 },
+      'Mega Nuke': { type: 'explosive', radius: 52, damage: 72, cost: 0 },
+      'MIRV': { type: 'mirv', radius: 26, damage: 28, cost: 0 },
+      'Mini MIRV': { type: 'explosive', radius: 20, damage: 24, cost: 0 },
+      'Napalm': { type: 'napalm', radius: 32, damage: 26, cost: 0 },
+      'Dirt Bomb': { type: 'dirt', radius: 44, damage: 0, cost: 0 },
+      'Tracer Round': { type: 'explosive', radius: 18, damage: 12, cost: 0, tracer: true }
+    };
+
+    const utilities = {
+      'Shield Pulse': {
+        description: 'Deploy a deflector shield that absorbs 40% damage for the next few hits.',
+        action: (tank) => {
+          if (tank.inventory['Shield Pulse'] <= 0) {
+            setStatus(`${tank.name} is out of shield charges.`);
+            return false;
+          }
+          tank.inventory['Shield Pulse']--;
+          tank.activeShield = Math.min(0.6, tank.activeShield + 0.4);
+          setStatus(`${tank.name} reinforces defenses.`);
+          return true;
+        }
+      },
+      'Repair Kit': {
+        description: 'Restore 35 armor points mid-battle.',
+        action: (tank) => {
+          if (tank.inventory['Repair Kit'] <= 0) {
+            setStatus(`${tank.name} is out of repair kits.`);
+            return false;
+          }
+          tank.inventory['Repair Kit']--;
+          tank.health = Math.min(tank.maxHealth, tank.health + 35);
+          createParticles(tank.x, tank.y - tankHeight / 2, '#8cf7ff', 16);
+          setStatus(`${tank.name} patches up for ${35} armor.`);
+          return true;
+        }
+      }
+    };
+
+    const storeItems = [
+      {
+        id: 'baby',
+        title: 'Baby Missiles (x5)',
+        cost: 60,
+        blurb: 'Reliable micro-warheads for dialing in your shots.',
+        apply: (tank) => addWeapon(tank, 'Baby Missile', 5)
+      },
+      {
+        id: 'heavy',
+        title: 'Heavy Missiles (x3)',
+        cost: 95,
+        blurb: 'Bigger craters, bigger paydays. Ideal for exposed targets.',
+        apply: (tank) => addWeapon(tank, 'Heavy Missile', 3)
+      },
+      {
+        id: 'mega',
+        title: 'Mega Nuke (x1)',
+        cost: 150,
+        blurb: 'Multi-kiloton devastation. Clears entire cliff faces.',
+        apply: (tank) => addWeapon(tank, 'Mega Nuke', 1)
+      },
+      {
+        id: 'mirv',
+        title: 'MIRV Pod (x1)',
+        cost: 125,
+        blurb: 'Splits into a cluster of submunitions mid-air.',
+        apply: (tank) => addWeapon(tank, 'MIRV', 1)
+      },
+      {
+        id: 'napalm',
+        title: 'Napalm Flood (x2)',
+        cost: 110,
+        blurb: 'Ignites terrain, carving molten channels and damage over time.',
+        apply: (tank) => addWeapon(tank, 'Napalm', 2)
+      },
+      {
+        id: 'dirt',
+        title: 'Dirt Shroud (x3)',
+        cost: 75,
+        blurb: 'Sandblast enemies or shore up craters with rich loam.',
+        apply: (tank) => addWeapon(tank, 'Dirt Bomb', 3)
+      },
+      {
+        id: 'tracer',
+        title: 'Tracer Rounds (x3)',
+        cost: 40,
+        blurb: 'Leave luminous trails to dial your next volley.',
+        apply: (tank) => addWeapon(tank, 'Tracer Round', 3)
+      },
+      {
+        id: 'shield',
+        title: 'Deflector Shield Charge',
+        cost: 90,
+        blurb: 'Absorb the sting of incoming fire. Stacks with existing shielding.',
+        apply: (tank) => {
+          tank.inventory['Shield Pulse'] = (tank.inventory['Shield Pulse'] || 0) + 1;
+        }
+      },
+      {
+        id: 'repair',
+        title: 'Repair Kits (x2)',
+        cost: 80,
+        blurb: 'Mid-round maintenance for when the armor plating buckles.',
+        apply: (tank) => {
+          tank.inventory['Repair Kit'] = (tank.inventory['Repair Kit'] || 0) + 2;
+        }
+      },
+      {
+        id: 'plating',
+        title: 'Reactive Plating Upgrade',
+        cost: 140,
+        blurb: 'Increase max armor by 15 for every round going forward.',
+        apply: (tank) => {
+          tank.maxHealth += 15;
+          tank.health = Math.min(tank.maxHealth, tank.health + 15);
+        }
+      }
+    ];
+
+    const terrain = {
+      heights: new Array(canvas.width).fill(canvas.height * 0.7)
+    };
+
+    function createTank(name, color) {
+      return {
+        name,
+        color,
+        x: 0,
+        y: 0,
+        facing: 1,
+        angle: 60,
+        power: 65,
+        health: 100,
+        maxHealth: 100,
+        money: 400,
+        inventory: {
+          'Baby Missile': 6,
+          'Heavy Missile': 2,
+          'Mega Nuke': 1,
+          'MIRV': 1,
+          'Napalm': 1,
+          'Dirt Bomb': 1,
+          'Tracer Round': 2,
+          'Shield Pulse': 1,
+          'Repair Kit': 1
+        },
+        activeShield: 0,
+        alive: true,
+        tracerCache: [],
+        ai: false
+      };
+    }
+
+    const player = createTank('Commander', '#61f7a7');
+    const aiTank = createTank('Oracle', '#ff7676');
+    aiTank.ai = true;
+    aiTank.money = 0;
+
+    let roundNumber = 0;
+    let wind = 0;
+    let currentPlayer = player;
+    let gameState = 'aim';
+
+    const projectiles = [];
+    const particles = [];
+    const fireZones = [];
+    const stars = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height * 0.42,
+      r: Math.random() * 1.5
+    }));
+    let lastTracer = null;
+
+    function degToRad(angle) {
+      return angle * Math.PI / 180;
+    }
+
+    function terrainHeightAt(x) {
+      const idx = Math.max(0, Math.min(terrain.heights.length - 1, Math.floor(x)));
+      return terrain.heights[idx];
+    }
+
+    function generateTerrain() {
+      const heights = new Array(canvas.width);
+      const segments = 16;
+      const step = Math.ceil(canvas.width / segments);
+      let lastHeight = canvas.height * (0.55 + Math.random() * 0.1);
+      for (let s = 0; s <= segments; s++) {
+        const nextHeight = canvas.height * (0.38 + Math.random() * 0.33);
+        for (let i = 0; i < step; i++) {
+          const x = s * step + i;
+          if (x >= canvas.width) break;
+          const t = i / step;
+          const base = lastHeight * (1 - t) + nextHeight * t;
+          const noise = Math.sin((x + Math.random() * 15) * 0.03) * 10;
+          const y = Math.min(canvas.height - 18, Math.max(canvas.height * 0.28, base + noise));
+          heights[x] = y;
+        }
+        lastHeight = nextHeight;
+      }
+      terrain.heights = heights;
+    }
+
+    function smoothTerrain(iterations = 2) {
+      for (let k = 0; k < iterations; k++) {
+        for (let x = 1; x < terrain.heights.length - 1; x++) {
+          terrain.heights[x] = (terrain.heights[x - 1] + terrain.heights[x] + terrain.heights[x + 1]) / 3;
+        }
+      }
+    }
+
+    function addWeapon(tank, weapon, amount) {
+      tank.inventory[weapon] = (tank.inventory[weapon] || 0) + amount;
+    }
+
+    function placeTanks() {
+      function findSpot(minX, maxX) {
+        let spot = Math.floor((minX + maxX) / 2);
+        let bestSlope = Infinity;
+        for (let i = 0; i < 80; i++) {
+          const x = Math.floor(minX + Math.random() * (maxX - minX));
+          const slope = Math.abs(terrainHeightAt(x + 12) - terrainHeightAt(x - 12));
+          if (slope < bestSlope) {
+            bestSlope = slope;
+            spot = x;
+          }
+        }
+        return spot;
+      }
+      const playerX = findSpot(70, canvas.width * 0.35);
+      const aiX = findSpot(canvas.width * 0.65, canvas.width - 70);
+      player.x = playerX;
+      player.y = terrainHeightAt(playerX);
+      aiTank.x = aiX;
+      aiTank.y = terrainHeightAt(aiX);
+      if (player.x < aiTank.x) {
+        player.facing = 1;
+        aiTank.facing = -1;
+      } else {
+        player.facing = -1;
+        aiTank.facing = 1;
+      }
+      player.angle = 60;
+      aiTank.angle = 120;
+      player.power = 65;
+      aiTank.power = 70;
+      player.health = player.maxHealth;
+      aiTank.health = aiTank.maxHealth;
+      player.activeShield = Math.min(player.activeShield, 0.6);
+      aiTank.activeShield = Math.min(aiTank.activeShield, 0.6);
+      player.alive = true;
+      aiTank.alive = true;
+    }
+
+    function resetProjectiles() {
+      projectiles.length = 0;
+      fireZones.length = 0;
+      lastTracer = null;
+    }
+
+    function startRound() {
+      roundNumber++;
+      generateTerrain();
+      smoothTerrain(3);
+      placeTanks();
+      resetProjectiles();
+      wind = (Math.random() * 0.6) - 0.3;
+      currentPlayer = roundNumber % 2 === 1 ? player : aiTank;
+      gameState = 'aim';
+      prepareAiInventory();
+      setStatus(`Round ${roundNumber} begins. ${currentPlayer === player ? 'You fire first.' : aiTank.name + ' has the initiative.'}`);
+      updateHUD();
+      updateWeaponSelect();
+      updateInventoryUI();
+      if (currentPlayer === aiTank) {
+        disablePlayerControls();
+        setTimeout(aiTakeTurn, 1500);
+      } else {
+        enablePlayerControls();
+      }
+    }
+
+    function prepareAiInventory() {
+      const base = {
+        'Baby Missile': 6,
+        'Heavy Missile': 3,
+        'Mega Nuke': roundNumber > 3 ? 2 : 1,
+        'MIRV': roundNumber > 1 ? 2 : 1,
+        'Napalm': 2,
+        'Dirt Bomb': 2,
+        'Tracer Round': 2,
+        'Shield Pulse': 1,
+        'Repair Kit': 1
+      };
+      aiTank.inventory = base;
+    }
+
+    function disablePlayerControls() {
+      document.getElementById('fireBtn').disabled = true;
+      document.getElementById('weaponSelect').disabled = true;
+      document.getElementById('angleSlider').disabled = true;
+      document.getElementById('powerSlider').disabled = true;
+    }
+
+    function enablePlayerControls() {
+      document.getElementById('fireBtn').disabled = false;
+      document.getElementById('weaponSelect').disabled = false;
+      document.getElementById('angleSlider').disabled = false;
+      document.getElementById('powerSlider').disabled = false;
+    }
+
+    function setStatus(text) {
+      document.getElementById('status').textContent = text;
+    }
+
+    function updateHUD() {
+      document.getElementById('roundDisplay').textContent = roundNumber;
+      const windDisplay = document.getElementById('windDisplay');
+      if (Math.abs(wind) < 0.05) {
+        windDisplay.textContent = 'Calm';
+      } else if (wind > 0) {
+        windDisplay.textContent = `→ ${wind.toFixed(2)}`;
+      } else {
+        windDisplay.textContent = `← ${Math.abs(wind).toFixed(2)}`;
+      }
+      document.getElementById('moneyDisplay').textContent = player.money;
+      document.getElementById('turnDisplay').textContent = currentPlayer.name;
+      document.getElementById('angleValue').textContent = `${Math.round(player.angle)}°`;
+      document.getElementById('powerValue').textContent = `${Math.round(player.power)}`;
+    }
+
+    function updateInventoryUI() {
+      const invDiv = document.getElementById('inventory');
+      const entries = [];
+      for (const [item, count] of Object.entries(player.inventory)) {
+        if (count > 0) {
+          entries.push(`<span>${item}: ${count}</span>`);
+        }
+      }
+      entries.push(`<span>Armor: ${Math.round(player.health)} / ${player.maxHealth}</span>`);
+      if (player.activeShield > 0.05) {
+        entries.push(`<span>Shield Strength: ${(player.activeShield * 100).toFixed(0)}%</span>`);
+      }
+      invDiv.innerHTML = entries.join('');
+    }
+
+    function updateWeaponSelect() {
+      const select = document.getElementById('weaponSelect');
+      const selected = select.value;
+      select.innerHTML = '';
+      const options = [];
+      for (const [name, count] of Object.entries(player.inventory)) {
+        if ((weaponCatalog[name] || utilities[name]) && count > 0) {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = `${name} (${count})`;
+          options.push(option);
+        }
+      }
+      if (options.length === 0) {
+        const fallback = document.createElement('option');
+        fallback.value = '';
+        fallback.textContent = 'Out of ammo';
+        options.push(fallback);
+        document.getElementById('fireBtn').disabled = true;
+      }
+      options.forEach(opt => select.appendChild(opt));
+      if (selected) {
+        const found = Array.from(options).find(o => o.value === selected);
+        if (found) {
+          select.value = selected;
+        }
+      }
+    }
+
+    function addProjectile(projectile) {
+      projectile.trail = [];
+      projectile.life = 0;
+      projectiles.push(projectile);
+      gameState = 'projectile';
+      disablePlayerControls();
+    }
+
+    function launchProjectile(tank, weaponName) {
+      const config = weaponCatalog[weaponName];
+      if (!config) return;
+      const angle = tank.angle;
+      const power = tank.power;
+      const rad = tank.facing === 1 ? degToRad(angle) : Math.PI - degToRad(angle);
+      const speed = power * SPEED_SCALE;
+      const vx = Math.cos(rad) * speed;
+      const vy = -Math.sin(rad) * speed;
+      const startX = tank.x + Math.cos(rad) * (tankWidth * 0.45);
+      const startY = tank.y - tankHeight + Math.sin(rad) * (tankWidth * 0.2);
+      const projectile = {
+        weapon: weaponName,
+        owner: tank,
+        x: startX,
+        y: startY,
+        vx,
+        vy,
+        split: false,
+        tracer: !!config.tracer
+      };
+      addProjectile(projectile);
+      if (weaponName === 'Tracer Round') {
+        setStatus(`${tank.name} lights up the sky with a tracer.`);
+      }
+    }
+
+    function useUtility(tank, name) {
+      const util = utilities[name];
+      if (!util) return false;
+      if (!tank.inventory[name] || tank.inventory[name] <= 0) {
+        setStatus(`${tank.name} has no ${name}s remaining.`);
+        return false;
+      }
+      const success = util.action(tank);
+      if (success) {
+        updateInventoryUI();
+      }
+      return success;
+    }
+
+    function fireSelectedWeapon() {
+      if (gameState !== 'aim' || currentPlayer !== player) return;
+      const select = document.getElementById('weaponSelect');
+      const weapon = select.value;
+      if (!weapon || !player.inventory[weapon]) {
+        setStatus('No ammunition selected.');
+        return;
+      }
+      player.angle = Number(document.getElementById('angleSlider').value);
+      player.power = Number(document.getElementById('powerSlider').value);
+      if (utilities[weapon]) {
+        const used = useUtility(player, weapon);
+        if (used) {
+          endTurn();
+        }
+        return;
+      }
+      if (!weaponCatalog[weapon]) {
+        setStatus('Unknown weapon.');
+        return;
+      }
+      player.inventory[weapon]--;
+      launchProjectile(player, weapon);
+      updateInventoryUI();
+      updateWeaponSelect();
+    }
+
+    document.getElementById('fireBtn').addEventListener('click', fireSelectedWeapon);
+    document.getElementById('weaponSelect').addEventListener('change', () => {
+      const weapon = document.getElementById('weaponSelect').value;
+      setStatus(weapon ? `Selected ${weapon}.` : 'No weapon selected.');
+    });
+
+    document.getElementById('angleSlider').addEventListener('input', (e) => {
+      player.angle = Number(e.target.value);
+      document.getElementById('angleValue').textContent = `${e.target.value}°`;
+    });
+    document.getElementById('powerSlider').addEventListener('input', (e) => {
+      player.power = Number(e.target.value);
+      document.getElementById('powerValue').textContent = `${e.target.value}`;
+    });
+
+    document.getElementById('shopBtn').addEventListener('click', () => {
+      if (gameState !== 'roundEnd') {
+        setStatus('You can visit the depot between rounds. Finish the fight!');
+        return;
+      }
+      openShop();
+    });
+
+    document.getElementById('closeShopBtn').addEventListener('click', () => {
+      closeShop();
+    });
+    document.getElementById('nextRoundBtn').addEventListener('click', () => {
+      if (gameState !== 'roundEnd') {
+        closeShop();
+        return;
+      }
+      closeShop();
+      startRound();
+    });
+
+    function openShop() {
+      const overlay = document.getElementById('shopOverlay');
+      const itemsDiv = document.getElementById('shopItems');
+      itemsDiv.innerHTML = '';
+      document.getElementById('shopMoney').textContent = player.money;
+      storeItems.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'shop-card';
+        const title = document.createElement('h3');
+        title.textContent = `${item.title} — $${item.cost}`;
+        const blurb = document.createElement('p');
+        blurb.textContent = item.blurb;
+        const btn = document.createElement('button');
+        btn.textContent = `Purchase`;
+        if (player.money < item.cost) {
+          btn.disabled = true;
+          btn.textContent = 'Insufficient credits';
+        }
+        btn.addEventListener('click', () => {
+          if (player.money < item.cost) return;
+          player.money -= item.cost;
+          item.apply(player);
+          document.getElementById('shopMoney').textContent = player.money;
+          updateInventoryUI();
+          updateWeaponSelect();
+          btn.disabled = player.money < item.cost;
+          setStatus(`Purchased ${item.title}.`);
+        });
+        card.appendChild(title);
+        card.appendChild(blurb);
+        card.appendChild(btn);
+        itemsDiv.appendChild(card);
+      });
+      overlay.classList.add('active');
+    }
+
+    function closeShop() {
+      document.getElementById('shopOverlay').classList.remove('active');
+      document.getElementById('shopMoney').textContent = player.money;
+    }
+
+    function carveTerrain(cx, cy, radius) {
+      const start = Math.floor(Math.max(0, cx - radius));
+      const end = Math.ceil(Math.min(canvas.width - 1, cx + radius));
+      for (let x = start; x <= end; x++) {
+        const dist = Math.abs(x - cx);
+        if (dist > radius) continue;
+        const depth = Math.sqrt(radius * radius - dist * dist);
+        const target = cy + depth;
+        if (terrain.heights[x] < target) {
+          terrain.heights[x] = Math.min(canvas.height - 2, target);
+        }
+      }
+    }
+
+    function depositTerrain(cx, cy, radius) {
+      const start = Math.floor(Math.max(0, cx - radius));
+      const end = Math.ceil(Math.min(canvas.width - 1, cx + radius));
+      for (let x = start; x <= end; x++) {
+        const dist = Math.abs(x - cx);
+        if (dist > radius) continue;
+        const lift = Math.sqrt(radius * radius - dist * dist);
+        const target = cy - lift;
+        if (terrain.heights[x] > target) {
+          terrain.heights[x] = Math.max(canvas.height * 0.18, target);
+        }
+      }
+    }
+
+    function applyDamage(tank, amount) {
+      if (!tank.alive) return;
+      let dmg = amount;
+      if (tank.activeShield > 0) {
+        dmg *= (1 - tank.activeShield);
+        tank.activeShield = Math.max(0, tank.activeShield - 0.25);
+      }
+      tank.health -= dmg;
+      if (tank.health <= 0) {
+        destroyTank(tank);
+      }
+    }
+
+    function destroyTank(tank) {
+      if (!tank.alive) return;
+      tank.alive = false;
+      tank.health = 0;
+      createParticles(tank.x, tank.y - tankHeight / 2, '#ffba64', 40);
+      const winner = tank === player ? aiTank : player;
+      winner.money += 250;
+      setStatus(`${winner.name} obliterates ${tank.name}!`);
+      updateHUD();
+      endRound(winner, `${tank.name} destroyed`);
+    }
+
+    function endRound(winner, reason) {
+      if (gameState === 'roundEnd') return;
+      gameState = 'roundEnd';
+      disablePlayerControls();
+      setStatus(`Round ${roundNumber} complete: ${winner.name} prevails — ${reason}. Visit the depot before redeploying.`);
+      updateHUD();
+      setTimeout(() => {
+        openShop();
+      }, 700);
+    }
+
+    function settleTank(tank) {
+      if (!tank.alive) return;
+      const previous = tank.y;
+      const newSurface = terrainHeightAt(tank.x);
+      tank.y = newSurface;
+      const drop = newSurface - previous;
+      if (drop > 18) {
+        applyDamage(tank, drop * 0.6);
+      }
+      if (tank.y > canvas.height - 5) {
+        destroyTank(tank);
+      }
+    }
+
+    function settleAllTanks() {
+      settleTank(player);
+      settleTank(aiTank);
+    }
+
+    function handleExplosion(projectile, impactX, impactY) {
+      const catalogConfig = weaponCatalog[projectile.weapon];
+      if (!catalogConfig) return;
+      const effectiveType = catalogConfig.type === 'mirv' ? 'explosive' : catalogConfig.type;
+      if (projectile.tracer) {
+        lastTracer = { points: projectile.trail.slice(), timer: 240 };
+      }
+      switch (effectiveType) {
+        case 'explosive':
+          carveTerrain(impactX, impactY, catalogConfig.radius);
+          createParticles(impactX, impactY, '#ff944a', 26);
+          damageFromBlast(projectile.owner, impactX, impactY, catalogConfig.radius, catalogConfig.damage);
+          break;
+        case 'napalm':
+          carveTerrain(impactX, impactY, catalogConfig.radius * 0.75);
+          createParticles(impactX, impactY, '#ff5a2e', 32);
+          damageFromBlast(projectile.owner, impactX, impactY, catalogConfig.radius, catalogConfig.damage);
+          fireZones.push({
+            x: impactX,
+            y: impactY,
+            radius: catalogConfig.radius + 12,
+            timer: 240,
+            damage: 4
+          });
+          break;
+        case 'dirt':
+          depositTerrain(impactX, impactY, catalogConfig.radius);
+          createParticles(impactX, impactY, '#b78a55', 20);
+          break;
+      }
+      settleAllTanks();
+    }
+
+    function damageFromBlast(owner, cx, cy, radius, damage) {
+      [player, aiTank].forEach(tank => {
+        if (!tank.alive) return;
+        const tx = tank.x;
+        const ty = tank.y - tankHeight / 2;
+        const dist = Math.hypot(cx - tx, cy - ty);
+        if (dist <= radius + 12) {
+          const falloff = Math.max(0.2, 1 - dist / (radius + 12));
+          applyDamage(tank, damage * falloff);
+          if (tank !== owner) {
+            owner.money += Math.round(25 * falloff);
+          }
+        }
+      });
+      updateHUD();
+      updateInventoryUI();
+    }
+
+    function updateProjectiles(delta) {
+      if (projectiles.length === 0) return;
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        const p = projectiles[i];
+        p.life += delta;
+        p.vy += GRAVITY * delta;
+        p.vx += wind * WIND_EFFECT * delta;
+        p.x += p.vx * delta;
+        p.y += p.vy * delta;
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 120) p.trail.shift();
+        if (p.weapon === 'MIRV' && !p.split && p.vy > 0) {
+          splitMirv(p);
+          projectiles.splice(i, 1);
+          continue;
+        }
+        if (p.x < -40 || p.x > canvas.width + 40 || p.y > canvas.height + 40 || p.life > 1200) {
+          projectiles.splice(i, 1);
+          continue;
+        }
+        const ground = terrainHeightAt(p.x);
+        if (p.y >= ground) {
+          handleExplosion(p, p.x, ground);
+          projectiles.splice(i, 1);
+          continue;
+        }
+        for (const tank of [player, aiTank]) {
+          if (!tank.alive) continue;
+          const tx = tank.x;
+          const ty = tank.y - tankHeight / 2;
+          if (Math.hypot(p.x - tx, p.y - ty) <= tankWidth * 0.6) {
+            handleExplosion(p, p.x, p.y);
+            projectiles.splice(i, 1);
+            break;
+          }
+        }
+      }
+      if (projectiles.length === 0) {
+        finishShot();
+      }
+    }
+
+    function splitMirv(projectile) {
+      projectile.split = true;
+      const count = 4;
+      const spread = Math.PI / 6;
+      for (let i = 0; i < count; i++) {
+        const offset = -spread / 2 + (spread / (count - 1)) * i;
+        const speed = Math.hypot(projectile.vx, projectile.vy) * 0.65;
+        const angle = Math.atan2(projectile.vy, projectile.vx) + offset;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        const sub = {
+          weapon: 'Mini MIRV',
+          owner: projectile.owner,
+          x: projectile.x,
+          y: projectile.y,
+          vx,
+          vy,
+          split: true,
+          tracer: false,
+          trail: []
+        };
+        addProjectile(sub);
+      }
+      createParticles(projectile.x, projectile.y, '#ffd866', 20);
+    }
+
+    function finishShot() {
+      if (gameState !== 'projectile') return;
+      gameState = 'aim';
+      settleAllTanks();
+      if (!player.alive || !aiTank.alive) return;
+      endTurn();
+    }
+
+    function endTurn() {
+      if (!player.alive || !aiTank.alive) return;
+      currentPlayer = currentPlayer === player ? aiTank : player;
+      updateHUD();
+      if (currentPlayer === player) {
+        enablePlayerControls();
+        setStatus('Your move: adjust angle and power, then fire.');
+      } else {
+        disablePlayerControls();
+        setStatus(`${aiTank.name} is calibrating targeting solutions...`);
+        setTimeout(aiTakeTurn, 1100);
+      }
+    }
+
+    function updateFireZones(delta) {
+      for (let i = fireZones.length - 1; i >= 0; i--) {
+        const zone = fireZones[i];
+        zone.timer -= delta * 10;
+        if (zone.timer <= 0) {
+          fireZones.splice(i, 1);
+          continue;
+        }
+        for (const tank of [player, aiTank]) {
+          if (!tank.alive) continue;
+          const dist = Math.hypot(zone.x - tank.x, zone.y - (tank.y - tankHeight / 2));
+          if (dist < zone.radius) {
+            applyDamage(tank, zone.damage * (delta / 2));
+          }
+        }
+        if (Math.random() < 0.4) {
+          carveTerrain(zone.x + (Math.random() - 0.5) * zone.radius, zone.y, 6);
+        }
+      }
+    }
+
+    function updateParticles(delta) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= delta;
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        p.vx *= 0.98;
+        p.vy += 0.05 * delta;
+        p.x += p.vx * delta;
+        p.y += p.vy * delta;
+      }
+    }
+
+    function createParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 3,
+          life: 40 + Math.random() * 30,
+          color
+        });
+      }
+    }
+
+    function drawBackground() {
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#081020');
+      grad.addColorStop(0.4, '#0b1732');
+      grad.addColorStop(1, '#1b120d');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      stars.forEach(star => {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function drawTerrain() {
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height);
+      ctx.lineTo(0, terrain.heights[0]);
+      for (let x = 1; x < terrain.heights.length; x++) {
+        ctx.lineTo(x, terrain.heights[x]);
+      }
+      ctx.lineTo(canvas.width, canvas.height);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, canvas.height * 0.4, 0, canvas.height);
+      grad.addColorStop(0, '#3a2f28');
+      grad.addColorStop(1, '#1b110c');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    function drawRoundedRect(x, y, width, height, radius) {
+      const r = Math.min(radius, Math.abs(width) / 2, Math.abs(height) / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + width - r, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+      ctx.lineTo(x + width, y + height - r);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+      ctx.lineTo(x + r, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawTank(tank) {
+      if (!tank.alive) return;
+      const baseY = tank.y;
+      const topY = baseY - tankHeight;
+      ctx.save();
+      ctx.fillStyle = tank.color;
+      drawRoundedRect(tank.x - tankWidth / 2, topY, tankWidth, tankHeight - 6, 6);
+      ctx.fill();
+      ctx.fillStyle = '#111821';
+      ctx.fillRect(tank.x - tankWidth / 2, baseY - 6, tankWidth, 6);
+      const angle = tank.facing === 1 ? degToRad(tank.angle) : Math.PI - degToRad(tank.angle);
+      const turretX = tank.x;
+      const turretY = topY + 6;
+      ctx.strokeStyle = '#d0f7ff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(turretX, turretY);
+      ctx.lineTo(turretX + Math.cos(angle) * 28, turretY + Math.sin(angle) * 28);
+      ctx.stroke();
+      if (tank.activeShield > 0.05) {
+        ctx.strokeStyle = `rgba(138, 234, 255, ${0.3 + tank.activeShield})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(tank.x, turretY + tankHeight / 4, 28, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#fff';
+      ctx.font = '14px "Segoe UI"';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${tank.name}`, tank.x, topY - 20);
+      ctx.fillStyle = '#ff6a6a';
+      const healthRatio = Math.max(0, tank.health) / tank.maxHealth;
+      ctx.fillRect(tank.x - 26, topY - 14, 52 * healthRatio, 5);
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.strokeRect(tank.x - 26, topY - 14, 52, 5);
+      ctx.restore();
+    }
+
+    function drawProjectiles() {
+      ctx.fillStyle = '#ffe7a3';
+      projectiles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        if (p.trail && p.trail.length > 1) {
+          ctx.strokeStyle = p.tracer ? 'rgba(255,233,120,0.8)' : 'rgba(255,255,255,0.3)';
+          ctx.lineWidth = p.tracer ? 2 : 1;
+          ctx.beginPath();
+          ctx.moveTo(p.trail[0].x, p.trail[0].y);
+          for (let i = 1; i < p.trail.length; i++) {
+            ctx.lineTo(p.trail[i].x, p.trail[i].y);
+          }
+          ctx.stroke();
+        }
+      });
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.life / 60);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+    }
+
+    function drawFireZones() {
+      fireZones.forEach(zone => {
+        const grad = ctx.createRadialGradient(zone.x, zone.y, 4, zone.x, zone.y, zone.radius);
+        grad.addColorStop(0, 'rgba(255,120,0,0.65)');
+        grad.addColorStop(0.6, 'rgba(200,60,0,0.25)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawLastTracer() {
+      if (!lastTracer) return;
+      lastTracer.timer -= 1;
+      if (lastTracer.timer <= 0) {
+        lastTracer = null;
+        return;
+      }
+      ctx.strokeStyle = 'rgba(120, 210, 255, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      const pts = lastTracer.points;
+      if (pts.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) {
+          ctx.lineTo(pts[i].x, pts[i].y);
+        }
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+
+    function draw() {
+      drawBackground();
+      drawTerrain();
+      drawFireZones();
+      drawProjectiles();
+      drawParticles();
+      drawTank(player);
+      drawTank(aiTank);
+      drawLastTracer();
+    }
+
+    function loop(timestamp) {
+      updateProjectiles(1);
+      updateFireZones(1);
+      updateParticles(1);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    function simulateShot(tank, weapon, angle, power) {
+      const config = weaponCatalog[weapon];
+      if (!config) return Infinity;
+      const rad = tank.facing === 1 ? degToRad(angle) : Math.PI - degToRad(angle);
+      const speed = power * SPEED_SCALE;
+      let vx = Math.cos(rad) * speed;
+      let vy = -Math.sin(rad) * speed;
+      let x = tank.x + Math.cos(rad) * (tankWidth * 0.45);
+      let y = tank.y - tankHeight + Math.sin(rad) * (tankWidth * 0.2);
+      for (let step = 0; step < 600; step++) {
+        vy += GRAVITY;
+        vx += wind * WIND_EFFECT;
+        x += vx;
+        y += vy;
+        if (x < 0 || x > canvas.width || y > canvas.height) break;
+        const ground = terrainHeightAt(x);
+        if (y >= ground) {
+          const dist = Math.hypot(x - player.x, ground - (player.y - tankHeight / 2)) - config.radius;
+          return dist;
+        }
+      }
+      return Infinity;
+    }
+
+    function aiChooseWeapon() {
+      const available = Object.entries(aiTank.inventory)
+        .filter(([name, count]) => count > 0 && (weaponCatalog[name] || utilities[name]))
+        .map(([name]) => name);
+      if (aiTank.health < 40 && aiTank.inventory['Repair Kit'] > 0) {
+        return 'Repair Kit';
+      }
+      if (aiTank.activeShield < 0.15 && aiTank.inventory['Shield Pulse'] > 0 && Math.random() < 0.3) {
+        return 'Shield Pulse';
+      }
+      const distance = Math.abs(aiTank.x - player.x);
+      if (player.health > 60 && aiTank.inventory['Mega Nuke'] > 0 && Math.random() < 0.6) {
+        return 'Mega Nuke';
+      }
+      if (distance > 420 && aiTank.inventory['MIRV'] > 0) {
+        return 'MIRV';
+      }
+      if (aiTank.inventory['Heavy Missile'] > 0 && Math.random() < 0.5) {
+        return 'Heavy Missile';
+      }
+      if (aiTank.inventory['Napalm'] > 0 && Math.random() < 0.4) {
+        return 'Napalm';
+      }
+      if (aiTank.inventory['Dirt Bomb'] > 0 && player.activeShield > 0.3) {
+        return 'Dirt Bomb';
+      }
+      return available.length ? available[Math.floor(Math.random() * available.length)] : 'Baby Missile';
+    }
+
+    function aiTakeTurn() {
+      if (gameState !== 'aim' || currentPlayer !== aiTank || !aiTank.alive) return;
+      const weapon = aiChooseWeapon();
+      if (utilities[weapon]) {
+        useUtility(aiTank, weapon);
+        endTurn();
+        return;
+      }
+      const angles = [];
+      const powers = [];
+      for (let a = 25; a <= 155; a += 5) angles.push(a);
+      for (let p = 45; p <= 110; p += 5) powers.push(p);
+      let best = { dist: Infinity, angle: 95, power: 80 };
+      for (const angle of angles) {
+        for (const power of powers) {
+          const result = simulateShot(aiTank, weapon, angle, power);
+          if (result < best.dist) {
+            best = { dist: result, angle, power };
+          }
+        }
+      }
+      aiTank.angle = best.angle;
+      aiTank.power = best.power;
+      if (aiTank.inventory[weapon] > 0) {
+        aiTank.inventory[weapon]--;
+      }
+      launchProjectile(aiTank, weapon);
+    }
+
+    function init() {
+      updateInventoryUI();
+      updateWeaponSelect();
+      updateHUD();
+      startRound();
+      requestAnimationFrame(loop);
+    }
+
+    init();
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
