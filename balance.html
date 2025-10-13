@@ -8,15 +8,15 @@
       margin: 0;
       display: flex;
       min-height: 100vh;
-      background: #222;
-      color: #fff;
+      background: radial-gradient(circle at top, #4a2e16 0%, #1b0f06 65%, #120802 100%);
+      color: #fbe4c3;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     }
     #sidebar {
       width: 220px;
-      background: rgba(0,0,0,0.7);
+      background: rgba(34, 19, 10, 0.85);
       padding: 20px;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+      box-shadow: 2px 0 18px rgba(0, 0, 0, 0.5);
     }
     #sidebar ul {
       list-style: none;
@@ -27,12 +27,12 @@
       margin: 15px 0;
     }
     #sidebar a {
-      color: #fff;
+      color: #fbe4c3;
       text-decoration: none;
       transition: color 0.3s;
     }
     #sidebar a:hover {
-      color: #ffea00;
+      color: #ffd27f;
     }
     #game-container {
       flex: 1;
@@ -40,29 +40,34 @@
       flex-direction: column;
       align-items: center;
       padding: 20px;
+      background: linear-gradient(160deg, rgba(94, 60, 31, 0.35), rgba(34, 19, 9, 0.2));
     }
     h1 {
       margin-top: 0;
       font-size: 3em;
-      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+      color: #fce7c9;
+      text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.6);
     }
     canvas {
-      background: #000;
-      border: 2px solid #fff;
-      border-radius: 8px;
+      background: #1c0f05;
+      border: 4px solid #7a4c21;
+      border-radius: 12px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.65);
     }
     #score {
       margin-top: 10px;
       font-size: 20px;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-      border-radius: 5px;
+      background: rgba(57, 35, 18, 0.75);
+      padding: 6px 14px;
+      border-radius: 6px;
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
+      color: #fde9c9;
     }
     #message {
       margin-top: 10px;
       font-size: 24px;
-      color: #ff3333;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      color: #ffc06a;
+      text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.6);
     }
   </style>
 </head>
@@ -88,20 +93,147 @@
         width: 800,
         height: 600,
         wireframes: false,
-        background: '#000'
+        background: '#160c04'
       }
     });
     Render.run(render);
     const runner = Runner.create();
     Runner.run(runner, engine);
 
+    const woodBodies = [];
+
+    function adjustColor(hex, amount) {
+      const num = parseInt(hex.slice(1), 16);
+      const clamp = value => Math.max(0, Math.min(255, value));
+      const r = clamp((num >> 16) + amount);
+      const g = clamp(((num >> 8) & 0xff) + amount);
+      const b = clamp((num & 0xff) + amount);
+      return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+    }
+
+    function drawShape(context, vertices) {
+      context.beginPath();
+      vertices.forEach((vertex, index) => {
+        if (index === 0) {
+          context.moveTo(vertex.x, vertex.y);
+        } else {
+          context.lineTo(vertex.x, vertex.y);
+        }
+      });
+      context.closePath();
+    }
+
+    function drawWoodBody(context, body, baseColor, outlineWidth) {
+      const { min, max } = body.bounds;
+      const highlight = adjustColor(baseColor, 70);
+      const midTone = baseColor;
+      const shadow = adjustColor(baseColor, -70);
+
+      const gradient = context.createLinearGradient(min.x, min.y, max.x, max.y);
+      gradient.addColorStop(0, highlight);
+      gradient.addColorStop(0.45, midTone);
+      gradient.addColorStop(1, shadow);
+
+      drawShape(context, body.vertices);
+      context.fillStyle = gradient;
+      context.fill();
+
+      context.lineJoin = 'round';
+      context.lineWidth = outlineWidth;
+      const strokeColor = body.render.strokeStyle && body.render.strokeStyle !== 'transparent'
+        ? body.render.strokeStyle
+        : adjustColor(baseColor, -80);
+      context.strokeStyle = strokeColor;
+      context.stroke();
+
+      const topHighlight = context.createLinearGradient(
+        min.x,
+        min.y,
+        min.x + (max.x - min.x) * 0.6,
+        min.y + (max.y - min.y) * 0.6
+      );
+      topHighlight.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+      topHighlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      drawShape(context, body.vertices);
+      context.fillStyle = topHighlight;
+      context.fill();
+
+      const dropShadow = context.createLinearGradient(
+        max.x,
+        max.y,
+        min.x + (max.x - min.x) * 0.4,
+        min.y + (max.y - min.y) * 0.4
+      );
+      dropShadow.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+      dropShadow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      drawShape(context, body.vertices);
+      context.fillStyle = dropShadow;
+      context.fill();
+
+      context.save();
+      drawShape(context, body.vertices);
+      context.clip();
+      context.translate(body.position.x, body.position.y);
+      context.rotate(body.angle);
+
+      const spanX = max.x - min.x;
+      const spanY = max.y - min.y;
+      const maxSpan = Math.max(spanX, spanY);
+      const grainSpacing = maxSpan / 5;
+
+      context.globalAlpha = 0.18;
+      context.strokeStyle = adjustColor(baseColor, -35);
+      context.lineWidth = 1.6;
+      for (let i = -2; i <= 2; i++) {
+        const y = i * grainSpacing * 0.45;
+        context.beginPath();
+        context.moveTo(-maxSpan, y);
+        context.bezierCurveTo(-maxSpan * 0.6, y + grainSpacing * 0.25, maxSpan * 0.6, y - grainSpacing * 0.25, maxSpan, y + grainSpacing * 0.05);
+        context.stroke();
+      }
+
+      context.globalAlpha = 0.1;
+      context.strokeStyle = adjustColor(baseColor, 55);
+      context.lineWidth = 1;
+      for (let i = -1; i <= 1; i++) {
+        const y = i * grainSpacing * 0.45 + grainSpacing * 0.3;
+        context.beginPath();
+        context.moveTo(-maxSpan, y);
+        context.bezierCurveTo(-maxSpan * 0.4, y - grainSpacing * 0.2, maxSpan * 0.4, y + grainSpacing * 0.2, maxSpan, y - grainSpacing * 0.05);
+        context.stroke();
+      }
+      context.restore();
+    }
+
+    function registerWoodBody(body, baseColor, outlineWidth = 3) {
+      body.render.fillStyle = baseColor;
+      body.render.strokeStyle = 'transparent';
+      body.render.lineWidth = 0;
+      woodBodies.push({ body, baseColor, outlineWidth });
+    }
+
+    Events.on(render, 'afterRender', () => {
+      const context = render.context;
+      context.save();
+      woodBodies.forEach(({ body, baseColor, outlineWidth }) => {
+        if (body.render.visible === false) return;
+        drawWoodBody(context, body, baseColor, outlineWidth);
+      });
+      context.restore();
+    });
+
     const platformWidth = 270;
     const platformHeight = 20;
     const platform = Bodies.rectangle(400, 560, platformWidth, platformHeight, {
       isStatic: true,
       friction: 0.8,
-      render: { fillStyle: '#fff' }
+      render: {
+        fillStyle: '#b8874d',
+        strokeStyle: '#4e2d15',
+        lineWidth: 4
+      }
     });
+    registerWoodBody(platform, '#b8874d', 4);
     World.add(world, platform);
 
     // Track platform movement for friction
@@ -200,7 +332,7 @@
     });
 
     const blocks = [];
-    const blockColors = ['#e74c3c', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6', '#e67e22'];
+    const blockColors = ['#c89b63', '#b3834c', '#d2a771', '#9f6d3c', '#e0b986', '#a97a47'];
     let score = 0;
     function spawnBlock() {
       const size = 40;
@@ -231,6 +363,7 @@
         block = Bodies.fromVertices(x, -size, vertices, options, true);
         if (Array.isArray(block)) block = block[0];
       }
+      registerWoodBody(block, color);
       blocks.push(block);
       World.add(world, block);
       score++;
