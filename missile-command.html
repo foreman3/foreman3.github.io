@@ -241,7 +241,9 @@
           type: isSmart ? 'smart' : 'standard',
           surfTimer: 0,
           surfDir: Math.random() < 0.5 ? -1 : 1,
-          colorPhase: Math.random() * Math.PI * 2
+          colorPhase: Math.random() * Math.PI * 2,
+          bounceCount: 0,
+          maxBounces: isSmart ? 5 + Math.floor(Math.random() * 6) : 0
         });
       }
     }
@@ -328,6 +330,33 @@
       }
     });
 
+    function detonateSmartMissile(missile, index) {
+      enemyMissiles.splice(index, 1);
+      explosions.push({ x: missile.x, y: missile.y, r: 0, max: 70, hold: 0.25, speed: 5.5 });
+      score += 200;
+      updateHud();
+    }
+
+    function deflectSmartMissile(missile, index, explosion, speedMultiplier = 1.2, offset = 3) {
+      missile.bounceCount = (missile.bounceCount || 0) + 1;
+      const allowedBounces = missile.maxBounces || 0;
+      if (allowedBounces && missile.bounceCount > allowedBounces) {
+        detonateSmartMissile(missile, index);
+        return false;
+      }
+
+      missile.surfTimer = Math.max(missile.surfTimer || 0, 0.6);
+      const angle = Math.atan2(missile.y - explosion.y, missile.x - explosion.x);
+      const tangential = angle + missile.surfDir * (Math.PI / 2);
+      const speed = missile.speed * speedMultiplier;
+      missile.vx = Math.cos(tangential) * speed;
+      missile.vy = Math.sin(tangential) * speed;
+      missile.x = explosion.x + Math.cos(angle) * (explosion.r + offset);
+      missile.y = explosion.y + Math.sin(angle) * (explosion.r + offset);
+      if (Math.random() < 0.35) missile.surfDir *= -1;
+      return true;
+    }
+
     function updatePlayerMissiles(dt) {
       for (let i = playerMissiles.length - 1; i >= 0; i--) {
         const m = playerMissiles[i];
@@ -366,14 +395,9 @@
             }
           }
           if (nearExplosion) {
-            m.surfTimer = Math.max(m.surfTimer, 0.6);
-            const angle = Math.atan2(m.y - nearExplosion.ex.y, m.x - nearExplosion.ex.x);
-            const tangential = angle + m.surfDir * (Math.PI / 2);
-            m.vx = Math.cos(tangential) * speed * 1.2;
-            m.vy = Math.sin(tangential) * speed * 1.2;
-            m.x = nearExplosion.ex.x + Math.cos(angle) * (nearExplosion.ex.r + 3);
-            m.y = nearExplosion.ex.y + Math.sin(angle) * (nearExplosion.ex.r + 3);
-            if (Math.random() < 0.35) m.surfDir *= -1;
+            if (!deflectSmartMissile(m, i, nearExplosion.ex, 1.2, 3)) {
+              continue;
+            }
           }
         }
 
@@ -460,16 +484,13 @@
           const dist = Math.hypot(m.x - ex.x, m.y - ex.y);
           if (dist < ex.r) {
             if (m.type === 'smart' && dist > ex.r * 0.45) {
-              m.surfTimer = Math.max(m.surfTimer, 0.6);
-              const angle = Math.atan2(m.y - ex.y, m.x - ex.x);
-              const tangential = angle + m.surfDir * (Math.PI / 2);
-              const speed = m.speed * 1.25;
-              m.vx = Math.cos(tangential) * speed;
-              m.vy = Math.sin(tangential) * speed;
-              m.x = ex.x + Math.cos(angle) * (ex.r + 6);
-              m.y = ex.y + Math.sin(angle) * (ex.r + 6);
-              particles.push({ x: m.x, y: m.y, vx: Math.cos(tangential) * 2, vy: Math.sin(tangential) * 2, life: 0.4, color: 'rgba(94,242,255,' });
-              continue;
+              if (deflectSmartMissile(m, i, ex, 1.25, 6)) {
+                const heading = Math.atan2(m.vy, m.vx);
+                particles.push({ x: m.x, y: m.y, vx: Math.cos(heading) * 2, vy: Math.sin(heading) * 2, life: 0.4, color: 'rgba(94,242,255,' });
+                continue;
+              }
+              destroyed = true;
+              break;
             }
             enemyMissiles.splice(i, 1);
             explosions.push({ x: m.x, y: m.y, r: 0, max: 70, hold: 0.25, speed: 5.5 });
