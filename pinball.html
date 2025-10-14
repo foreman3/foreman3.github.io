@@ -4,76 +4,163 @@
   <meta charset="UTF-8">
   <title>Pinball</title>
   <style>
+    @keyframes aurora {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     body {
       margin: 0;
       display: flex;
       min-height: 100vh;
-      background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      color: #fff;
+      color: #f9f9ff;
+      background: radial-gradient(circle at 20% 20%, #1b1b46, #040414 70%),
+                  radial-gradient(circle at 80% 0%, rgba(0,255,255,0.25), transparent 55%),
+                  linear-gradient(135deg, #0f1020, #1b0b3a 40%, #082f64);
+      background-size: 300% 300%;
+      animation: aurora 20s infinite alternate ease-in-out;
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 10%, rgba(255,255,255,0.08), transparent 45%),
+                  radial-gradient(circle at 80% 80%, rgba(255,0,200,0.08), transparent 50%);
+      mix-blend-mode: screen;
+      z-index: -1;
+    }
+
     #sidebar {
-      width: 220px;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 20px;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+      width: 240px;
+      background: rgba(4, 12, 36, 0.78);
+      padding: 24px 20px 40px;
+      box-shadow: 0 0 35px rgba(10, 20, 60, 0.65);
+      backdrop-filter: blur(6px);
+      border-right: 1px solid rgba(120, 180, 255, 0.2);
     }
+
     #sidebar ul {
       list-style: none;
       padding: 0;
       margin: 0;
     }
+
     #sidebar li {
       margin: 15px 0;
     }
+
     #sidebar a {
-      color: #fff;
+      color: #e2f1ff;
       text-decoration: none;
-      transition: color 0.3s;
+      letter-spacing: 0.03em;
+      font-weight: 600;
+      transition: color 0.3s, text-shadow 0.3s;
     }
+
     #sidebar a:hover {
-      color: #ffea00;
+      color: #86f0ff;
+      text-shadow: 0 0 8px rgba(134, 240, 255, 0.75);
     }
+
     #game-container {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px;
+      padding: 40px 20px 60px;
+      position: relative;
     }
+
     h1 {
       margin-top: 0;
-      font-size: 3em;
-      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+      margin-bottom: 10px;
+      font-size: 3.4em;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      text-shadow: 0 0 15px rgba(0, 220, 255, 0.75), 0 0 40px rgba(255, 0, 220, 0.4);
     }
+
+    #status-bar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    #info, #combo {
+      font-size: 18px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(21, 34, 84, 0.85), rgba(6, 12, 30, 0.85));
+      box-shadow: 0 0 12px rgba(0, 214, 255, 0.3);
+      border: 1px solid rgba(110, 200, 255, 0.35);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    #combo {
+      color: #9cf6ff;
+      transition: transform 0.25s ease, color 0.25s ease, opacity 0.25s ease;
+    }
+
     #gameSVG {
-      background: #222;
-      border: 2px solid #fff;
-      margin-top: 20px;
-      border-radius: 8px;
-    }
-    #info {
+      background: radial-gradient(circle at 50% 25%, rgba(40,60,120,0.7), rgba(5,10,20,0.85));
+      border: 3px solid rgba(140, 210, 255, 0.6);
       margin-top: 10px;
-      font-size: 20px;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-      border-radius: 5px;
+      border-radius: 18px;
+      box-shadow: 0 0 45px rgba(0, 180, 255, 0.3), inset 0 0 30px rgba(0, 12, 32, 0.8);
     }
+
     #message {
-      margin-top: 10px;
-      font-size: 24px;
-      color: #ff3333;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      margin-top: 16px;
+      min-height: 28px;
+      font-size: 22px;
+      letter-spacing: 0.12em;
+      color: #fdbaff;
+      text-shadow: 0 0 10px rgba(255, 90, 255, 0.7);
+      transition: opacity 0.4s ease;
+    }
+
+    #controls {
+      margin-top: 22px;
+      max-width: 420px;
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.6;
+      color: rgba(214, 236, 255, 0.85);
+      background: linear-gradient(135deg, rgba(10, 18, 44, 0.8), rgba(7, 12, 26, 0.9));
+      padding: 18px 20px;
+      border-radius: 16px;
+      border: 1px solid rgba(90, 130, 255, 0.3);
+      box-shadow: 0 0 25px rgba(32, 110, 220, 0.25);
+    }
+
+    #controls span {
+      color: #86f0ff;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
-    <h1>Pinball</h1>
+    <h1>Neon Pinball Remix</h1>
+    <div id="status-bar">
+      <div id="info">Score: 0 | Balls: 3</div>
+      <div id="combo">Build your combo!</div>
+    </div>
     <svg id="gameSVG" width="400" height="600"></svg>
-    <div id="info">Score: 0 | Balls: 3</div>
     <div id="message"></div>
+    <div id="controls">
+      Rip the flippers with <span>← / Z</span> and <span>→ / /</span>. Launch using <span>Space</span> or <span>↓</span>.
+      Chain quick hits to fuel the <span>combo reactor</span> for bonus points!
+    </div>
   </div>
   <script>
     const svg = document.getElementById('gameSVG');
@@ -83,39 +170,39 @@
     const ballRadius = 8;
     const walls = { left: 10, right: canvas.width - 10, top: 10 };
     const launchLane = { x: walls.right - 30, width: 20, gap: 90 };
-    // plunger.power is the pull distance; startY sets the visible starting point
     const plunger = {
       power: 0,
       maxPower: 60,
       charging: false,
-      startY: canvas.height * 0.8 // begin ~20% from the bottom
+      startY: canvas.height * 0.8
     };
 
-    const launchScale = 0.45; // converts pull distance to launch velocity
-    const maxSpeed = 15;      // threshold before excess energy is damped
-    const energyDamping = 0.94; // factor applied when above threshold
+    const launchScale = 0.45;
+    const maxSpeed = 15;
+    const energyDamping = 0.94;
 
     const curveRadius = 60;
     const topCurve = { x: walls.left + curveRadius, y: walls.top + curveRadius, r: curveRadius };
 
     let ball, score = 0, balls = 3, gameOver = false;
+    let comboTimer = 0, comboCount = 0, messageTimer = 0;
+
+    const comboElem = document.getElementById('combo');
+    const messageElem = document.getElementById('message');
 
     const bumpers = [
       {x: 100, y: 200, r: 20, score: 100},
       {x: 300, y: 250, r: 20, score: 100},
       {x: 200, y: 120, r: 25, score: 150},
-      // small rubber bumper at the end of the top curve
       {x: walls.left + curveRadius * 0.6, y: walls.top + curveRadius * 0.6, r: 12, score: 0, damping: 0.5}
     ];
 
     const flippers = {
-      // Flippers start in the lowered position and snap upward when active
       left:  {x1: 69.22, y1: canvas.height-80, length: 121, angle: 30,  activeAngle: -20, active:false, t:0, prev_t:0},
-      // Right flipper defaults down and flips up on button press
       right: {x1: canvas.width-69.22, y1: canvas.height-80, length: 121, angle: 150, activeAngle:200, active:false, t:0, prev_t:0}
     };
 
-    const outlaneOffset = ballRadius * 4; // two ball diameters from the wall
+    const outlaneOffset = ballRadius * 4;
     const slingshots = {
       left: {
         points: [
@@ -133,9 +220,6 @@
       }
     };
 
-
-
-    // Popup targets organized in three groups of four
     const targetGroups = [
       [
         {x: 50,  y: 180, w: 8, h: 20, up:true, score:150},
@@ -156,6 +240,18 @@
     ];
     const targets = targetGroups.flat();
 
+    const trailLength = 12;
+    const ballTrail = [];
+    const ballTrailElems = [];
+    let ballElem, plungerElem;
+
+    function svgElem(type, attrs, parent = svg){
+      const el = document.createElementNS(svgNS, type);
+      Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
+      parent.appendChild(el);
+      return el;
+    }
+
     function lineEndAt(f, t){
       const ang = (f.angle * (1 - t) + f.activeAngle * t) * Math.PI/180;
       return {x:f.x1 + Math.cos(ang)*f.length, y:f.y1 + Math.sin(ang)*f.length, ang};
@@ -166,7 +262,7 @@
     }
 
     function updateFlippers(dt){
-      const rate = dt / 0.1; // 0.1 second transition for snappier action
+      const rate = dt / 0.1;
       for(const key in flippers){
         const f = flippers[key];
         const target = f.active ? 1 : 0;
@@ -188,15 +284,8 @@
         inLaunch: true
       };
       plunger.power = 0;
-    }
-
-    let ballElem, plungerElem;
-
-    function svgElem(type, attrs, parent = svg){
-      const el = document.createElementNS(svgNS, type);
-      Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
-      parent.appendChild(el);
-      return el;
+      ballTrail.length = 0;
+      ballTrailElems.forEach(elem => elem.setAttribute('opacity', 0));
     }
 
     function initSVG(){
@@ -206,24 +295,57 @@
       }
 
       const boardGrad = defElem('linearGradient', {id:'boardGradient', x1:'0%', y1:'0%', x2:'0%', y2:'100%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#444'}, boardGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#111'}, boardGrad);
+      svgElem('stop', {offset:'0%', 'stop-color':'#0f2045'}, boardGrad);
+      svgElem('stop', {offset:'60%', 'stop-color':'#061026'}, boardGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#020510'}, boardGrad);
+
+      const boardHighlight = defElem('radialGradient', {id:'boardHighlight', cx:'50%', cy:'15%', r:'80%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'rgba(100,255,255,0.35)'}, boardHighlight);
+      svgElem('stop', {offset:'70%', 'stop-color':'rgba(100,255,255,0)'}, boardHighlight);
 
       const bumperGrad = defElem('radialGradient', {id:'bumperGradient', cx:'50%', cy:'50%', r:'50%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#fff'}, bumperGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#66ccff'}, bumperGrad);
+      svgElem('stop', {offset:'0%', 'stop-color':'#ffffff'}, bumperGrad);
+      svgElem('stop', {offset:'60%', 'stop-color':'#46d9ff'}, bumperGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#006bff'}, bumperGrad);
+
+      const bumperGlowGrad = defElem('radialGradient', {id:'bumperGlowGradient', cx:'50%', cy:'50%', r:'50%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'rgba(120,220,255,0.9)'}, bumperGlowGrad);
+      svgElem('stop', {offset:'80%', 'stop-color':'rgba(0,130,255,0.1)'}, bumperGlowGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'rgba(0,130,255,0)'}, bumperGlowGrad);
 
       const flipperGrad = defElem('linearGradient', {id:'flipperGradient', x1:'0%', y1:'0%', x2:'0%', y2:'100%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#ff88ff'}, flipperGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#660066'}, flipperGrad);
+      svgElem('stop', {offset:'0%', 'stop-color':'#ff8df4'}, flipperGrad);
+      svgElem('stop', {offset:'50%', 'stop-color':'#ff2bd6'}, flipperGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#6314c5'}, flipperGrad);
 
-      const ballGrad = defElem('radialGradient', {id:'ballGradient', cx:'50%', cy:'50%', r:'50%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#ffffcc'}, ballGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#ffcc00'}, ballGrad);
+      const ballGrad = defElem('radialGradient', {id:'ballGradient', cx:'40%', cy:'35%', r:'65%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'#fffbd5'}, ballGrad);
+      svgElem('stop', {offset:'50%', 'stop-color':'#ffd056'}, ballGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#ff7b2f'}, ballGrad);
+
+      const trailGrad = defElem('radialGradient', {id:'trailGradient', cx:'50%', cy:'50%', r:'50%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'rgba(255,224,180,0.8)'}, trailGrad);
+      svgElem('stop', {offset:'60%', 'stop-color':'rgba(255,120,70,0.35)'}, trailGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'rgba(255,40,120,0)'}, trailGrad);
 
       const targetGrad = defElem('linearGradient', {id:'targetGradient', x1:'0%', y1:'0%', x2:'0%', y2:'100%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#ffd966'}, targetGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#ff8800'}, targetGrad);
+      svgElem('stop', {offset:'0%', 'stop-color':'#ffe06d'}, targetGrad);
+      svgElem('stop', {offset:'50%', 'stop-color':'#ffa13f'}, targetGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#ff4f7a'}, targetGrad);
+
+      const slingGrad = defElem('linearGradient', {id:'slingGradient', x1:'0%', y1:'0%', x2:'100%', y2:'100%'});
+      svgElem('stop', {offset:'0%', 'stop-color':'#5fffd2'}, slingGrad);
+      svgElem('stop', {offset:'100%', 'stop-color':'#008cff'}, slingGrad);
+
+      const glowFilter = defElem('filter', {id:'glowFilter', x:'-50%', y:'-50%', width:'200%', height:'200%'});
+      svgElem('feGaussianBlur', {'in':'SourceGraphic', stdDeviation:'4', result:'blur'}, glowFilter);
+      const glowMerge = svgElem('feMerge', {}, glowFilter);
+      svgElem('feMergeNode', {'in':'blur'}, glowMerge);
+      svgElem('feMergeNode', {'in':'SourceGraphic'}, glowMerge);
+
+      const sparkFilter = defElem('filter', {id:'sparkFilter', x:'-50%', y:'-50%', width:'200%', height:'200%'});
+      svgElem('feGaussianBlur', {'in':'SourceGraphic', stdDeviation:'12', result:'b1'}, sparkFilter);
+      svgElem('feColorMatrix', {type:'matrix', values:'1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7'}, sparkFilter);
 
       const boardPath = [
         `M ${walls.right} ${walls.top}`,
@@ -233,35 +355,86 @@
         `L ${walls.right} ${canvas.height}`,
         'Z'
       ].join(' ');
-      svgElem('path', {d: boardPath, fill:'url(#boardGradient)', stroke:'#fff', 'stroke-width':4});
-      svgElem('line', {x1:launchLane.x, y1:launchLane.gap, x2:launchLane.x, y2:canvas.height, stroke:'#fff', 'stroke-width':4});
-      plungerElem = svgElem('rect', {x: launchLane.x + launchLane.width/2 - 4, y: plunger.startY, width:8, height:20, fill:'#888'});
+      svgElem('path', {d: boardPath, fill:'url(#boardGradient)', stroke:'rgba(150,220,255,0.65)', 'stroke-width':4});
+      svgElem('path', {d: boardPath, fill:'url(#boardHighlight)', opacity:'0.5'});
+
+      const decorGroup = svgElem('g', {'stroke-width':1.5, 'stroke-linecap':'round'});
+      const laneInset = 24;
+      for(let i=0; i<8; i++){
+        const y = walls.top + 60 + i*60;
+        const line = svgElem('line', {x1:walls.left + laneInset, y1:y, x2:launchLane.x - laneInset, y2:y, stroke:`rgba(80,160,255,${0.18 + i*0.03})`}, decorGroup);
+        line.setAttribute('filter', 'url(#glowFilter)');
+      }
+      const orbit = svgElem('path', {d:`M ${walls.left+60} ${walls.top+140} C ${canvas.width*0.35} ${walls.top+20}, ${canvas.width*0.65} ${walls.top+280}, ${launchLane.x-20} ${walls.top+200}`, stroke:'rgba(255,140,220,0.45)', fill:'none'}, decorGroup);
+      orbit.setAttribute('filter', 'url(#glowFilter)');
+
+      const starGroup = svgElem('g', {opacity:'0.55'});
+      for(let i=0; i<35; i++){
+        const star = svgElem('circle', {cx: Math.random()*(canvas.width-60)+30, cy: Math.random()*canvas.height*0.55 + 20, r: Math.random()*1.8 + 0.6, fill:'rgba(255,255,255,0.6)'}, starGroup);
+        star.setAttribute('filter', 'url(#sparkFilter)');
+      }
+
+      svgElem('line', {x1:launchLane.x, y1:launchLane.gap, x2:launchLane.x, y2:canvas.height, stroke:'rgba(150,220,255,0.7)', 'stroke-width':4});
+      plungerElem = svgElem('rect', {x: launchLane.x + launchLane.width/2 - 4, y: plunger.startY, width:8, height:22, rx:3, fill:'#85a9ff'});
+
+      const bumperGroup = svgElem('g', {});
       bumpers.forEach(b=>{
-        b.elem = svgElem('circle', {cx:b.x, cy:b.y, r:b.r, fill:'url(#bumperGradient)', stroke:'#3399ff', 'stroke-width':2});
+        b.flashTimer = 0;
+        b.glow = svgElem('circle', {cx:b.x, cy:b.y, r:b.r*1.7, fill:'url(#bumperGlowGradient)', opacity:0}, bumperGroup);
+        b.elem = svgElem('circle', {cx:b.x, cy:b.y, r:b.r, fill:'url(#bumperGradient)', stroke:'#39c1ff', 'stroke-width':2});
+        b.elem.setAttribute('filter', 'url(#glowFilter)');
       });
+
       for(const key in slingshots){
         const pts = slingshots[key].points.map(p=>`${p.x},${p.y}`).join(' ');
-        slingshots[key].elem = svgElem('polygon', {points:pts, fill:'url(#targetGradient)', stroke:'#ff5500', 'stroke-width':2});
+        slingshots[key].elem = svgElem('polygon', {points:pts, fill:'url(#slingGradient)', stroke:'#86f0ff', 'stroke-width':2});
+        slingshots[key].elem.setAttribute('opacity', '0.9');
+        slingshots[key].elem.setAttribute('filter', 'url(#glowFilter)');
       }
+
       for(const key in flippers){
         const f = flippers[key];
         const end = lineEnd(f);
-        f.elem = svgElem('line', {x1:f.x1, y1:f.y1, x2:end.x, y2:end.y, stroke:'url(#flipperGradient)', 'stroke-width':12, 'stroke-linecap':'round'});
+        f.elem = svgElem('line', {x1:f.x1, y1:f.y1, x2:end.x, y2:end.y, stroke:'url(#flipperGradient)', 'stroke-width':14, 'stroke-linecap':'round'});
+        f.elem.setAttribute('filter', 'url(#glowFilter)');
       }
+
       targets.forEach(t=>{
-        t.elem = svgElem('rect', {x:t.x - t.w/2, y:t.y - t.h, width:t.w, height:t.h, fill:'url(#targetGradient)', stroke:'#ff5500', 'stroke-width':1});
+        t.elem = svgElem('rect', {x:t.x - t.w/2, y:t.y - t.h, width:t.w, height:t.h, fill:'url(#targetGradient)', stroke:'#ff6ea9', 'stroke-width':1.4, rx:2});
+        t.elem.setAttribute('filter', 'url(#glowFilter)');
       });
-      ballElem = svgElem('circle', {cx:ball.x, cy:ball.y, r:ballRadius, fill:'url(#ballGradient)', stroke:'#ddaa00', 'stroke-width':1});
+
+      const trailGroup = svgElem('g', {});
+      for(let i=0; i<trailLength; i++){
+        const elem = svgElem('circle', {cx:ball.x, cy:ball.y, r:ballRadius, fill:'url(#trailGradient)', opacity:0}, trailGroup);
+        ballTrailElems.push(elem);
+      }
+
+      ballElem = svgElem('circle', {cx:ball.x, cy:ball.y, r:ballRadius, fill:'url(#ballGradient)', stroke:'#ffef9d', 'stroke-width':1});
+      ballElem.setAttribute('filter', 'url(#glowFilter)');
     }
 
     function drawBall(){
+      ballTrail.unshift({x:ball.x, y:ball.y});
+      if(ballTrail.length > trailLength){
+        ballTrail.pop();
+      }
+      for(let i=0; i<ballTrailElems.length; i++){
+        const p = ballTrail[i];
+        if(!p){
+          ballTrailElems[i].setAttribute('opacity', 0);
+          continue;
+        }
+        const progress = 1 - i / trailLength;
+        const r = ballRadius * (0.45 + progress * 0.55);
+        ballTrailElems[i].setAttribute('cx', p.x);
+        ballTrailElems[i].setAttribute('cy', p.y);
+        ballTrailElems[i].setAttribute('r', r);
+        ballTrailElems[i].setAttribute('opacity', 0.12 + progress * 0.35);
+      }
       ballElem.setAttribute('cx', ball.x);
       ballElem.setAttribute('cy', ball.y);
     }
-
-    function drawBumpers(){ /* static - no per frame drawing needed */ }
-
-    function drawSlingshots(){ /* static */ }
 
     function drawFlippers(){
       for(const key in flippers){
@@ -271,7 +444,6 @@
         f.elem.setAttribute('y2', end.y);
       }
     }
-
 
     function drawTargets(){
       targets.forEach(t=>{
@@ -330,7 +502,6 @@
       }
     }
 
-    // Collision detection for rectangular popup targets
     function rectCollision(t){
       const left = t.x - t.w/2;
       const right = t.x + t.w/2;
@@ -359,8 +530,8 @@
       }
     }
 
-   function updatePhysics(){
-     if(gameOver) return;
+    function updatePhysics(){
+      if(gameOver) return;
       if(ball.inLaunch){
         if(plunger.charging){
           plunger.power = Math.min(plunger.maxPower, plunger.power + 0.6);
@@ -369,7 +540,6 @@
         ball.vy += gravity;
         ball.y += ball.vy;
         ball.x = launchLane.x + launchLane.width/2;
-        // keep the ball resting on the plunger while charging
         if(ball.y + ballRadius > plungerY){
           ball.y = plungerY - ballRadius;
           ball.vy = 0;
@@ -382,7 +552,6 @@
           ball.inLaunch = false;
           ball.x = launchLane.x - ballRadius;
           ball.vx = -2;
-          // plunger returns to starting position after launch
           plunger.power = 0;
         }
         return;
@@ -391,12 +560,9 @@
       ball.x += ball.vx;
       ball.y += ball.vy;
 
-      // handle curved wall collision first
       arcCollision(topCurve);
-
       const inTopCurve = ball.x < topCurve.x && ball.y < topCurve.y;
 
-      // walls
       if(ball.x - ballRadius < walls.left && !inTopCurve){
         ball.x = walls.left + ballRadius;
         ball.vx = Math.abs(ball.vx);
@@ -414,18 +580,21 @@
         ball.vy = Math.abs(ball.vy);
       }
       if(ball.y - ballRadius > canvas.height){
-        balls--; 
+        balls--;
         if(balls>0){
           resetBall();
+          comboCount = 0;
+          comboTimer = 0;
+          updateComboDisplay();
+          showMessage('Ball lost! Keep the rhythm.', '#ff6f9f');
         } else {
           gameOver = true;
-          document.getElementById('message').textContent = 'Game Over';
+          showMessage('Game Over', '#ff4f6d');
         }
         updateInfo();
         return;
       }
 
-      // bumpers
       bumpers.forEach(b=>{
         const dx = ball.x - b.x;
         const dy = ball.y - b.y;
@@ -441,7 +610,9 @@
             ball.vy *= b.damping;
           }
           score += b.score;
+          triggerCombo(b.score);
           updateInfo();
+          b.flashTimer = 0.4;
         }
       });
 
@@ -449,7 +620,6 @@
         triangleCollision(slingshots[key]);
       }
 
-      // popup targets
       targetGroups.forEach(group => {
         let allDown = true;
         group.forEach(t => {
@@ -457,6 +627,7 @@
             if(rectCollision(t)){
               t.up = false;
               score += t.score;
+              triggerCombo(t.score);
               updateInfo();
             }
             if(t.up) allDown = false;
@@ -464,10 +635,10 @@
         });
         if(allDown){
           group.forEach(t=> t.up = true);
+          showMessage('Target wave reset!', '#8ef7ff');
         }
       });
 
-      // flippers collision with simple sweep handling
       for(const key in flippers){
         const f = flippers[key];
         const segments = [
@@ -499,8 +670,8 @@
             if(f.t > f.prev_t) motionPower = 1.25;
             else if(f.t < f.prev_t) motionPower = 0.5;
             const hitPos = seg.hitPosFunc(u);
-            const tipMult = 1 + hitPos * 2; // strongest at tip
-            const factor = motionPower * tipMult * 0.7; // reduced boost
+            const tipMult = 1 + hitPos * 2;
+            const factor = motionPower * tipMult * 0.7;
             ball.vx *= factor;
             ball.vy *= factor;
             break;
@@ -514,6 +685,71 @@
       document.getElementById('info').textContent = `Score: ${score} | Balls: ${balls}`;
     }
 
+    function updateComboDisplay(){
+      if(comboCount > 1){
+        comboElem.textContent = `Combo x${comboCount}`;
+        comboElem.style.color = '#f7f7ff';
+        comboElem.style.transform = 'scale(1.1)';
+        comboElem.style.opacity = 1;
+      } else {
+        comboElem.textContent = 'Build your combo!';
+        comboElem.style.color = '#9cf6ff';
+        comboElem.style.transform = 'scale(1)';
+        comboElem.style.opacity = 0.85;
+      }
+    }
+
+    function showMessage(text, color = '#fdbaff'){
+      messageElem.textContent = text;
+      messageElem.style.color = color;
+      messageElem.style.opacity = 1;
+      messageTimer = 2.2;
+    }
+
+    function triggerCombo(points){
+      if(points <= 0) return;
+      if(comboTimer > 0){
+        comboCount += 1;
+      } else {
+        comboCount = 1;
+      }
+      comboTimer = 1.2;
+      if(comboCount > 1){
+        const bonus = Math.round(points * comboCount * 0.35);
+        score += bonus;
+        showMessage(`Combo x${comboCount}! Bonus +${bonus}`, '#9cf6ff');
+      }
+      updateComboDisplay();
+    }
+
+    function updateEffects(dt){
+      if(comboTimer > 0){
+        comboTimer = Math.max(0, comboTimer - dt);
+        if(comboTimer === 0){
+          comboCount = 0;
+          updateComboDisplay();
+        }
+      }
+
+      bumpers.forEach(b=>{
+        if(b.flashTimer > 0){
+          b.flashTimer = Math.max(0, b.flashTimer - dt);
+          const intensity = b.flashTimer / 0.4;
+          b.glow.setAttribute('opacity', 0.4 + intensity * 0.6);
+          b.glow.setAttribute('r', b.r * (1.5 + intensity * 0.6));
+        } else {
+          b.glow.setAttribute('opacity', 0);
+        }
+      });
+
+      if(messageTimer > 0){
+        messageTimer = Math.max(0, messageTimer - dt);
+        if(messageTimer <= 0){
+          messageElem.style.opacity = 0;
+        }
+      }
+    }
+
     function draw(){
       const plungerY = plunger.startY + plunger.power;
       plungerElem.setAttribute('y', plungerY);
@@ -522,11 +758,11 @@
       drawBall();
     }
 
-    const FRAME_TIME = 1000/60;
     function step(){
       const dt = 1/60;
       updateFlippers(dt);
       updatePhysics();
+      updateEffects(dt);
       draw();
     }
 
@@ -543,14 +779,19 @@
         if(ball.inLaunch){
           ball.vy = -plunger.power * launchScale;
         }
-        // keep plunger extended until ball leaves the launch lane
       }
     });
 
     resetBall();
     initSVG();
     updateInfo();
-    setInterval(step, FRAME_TIME);
+    updateComboDisplay();
+
+    function loop(){
+      step();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
   </script>
   <script>
     fetch('sidebar.html')
