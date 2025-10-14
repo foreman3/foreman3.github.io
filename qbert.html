@@ -113,7 +113,7 @@
         description: 'Touch each tile once to light it up.',
         behavior: 'progressive',
         completionStage: 1,
-        sequence: ['#142442', '#38f9ff', '#0ab0ff'],
+        sequence: ['#244e9a', '#38f9ff', '#0ab0ff'],
         isComplete(tile){
           return tile.stage >= this.completionStage;
         }
@@ -123,7 +123,7 @@
         description: 'Charge each tile twice to lock it in place.',
         behavior: 'progressive',
         completionStage: 2,
-        sequence: ['#1a0f24', '#ffd166', '#ff6f59', '#ef476f'],
+        sequence: ['#3f1b58', '#ffd166', '#ff6f59', '#ef476f'],
         isComplete(tile){
           return tile.stage >= this.completionStage;
         }
@@ -133,7 +133,7 @@
         description: 'Second bounce locks a tile, a third knocks it loose again.',
         behavior: 'toggle',
         completionStage: 2,
-        sequence: ['#0f1f1a', '#7affc3', '#1ad3b3'],
+        sequence: ['#1f3f33', '#7affc3', '#1ad3b3'],
         isComplete(tile){
           return tile.stage === this.completionStage;
         }
@@ -143,7 +143,7 @@
         description: 'Pulse each tile three times to stabilize it.',
         behavior: 'progressive',
         completionStage: 3,
-        sequence: ['#1b0f38', '#c09bff', '#8a5dff', '#4f3dff'],
+        sequence: ['#35206f', '#c09bff', '#8a5dff', '#4f3dff'],
         isComplete(tile){
           return tile.stage >= this.completionStage;
         }
@@ -153,7 +153,7 @@
         description: 'Tiles cycle through colors—stop on the highlight hue to score.',
         behavior: 'cycle',
         completionStage: 2,
-        sequence: ['#24120f', '#ffc971', '#ff6f91', '#ff1d58', '#7c2bff'],
+        sequence: ['#4a241f', '#ffc971', '#ff6f91', '#ff1d58', '#7c2bff'],
         isComplete(tile){
           return tile.stage === this.completionStage;
         }
