@@ -64,7 +64,9 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    const player = { x: canvas.width / 2, y: canvas.height - 30, w: 40, h: 20, speed: 5 };
+    const player = { x: canvas.width / 2, y: canvas.height - 36, w: 54, h: 32, speed: 5 };
+    const playerImg = new Image();
+    playerImg.src = 'images/player_ship.svg';
     const keys = {};
 
     let missiles = [];
@@ -76,8 +78,18 @@
     let score = 0;
     let gameOver = false;
 
-    const alienImg = new Image();
-    alienImg.src = 'images/alien.svg';
+    const alienSpriteSources = [
+      'images/invader_scout.svg',
+      'images/invader_barrage.svg',
+      'images/invader_mystic.svg',
+      'images/invader_vanguard.svg',
+      'images/invader_overlord.svg'
+    ];
+    const alienSprites = alienSpriteSources.map(src => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    });
 
     function createAliens() {
       aliens = [];
@@ -85,7 +97,14 @@
       const cols = 10;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          aliens.push({ x: 80 + c * 60, y: 60 + r * 40, w: 30, h: 20, alive: true });
+          aliens.push({
+            x: 80 + c * 60,
+            y: 60 + r * 40,
+            w: 42,
+            h: 32,
+            alive: true,
+            sprite: alienSprites[r % alienSprites.length]
+          });
         }
       }
     }
@@ -233,8 +252,12 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       // player
-      ctx.fillStyle = '#0f0';
-      ctx.fillRect(player.x - player.w / 2, player.y - player.h / 2, player.w, player.h);
+      if (playerImg.complete) {
+        ctx.drawImage(playerImg, player.x - player.w / 2, player.y - player.h / 2, player.w, player.h);
+      } else {
+        ctx.fillStyle = '#0f0';
+        ctx.fillRect(player.x - player.w / 2, player.y - player.h / 2, player.w, player.h);
+      }
       // missiles
       ctx.strokeStyle = '#0ff';
       missiles.forEach(m => {
@@ -245,7 +268,14 @@
       });
       // aliens
       for (const a of aliens) {
-        if (a.alive) ctx.drawImage(alienImg, a.x - a.w / 2, a.y - a.h / 2, a.w, a.h);
+        if (!a.alive) continue;
+        const sprite = a.sprite;
+        if (sprite && sprite.complete) {
+          ctx.drawImage(sprite, a.x - a.w / 2, a.y - a.h / 2, a.w, a.h);
+        } else {
+          ctx.fillStyle = '#0f0';
+          ctx.fillRect(a.x - a.w / 2, a.y - a.h / 2, a.w, a.h);
+        }
       }
       // explosions
       ctx.strokeStyle = '#ff0';
