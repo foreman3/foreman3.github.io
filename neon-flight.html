@@ -137,10 +137,6 @@
     let nebulae = [];
     let auroraBands = [];
 
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const audioCtx = new AudioContext();
-    let audioStarted = false;
-
     function resetGame(){
       plane = { x:0, y:50, z:PLANE_Z, speed:8 };
       buildings = [];
@@ -179,12 +175,69 @@
       const cityWidth = 600;
       const palette = palettes[Math.floor(Math.random()*palettes.length)];
       if(Math.random() < 0.03){
-        const width = cityWidth + 80; // extend slightly beyond plane range
-        const depth = 60 + Math.random()*40;
-        const arch = 70 + Math.random()*20; // highest point of the arch
-        const height = arch + 200; // tall enough so plane cannot fly over
+        const width = cityWidth + 120;
+        const depth = 60 + Math.random()*50;
+        const deckHeight = 150 + Math.random()*35;
+        const deckThickness = 12 + Math.random()*6;
+        const clearanceHeight = 65 + Math.random()*25;
+        const design = Math.floor(Math.random()*3);
         const z = 400 + Math.random()*1200;
-        buildings.push({type:'bridge', x:0, width, depth, bottom:0, arch, height, z, palette});
+        const bridge = {
+          type: 'bridge',
+          x: 0,
+          width,
+          depth,
+          z,
+          palette,
+          deckHeight,
+          deckThickness,
+          clearanceHeight,
+          design,
+          supports: [],
+          features: {}
+        };
+
+        const halfWidth = width / 2;
+        const supportDepth = Math.min(depth * 0.75, 70);
+
+        if(design === 0){
+          const archHeight = deckHeight + 80 + Math.random()*30;
+          bridge.features.archHeight = archHeight;
+          bridge.features.archThickness = 16 + Math.random()*8;
+          bridge.features.cableCount = 6 + Math.floor(Math.random()*4);
+          bridge.supports.push(
+            { xOffset: -halfWidth + 70, width: 70, depth: supportDepth, bottom: 0, height: deckHeight, colorShift: -15 },
+            { xOffset: halfWidth - 70, width: 70, depth: supportDepth, bottom: 0, height: deckHeight, colorShift: -15 }
+          );
+          bridge.height = archHeight;
+        } else if(design === 1){
+          const towerHeight = deckHeight + 90 + Math.random()*40;
+          const towerOffset = width * 0.22;
+          const towerWidth = 60;
+          bridge.features.towerHeight = towerHeight;
+          bridge.features.cableSag = 40 + Math.random()*20;
+          bridge.features.towerOffset = towerOffset;
+          bridge.supports.push(
+            { xOffset: -halfWidth + 55, width: 60, depth: supportDepth, bottom: 0, height: deckHeight, colorShift: -20 },
+            { xOffset: halfWidth - 55, width: 60, depth: supportDepth, bottom: 0, height: deckHeight, colorShift: -20 },
+            { xOffset: -towerOffset, width: towerWidth, depth: supportDepth * 0.9, bottom: 0, height: towerHeight, colorShift: -5 },
+            { xOffset: towerOffset, width: towerWidth, depth: supportDepth * 0.9, bottom: 0, height: towerHeight, colorShift: -5 }
+          );
+          bridge.height = towerHeight;
+        } else {
+          const frameHeight = deckHeight + 60 + Math.random()*25;
+          const frameCount = 4 + Math.floor(Math.random()*2);
+          bridge.features.frameCount = frameCount;
+          bridge.features.frameHeight = frameHeight;
+          bridge.supports.push(
+            { xOffset: -halfWidth + 50, width: 55, depth: supportDepth, bottom: 0, height: deckHeight, colorShift: -12 },
+            { xOffset: halfWidth - 50, width: 55, depth: supportDepth, bottom: 0, height: deckHeight, colorShift: -12 },
+            { xOffset: 0, width: 70, depth: supportDepth * 0.85, bottom: 0, height: deckHeight, colorShift: -18 }
+          );
+          bridge.height = frameHeight;
+        }
+
+        buildings.push(bridge);
       } else {
         const x = (Math.random()-0.5) * cityWidth;
         const width = 40 + Math.random()*60;
@@ -242,13 +295,19 @@
         let overlap = false;
         for(const b of buildings){
           const withinZ = Math.abs(b.z - z) < b.depth;
-          const width = b.type === 'bridge' ? 600 : b.width;
+          const width = b.type === 'bridge' ? b.width : b.width;
           const withinX = Math.abs(x - b.x) < width/2 + radius*2;
           let bottom = b.bottom || 0;
           if(b.type === 'bridge'){
-            const w = 300; // playable area half-width
-            const rel = Math.abs(x - b.x);
-            bottom = b.arch * (1 - (rel*rel)/(w*w));
+            const rel = x - b.x;
+            bottom = bridgeBottomAt(b, rel);
+            for(const support of b.supports){
+              const half = support.width/2 + radius;
+              if(Math.abs(rel - support.xOffset) < half){
+                bottom = Math.max(bottom, support.height);
+                break;
+              }
+            }
           }
           const withinY = y > bottom - radius*2 && y < b.height + radius*2;
           if(withinZ && withinX && withinY){
@@ -258,84 +317,33 @@
         }
         if(!overlap) break;
       }
-    if(attempts < 10){
-      rings.push({x,y,z,radius,collected:false});
-      return true;
-    }
-    return false;
+  if(attempts < 10){
+    rings.push({x,y,z,radius,collected:false});
+    return true;
   }
+  return false;
+}
 
-  function initAudio(){
-    if(audioStarted) return;
-    audioStarted = true;
-    if(audioCtx.state === 'suspended') audioCtx.resume();
-    playMusic();
-  }
+ function bridgeBottomAt(bridge, rel){
+   const halfWidth = bridge.width / 2;
+   if(halfWidth <= 0) return 0;
+   const ratio = Math.min(1, Math.abs(rel) / halfWidth);
+   const deckBottom = bridge.deckHeight - bridge.deckThickness;
+   let clearance = bridge.clearanceHeight * (1 - ratio*ratio);
+   if(bridge.design === 1){
+     clearance += Math.sin(ratio * Math.PI) * 6;
+   } else if(bridge.design === 2){
+     clearance -= Math.sin(ratio * Math.PI) * 8;
+   }
+   clearance = Math.max(0, clearance);
+   let bottom = Math.min(deckBottom, clearance);
+   if(bridge.design === 0){
+     bottom += Math.cos(ratio * Math.PI) * 4;
+   }
+   return Math.max(0, bottom);
+ }
 
-  
-  function playWhoosh(){
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 600;
-    gain.gain.value = 0.2;
-    osc.connect(gain).connect(audioCtx.destination);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.2);
-  }
-
-  function playRing(){
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.3);
-  }
-
-  function playCrash(){
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.5);
-    gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.5);
-  }
-
-  function playMusic(){
-    const notes = [220,0,330,0,392,0,330,0];
-    let i = 0;
-    function step(){
-      if(!audioStarted) return;
-      const freq = notes[i];
-      if(freq){
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-        osc.connect(gain).connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.25);
-      }
-      i = (i+1)%notes.length;
-      setTimeout(step,250);
-    }
-    step();
-  }
-
-    function update(){
+  function update(){
       if(!running) return;
       // Increased control responsiveness
       const ctrl = 8;
@@ -363,18 +371,35 @@
         const front = b.z - b.depth/2;
         const back = b.z + b.depth/2;
         const withinZ = front <= plane.z && back >= plane.z;
-        const withinX = Math.abs(b.x - plane.x) < b.width/2;
-        let bottom = b.bottom || 0;
+        let collision = false;
         if(b.type === 'bridge'){
           const w = b.width/2;
-          const rel = Math.abs(plane.x - b.x);
-          bottom = b.arch * (1 - (rel*rel)/(w*w));
+          const rel = plane.x - b.x;
+          const bottom = bridgeBottomAt(b, rel);
+          if(Math.abs(rel) < w && plane.y < b.height && plane.y > bottom){
+            collision = true;
+          }
+          if(!collision){
+            for(const support of b.supports){
+              const half = support.width/2;
+              const supportBottom = support.bottom ?? 0;
+              const supportTop = support.collisionHeight || support.height;
+              if(Math.abs(rel - support.xOffset) < half &&
+                 plane.y < supportTop && plane.y > supportBottom){
+                collision = true;
+                break;
+              }
+            }
+          }
+        } else {
+          const withinX = Math.abs(b.x - plane.x) < b.width/2;
+          const bottom = b.bottom || 0;
+          const withinY = plane.y < b.height && plane.y > bottom;
+          collision = withinX && withinY;
         }
-        const withinY = plane.y < b.height && plane.y > bottom;
-        if(withinZ && withinX && withinY){
+        if(withinZ && collision){
           running = false;
           document.getElementById('message').textContent = 'Crash! Press Space';
-          playCrash();
         }
         if(back <= plane.z){
           buildings.splice(i, 1);
@@ -391,7 +416,6 @@
            Math.abs(r.y - plane.y) < r.radius){
           r.collected = true;
           score += 100;
-          playRing();
         }
         if(r.z + r.radius <= plane.z){
           rings.splice(i,1);
@@ -739,134 +763,262 @@
       drawTopper(b);
     }
 
+    function drawBridgeSupport(bridge, support){
+      const baseColor = adjustColor(bridge.palette.base, support.colorShift || 0);
+      drawPrism({
+        x: bridge.x + support.xOffset,
+        width: support.width,
+        depth: support.depth || Math.min(bridge.depth*0.9, 80),
+        bottom: support.bottom ?? 0,
+        top: support.height,
+        z: bridge.z,
+        palette: bridge.palette,
+        windows: 0,
+        windowCols: 0,
+        baseColor,
+        accentColor: adjustColor(bridge.palette.accent, 8)
+      });
+    }
+
+    function drawBridgeDeck(bridge){
+      const deckBottom = bridge.deckHeight - bridge.deckThickness;
+      drawPrism({
+        x: bridge.x,
+        width: bridge.width,
+        depth: bridge.depth,
+        bottom: deckBottom,
+        top: bridge.deckHeight,
+        z: bridge.z,
+        palette: bridge.palette,
+        windows: 0,
+        windowCols: 0,
+        baseColor: adjustColor(bridge.palette.base, -35),
+        accentColor: adjustColor(bridge.palette.accent, -5)
+      });
+    }
+
+    function drawBridgeRails(bridge){
+      const w = bridge.width/2;
+      const d = bridge.depth/2;
+      const y = bridge.deckHeight + 6;
+      const leftFront = project(bridge.x - w, y, bridge.z - d);
+      const rightFront = project(bridge.x + w, y, bridge.z - d);
+      const leftBack = project(bridge.x - w, y, bridge.z + d);
+      const rightBack = project(bridge.x + w, y, bridge.z + d);
+      ctx.save();
+      ctx.strokeStyle = withAlpha(bridge.palette.glow, 0.8);
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = withAlpha(bridge.palette.glow, 0.6);
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.moveTo(leftFront.x, leftFront.y);
+      ctx.lineTo(rightFront.x, rightFront.y);
+      ctx.moveTo(leftBack.x, leftBack.y);
+      ctx.lineTo(rightBack.x, rightBack.y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    function drawBridgeUnderside(bridge){
+      const w = bridge.width/2;
+      const d = bridge.depth/2;
+      const underside = bridge.deckHeight - bridge.deckThickness - 6;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = withAlpha(bridge.palette.glow, 0.35);
+      ctx.lineWidth = 1.6;
+      for(const offset of [-0.35, 0, 0.35]){
+        const x = bridge.x + w * offset;
+        const front = project(x, underside, bridge.z - d);
+        const back = project(x, underside, bridge.z + d);
+        ctx.beginPath();
+        ctx.moveTo(front.x, front.y);
+        ctx.lineTo(back.x, back.y);
+        ctx.stroke();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.restore();
+    }
+
+    function drawArchBridgeDetails(bridge){
+      const {archHeight, archThickness, cableCount} = bridge.features;
+      if(!archHeight) return;
+      const w = bridge.width/2;
+      const d = bridge.depth/2;
+      const span = Math.max(10, archHeight - bridge.deckHeight);
+      const segments = 28;
+      ctx.save();
+      ctx.shadowColor = withAlpha(bridge.palette.glow, 0.55);
+      ctx.shadowBlur = 18;
+      ctx.strokeStyle = withAlpha(bridge.palette.accent, 0.85);
+      ctx.lineWidth = Math.max(3, archThickness/3);
+      for(const depth of [-d, d]){
+        ctx.beginPath();
+        for(let i=0;i<=segments;i++){
+          const t = -w + (2*w*i)/segments;
+          const ratio = t / w;
+          const y = bridge.deckHeight + span * (1 - ratio*ratio);
+          const p = project(bridge.x + t, y, bridge.z + depth);
+          if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+      }
+
+      ctx.shadowBlur = 9;
+      ctx.strokeStyle = withAlpha(bridge.palette.glow, 0.75);
+      ctx.lineWidth = 1.4;
+      const cables = cableCount || 6;
+      for(let i=1;i<=cables;i++){
+        const t = i/(cables+1);
+        const x = -w + bridge.width * t;
+        const ratio = x / w;
+        const y = bridge.deckHeight + span * (1 - ratio*ratio);
+        for(const depth of [-d, d]){
+          const top = project(bridge.x + x, y, bridge.z + depth);
+          const bottom = project(bridge.x + x, bridge.deckHeight, bridge.z + depth);
+          ctx.beginPath();
+          ctx.moveTo(top.x, top.y);
+          ctx.lineTo(bottom.x, bottom.y);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawSuspensionBridgeDetails(bridge){
+      const {towerHeight, cableSag, towerOffset} = bridge.features;
+      if(!towerHeight) return;
+      const w = bridge.width/2;
+      const d = bridge.depth/2;
+      const segments = 36;
+      ctx.save();
+      ctx.shadowColor = withAlpha(bridge.palette.glow, 0.5);
+      ctx.shadowBlur = 16;
+      ctx.strokeStyle = withAlpha(bridge.palette.accent, 0.85);
+      ctx.lineWidth = 2.2;
+
+      function cableHeight(t){
+        const eased = Math.sin(Math.PI * t);
+        return towerHeight - eased * (cableSag || 45);
+      }
+
+      for(const depth of [-d, d]){
+        ctx.beginPath();
+        for(let i=0;i<=segments;i++){
+          const t = i/segments;
+          const x = -w + 2*w*t;
+          const y = cableHeight(t);
+          const p = project(bridge.x + x, y, bridge.z + depth);
+          if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+      }
+
+      ctx.shadowBlur = 8;
+      ctx.strokeStyle = withAlpha(bridge.palette.glow, 0.7);
+      ctx.lineWidth = 1.3;
+      const hangerCount = 12;
+      for(let i=1;i<hangerCount;i++){
+        const t = i/hangerCount;
+        const x = -w + 2*w*t;
+        const y = cableHeight(t);
+        for(const depth of [-d, d]){
+          const top = project(bridge.x + x, y, bridge.z + depth);
+          const bottom = project(bridge.x + x, bridge.deckHeight, bridge.z + depth);
+          ctx.beginPath();
+          ctx.moveTo(top.x, top.y);
+          ctx.lineTo(bottom.x, bottom.y);
+          ctx.stroke();
+        }
+      }
+
+      if(towerOffset){
+        ctx.shadowBlur = 14;
+        ctx.lineWidth = 2.4;
+        for(const depth of [-d, d]){
+          const leftTop = project(bridge.x - towerOffset, towerHeight, bridge.z + depth);
+          const rightTop = project(bridge.x + towerOffset, towerHeight, bridge.z + depth);
+          ctx.beginPath();
+          ctx.moveTo(leftTop.x, leftTop.y);
+          ctx.lineTo(rightTop.x, rightTop.y);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawTrussBridgeDetails(bridge){
+      const {frameCount, frameHeight} = bridge.features;
+      if(!frameCount || !frameHeight) return;
+      const w = bridge.width/2;
+      const d = bridge.depth/2;
+      const step = bridge.width / (frameCount + 1);
+      ctx.save();
+      ctx.shadowColor = withAlpha(bridge.palette.accent, 0.55);
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = withAlpha(bridge.palette.accent, 0.85);
+      ctx.lineWidth = 2;
+      for(const depth of [-d, d]){
+        for(let i=0;i<=frameCount+1;i++){
+          const x = -w + step*i;
+          const base = project(bridge.x + x, bridge.deckHeight, bridge.z + depth);
+          const top = project(bridge.x + x, frameHeight, bridge.z + depth);
+          ctx.beginPath();
+          ctx.moveTo(base.x, base.y);
+          ctx.lineTo(top.x, top.y);
+          ctx.stroke();
+        }
+        ctx.lineWidth = 1.6;
+        for(let i=0;i<frameCount+1;i++){
+          const x1 = -w + step*i;
+          const x2 = x1 + step;
+          const base1 = project(bridge.x + x1, bridge.deckHeight, bridge.z + depth);
+          const base2 = project(bridge.x + x2, bridge.deckHeight, bridge.z + depth);
+          const apex = project(bridge.x + (x1 + x2)/2, frameHeight, bridge.z + depth);
+          ctx.beginPath();
+          ctx.moveTo(base1.x, base1.y);
+          ctx.lineTo(apex.x, apex.y);
+          ctx.lineTo(base2.x, base2.y);
+          ctx.stroke();
+        }
+      }
+      ctx.shadowBlur = 6;
+      ctx.lineWidth = 1.4;
+      ctx.strokeStyle = withAlpha(bridge.palette.glow, 0.75);
+      for(const depth of [-d, d]){
+        const topLeft = project(bridge.x - w, frameHeight, bridge.z + depth);
+        const topRight = project(bridge.x + w, frameHeight, bridge.z + depth);
+        ctx.beginPath();
+        ctx.moveTo(topLeft.x, topLeft.y);
+        ctx.lineTo(topRight.x, topRight.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     function drawBridge(b){
-      const w = b.width/2;
-      const d = b.depth/2;
-      const top = b.height;
-      const palette = b.palette;
-      const glow = palette.glow;
-      const segs = 20;
-
-      const leftBaseFront = project(b.x - w, 0, b.z - d);
-      const leftBaseBack = project(b.x - w, 0, b.z + d);
-      const leftTopFront = project(b.x - w, top, b.z - d);
-      const leftTopBack = project(b.x - w, top, b.z + d);
-
-      const rightBaseFront = project(b.x + w, 0, b.z - d);
-      const rightBaseBack = project(b.x + w, 0, b.z + d);
-      const rightTopFront = project(b.x + w, top, b.z - d);
-      const rightTopBack = project(b.x + w, top, b.z + d);
-
       ctx.save();
       ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
 
-      const walkwayGrad = ctx.createLinearGradient(leftBaseFront.x, leftBaseFront.y, rightBaseFront.x, rightBaseFront.y);
-      walkwayGrad.addColorStop(0, adjustColor(palette.base, -20));
-      walkwayGrad.addColorStop(1, adjustColor(palette.base, -45));
-      ctx.beginPath();
-      ctx.moveTo(leftBaseFront.x, leftBaseFront.y);
-      ctx.lineTo(rightBaseFront.x, rightBaseFront.y);
-      ctx.lineTo(rightBaseBack.x, rightBaseBack.y);
-      ctx.lineTo(leftBaseBack.x, leftBaseBack.y);
-      ctx.closePath();
-      ctx.fillStyle = walkwayGrad;
-      ctx.fill();
-
-      const frontGrad = ctx.createLinearGradient(leftBaseFront.x, leftBaseFront.y, leftTopFront.x, leftTopFront.y);
-      frontGrad.addColorStop(0, adjustColor(palette.base, 30));
-      frontGrad.addColorStop(1, adjustColor(palette.base, 0));
-      ctx.beginPath();
-      ctx.moveTo(leftBaseFront.x, leftBaseFront.y);
-      ctx.lineTo(rightBaseFront.x, rightBaseFront.y);
-      ctx.lineTo(rightTopFront.x, rightTopFront.y);
-      ctx.lineTo(leftTopFront.x, leftTopFront.y);
-      ctx.closePath();
-      ctx.fillStyle = frontGrad;
-      ctx.fill();
-
-      const backGrad = ctx.createLinearGradient(leftBaseBack.x, leftBaseBack.y, leftTopBack.x, leftTopBack.y);
-      backGrad.addColorStop(0, adjustColor(palette.base, -5));
-      backGrad.addColorStop(1, adjustColor(palette.base, -35));
-      ctx.beginPath();
-      ctx.moveTo(leftBaseBack.x, leftBaseBack.y);
-      ctx.lineTo(rightBaseBack.x, rightBaseBack.y);
-      ctx.lineTo(rightTopBack.x, rightTopBack.y);
-      ctx.lineTo(leftTopBack.x, leftTopBack.y);
-      ctx.closePath();
-      ctx.fillStyle = backGrad;
-      ctx.fill();
-
-      const roofGrad = ctx.createLinearGradient(leftTopFront.x, leftTopFront.y, leftTopBack.x, leftTopBack.y);
-      roofGrad.addColorStop(0, adjustColor(palette.base, 55));
-      roofGrad.addColorStop(1, adjustColor(palette.base, 10));
-      ctx.beginPath();
-      ctx.moveTo(leftTopFront.x, leftTopFront.y);
-      ctx.lineTo(rightTopFront.x, rightTopFront.y);
-      ctx.lineTo(rightTopBack.x, rightTopBack.y);
-      ctx.lineTo(leftTopBack.x, leftTopBack.y);
-      ctx.closePath();
-      ctx.fillStyle = roofGrad;
-      ctx.fill();
-
-      ctx.shadowColor = withAlpha(glow, 0.5);
-      ctx.shadowBlur = 14;
-      ctx.strokeStyle = withAlpha(glow, 0.9);
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(leftBaseFront.x, leftBaseFront.y);
-      ctx.lineTo(leftTopFront.x, leftTopFront.y);
-      ctx.lineTo(leftTopBack.x, leftTopBack.y);
-      ctx.lineTo(leftBaseBack.x, leftBaseBack.y);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(rightBaseFront.x, rightBaseFront.y);
-      ctx.lineTo(rightTopFront.x, rightTopFront.y);
-      ctx.lineTo(rightTopBack.x, rightTopBack.y);
-      ctx.lineTo(rightBaseBack.x, rightBaseBack.y);
-      ctx.closePath();
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(leftTopFront.x, leftTopFront.y);
-      ctx.lineTo(rightTopFront.x, rightTopFront.y);
-      ctx.moveTo(leftTopBack.x, leftTopBack.y);
-      ctx.lineTo(rightTopBack.x, rightTopBack.y);
-      ctx.stroke();
-
-      ctx.shadowBlur = 18;
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = withAlpha(palette.accent, 0.9);
-      ctx.beginPath();
-      for(let i=0;i<=segs;i++){
-        const x = -w + (2*w*i)/segs;
-        const y = b.arch * (1 - (x*x)/(w*w));
-        const p = project(b.x + x, y, b.z - d);
-        if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
-      }
-      ctx.stroke();
-
-      ctx.beginPath();
-      for(let i=0;i<=segs;i++){
-        const x = -w + (2*w*i)/segs;
-        const y = b.arch * (1 - (x*x)/(w*w));
-        const p = project(b.x + x, y, b.z + d);
-        if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
-      }
-      ctx.stroke();
-
-      ctx.shadowBlur = 10;
-      ctx.fillStyle = withAlpha(palette.glow, 0.85);
-      for(let i=0;i<=segs;i+=2){
-        const x = -w + (2*w*i)/segs;
-        const y = b.arch * (1 - (x*x)/(w*w));
-        const pFront = project(b.x + x, y, b.z - d);
-        ctx.beginPath();
-        ctx.arc(pFront.x, pFront.y, 2.5, 0, Math.PI*2);
-        ctx.fill();
+      const supports = [...b.supports].sort((a,b) => (a.height - b.height));
+      for(const support of supports){
+        drawBridgeSupport(b, support);
       }
 
-      ctx.shadowBlur = 0;
+      drawBridgeDeck(b);
+      drawBridgeRails(b);
+      drawBridgeUnderside(b);
+
+      if(b.design === 0){
+        drawArchBridgeDetails(b);
+      } else if(b.design === 1){
+        drawSuspensionBridgeDetails(b);
+      } else {
+        drawTrussBridgeDetails(b);
+      }
+
       ctx.restore();
     }
 
@@ -946,14 +1098,12 @@
     }
 
     window.addEventListener('keydown', e => {
-      initAudio();
-      if(e.code === 'ArrowLeft'){ left = true; playWhoosh(); }
-      if(e.code === 'ArrowRight'){ right = true; playWhoosh(); }
-      if(e.code === 'ArrowUp'){ up = true; playWhoosh(); }
-      if(e.code === 'ArrowDown'){ down = true; playWhoosh(); }
+      if(e.code === 'ArrowLeft'){ left = true; }
+      if(e.code === 'ArrowRight'){ right = true; }
+      if(e.code === 'ArrowUp'){ up = true; }
+      if(e.code === 'ArrowDown'){ down = true; }
       if(e.code === 'Space' && !running) resetGame();
     });
-    window.addEventListener('mousedown', initAudio);
     window.addEventListener('keyup', e => {
       if(e.code === 'ArrowLeft') left = false;
       if(e.code === 'ArrowRight') right = false;
