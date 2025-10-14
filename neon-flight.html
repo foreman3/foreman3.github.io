@@ -576,16 +576,31 @@
     function drawPrism({x, width, depth, bottom, top, z, palette, windows=0, windowCols=0, baseColor, accentColor, accents=[]}){
       const w = width/2;
       const d = depth/2;
-      const frontBottomLeft = project(x - w, bottom, z - d);
-      const frontBottomRight = project(x + w, bottom, z - d);
-      const backBottomLeft = project(x - w, bottom, z + d);
-      const backBottomRight = project(x + w, bottom, z + d);
-      const frontTopLeft = project(x - w, top, z - d);
-      const frontTopRight = project(x + w, top, z - d);
-      const backTopLeft = project(x - w, top, z + d);
-      const backTopRight = project(x + w, top, z + d);
+      let frontBottomLeft = project(x - w, bottom, z - d);
+      let frontBottomRight = project(x + w, bottom, z - d);
+      let backBottomLeft = project(x - w, bottom, z + d);
+      let backBottomRight = project(x + w, bottom, z + d);
+      let frontTopLeft = project(x - w, top, z - d);
+      let frontTopRight = project(x + w, top, z - d);
+      let backTopLeft = project(x - w, top, z + d);
+      let backTopRight = project(x + w, top, z + d);
 
-      if(frontBottomLeft.x > frontBottomRight.x || backBottomLeft.x > backBottomRight.x) return;
+      const allPoints = [
+        frontBottomLeft, frontBottomRight, backBottomLeft, backBottomRight,
+        frontTopLeft, frontTopRight, backTopLeft, backTopRight
+      ];
+      if(allPoints.some(p => !Number.isFinite(p.x) || !Number.isFinite(p.y))){
+        return;
+      }
+
+      if(frontBottomLeft.x > frontBottomRight.x){
+        [frontBottomLeft, frontBottomRight] = [frontBottomRight, frontBottomLeft];
+        [frontTopLeft, frontTopRight] = [frontTopRight, frontTopLeft];
+      }
+      if(backBottomLeft.x > backBottomRight.x){
+        [backBottomLeft, backBottomRight] = [backBottomRight, backBottomLeft];
+        [backTopLeft, backTopRight] = [backTopRight, backTopLeft];
+      }
 
       const base = baseColor || palette.base;
       const accent = accentColor || palette.accent;
