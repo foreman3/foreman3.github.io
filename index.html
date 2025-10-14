@@ -1,57 +1,587 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Research Station Terminal</title>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/egg.js/1.0/egg.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/jquery.terminal.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css"/>
-    <script type="text/javascript" src="https://foreman3.github.io/filesystem.js"></script>
-    <script type="text/javascript" src="https://foreman3.github.io/rover.js"></script>
-    <script type="text/javascript" src="https://foreman3.github.io/db.js"></script>
-    <script type="text/javascript" src="https://foreman3.github.io/terminal.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retro Arcade Selector</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      :root {
+        color-scheme: dark;
+        --bg-color: #060115;
+        --card-overlay: rgba(11, 6, 40, 0.75);
+        --highlight: #ff6bcb;
+        --accent: #67f7ff;
+        --glow: 0 0 25px rgba(103, 247, 255, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
-        display: flex;
         min-height: 100vh;
+        font-family: "Rubik", system-ui, sans-serif;
+        background: radial-gradient(circle at top, #1d0463 0%, var(--bg-color) 55%);
+        color: #f0f4ff;
+        position: relative;
+        overflow-x: hidden;
       }
-      #sidebar {
-        width: 200px;
-        background: #333;
-        color: #fff;
-        padding: 10px;
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: -40vmax;
+        z-index: -2;
+        background: conic-gradient(
+            from 180deg,
+            rgba(103, 247, 255, 0.08),
+            transparent 35%,
+            rgba(255, 107, 203, 0.1),
+            transparent 70%,
+            rgba(103, 247, 255, 0.08)
+          )
+          50% / 90vmax 90vmax;
+        animation: spin 45s linear infinite;
+        opacity: 0.8;
       }
-      #sidebar ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
+
+      body::after {
+        animation-direction: reverse;
+        mix-blend-mode: screen;
+        opacity: 0.6;
       }
-      #sidebar li {
-        margin: 10px 0;
+
+      main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 4rem 1.5rem 6rem;
       }
-      #sidebar a {
-        color: #fff;
+
+      .hero {
+        text-align: center;
+        margin-bottom: 3.5rem;
+        position: relative;
+      }
+
+      .hero h1 {
+        font-family: "Press Start 2P", cursive;
+        font-size: clamp(1.8rem, 5vw, 3rem);
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+        text-shadow: 0 6px 25px rgba(10, 0, 35, 0.8), 0 0 20px rgba(103, 247, 255, 0.4);
+      }
+
+      .hero p {
+        max-width: 680px;
+        margin: 0 auto;
+        color: rgba(235, 241, 255, 0.82);
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+
+      .hero .pulse-ring {
+        position: absolute;
+        inset: -4rem;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 107, 203, 0.25), transparent 70%);
+        filter: blur(20px);
+        z-index: -1;
+        animation: pulse 6s ease-in-out infinite;
+      }
+
+      .filters {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 2.5rem;
+      }
+
+      .filters button {
+        background: rgba(10, 8, 45, 0.85);
+        border: 1px solid rgba(103, 247, 255, 0.6);
+        color: #e8faff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 999px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        box-shadow: 0 0 0 rgba(103, 247, 255, 0.25);
+      }
+
+      .filters button:hover,
+      .filters button:focus-visible {
+        transform: translateY(-3px);
+        background: rgba(103, 247, 255, 0.2);
+        box-shadow: 0 8px 22px rgba(103, 247, 255, 0.25);
+      }
+
+      .game-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.5rem;
+        position: relative;
+      }
+
+      .game-card {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
         text-decoration: none;
+        color: inherit;
+        padding: 1.75rem 1.5rem;
+        min-height: 260px;
+        display: flex;
+        align-items: flex-end;
+        isolation: isolate;
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+        box-shadow: 0 12px 35px rgba(8, 0, 30, 0.55);
       }
-      #terminal-container {
-        flex: 1;
-        padding: 10px;
+
+      .game-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(185deg, rgba(6, 1, 21, 0.2) 0%, rgba(6, 1, 21, 0.9) 75%),
+          var(--card-image) center / cover no-repeat;
+        z-index: -2;
+        transition: transform 0.6s ease;
+      }
+
+      .game-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 1.5px solid rgba(103, 247, 255, 0.22);
+        border-radius: 24px;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        box-shadow: var(--glow);
+      }
+
+      .game-card:hover,
+      .game-card:focus-visible {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 18px 45px rgba(255, 107, 203, 0.35);
+      }
+
+      .game-card:hover::before,
+      .game-card:focus-visible::before {
+        transform: scale(1.08);
+      }
+
+      .game-card:hover::after,
+      .game-card:focus-visible::after {
+        opacity: 1;
+      }
+
+      .game-card__content {
+        position: relative;
+        z-index: 1;
+        backdrop-filter: blur(6px);
+        background: linear-gradient(135deg, rgba(6, 1, 21, 0.75), rgba(22, 7, 58, 0.65));
+        padding: 1.25rem;
+        border-radius: 18px;
+        border: 1px solid rgba(103, 247, 255, 0.25);
+      }
+
+      .game-card h2 {
+        font-family: "Press Start 2P", cursive;
+        font-size: 1.05rem;
+        margin: 0 0 0.75rem;
+        color: #fff5f8;
+        text-shadow: 0 0 16px rgba(103, 247, 255, 0.6);
+      }
+
+      .game-card p {
+        margin: 0;
+        font-size: 0.92rem;
+        line-height: 1.5;
+        color: rgba(235, 241, 255, 0.85);
+      }
+
+      .play-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 1rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-size: 0.75rem;
+      }
+
+      .play-tag svg {
+        width: 14px;
+        height: 14px;
+        fill: currentColor;
+        filter: drop-shadow(0 0 6px rgba(103, 247, 255, 0.5));
+      }
+
+      footer {
+        text-align: center;
+        padding: 2.5rem 1.5rem 3rem;
+        color: rgba(215, 225, 255, 0.75);
+        font-size: 0.85rem;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(0.9);
+          opacity: 0.6;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 0.9;
+        }
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 3rem 1.1rem 5rem;
+        }
+
+        .game-card {
+          min-height: 220px;
+        }
+
+        .game-card__content {
+          padding: 1rem;
+        }
       }
     </style>
   </head>
   <body>
-    <div id="sidebar-placeholder"></div>
-    <div id="terminal-container">
-      <div id="terminal"></div>
-    </div>
-    <script>
-      fetch('sidebar.html')
-        .then(r => r.text())
-        .then(html => {
-          const placeholder = document.getElementById('sidebar-placeholder');
-          if (placeholder) placeholder.outerHTML = html;
-        });
-    </script>
+    <main>
+      <header class="hero">
+        <div class="pulse-ring" aria-hidden="true"></div>
+        <h1>The Vibecade</h1>
+        <p>
+          Plug into a neon-soaked arcade multiverse! Choose a cabinet, mash those buttons,
+          and dive into pixelated adventures spanning space battles, burger stacking,
+          hover-bike races, and more.
+        </p>
+      </header>
+
+      <div class="filters" aria-hidden="true">
+        <button type="button">Classics</button>
+        <button type="button">High Score Hunt</button>
+        <button type="button">Cozy Mode</button>
+        <button type="button">Chaos Mode</button>
+      </div>
+
+      <section class="game-grid" aria-label="Game selection grid">
+        <a
+          class="game-card"
+          href="drop-game.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1502741471662-5a59824b2412?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Drop Game</h2>
+            <p>Catch juicy fruit as it rains from above—keep your basket moving and your reflexes sharp.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="flappy.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Flappy</h2>
+            <p>Swoop through neon gates and tap to survive an endless obstacle gauntlet.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="joust.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Joust</h2>
+            <p>Mount your cosmic ostrich and lance rival riders in mid-air duels among floating spires.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="pinball.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1508057198894-247b23fe5ade?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Pinball</h2>
+            <p>Light up ramps, smack bumpers, and chase multi-ball madness on a glowing table.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="burger.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Burger Builder</h2>
+            <p>Layer buns, patties, and toppings while dodging kitchen chaos and hungry pests.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="pacman.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1526498460520-4c246339dccb?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Pac-Man</h2>
+            <p>Chomp every pellet in the maze while juking pastel ghosts on your tail.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="qbert.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Q*bert Clone</h2>
+            <p>Hop diagonally across pyramids and flip every tile while outsmarting oddball foes.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="pitfall.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1526481280695-3c469bb721be?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Pitfall</h2>
+            <p>Sprint through the jungle, leap over crocodiles, and brave treacherous quicksand.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="pole.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Pole Position</h2>
+            <p>Lean into corners and blaze down 8-bit asphalt against a rush of rivals.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="asteroids.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Asteroids</h2>
+            <p>Spin, thrust, and shatter cosmic boulders into stardust—just don’t get caught in the debris.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="space-invaders.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Space Invaders</h2>
+            <p>Hold the line as pixelated aliens march downward in ever-faster waves.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="space-invaders-command.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1475906089153-644d9452ce87?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Invaders Command</h2>
+            <p>Deploy smart missiles and intercept alien barrages before they vaporize your bases.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="missile-command.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1541870730196-cd1efcbf5649?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Missile Command</h2>
+            <p>Guide defense rockets to intercept incoming warheads and protect every city light.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="tetris.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Tetris</h2>
+            <p>Slot falling tetrominoes into perfect lines to keep the well from overflowing.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="tanks.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Tanks</h2>
+            <p>Navigate tight arenas, bank shots off walls, and outmaneuver enemy armor.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="ultra-tanks.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1473445730015-841f29a9490b?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Ultra Tanks</h2>
+            <p>Blast ricocheting projectiles and unleash screen-filling air raids to dominate.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="boxing.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1571731956672-f2b94d7dd0cb?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Boxing</h2>
+            <p>Dodge, weave, and counterpunch through flashy rounds under a roaring crowd.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="neon-flight.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Neon Flight</h2>
+            <p>Thread a glowing jet through wireframe skyscrapers in synthwave twilight.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+
+        <a
+          class="game-card"
+          href="excitebike.html"
+          style="--card-image: url('https://images.unsplash.com/photo-1529429617124-aee00003d559?auto=format&fit=crop&w=800&q=80');"
+        >
+          <div class="game-card__content">
+            <h2>Excitebike</h2>
+            <p>Launch off ramps, balance landings, and snag turbo boosts on the dirt track.</p>
+            <span class="play-tag"
+              >Play Now
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        </a>
+      </section>
+    </main>
+
+    <footer>
+      Insert coin to continue · Built for friends of the Foreman Research Arcade
+    </footer>
   </body>
 </html>
