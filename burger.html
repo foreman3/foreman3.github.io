@@ -651,7 +651,9 @@ function handlePlayer(){
   if(player.cooldown > 0) player.cooldown--;
   if(player.invulnerable > 0) player.invulnerable--;
 
-  if(isOnFloor(player) || isOnPiece(player)){
+  const alignedLadder = ladderAt(player.x, player.y);
+  const nearFloor = floors.some(f => Math.abs(player.y - f) < 0.18);
+  if(isOnFloor(player) || isOnPiece(player) || (alignedLadder && nearFloor)){
     if(keys.left){
       player.vx = -0.14;
       player.dir = -1;
