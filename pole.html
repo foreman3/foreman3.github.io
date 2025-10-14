@@ -219,12 +219,12 @@
     const DRAW_DISTANCE = 1400;
 
     const segments = [];
-    const scenery = ['palm', 'tower', 'flag', 'light'];
+    const scenery = ['mushroom', 'boosterTree', 'cheerballoon', 'hoverSign'];
     for (let i = 0; i < TOTAL_SEGMENTS; i++) {
       const curve = Math.sin(i / 35) * 0.7 + Math.sin(i / 18) * 0.45;
       const hill = Math.sin(i / 45) * 0.45 + Math.sin(i / 120) * 0.2;
       const deco = (i % 17 === 0) ? scenery[i % scenery.length] : (i % 23 === 0 ? 'crowd' : null);
-      const color = (i % 2 === 0) ? '#2b2f3b' : '#23262f';
+      const color = (i % 2 === 0) ? '#4a4f8f' : '#3b3f72';
       segments.push({ curve, hill, color, deco });
     }
 
@@ -468,36 +468,83 @@
     }
 
     function drawBackground(){
-      const cycle = (Math.sin(dayCycle) + 1) / 2;
+      const cycle = (Math.sin(dayCycle * 0.6) + 1) / 2;
+      const glow = (Math.cos(dayCycle * 0.8) + 1) / 2;
+
       const skyGradient = ctx.createLinearGradient(0, 0, 0, horizon);
-      skyGradient.addColorStop(0, `rgba(${Math.floor(40 + cycle * 90)}, ${Math.floor(60 + cycle * 120)}, ${Math.floor(140 + cycle * 90)}, 1)`);
-      skyGradient.addColorStop(1, `rgba(${Math.floor(12 + cycle * 40)}, ${Math.floor(15 + cycle * 90)}, ${Math.floor(40 + cycle * 120)}, 1)`);
+      skyGradient.addColorStop(0, `rgba(${Math.floor(90 + cycle * 40)}, ${Math.floor(170 + cycle * 60)}, ${Math.floor(255 - cycle * 20)}, 1)`);
+      skyGradient.addColorStop(0.55, `rgba(${Math.floor(130 + cycle * 40)}, ${Math.floor(200 + cycle * 35)}, ${Math.floor(255 - cycle * 50)}, 1)`);
+      skyGradient.addColorStop(1, `rgba(${Math.floor(160 + glow * 35)}, ${Math.floor(220 + glow * 20)}, ${Math.floor(255 - glow * 40)}, 1)`);
       ctx.fillStyle = skyGradient;
       ctx.fillRect(0, 0, canvas.width, horizon);
 
-      const sunX = canvas.width * (0.1 + cycle * 0.8);
-      const sunY = horizon * (0.25 + (1 - cycle) * 0.35);
-      const sunRadius = 70 + cycle * 40;
-      const sunGradient = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, sunRadius);
-      sunGradient.addColorStop(0, `rgba(255, ${210 + Math.floor(30 * cycle)}, ${120 + Math.floor(80 * cycle)}, 0.95)`);
-      sunGradient.addColorStop(1, 'rgba(255, 200, 120, 0)');
+      const sunX = canvas.width * (0.15 + cycle * 0.7);
+      const sunY = horizon * (0.18 + (1 - cycle) * 0.25);
+      const sunRadius = 70 + glow * 50;
+      const sunGradient = ctx.createRadialGradient(sunX, sunY, 12, sunX, sunY, sunRadius);
+      sunGradient.addColorStop(0, `rgba(255, ${220 + Math.floor(cycle * 20)}, ${140 + Math.floor(cycle * 60)}, 0.95)`);
+      sunGradient.addColorStop(0.45, `rgba(255, ${200 + Math.floor(glow * 40)}, ${150 + Math.floor(glow * 50)}, 0.55)`);
+      sunGradient.addColorStop(1, 'rgba(255, 200, 140, 0)');
       ctx.fillStyle = sunGradient;
       ctx.beginPath();
       ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = '#050910';
+      ctx.save();
+      ctx.globalAlpha = 0.45 + glow * 0.25;
+      ctx.strokeStyle = `rgba(${Math.floor(255 - glow * 30)}, ${Math.floor(190 + glow * 40)}, ${Math.floor(255)}, 0.6)`;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(canvas.width * 0.5, horizon * 0.75, horizon * 0.6, Math.PI * 0.05, Math.PI - Math.PI * 0.05);
+      ctx.stroke();
+      ctx.restore();
+
+      for(let i = 0; i < 4; i++){
+        const offset = ((dayCycle * 0.05) + i * 0.23) % 1;
+        const cloudX = offset * canvas.width;
+        const cloudY = horizon * (0.08 + (i % 2) * 0.12);
+        const width = 120 + Math.sin(dayCycle + i) * 40;
+        ctx.save();
+        ctx.translate(cloudX, cloudY);
+        ctx.scale(1, 0.65);
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, width, 60, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.beginPath();
+        ctx.ellipse(-width * 0.4, -18, width * 0.45, 50, 0, 0, Math.PI * 2);
+        ctx.ellipse(width * 0.35, -12, width * 0.4, 46, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const ridgeColor = `rgba(${Math.floor(100 + cycle * 20)}, ${Math.floor(120 + cycle * 20)}, ${Math.floor(220 + cycle * 30)}, 0.45)`;
+      ctx.fillStyle = ridgeColor;
+      for(let i = 0; i < 5; i++){
+        const peakX = (i / 4) * canvas.width + Math.sin(dayCycle * 0.7 + i) * canvas.width * 0.12;
+        const peakY = horizon * (0.45 + Math.sin(dayCycle * 0.6 + i) * 0.05);
+        ctx.beginPath();
+        ctx.moveTo(peakX - canvas.width * 0.25, horizon * 0.95);
+        ctx.quadraticCurveTo(peakX, peakY, peakX + canvas.width * 0.25, horizon * 0.95);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      const groundGradient = ctx.createLinearGradient(0, horizon, 0, canvas.height);
+      groundGradient.addColorStop(0, `rgba(${Math.floor(90 + glow * 20)}, ${Math.floor(200 + cycle * 25)}, ${Math.floor(140 + cycle * 20)}, 1)`);
+      groundGradient.addColorStop(1, `rgba(${Math.floor(40 + glow * 20)}, ${Math.floor(160 + glow * 20)}, ${Math.floor(90 + glow * 30)}, 1)`);
+      ctx.fillStyle = groundGradient;
       ctx.fillRect(0, horizon, canvas.width, canvas.height - horizon);
 
-      const mountainColor = `rgba(${20 + cycle * 40}, ${30 + cycle * 60}, ${60 + cycle * 80}, 0.85)`;
-      ctx.fillStyle = mountainColor;
-      for(let i=0; i<5; i++){
-        const peakX = (i / 4) * canvas.width + Math.sin(dayCycle + i) * canvas.width * 0.1;
-        const peakY = horizon * (0.45 + Math.sin(dayCycle * 0.7 + i) * 0.08);
+      ctx.fillStyle = `rgba(${Math.floor(60 + glow * 20)}, ${Math.floor(190 + cycle * 25)}, ${Math.floor(110 + cycle * 25)}, 0.8)`;
+      for(let i = -1; i < 6; i++){
+        const hillX = (i / 5) * canvas.width + Math.sin(dayCycle + i) * canvas.width * 0.08;
+        const hillWidth = canvas.width * 0.45;
+        const hillHeight = horizon * 0.4;
         ctx.beginPath();
-        ctx.moveTo(peakX - canvas.width * 0.35, horizon);
-        ctx.lineTo(peakX, peakY);
-        ctx.lineTo(peakX + canvas.width * 0.35, horizon);
+        ctx.moveTo(hillX - hillWidth / 2, canvas.height);
+        ctx.quadraticCurveTo(hillX, horizon + hillHeight, hillX + hillWidth / 2, canvas.height);
         ctx.closePath();
         ctx.fill();
       }
@@ -524,19 +571,19 @@
         const shoulder = lineWidth * 0.15;
         const laneMark = lineWidth * 0.02;
 
-        const rumbleColor = depth % 0.04 < 0.02 ? '#e76f51' : '#f4a261';
+        const rumbleColor = depth % 0.04 < 0.02 ? '#ff4d6d' : '#fef3f8';
         ctx.fillStyle = rumbleColor;
         ctx.fillRect(roadCenter - lineWidth / 2 - shoulder, y + elevation, lineWidth + shoulder * 2, 2);
 
         ctx.fillStyle = segment.color;
         ctx.fillRect(roadCenter - lineWidth / 2, y + elevation, lineWidth, 2);
 
-        ctx.fillStyle = '#1f1f24';
+        ctx.fillStyle = 'rgba(255, 205, 72, 0.92)';
         ctx.fillRect(roadCenter - lineWidth / 2 + laneMark, y + elevation, laneMark, 2);
         ctx.fillRect(roadCenter + lineWidth / 2 - laneMark * 2, y + elevation, laneMark, 2);
 
         if(Math.floor((trackPos / 12 + depth * 120)) % 2 === 0){
-          ctx.fillStyle = 'rgba(245,245,245,0.85)';
+          ctx.fillStyle = 'rgba(255,255,255,0.9)';
           ctx.fillRect(roadCenter - laneMark / 2, y + elevation, laneMark, 2);
         }
 
@@ -549,62 +596,98 @@
     }
 
     function drawDecoration(type, roadCenter, lineWidth, y, depth, side){
-      const scale = (1 - depth) * 1.8;
+      const scale = (1 - depth) * 1.9;
       const offsetMultiplier = side;
-      const xOffset = (type === 'crowd') ? lineWidth * 0.92 : lineWidth * 0.78;
-      const baseY = y - (60 * (1 - depth));
-      const colorAccent = `rgba(125, 211, 255, ${0.4 + 0.5 * (1 - depth)})`;
+      const baseOffset = type === 'crowd' ? lineWidth * 0.95 : (type === 'cheerballoon' ? lineWidth * 0.7 : lineWidth * 0.82);
+      const vertical = type === 'cheerballoon' ? 120 : 70;
+      const baseY = y - (vertical * (1 - depth));
 
       ctx.save();
-      ctx.translate(roadCenter + offsetMultiplier * (lineWidth / 2 + xOffset), baseY);
+      ctx.translate(roadCenter + offsetMultiplier * (lineWidth / 2 + baseOffset), baseY);
       ctx.scale(scale * (side < 0 ? -1 : 1), scale);
 
       switch(type){
-        case 'palm':
-          ctx.fillStyle = '#5c3c0f';
-          ctx.fillRect(-6, 0, 12, 60);
-          ctx.fillStyle = '#0fb981';
-          for(let i=0;i<5;i++){
+        case 'mushroom':
+          ctx.fillStyle = '#ffe8c6';
+          ctx.fillRect(-6, 0, 12, 36);
+          ctx.fillStyle = '#ff5fa6';
+          ctx.beginPath();
+          ctx.moveTo(0, -10);
+          ctx.bezierCurveTo(34, -12, 34, -44, 0, -48);
+          ctx.bezierCurveTo(-34, -44, -34, -12, 0, -10);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.85)';
+          for(let i=0;i<4;i++){
+            const angle = (Math.PI * 2 / 4) * i;
+            const spotX = Math.cos(angle) * 10;
+            const spotY = -30 + Math.sin(angle) * 8;
             ctx.beginPath();
-            ctx.moveTo(0, -12);
-            ctx.quadraticCurveTo(24, -30 - i * 6, 0, -40 - i * 4);
-            ctx.quadraticCurveTo(-24, -30 - i * 6, 0, -12);
+            ctx.ellipse(spotX, spotY, 6, 8, 0, 0, Math.PI * 2);
             ctx.fill();
           }
           break;
-        case 'tower':
-          ctx.fillStyle = '#f7ede2';
-          ctx.fillRect(-12, -80, 24, 80);
-          ctx.fillStyle = colorAccent;
-          ctx.fillRect(-18, -90, 36, 12);
-          ctx.fillRect(-18, -110, 36, 12);
-          break;
-        case 'flag':
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(-4, -60, 8, 60);
-          ctx.fillStyle = '#e63946';
+        case 'boosterTree':
+          ctx.fillStyle = '#8b5930';
+          ctx.fillRect(-5, 0, 10, 48);
+          const foliage = ['#5ef0a5', '#2ad8a1', '#0dc2a0'];
+          for(let i=0; i<foliage.length; i++){
+            ctx.fillStyle = foliage[i];
+            ctx.beginPath();
+            ctx.ellipse(0, -20 - i * 16, 26 - i * 6, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.fillStyle = 'rgba(255,255,255,0.25)';
           ctx.beginPath();
-          ctx.moveTo(4, -60);
-          ctx.lineTo(54, -50);
-          ctx.lineTo(4, -40);
+          ctx.ellipse(6, -36, 10, 8, 0, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        case 'cheerballoon':
+          ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, 10);
+          ctx.quadraticCurveTo(6, 36, 0, 60);
+          ctx.stroke();
+          ctx.fillStyle = '#ff85ff';
+          ctx.beginPath();
+          ctx.ellipse(0, -20, 26, 32, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffd966';
+          ctx.beginPath();
+          ctx.moveTo(0, -48);
+          ctx.quadraticCurveTo(10, -58, 0, -62);
+          ctx.quadraticCurveTo(-10, -58, 0, -48);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.beginPath();
+          ctx.ellipse(-8, -26, 8, 12, -0.2, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        case 'hoverSign':
+          ctx.fillStyle = '#2b3280';
+          ctx.fillRect(-8, 0, 16, 48);
+          ctx.fillStyle = '#5961ff';
+          ctx.fillRect(-32, -48, 64, 38);
+          ctx.fillStyle = '#ffe66d';
+          ctx.beginPath();
+          ctx.moveTo(-10, -29);
+          ctx.lineTo(0, -42);
+          ctx.lineTo(10, -29);
+          ctx.lineTo(0, -16);
           ctx.closePath();
           ctx.fill();
-          break;
-        case 'light':
-          ctx.fillStyle = '#f1faee';
-          ctx.fillRect(-5, -60, 10, 60);
-          ctx.beginPath();
-          ctx.arc(0, -70, 16, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255, 236, 179, 0.9)';
-          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.4)';
+          ctx.fillRect(-32, -10, 64, 6);
           break;
         case 'crowd':
-          ctx.fillStyle = 'rgba(30, 60, 120, 0.8)';
-          ctx.fillRect(-36, -12, 72, 12);
-          ctx.fillStyle = '#f4f4f4';
+          ctx.fillStyle = 'rgba(40, 60, 140, 0.85)';
+          ctx.fillRect(-40, -14, 80, 14);
+          const colors = ['#ffe066', '#ff6b6b', '#7bedff', '#b47bff'];
           for(let i=0;i<6;i++){
+            ctx.fillStyle = colors[i % colors.length];
             ctx.beginPath();
-            ctx.arc(-30 + i * 12, -12, 6, 0, Math.PI);
+            ctx.arc(-30 + i * 12, -14, 6, 0, Math.PI);
             ctx.fill();
           }
           break;
