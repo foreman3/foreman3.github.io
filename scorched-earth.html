@@ -34,7 +34,7 @@
     }
     #hud {
       width: 100%;
-      max-width: 1060px;
+      max-width: 1280px;
       background: rgba(17, 27, 39, 0.75);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 10px;
@@ -92,7 +92,7 @@
     }
     #gameCanvas {
       width: 100%;
-      max-width: 1060px;
+      max-width: 1280px;
       height: auto;
       border-radius: 14px;
       border: 2px solid rgba(255,255,255,0.08);
@@ -101,13 +101,13 @@
     }
     #status {
       width: 100%;
-      max-width: 1060px;
+      max-width: 1280px;
       font-size: 1rem;
       min-height: 28px;
     }
     #inventory {
       width: 100%;
-      max-width: 1060px;
+      max-width: 1280px;
       background: rgba(15, 22, 32, 0.7);
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 10px;
@@ -222,7 +222,7 @@
         <button id="shopBtn">Field Depot</button>
       </div>
     </div>
-    <canvas id="gameCanvas" width="1060" height="560"></canvas>
+    <canvas id="gameCanvas" width="1280" height="640"></canvas>
     <div id="status"></div>
     <div id="inventory"></div>
   </div>
@@ -644,7 +644,7 @@
       const vx = Math.cos(rad) * speed;
       const vy = -Math.sin(rad) * speed;
       const startX = tank.x + Math.cos(rad) * (tankWidth * 0.45);
-      const startY = tank.y - tankHeight + Math.sin(rad) * (tankWidth * 0.2);
+      const startY = tank.y - tankHeight - Math.sin(rad) * (tankWidth * 0.2);
       const projectile = {
         weapon: weaponName,
         owner: tank,
@@ -1116,7 +1116,7 @@
       ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.moveTo(turretX, turretY);
-      ctx.lineTo(turretX + Math.cos(angle) * 28, turretY + Math.sin(angle) * 28);
+      ctx.lineTo(turretX + Math.cos(angle) * 28, turretY - Math.sin(angle) * 28);
       ctx.stroke();
       if (tank.activeShield > 0.05) {
         ctx.strokeStyle = `rgba(138, 234, 255, ${0.3 + tank.activeShield})`;
@@ -1229,7 +1229,7 @@
       let vx = Math.cos(rad) * speed;
       let vy = -Math.sin(rad) * speed;
       let x = tank.x + Math.cos(rad) * (tankWidth * 0.45);
-      let y = tank.y - tankHeight + Math.sin(rad) * (tankWidth * 0.2);
+      let y = tank.y - tankHeight - Math.sin(rad) * (tankWidth * 0.2);
       for (let step = 0; step < 600; step++) {
         vy += GRAVITY;
         vx += wind * WIND_EFFECT;
