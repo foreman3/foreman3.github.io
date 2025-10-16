@@ -245,6 +245,7 @@
 
     const GRAVITY = 0.18;
     const SPEED_SCALE = 0.5;
+    const POWER_ATTENUATION = 0.7;
     const WIND_EFFECT = 0.04;
     const tankWidth = 34;
     const tankHeight = 20;
@@ -405,6 +406,7 @@
     }
 
     const player = createTank('Commander', '#61f7a7');
+    player.inventory['Baby Missile'] = Infinity;
     const aiTank = createTank('Oracle', '#ff7676');
     aiTank.ai = true;
     aiTank.money = 0;
@@ -426,6 +428,10 @@
 
     function degToRad(angle) {
       return angle * Math.PI / 180;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
     }
 
     function terrainHeightAt(x) {
@@ -582,12 +588,16 @@
       document.getElementById('powerValue').textContent = `${Math.round(player.power)}`;
     }
 
+    function formatInventoryCount(count) {
+      return count === Infinity ? '∞' : count;
+    }
+
     function updateInventoryUI() {
       const invDiv = document.getElementById('inventory');
       const entries = [];
       for (const [item, count] of Object.entries(player.inventory)) {
         if (count > 0) {
-          entries.push(`<span>${item}: ${count}</span>`);
+          entries.push(`<span>${item}: ${formatInventoryCount(count)}</span>`);
         }
       }
       entries.push(`<span>Armor: ${Math.round(player.health)} / ${player.maxHealth}</span>`);
@@ -606,7 +616,7 @@
         if ((weaponCatalog[name] || utilities[name]) && count > 0) {
           const option = document.createElement('option');
           option.value = name;
-          option.textContent = `${name} (${count})`;
+          option.textContent = `${name} (${formatInventoryCount(count)})`;
           options.push(option);
         }
       }
@@ -640,7 +650,7 @@
       const angle = tank.angle;
       const power = tank.power;
       const rad = tank.facing === 1 ? degToRad(angle) : Math.PI - degToRad(angle);
-      const speed = power * SPEED_SCALE;
+      const speed = power * SPEED_SCALE * POWER_ATTENUATION;
       const vx = Math.cos(rad) * speed;
       const vy = -Math.sin(rad) * speed;
       const startX = tank.x + Math.cos(rad) * (tankWidth * 0.45);
@@ -696,7 +706,9 @@
         setStatus('Unknown weapon.');
         return;
       }
-      player.inventory[weapon]--;
+      if (weapon !== 'Baby Missile') {
+        player.inventory[weapon]--;
+      }
       launchProjectile(player, weapon);
       updateInventoryUI();
       updateWeaponSelect();
@@ -715,6 +727,45 @@
     document.getElementById('powerSlider').addEventListener('input', (e) => {
       player.power = Number(e.target.value);
       document.getElementById('powerValue').textContent = `${e.target.value}`;
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        return;
+      }
+      if (gameState !== 'aim' || currentPlayer !== player) {
+        return;
+      }
+      const angleSlider = document.getElementById('angleSlider');
+      const powerSlider = document.getElementById('powerSlider');
+      let handled = false;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const currentAngle = Number(angleSlider.value);
+        const step = 1;
+        const delta = e.key === 'ArrowLeft' ? -step : step;
+        const newAngle = clamp(currentAngle + delta, Number(angleSlider.min), Number(angleSlider.max));
+        if (newAngle !== currentAngle) {
+          handled = true;
+        }
+        angleSlider.value = newAngle;
+        player.angle = newAngle;
+        document.getElementById('angleValue').textContent = `${Math.round(newAngle)}°`;
+      }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        const currentPower = Number(powerSlider.value);
+        const step = 1;
+        const delta = e.key === 'ArrowDown' ? -step : step;
+        const newPower = clamp(currentPower + delta, Number(powerSlider.min), Number(powerSlider.max));
+        if (newPower !== currentPower) {
+          handled = true;
+        }
+        powerSlider.value = newPower;
+        player.power = newPower;
+        document.getElementById('powerValue').textContent = `${Math.round(newPower)}`;
+      }
+      if (handled) {
+        e.preventDefault();
+      }
     });
 
     document.getElementById('shopBtn').addEventListener('click', () => {
@@ -1225,7 +1276,7 @@
       const config = weaponCatalog[weapon];
       if (!config) return Infinity;
       const rad = tank.facing === 1 ? degToRad(angle) : Math.PI - degToRad(angle);
-      const speed = power * SPEED_SCALE;
+      const speed = power * SPEED_SCALE * POWER_ATTENUATION;
       let vx = Math.cos(rad) * speed;
       let vy = -Math.sin(rad) * speed;
       let x = tank.x + Math.cos(rad) * (tankWidth * 0.45);
