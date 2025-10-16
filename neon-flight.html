@@ -430,11 +430,12 @@
       document.getElementById('info').textContent = `Distance: ${Math.floor(distance)} | Score: ${score}`;
     }
 
-    function project(x,y,z){
-      const scale = FOV / (FOV + z);
+    function project(x, y, z){
+      const relativeZ = Math.max(1, z - plane.z);
+      const scale = FOV / (FOV + relativeZ);
       return {
-        x: canvas.width/2 + (x - plane.x)*scale,
-        y: canvas.height*0.7 - (y - plane.y)*scale
+        x: canvas.width/2 + (x - plane.x) * scale,
+        y: canvas.height*0.7 - (y - plane.y) * scale
       };
     }
 
@@ -1039,7 +1040,8 @@
 
   function drawRing(r){
     const center = project(r.x, r.y, r.z);
-    const scale = FOV / (FOV + r.z);
+    const relativeZ = Math.max(1, r.z - plane.z);
+    const scale = FOV / (FOV + relativeZ);
     const rad = r.radius * scale;
     ctx.save();
     const glow = ctx.createRadialGradient(center.x, center.y, rad*0.2, center.x, center.y, rad);
