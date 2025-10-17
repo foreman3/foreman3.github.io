@@ -124,6 +124,16 @@
 
     const FOV = 300;
     const PLANE_Z = -FOV * 0.8; // place the plane further down the z-axis
+    const BUILDING_VIEW_DISTANCE = 2200;
+    const BUILDING_DESPAWN_DISTANCE = 350;
+    const BUILDING_SPAWN_START = 400;
+    const BUILDING_SPACING_MIN = 160;
+    const BUILDING_SPACING_VARIANCE = 260;
+    const PLANE_HALF_WIDTH = 22;
+    const PLANE_HALF_HEIGHT = 12;
+    const PLANE_HALF_DEPTH = 55;
+    const RING_SPAWN_DISTANCE = 1600;
+    const RING_DESPAWN_BUFFER = 200;
     const palettes = [
       { base:'#06f2ff', accent:'#25a8ff', glow:'#7dffff', windows:'#b9f9ff' },
       { base:'#ff3be7', accent:'#ff6ab3', glow:'#ff9df2', windows:'#ffd6fa' },
@@ -132,6 +142,7 @@
     ];
 
     let plane, buildings, rings, distance, score, nextRing, running;
+    let playerZ, nextBuildingZ;
     let left=false, right=false, up=false, down=false;
     let stars = [];
     let nebulae = [];
@@ -145,6 +156,8 @@
       score = 0;
       nextRing = 1000;
       running = true;
+      playerZ = 0;
+      nextBuildingZ = BUILDING_SPAWN_START;
       document.getElementById('message').textContent = '';
       stars = Array.from({length:160}, () => ({
         x: Math.random()*canvas.width,
@@ -167,11 +180,11 @@
         phase: Math.random()*Math.PI*2,
         color: ['#20ffd5','#9b4dff','#58ff83'][Math.floor(Math.random()*3)]
       }));
-      for(let i=0;i<10;i++) spawnBuilding();
+      ensureBuildings();
       document.getElementById('info').textContent = 'Distance: 0 | Score: 0';
     }
 
-    function spawnBuilding(){
+    function spawnBuilding(worldZ){
       const cityWidth = 600;
       const palette = palettes[Math.floor(Math.random()*palettes.length)];
       if(Math.random() < 0.03){
@@ -181,13 +194,13 @@
         const deckThickness = 12 + Math.random()*6;
         const clearanceHeight = 65 + Math.random()*25;
         const design = Math.floor(Math.random()*3);
-        const z = 400 + Math.random()*1200;
         const bridge = {
           type: 'bridge',
           x: 0,
           width,
           depth,
-          z,
+          z: 0,
+          worldZ,
           palette,
           deckHeight,
           deckThickness,
@@ -237,14 +250,13 @@
           bridge.height = frameHeight;
         }
 
-        buildings.push(bridge);
+        return bridge;
       } else {
         const x = (Math.random()-0.5) * cityWidth;
         const width = 40 + Math.random()*60;
         const depth = 40 + Math.random()*60;
         const coreHeight = 90 + Math.random()*160;
         let totalHeight = coreHeight;
-        const z = 400 + Math.random()*1200;
         const windows = 3 + Math.floor(Math.random()*4);
         const windowCols = 2 + Math.floor(Math.random()*3);
         const accentPositions = [];
@@ -276,76 +288,254 @@
           topper = {height: topperHeight, color: palette.glow};
           totalHeight += topperHeight;
         }
-        buildings.push({
+        return {
           type:'building', x, width, depth, bottom:0, coreHeight,
-          height: totalHeight, z, palette, windows, windowCols,
+          height: totalHeight, z: 0, worldZ, palette, windows, windowCols,
           segments, topper, accentPositions
-        });
+        };
+      }
+    }
+
+    function ensureBuildings(){
+      while(nextBuildingZ < playerZ + BUILDING_VIEW_DISTANCE){
+        const building = spawnBuilding(nextBuildingZ);
+        const relativeZ = building.worldZ - playerZ;
+        building.relativeZ = relativeZ;
+        building.frontZ = relativeZ - building.depth/2;
+        building.backZ = relativeZ + building.depth/2;
+        building.z = PLANE_Z + relativeZ;
+        buildings.push(building);
+        nextBuildingZ += BUILDING_SPACING_MIN + Math.random()*BUILDING_SPACING_VARIANCE;
       }
     }
 
     function spawnRing(){
       const radius = 20;
-      const z = 1600;
+      const worldZ = playerZ + RING_SPAWN_DISTANCE;
       const y = 60 + Math.random()*80;
       let x;
       let attempts;
-      for(attempts=0; attempts<10; attempts++){
+      for(attempts = 0; attempts < 10; attempts++){
         x = (Math.random()-0.5) * 600;
         let overlap = false;
         for(const b of buildings){
-          const withinZ = Math.abs(b.z - z) < b.depth;
-          const width = b.type === 'bridge' ? b.width : b.width;
-          const withinX = Math.abs(x - b.x) < width/2 + radius*2;
-          let bottom = b.bottom || 0;
+          const halfDepth = b.depth/2;
+          const zMin = b.worldZ - halfDepth - radius * 1.5;
+          const zMax = b.worldZ + halfDepth + radius * 1.5;
+          if(worldZ < zMin || worldZ > zMax){
+            continue;
+          }
           if(b.type === 'bridge'){
             const rel = x - b.x;
-            bottom = bridgeBottomAt(b, rel);
-            for(const support of b.supports){
-              const half = support.width/2 + radius;
-              if(Math.abs(rel - support.xOffset) < half){
-                bottom = Math.max(bottom, support.height);
+            if(Math.abs(rel) < b.width/2 + radius){
+              const clearance = bridgeClearanceAt(b, rel);
+              if(y > clearance - radius){
+                overlap = true;
                 break;
               }
             }
-          }
-          const withinY = y > bottom - radius*2 && y < b.height + radius*2;
-          if(withinZ && withinX && withinY){
-            overlap = true;
-            break;
+            for(const support of b.supports){
+              const supportHalfDepth = (support.depth || b.depth)/2;
+              const supportZMin = b.worldZ - supportHalfDepth - radius;
+              const supportZMax = b.worldZ + supportHalfDepth + radius;
+              if(worldZ < supportZMin || worldZ > supportZMax){
+                continue;
+              }
+              const supportX = b.x + support.xOffset;
+              const supportHalf = support.width/2 + radius;
+              const supportHeight = support.collisionHeight || support.height;
+              if(Math.abs(x - supportX) < supportHalf && y < supportHeight + radius){
+                overlap = true;
+                break;
+              }
+            }
+            if(overlap) break;
+          } else {
+            const halfWidth = b.width/2 + radius;
+            if(Math.abs(x - b.x) < halfWidth && y < b.height + radius){
+              overlap = true;
+              break;
+            }
           }
         }
         if(!overlap) break;
       }
-  if(attempts < 10){
-    rings.push({x,y,z,radius,collected:false});
-    return true;
+      if(attempts < 10){
+        rings.push({x, y, worldZ, z: 0, radius, collected: false});
+        return true;
+      }
+      return false;
+    }
+
+  function bridgeClearanceAt(bridge, rel){
+    const halfWidth = bridge.width / 2;
+    if(halfWidth <= 0) return 0;
+    const ratio = Math.min(1, Math.abs(rel) / halfWidth);
+    const deckBottom = bridge.deckHeight - bridge.deckThickness;
+    let clearance = bridge.clearanceHeight * (1 - ratio * ratio);
+    if(bridge.design === 1){
+      clearance += Math.sin(ratio * Math.PI) * 6;
+    } else if(bridge.design === 2){
+      clearance -= Math.sin(ratio * Math.PI) * 6;
+    } else {
+      clearance += Math.cos(ratio * Math.PI) * 4;
+    }
+    return clamp(clearance, 0, deckBottom);
   }
-  return false;
-}
 
- function bridgeBottomAt(bridge, rel){
-   const halfWidth = bridge.width / 2;
-   if(halfWidth <= 0) return 0;
-   const ratio = Math.min(1, Math.abs(rel) / halfWidth);
-   const deckBottom = bridge.deckHeight - bridge.deckThickness;
-   let clearance = bridge.clearanceHeight * (1 - ratio*ratio);
-   if(bridge.design === 1){
-     clearance += Math.sin(ratio * Math.PI) * 6;
-   } else if(bridge.design === 2){
-     clearance -= Math.sin(ratio * Math.PI) * 8;
-   }
-   clearance = Math.max(0, clearance);
-   let bottom = Math.min(deckBottom, clearance);
-   if(bridge.design === 0){
-     bottom += Math.cos(ratio * Math.PI) * 4;
-   }
-   return Math.max(0, bottom);
- }
+  function getPlaneBounds(){
+    return {
+      xMin: plane.x - PLANE_HALF_WIDTH,
+      xMax: plane.x + PLANE_HALF_WIDTH,
+      yMin: plane.y - PLANE_HALF_HEIGHT,
+      yMax: plane.y + PLANE_HALF_HEIGHT,
+      zMin: playerZ - PLANE_HALF_DEPTH,
+      zMax: playerZ + PLANE_HALF_DEPTH
+    };
+  }
 
-  function update(){
+  function boxesOverlap(a, b){
+    return a.xMin < b.xMax && a.xMax > b.xMin &&
+           a.yMin < b.yMax && a.yMax > b.yMin &&
+           a.zMin < b.zMax && a.zMax > b.zMin;
+  }
+
+  function buildingCollisionBoxes(building){
+    const boxes = [];
+    const centerZ = building.worldZ;
+    const halfDepth = building.depth / 2;
+    boxes.push({
+      xMin: building.x - building.width/2,
+      xMax: building.x + building.width/2,
+      yMin: building.bottom || 0,
+      yMax: building.coreHeight,
+      zMin: centerZ - halfDepth,
+      zMax: centerZ + halfDepth
+    });
+    if(Array.isArray(building.segments)){
+      for(const seg of building.segments){
+        const segHalfDepth = seg.depth/2;
+        boxes.push({
+          xMin: building.x - seg.width/2,
+          xMax: building.x + seg.width/2,
+          yMin: seg.bottom,
+          yMax: seg.top,
+          zMin: centerZ - segHalfDepth,
+          zMax: centerZ + segHalfDepth
+        });
+      }
+    }
+    if(building.topper){
+      boxes.push({
+        xMin: building.x - building.width/2,
+        xMax: building.x + building.width/2,
+        yMin: building.height - building.topper.height,
+        yMax: building.height,
+        zMin: centerZ - halfDepth,
+        zMax: centerZ + halfDepth
+      });
+    }
+    return boxes;
+  }
+
+  function checkBuildingCollision(building, planeBox){
+    for(const box of buildingCollisionBoxes(building)){
+      if(boxesOverlap(planeBox, box)){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function checkBridgeCollision(bridge, planeBox){
+    const halfDepth = bridge.depth / 2;
+    const zMin = bridge.worldZ - halfDepth;
+    const zMax = bridge.worldZ + halfDepth;
+    if(planeBox.zMax < zMin || planeBox.zMin > zMax){
+      return false;
+    }
+
+    for(const support of bridge.supports){
+      const supportHalfDepth = (support.depth || bridge.depth) / 2;
+      const supportCenterZ = bridge.worldZ;
+      const supportBox = {
+        xMin: bridge.x + support.xOffset - support.width/2,
+        xMax: bridge.x + support.xOffset + support.width/2,
+        yMin: support.bottom ?? 0,
+        yMax: support.collisionHeight || support.height,
+        zMin: supportCenterZ - supportHalfDepth,
+        zMax: supportCenterZ + supportHalfDepth
+      };
+      if(boxesOverlap(planeBox, supportBox)){
+        return true;
+      }
+    }
+
+    const planeCenterX = (planeBox.xMin + planeBox.xMax) / 2;
+    const relativeX = planeCenterX - bridge.x;
+    if(Math.abs(relativeX) <= bridge.width / 2){
+      const clearance = bridgeClearanceAt(bridge, relativeX);
+      if(planeBox.yMax > clearance){
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function updateBuildings(){
+    const planeBox = getPlaneBounds();
+    let crashed = false;
+    for(let i = buildings.length - 1; i >= 0; i--){
+      const building = buildings[i];
+      const relativeZ = building.worldZ - playerZ;
+      building.relativeZ = relativeZ;
+      building.frontZ = relativeZ - building.depth/2;
+      building.backZ = relativeZ + building.depth/2;
+      building.z = PLANE_Z + relativeZ;
+
+      if(building.backZ < -BUILDING_DESPAWN_DISTANCE){
+        buildings.splice(i, 1);
+        continue;
+      }
+
+      if(!crashed && building.frontZ <= PLANE_HALF_DEPTH && building.backZ >= -PLANE_HALF_DEPTH){
+        if(building.type === 'bridge'){
+          if(checkBridgeCollision(building, planeBox)){
+            crashed = true;
+          }
+        } else if(checkBuildingCollision(building, planeBox)){
+          crashed = true;
+        }
+      }
+    }
+    return crashed;
+  }
+
+  function updateRings(){
+    for(let i = rings.length - 1; i >= 0; i--){
+      const ring = rings[i];
+      const relativeZ = ring.worldZ - playerZ;
+      ring.relativeZ = relativeZ;
+      ring.z = PLANE_Z + relativeZ;
+
+      if(relativeZ + ring.radius < -RING_DESPAWN_BUFFER){
+        rings.splice(i, 1);
+        continue;
+      }
+
+      if(!ring.collected &&
+         Math.abs(ring.worldZ - playerZ) < ring.radius &&
+         Math.abs(ring.x - plane.x) < ring.radius &&
+         Math.abs(ring.y - plane.y) < ring.radius){
+        ring.collected = true;
+        score += 100;
+      }
+    }
+  }
+
+    function update(){
       if(!running) return;
-      // Increased control responsiveness
       const ctrl = 8;
       if(left) plane.x -= ctrl;
       if(right) plane.x += ctrl;
@@ -365,69 +555,24 @@
       for(const band of auroraBands){
         band.phase += band.speed * plane.speed;
       }
-      for(let i = buildings.length - 1; i >= 0; i--){
-        const b = buildings[i];
-        b.z -= plane.speed;
-        const front = b.z - b.depth/2;
-        const back = b.z + b.depth/2;
-        const collisionBuffer = 80;
-        const withinZ = front <= plane.z + collisionBuffer && back >= plane.z - collisionBuffer;
-        let collision = false;
-        if(b.type === 'bridge'){
-          const w = b.width/2;
-          const rel = plane.x - b.x;
-          const bottom = bridgeBottomAt(b, rel);
-          if(Math.abs(rel) < w && plane.y < b.height && plane.y > bottom){
-            collision = true;
-          }
-          if(!collision){
-            for(const support of b.supports){
-              const half = support.width/2;
-              const supportBottom = support.bottom ?? 0;
-              const supportTop = support.collisionHeight || support.height;
-              if(Math.abs(rel - support.xOffset) < half &&
-                 plane.y < supportTop && plane.y > supportBottom){
-                collision = true;
-                break;
-              }
-            }
-          }
-        } else {
-          const withinX = Math.abs(b.x - plane.x) < b.width/2;
-          const bottom = b.bottom || 0;
-          const withinY = plane.y < b.height && plane.y > bottom;
-          collision = withinX && withinY;
-        }
-        if(withinZ && collision){
-          running = false;
-          document.getElementById('message').textContent = 'Crash! Press Space';
-        }
-        if(back <= plane.z){
-          buildings.splice(i, 1);
-        }
-      }
-      while(buildings.length < 10) spawnBuilding();
 
-      for(let i = rings.length - 1; i >= 0; i--){
-        const r = rings[i];
-        r.z -= plane.speed;
-        if(!r.collected &&
-           Math.abs(r.z - plane.z) < r.radius &&
-           Math.abs(r.x - plane.x) < r.radius &&
-           Math.abs(r.y - plane.y) < r.radius){
-          r.collected = true;
-          score += 100;
-        }
-        if(r.z + r.radius <= plane.z){
-          rings.splice(i,1);
-        }
+      playerZ += plane.speed;
+      distance = playerZ;
+
+      const crashed = updateBuildings();
+      ensureBuildings();
+
+      if(crashed){
+        running = false;
+        document.getElementById('message').textContent = 'Crash! Press Space';
       }
+
+      updateRings();
 
       if(distance >= nextRing){
         if(spawnRing()) nextRing += 1000;
       }
 
-      distance += plane.speed;
       document.getElementById('info').textContent = `Distance: ${Math.floor(distance)} | Score: ${score}`;
     }
 
