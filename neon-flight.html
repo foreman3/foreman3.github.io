@@ -370,7 +370,8 @@
         b.z -= plane.speed;
         const front = b.z - b.depth/2;
         const back = b.z + b.depth/2;
-        const withinZ = front <= plane.z && back >= plane.z;
+        const collisionBuffer = 80;
+        const withinZ = front <= plane.z + collisionBuffer && back >= plane.z - collisionBuffer;
         let collision = false;
         if(b.type === 'bridge'){
           const w = b.width/2;
