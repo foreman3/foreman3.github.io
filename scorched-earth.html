@@ -123,6 +123,7 @@
       border-radius: 6px;
       border: 1px solid rgba(255,255,255,0.05);
     }
+    #setupOverlay,
     #shopOverlay {
       position: fixed;
       inset: 0;
@@ -133,8 +134,64 @@
       justify-content: center;
       z-index: 999;
     }
+    #setupOverlay.active,
     #shopOverlay.active {
       display: flex;
+    }
+    #setupPanel {
+      width: min(520px, 90vw);
+      background: linear-gradient(160deg, rgba(19,34,46,0.96), rgba(10,16,24,0.92));
+      border-radius: 16px;
+      border: 1px solid rgba(90,214,255,0.28);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.45);
+      padding: 26px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    #setupPanel h2 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: #8fe6ff;
+    }
+    #setupIntro {
+      margin: 0;
+      line-height: 1.45;
+      color: rgba(235,245,255,0.82);
+      font-size: 0.95rem;
+    }
+    #setupControls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    #opponentSelectors {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .opponent-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(6,12,18,0.65);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .opponent-row span {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .opponent-row select {
+      flex: 0 0 120px;
+    }
+    #startGameBtn {
+      align-self: flex-end;
+      padding: 10px 20px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
     }
     #shopPanel {
       width: min(720px, 90vw);
@@ -196,6 +253,24 @@
   </style>
 </head>
 <body>
+  <div id="setupOverlay" class="active">
+    <div id="setupPanel">
+      <h2>Mission Briefing</h2>
+      <p id="setupIntro">Choose how many rival commanders join the sortie and calibrate their tactical aptitude. Higher skills mean ruthless accuracy and smarter targeting.</p>
+      <div id="setupControls">
+        <label>Opponents
+          <select id="opponentCount">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <div id="opponentSelectors"></div>
+        <button id="startGameBtn">Deploy Forces</button>
+      </div>
+    </div>
+  </div>
   <div id="sidebar-placeholder"></div>
   <div id="game-shell">
     <h1>Scorched Skies</h1>
@@ -375,8 +450,26 @@
       heights: new Array(canvas.width).fill(canvas.height * 0.7)
     };
 
-    function createTank(name, color) {
+    let nextTankId = 0;
+
+    function baseInventory() {
       return {
+        'Baby Missile': 6,
+        'Heavy Missile': 2,
+        'Mega Nuke': 1,
+        'MIRV': 1,
+        'Napalm': 1,
+        'Dirt Bomb': 1,
+        'Tracer Round': 2,
+        'Shield Pulse': 1,
+        'Repair Kit': 1
+      };
+    }
+
+    function createTank(name, color, options = {}) {
+      const skill = options.skill ?? 3;
+      return {
+        id: nextTankId++,
         name,
         color,
         x: 0,
@@ -387,34 +480,32 @@
         health: 100,
         maxHealth: 100,
         money: 400,
-        inventory: {
-          'Baby Missile': 6,
-          'Heavy Missile': 2,
-          'Mega Nuke': 1,
-          'MIRV': 1,
-          'Napalm': 1,
-          'Dirt Bomb': 1,
-          'Tracer Round': 2,
-          'Shield Pulse': 1,
-          'Repair Kit': 1
-        },
+        inventory: baseInventory(),
         activeShield: 0,
         alive: true,
         tracerCache: [],
-        ai: false
+        ai: !!options.ai,
+        aiSkill: options.ai ? clamp(skill, 1, 5) : null,
+        lockedTargetId: null,
+        solutionMemory: {},
+        lastTargetId: null,
+        isPlayer: !options.ai
       };
     }
 
     const player = createTank('Commander', '#61f7a7');
     player.inventory['Baby Missile'] = Infinity;
-    const aiTank = createTank('Oracle', '#ff7676');
-    aiTank.ai = true;
-    aiTank.money = 0;
 
+    const aiPalette = ['#ff7676', '#ffb878', '#94a2ff', '#ffa0d4'];
+
+    let opponents = [];
+    let tanks = [];
     let roundNumber = 0;
     let wind = 0;
+    let currentPlayerIndex = 0;
     let currentPlayer = player;
-    let gameState = 'aim';
+    let roundStarterIndex = 0;
+    let gameState = 'setup';
 
     const projectiles = [];
     const particles = [];
@@ -425,6 +516,119 @@
       r: Math.random() * 1.5
     }));
     let lastTracer = null;
+
+    const aiNames = ['Oracle', 'Tempest', 'Aegis', 'Viper', 'Specter', 'Nova', 'Fury', 'Glacier'];
+
+    function updateOpponentSelectors(count) {
+      const container = document.getElementById('opponentSelectors');
+      if (!container) return;
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const row = document.createElement('div');
+        row.className = 'opponent-row';
+        const label = document.createElement('span');
+        label.textContent = `Opponent ${i + 1}`;
+        const select = document.createElement('select');
+        select.dataset.index = i;
+        for (let s = 1; s <= 5; s++) {
+          const option = document.createElement('option');
+          option.value = s;
+          option.textContent = `Skill ${s}`;
+          if (s === Math.min(3, 1 + i)) {
+            option.selected = true;
+          }
+          select.appendChild(option);
+        }
+        row.appendChild(label);
+        row.appendChild(select);
+        container.appendChild(row);
+      }
+    }
+
+    function gatherSkillSelections() {
+      const container = document.getElementById('opponentSelectors');
+      if (!container) return [];
+      return Array.from(container.querySelectorAll('select')).map(select => Number(select.value));
+    }
+
+    function hideSetupOverlay() {
+      const overlay = document.getElementById('setupOverlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+      }
+    }
+
+    function showSetupOverlay() {
+      const overlay = document.getElementById('setupOverlay');
+      if (overlay) {
+        overlay.classList.add('active');
+      }
+      gameState = 'setup';
+      disablePlayerControls();
+      setStatus('Configure opponents to begin the campaign.');
+      if (typeof opponentCountSelect !== 'undefined' && opponentCountSelect) {
+        updateOpponentSelectors(Number(opponentCountSelect.value));
+      }
+    }
+
+    function resetTankForCampaign(tank, resetMoney = true) {
+      tank.inventory = baseInventory();
+      if (tank.isPlayer) {
+        tank.inventory['Baby Missile'] = Infinity;
+      }
+      if (resetMoney) {
+        tank.money = tank.isPlayer ? 400 : 0;
+      }
+      tank.maxHealth = 100;
+      tank.health = 100;
+      tank.activeShield = 0;
+      tank.alive = true;
+      tank.lockedTargetId = null;
+      tank.solutionMemory = {};
+      tank.lastTargetId = null;
+    }
+
+    function configureOpponents(skillLevels) {
+      opponents = skillLevels.map((skill, index) => {
+        const name = aiNames[index % aiNames.length];
+        const color = aiPalette[index % aiPalette.length];
+        const tank = createTank(name, color, { ai: true, skill });
+        tank.money = 0;
+        return tank;
+      });
+      tanks = [player, ...opponents];
+      resetTankForCampaign(player, true);
+      opponents.forEach(tank => resetTankForCampaign(tank, true));
+      roundNumber = 0;
+      wind = 0;
+      roundStarterIndex = 0;
+      currentPlayerIndex = 0;
+      currentPlayer = player;
+      gameState = 'aim';
+      hideSetupOverlay();
+      startRound();
+    }
+
+    const opponentCountSelect = document.getElementById('opponentCount');
+    if (opponentCountSelect) {
+      updateOpponentSelectors(Number(opponentCountSelect.value));
+      opponentCountSelect.addEventListener('change', () => {
+        updateOpponentSelectors(Number(opponentCountSelect.value));
+      });
+    }
+
+    const startGameBtn = document.getElementById('startGameBtn');
+    if (startGameBtn) {
+      startGameBtn.addEventListener('click', () => {
+        if (!opponentCountSelect) return;
+        const count = Number(opponentCountSelect.value);
+        const skills = gatherSkillSelections();
+        if (skills.length !== count) {
+          return;
+        }
+        configureOpponents(skills);
+      });
+    }
 
     function degToRad(angle) {
       return angle * Math.PI / 180;
@@ -476,39 +680,52 @@
       function findSpot(minX, maxX) {
         let spot = Math.floor((minX + maxX) / 2);
         let bestSlope = Infinity;
-        for (let i = 0; i < 80; i++) {
-          const x = Math.floor(minX + Math.random() * (maxX - minX));
+        for (let i = 0; i < 90; i++) {
+          const x = Math.floor(minX + Math.random() * Math.max(1, maxX - minX));
           const slope = Math.abs(terrainHeightAt(x + 12) - terrainHeightAt(x - 12));
           if (slope < bestSlope) {
             bestSlope = slope;
             spot = x;
           }
         }
-        return spot;
+        return Math.max(60, Math.min(canvas.width - 60, spot));
       }
-      const playerX = findSpot(70, canvas.width * 0.35);
-      const aiX = findSpot(canvas.width * 0.65, canvas.width - 70);
-      player.x = playerX;
-      player.y = terrainHeightAt(playerX);
-      aiTank.x = aiX;
-      aiTank.y = terrainHeightAt(aiX);
-      if (player.x < aiTank.x) {
-        player.facing = 1;
-        aiTank.facing = -1;
-      } else {
-        player.facing = -1;
-        aiTank.facing = 1;
-      }
-      player.angle = 60;
-      aiTank.angle = 120;
-      player.power = 65;
-      aiTank.power = 70;
-      player.health = player.maxHealth;
-      aiTank.health = aiTank.maxHealth;
-      player.activeShield = Math.min(player.activeShield, 0.6);
-      aiTank.activeShield = Math.min(aiTank.activeShield, 0.6);
-      player.alive = true;
-      aiTank.alive = true;
+      const padding = 70;
+      const total = Math.max(1, tanks.length);
+      const usableWidth = canvas.width - padding * 2;
+      tanks.forEach((tank, index) => {
+        const segment = usableWidth / total;
+        const minX = padding + segment * index;
+        const maxX = padding + segment * (index + 1);
+        const xPos = findSpot(minX, maxX);
+        tank.x = xPos;
+        tank.y = terrainHeightAt(xPos);
+        tank.health = tank.maxHealth;
+        tank.alive = true;
+        tank.activeShield = Math.min(tank.activeShield, 0.6);
+        tank.tracerCache = [];
+        tank.lockedTargetId = tank.aiSkill && tank.aiSkill > 1 ? tank.lockedTargetId : null;
+        tank.angle = tank.x < canvas.width / 2 ? 60 : 120;
+        tank.power = 65;
+      });
+      tanks.forEach(tank => {
+        const rivals = tanks.filter(other => other !== tank && other.alive);
+        if (rivals.length) {
+          const nearest = rivals.reduce((acc, other) => {
+            const dist = Math.abs(other.x - tank.x);
+            if (!acc || dist < acc.dist) {
+              return { tank: other, dist };
+            }
+            return acc;
+          }, null);
+          if (nearest) {
+            tank.facing = nearest.tank.x >= tank.x ? 1 : -1;
+            tank.angle = tank.facing === 1 ? 60 : 120;
+          }
+        } else {
+          tank.facing = tank.x < canvas.width / 2 ? 1 : -1;
+        }
+      });
     }
 
     function resetProjectiles() {
@@ -518,40 +735,47 @@
     }
 
     function startRound() {
+      if (tanks.length === 0) return;
       roundNumber++;
       generateTerrain();
       smoothTerrain(3);
       placeTanks();
       resetProjectiles();
       wind = (Math.random() * 0.6) - 0.3;
-      currentPlayer = roundNumber % 2 === 1 ? player : aiTank;
-      gameState = 'aim';
       prepareAiInventory();
-      setStatus(`Round ${roundNumber} begins. ${currentPlayer === player ? 'You fire first.' : aiTank.name + ' has the initiative.'}`);
+      if (roundNumber === 1) {
+        roundStarterIndex = 0;
+      } else {
+        roundStarterIndex = (roundStarterIndex + 1) % tanks.length;
+      }
+      currentPlayerIndex = roundStarterIndex;
+      currentPlayer = tanks[currentPlayerIndex];
+      gameState = 'aim';
+      setStatus(`Round ${roundNumber} begins. ${currentPlayer.isPlayer ? 'You fire first.' : currentPlayer.name + ' seizes the initiative.'}`);
       updateHUD();
       updateWeaponSelect();
       updateInventoryUI();
-      if (currentPlayer === aiTank) {
-        disablePlayerControls();
-        setTimeout(aiTakeTurn, 1500);
-      } else {
+      if (currentPlayer.isPlayer) {
         enablePlayerControls();
+      } else {
+        disablePlayerControls();
+        scheduleAiTurn(currentPlayer);
       }
     }
 
     function prepareAiInventory() {
-      const base = {
-        'Baby Missile': 6,
-        'Heavy Missile': 3,
-        'Mega Nuke': roundNumber > 3 ? 2 : 1,
-        'MIRV': roundNumber > 1 ? 2 : 1,
-        'Napalm': 2,
-        'Dirt Bomb': 2,
-        'Tracer Round': 2,
-        'Shield Pulse': 1,
-        'Repair Kit': 1
-      };
-      aiTank.inventory = base;
+      opponents.forEach(tank => {
+        tank.inventory = baseInventory();
+        if (roundNumber > 3) {
+          tank.inventory['Mega Nuke'] = 2;
+        }
+        if (roundNumber > 1) {
+          tank.inventory['MIRV'] = 2;
+        }
+        tank.activeShield = Math.min(tank.activeShield, 0.4);
+        tank.lockedTargetId = null;
+        tank.solutionMemory = {};
+      });
     }
 
     function disablePlayerControls() {
@@ -583,7 +807,7 @@
         windDisplay.textContent = `← ${Math.abs(wind).toFixed(2)}`;
       }
       document.getElementById('moneyDisplay').textContent = player.money;
-      document.getElementById('turnDisplay').textContent = currentPlayer.name;
+      document.getElementById('turnDisplay').textContent = currentPlayer && currentPlayer.alive ? currentPlayer.name : '—';
       document.getElementById('angleValue').textContent = `${Math.round(player.angle)}°`;
       document.getElementById('powerValue').textContent = `${Math.round(player.power)}`;
     }
@@ -793,6 +1017,11 @@
       const itemsDiv = document.getElementById('shopItems');
       itemsDiv.innerHTML = '';
       document.getElementById('shopMoney').textContent = player.money;
+      const deployBtn = document.getElementById('nextRoundBtn');
+      if (deployBtn) {
+        deployBtn.disabled = !player.alive;
+        deployBtn.textContent = player.alive ? 'Deploy Next Round' : 'Commander Down';
+      }
       storeItems.forEach(item => {
         const card = document.createElement('div');
         card.className = 'shop-card';
@@ -857,7 +1086,7 @@
       }
     }
 
-    function applyDamage(tank, amount) {
+    function applyDamage(tank, amount, source = null) {
       if (!tank.alive) return;
       let dmg = amount;
       if (tank.activeShield > 0) {
@@ -865,32 +1094,61 @@
         tank.activeShield = Math.max(0, tank.activeShield - 0.25);
       }
       tank.health -= dmg;
+      if (source && source.ai && source !== tank && source.aiSkill >= 2 && source.aiSkill <= 4 && dmg > 0.1) {
+        source.lockedTargetId = tank.id;
+      }
       if (tank.health <= 0) {
-        destroyTank(tank);
+        destroyTank(tank, source);
       }
     }
 
-    function destroyTank(tank) {
+    function destroyTank(tank, source = null) {
       if (!tank.alive) return;
       tank.alive = false;
       tank.health = 0;
       createParticles(tank.x, tank.y - tankHeight / 2, '#ffba64', 40);
-      const winner = tank === player ? aiTank : player;
-      winner.money += 250;
-      setStatus(`${winner.name} obliterates ${tank.name}!`);
+      if (source && source !== tank) {
+        source.money += 250;
+        setStatus(`${source.name} obliterates ${tank.name}!`);
+      } else {
+        setStatus(`${tank.name} is obliterated!`);
+      }
+      tanks.forEach(actor => {
+        if (actor.lockedTargetId === tank.id) {
+          actor.lockedTargetId = null;
+        }
+        if (actor.solutionMemory && actor.solutionMemory[tank.id]) {
+          delete actor.solutionMemory[tank.id];
+        }
+        if (actor.lastTargetId === tank.id) {
+          actor.lastTargetId = null;
+        }
+      });
       updateHUD();
-      endRound(winner, `${tank.name} destroyed`);
+      const survivors = tanks.filter(t => t.alive);
+      if (survivors.length <= 1) {
+        const winner = survivors[0] || source || null;
+        endRound(winner, `${tank.name} destroyed`);
+      }
     }
 
     function endRound(winner, reason) {
       if (gameState === 'roundEnd') return;
       gameState = 'roundEnd';
       disablePlayerControls();
-      setStatus(`Round ${roundNumber} complete: ${winner.name} prevails — ${reason}. Visit the depot before redeploying.`);
+      const victorName = winner ? winner.name : 'No commander';
+      const suffix = player.alive ? ' Visit the depot before redeploying.' : ' Recalibrate your forces to try again.';
+      setStatus(`Round ${roundNumber} complete: ${victorName} prevails — ${reason}.${suffix}`);
       updateHUD();
-      setTimeout(() => {
-        openShop();
-      }, 700);
+      if (player.alive) {
+        setTimeout(() => {
+          openShop();
+        }, 700);
+      } else {
+        setTimeout(() => {
+          showSetupOverlay();
+        }, 1100);
+      }
     }
 
     function settleTank(tank) {
@@ -903,13 +1161,12 @@
         applyDamage(tank, drop * 0.6);
       }
       if (tank.y > canvas.height - 5) {
-        destroyTank(tank);
+        destroyTank(tank, null);
       }
     }
 
     function settleAllTanks() {
-      settleTank(player);
-      settleTank(aiTank);
+      tanks.forEach(tank => settleTank(tank));
     }
 
     function handleExplosion(projectile, impactX, impactY) {
@@ -934,7 +1191,8 @@
             y: impactY,
             radius: catalogConfig.radius + 12,
             timer: 240,
-            damage: 4
+            damage: 4,
+            owner: projectile.owner || null
           });
           break;
         case 'dirt':
@@ -946,15 +1204,15 @@
     }
 
     function damageFromBlast(owner, cx, cy, radius, damage) {
-      [player, aiTank].forEach(tank => {
+      tanks.forEach(tank => {
         if (!tank.alive) return;
         const tx = tank.x;
         const ty = tank.y - tankHeight / 2;
         const dist = Math.hypot(cx - tx, cy - ty);
         if (dist <= radius + 12) {
           const falloff = Math.max(0.2, 1 - dist / (radius + 12));
-          applyDamage(tank, damage * falloff);
-          if (tank !== owner) {
+          applyDamage(tank, damage * falloff, owner || null);
+          if (owner && owner !== tank) {
             owner.money += Math.round(25 * falloff);
           }
         }
@@ -989,7 +1247,7 @@
           projectiles.splice(i, 1);
           continue;
         }
-        for (const tank of [player, aiTank]) {
+        for (const tank of tanks) {
           if (!tank.alive) continue;
           const tx = tank.x;
           const ty = tank.y - tankHeight / 2;
@@ -1035,21 +1293,36 @@
       if (gameState !== 'projectile') return;
       gameState = 'aim';
       settleAllTanks();
-      if (!player.alive || !aiTank.alive) return;
+      const alive = tanks.filter(tank => tank.alive);
+      if (alive.length <= 1) {
+        return;
+      }
       endTurn();
     }
 
     function endTurn() {
-      if (!player.alive || !aiTank.alive) return;
-      currentPlayer = currentPlayer === player ? aiTank : player;
+      if (gameState !== 'aim') return;
+      const alive = tanks.filter(tank => tank.alive);
+      if (alive.length <= 1) return;
+      let nextIndex = currentPlayerIndex;
+      for (let i = 0; i < tanks.length; i++) {
+        nextIndex = (nextIndex + 1) % tanks.length;
+        if (tanks[nextIndex].alive) {
+          currentPlayerIndex = nextIndex;
+          currentPlayer = tanks[currentPlayerIndex];
+          break;
+        }
+      }
       updateHUD();
-      if (currentPlayer === player) {
+      if (currentPlayer.isPlayer && player.alive) {
         enablePlayerControls();
         setStatus('Your move: adjust angle and power, then fire.');
       } else {
         disablePlayerControls();
-        setStatus(`${aiTank.name} is calibrating targeting solutions...`);
-        setTimeout(aiTakeTurn, 1100);
+        if (currentPlayer && currentPlayer.alive) {
+          setStatus(`${currentPlayer.name} is calibrating targeting solutions...`);
+          scheduleAiTurn(currentPlayer);
+        }
       }
     }
 
@@ -1061,11 +1334,11 @@
           fireZones.splice(i, 1);
           continue;
         }
-        for (const tank of [player, aiTank]) {
+        for (const tank of tanks) {
           if (!tank.alive) continue;
           const dist = Math.hypot(zone.x - tank.x, zone.y - (tank.y - tankHeight / 2));
           if (dist < zone.radius) {
-            applyDamage(tank, zone.damage * (delta / 2));
+            applyDamage(tank, zone.damage * (delta / 2), zone.owner || null);
           }
         }
         if (Math.random() < 0.4) {
@@ -1259,8 +1532,7 @@
       drawFireZones();
       drawProjectiles();
       drawParticles();
-      drawTank(player);
-      drawTank(aiTank);
+      tanks.forEach(drawTank);
       drawLastTracer();
     }
 
@@ -1272,93 +1544,187 @@
       requestAnimationFrame(loop);
     }
 
-    function simulateShot(tank, weapon, angle, power) {
+    function simulateShot(tank, weapon, angle, power, facing = tank.facing, target = null) {
       const config = weaponCatalog[weapon];
-      if (!config) return Infinity;
-      const rad = tank.facing === 1 ? degToRad(angle) : Math.PI - degToRad(angle);
+      if (!config) {
+        return { dist: Infinity, impactX: tank.x, impactY: tank.y };
+      }
+      const aimFacing = facing ?? (target && target.x < tank.x ? -1 : 1);
+      const rad = aimFacing === 1 ? degToRad(angle) : Math.PI - degToRad(angle);
       const speed = power * SPEED_SCALE * POWER_ATTENUATION;
       let vx = Math.cos(rad) * speed;
       let vy = -Math.sin(rad) * speed;
       let x = tank.x + Math.cos(rad) * (tankWidth * 0.45);
       let y = tank.y - tankHeight - Math.sin(rad) * (tankWidth * 0.2);
+      let closest = Infinity;
+      let impactX = x;
+      let impactY = y;
+      const targetCenterY = target ? target.y - tankHeight / 2 : null;
       for (let step = 0; step < 600; step++) {
         vy += GRAVITY;
         vx += wind * WIND_EFFECT;
         x += vx;
         y += vy;
+        if (target) {
+          const distCenter = Math.hypot(x - target.x, y - targetCenterY) - config.radius;
+          if (distCenter < closest) {
+            closest = distCenter;
+          }
+        }
         if (x < 0 || x > canvas.width || y > canvas.height) break;
         const ground = terrainHeightAt(x);
         if (y >= ground) {
-          const dist = Math.hypot(x - player.x, ground - (player.y - tankHeight / 2)) - config.radius;
-          return dist;
+          impactX = x;
+          impactY = ground;
+          if (target) {
+            const finalDist = Math.hypot(impactX - target.x, impactY - targetCenterY) - config.radius;
+            closest = Math.min(closest, finalDist);
+          }
+          break;
         }
       }
-      return Infinity;
+      return { dist: closest, impactX, impactY };
     }
 
-    function aiChooseWeapon() {
-      const available = Object.entries(aiTank.inventory)
+    function getAliveOpponents(tank) {
+      return tanks.filter(other => other !== tank && other.alive);
+    }
+
+    function aiChooseTarget(tank) {
+      const options = getAliveOpponents(tank);
+      if (options.length === 0) return null;
+      if (tank.aiSkill === 1) {
+        return options[Math.floor(Math.random() * options.length)];
+      }
+      if (tank.aiSkill >= 2 && tank.aiSkill <= 4 && tank.lockedTargetId) {
+        const locked = options.find(opt => opt.id === tank.lockedTargetId);
+        if (locked) {
+          return locked;
+        }
+      }
+      if (tank.aiSkill === 5) {
+        const playerTarget = options.find(opt => opt.isPlayer);
+        if (playerTarget) return playerTarget;
+        return options.reduce((weakest, opt) => (opt.health < weakest.health ? opt : weakest), options[0]);
+      }
+      const playerTarget = options.find(opt => opt.isPlayer);
+      if (playerTarget) return playerTarget;
+      return options.reduce((weakest, opt) => (opt.health < weakest.health ? opt : weakest), options[0]);
+    }
+
+    function aiChooseWeapon(tank, target) {
+      const available = Object.entries(tank.inventory)
         .filter(([name, count]) => count > 0 && (weaponCatalog[name] || utilities[name]))
         .map(([name]) => name);
-      if (aiTank.health < 40 && aiTank.inventory['Repair Kit'] > 0) {
+      if (tank.health < 40 && tank.inventory['Repair Kit'] > 0) {
         return 'Repair Kit';
       }
-      if (aiTank.activeShield < 0.15 && aiTank.inventory['Shield Pulse'] > 0 && Math.random() < 0.3) {
+      if (tank.activeShield < 0.15 && tank.inventory['Shield Pulse'] > 0 && Math.random() < 0.3) {
         return 'Shield Pulse';
       }
-      const distance = Math.abs(aiTank.x - player.x);
-      if (player.health > 60 && aiTank.inventory['Mega Nuke'] > 0 && Math.random() < 0.6) {
+      if (!target) {
+        return available.length ? available[Math.floor(Math.random() * available.length)] : 'Baby Missile';
+      }
+      const distance = Math.abs(tank.x - target.x);
+      if (target.health > 60 && tank.inventory['Mega Nuke'] > 0 && Math.random() < 0.6) {
         return 'Mega Nuke';
       }
-      if (distance > 420 && aiTank.inventory['MIRV'] > 0) {
+      if (distance > 420 && tank.inventory['MIRV'] > 0) {
         return 'MIRV';
       }
-      if (aiTank.inventory['Heavy Missile'] > 0 && Math.random() < 0.5) {
+      if (tank.inventory['Heavy Missile'] > 0 && Math.random() < 0.5) {
         return 'Heavy Missile';
       }
-      if (aiTank.inventory['Napalm'] > 0 && Math.random() < 0.4) {
+      if (tank.inventory['Napalm'] > 0 && Math.random() < 0.35) {
         return 'Napalm';
       }
-      if (aiTank.inventory['Dirt Bomb'] > 0 && player.activeShield > 0.3) {
+      if (tank.inventory['Dirt Bomb'] > 0 && target.activeShield > 0.3) {
         return 'Dirt Bomb';
       }
       return available.length ? available[Math.floor(Math.random() * available.length)] : 'Baby Missile';
     }
 
-    function aiTakeTurn() {
-      if (gameState !== 'aim' || currentPlayer !== aiTank || !aiTank.alive) return;
-      const weapon = aiChooseWeapon();
-      if (utilities[weapon]) {
-        useUtility(aiTank, weapon);
-        endTurn();
-        return;
+    function aiPlanShot(tank, target, weapon) {
+      const skill = tank.aiSkill || 1;
+      const facing = target ? (target.x >= tank.x ? 1 : -1) : tank.facing;
+      if (skill === 1 || !target) {
+        return {
+          angle: clamp(20 + Math.random() * 140, 15, 165),
+          power: clamp(45 + Math.random() * 70, 40, 120),
+          facing
+        };
       }
-      const angles = [];
-      const powers = [];
-      for (let a = 25; a <= 155; a += 5) angles.push(a);
-      for (let p = 45; p <= 110; p += 5) powers.push(p);
-      let best = { dist: Infinity, angle: 95, power: 80 };
-      for (const angle of angles) {
-        for (const power of powers) {
-          const result = simulateShot(aiTank, weapon, angle, power);
-          if (result < best.dist) {
-            best = { dist: result, angle, power };
+      const angleStep = skill >= 4 ? 2 : skill === 3 ? 4 : 6;
+      const powerStep = skill >= 4 ? 4 : skill === 3 ? 6 : 8;
+      let best = { dist: Infinity, angle: 60, power: 70, facing };
+      for (let angle = 25; angle <= 155; angle += angleStep) {
+        for (let power = 45; power <= 120; power += powerStep) {
+          const result = simulateShot(tank, weapon, angle, power, facing, target);
+          if (result.dist < best.dist) {
+            best = { dist: result.dist, angle, power, facing };
           }
         }
       }
-      aiTank.angle = best.angle;
-      aiTank.power = best.power;
-      if (aiTank.inventory[weapon] > 0) {
-        aiTank.inventory[weapon]--;
+      const plan = { angle: best.angle, power: best.power, facing: best.facing };
+      const memory = tank.solutionMemory[target.id];
+      if (skill === 5) {
+        if (tank.lastTargetId === target.id && memory) {
+          plan.angle = clamp(memory.angle + (Math.random() - 0.5) * 2, 18, 162);
+          plan.power = clamp(memory.power + (Math.random() - 0.5) * 3, 40, 120);
+          plan.facing = memory.facing;
+        } else {
+          tank.solutionMemory[target.id] = { angle: best.angle, power: best.power, facing: best.facing };
+          plan.angle = clamp(best.angle + (Math.random() - 0.5) * 10, 20, 160);
+          plan.power = clamp(best.power + (Math.random() - 0.5) * 18, 45, 120);
+        }
+      } else {
+        const accuracyTaper = Math.max(0, 5 - skill);
+        plan.angle = clamp(plan.angle + (Math.random() - 0.5) * angleStep * (accuracyTaper * 0.6), 20, 160);
+        plan.power = clamp(plan.power + (Math.random() - 0.5) * powerStep * (accuracyTaper * 1.1), 45, 120);
+        if (skill >= 4) {
+          tank.solutionMemory[target.id] = { angle: plan.angle, power: plan.power, facing: plan.facing };
+        }
       }
-      launchProjectile(aiTank, weapon);
+      return plan;
+    }
+
+    function scheduleAiTurn(tank) {
+      setTimeout(() => aiTakeTurn(tank), 900 + Math.random() * 500);
+    }
+
+    function aiTakeTurn(tank) {
+      if (gameState !== 'aim' || currentPlayer !== tank || !tank.alive) return;
+      const target = aiChooseTarget(tank);
+      if (!target) {
+        endTurn();
+        return;
+      }
+      const weapon = aiChooseWeapon(tank, target);
+      if (utilities[weapon]) {
+        const used = useUtility(tank, weapon);
+        if (used) {
+          endTurn();
+        } else {
+          endTurn();
+        }
+        return;
+      }
+      const plan = aiPlanShot(tank, target, weapon);
+      tank.facing = plan.facing;
+      tank.angle = plan.angle;
+      tank.power = plan.power;
+      tank.lastTargetId = target.id;
+      if (tank.inventory[weapon] !== Infinity && tank.inventory[weapon] > 0) {
+        tank.inventory[weapon]--;
+      }
+      launchProjectile(tank, weapon);
     }
 
     function init() {
       updateInventoryUI();
       updateWeaponSelect();
       updateHUD();
-      startRound();
+      setStatus('Configure opponents to begin the campaign.');
       requestAnimationFrame(loop);
     }
 
