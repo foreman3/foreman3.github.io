@@ -90,6 +90,11 @@
       transform: translateY(-1px);
       box-shadow: 0 8px 16px rgba(90, 214, 255, 0.25);
     }
+    #skipFightBtn {
+      display: none;
+      background: rgba(255, 120, 120, 0.18);
+      border-color: rgba(255, 120, 120, 0.4);
+    }
     #gameCanvas {
       width: 100%;
       max-width: 1280px;
@@ -163,29 +168,51 @@
     #setupControls {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
     }
     #opponentSelectors {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
     .opponent-row {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px 12px;
       align-items: center;
-      justify-content: space-between;
-      gap: 10px;
       background: rgba(6,12,18,0.65);
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 10px;
       padding: 10px 12px;
     }
     .opponent-row span {
       font-weight: 600;
       letter-spacing: 0.02em;
+      color: rgba(214,238,255,0.88);
     }
-    .opponent-row select {
-      flex: 0 0 120px;
+    .opponent-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .opponent-controls input[type="text"] {
+      min-width: 140px;
+    }
+    .skill-select {
+      display: none;
+    }
+    .skill-select.active {
+      display: block;
+    }
+    .opponent-tag {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(90,214,255,0.18);
+      border: 1px solid rgba(90,214,255,0.25);
+      font-size: 0.85rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
     }
     #startGameBtn {
       align-self: flex-end;
@@ -258,7 +285,14 @@
       <h2>Mission Briefing</h2>
       <p id="setupIntro">Choose how many rival commanders join the sortie and calibrate their tactical aptitude. Higher skills mean ruthless accuracy and smarter targeting.</p>
       <div id="setupControls">
-        <label>Opponents
+        <div class="opponent-row" id="commanderConfig">
+          <span>Player 1</span>
+          <div class="opponent-controls">
+            <input type="text" id="commanderName" value="Commander" aria-label="Player 1 name">
+            <div class="opponent-tag">Human</div>
+          </div>
+        </div>
+        <label>Additional Combatants
           <select id="opponentCount">
             <option value="1">1</option>
             <option value="2">2</option>
@@ -295,6 +329,7 @@
         </label>
         <button id="fireBtn">Fire!</button>
         <button id="shopBtn">Field Depot</button>
+        <button id="skipFightBtn">End Fight</button>
       </div>
     </div>
     <canvas id="gameCanvas" width="1280" height="640"></canvas>
@@ -489,23 +524,28 @@
         lockedTargetId: null,
         solutionMemory: {},
         lastTargetId: null,
-        isPlayer: !options.ai
+        isPlayer: !options.ai,
+        selectedWeapon: 'Baby Missile'
       };
     }
 
-    const player = createTank('Commander', '#61f7a7');
-    player.inventory['Baby Missile'] = Infinity;
-
+    const humanPalette = ['#61f7a7', '#73f5ff', '#f7f77c', '#ff9cf2'];
     const aiPalette = ['#ff7676', '#ffb878', '#94a2ff', '#ffa0d4'];
 
-    let opponents = [];
+    let humanPlayers = [];
+    let aiOpponents = [];
     let tanks = [];
     let roundNumber = 0;
     let wind = 0;
     let currentPlayerIndex = 0;
-    let currentPlayer = player;
+    let currentPlayer = null;
     let roundStarterIndex = 0;
     let gameState = 'setup';
+    let activeHuman = null;
+    let shopQueue = [];
+    let currentShopCommander = null;
+    let fastForwardActive = false;
+    let lastFrameTime = null;
 
     const projectiles = [];
     const particles = [];
@@ -519,6 +559,29 @@
 
     const aiNames = ['Oracle', 'Tempest', 'Aegis', 'Viper', 'Specter', 'Nova', 'Fury', 'Glacier'];
 
+    function setActiveHuman(tank) {
+      activeHuman = tank || null;
+      updateHUD();
+      updateInventoryUI();
+      updateWeaponSelect();
+    }
+
+    function updateFastForwardState() {
+      const aliveHumans = humanPlayers.filter(h => h.alive);
+      const activeCombatants = tanks.filter(t => t.alive);
+      const shouldFastForward = (gameState === 'aim' || gameState === 'projectile') && aliveHumans.length === 0 && activeCombatants.length > 1;
+      fastForwardActive = shouldFastForward;
+      const skipBtn = document.getElementById('skipFightBtn');
+      if (skipBtn) {
+        if (shouldFastForward && gameState !== 'roundEnd') {
+          skipBtn.style.display = 'inline-flex';
+          skipBtn.disabled = false;
+        } else {
+          skipBtn.style.display = 'none';
+        }
+      }
+    }
+
     function updateOpponentSelectors(count) {
       const container = document.getElementById('opponentSelectors');
       if (!container) return;
@@ -526,10 +589,31 @@
       for (let i = 0; i < count; i++) {
         const row = document.createElement('div');
         row.className = 'opponent-row';
+        row.dataset.index = i;
         const label = document.createElement('span');
-        label.textContent = `Opponent ${i + 1}`;
-        const select = document.createElement('select');
-        select.dataset.index = i;
+        label.textContent = `Player ${i + 2}`;
+        const controls = document.createElement('div');
+        controls.className = 'opponent-controls';
+
+        const typeSelect = document.createElement('select');
+        typeSelect.dataset.role = 'type';
+        const cpuOption = document.createElement('option');
+        cpuOption.value = 'cpu';
+        cpuOption.textContent = 'CPU';
+        const humanOption = document.createElement('option');
+        humanOption.value = 'human';
+        humanOption.textContent = 'Human';
+        typeSelect.appendChild(cpuOption);
+        typeSelect.appendChild(humanOption);
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.dataset.role = 'name';
+        nameInput.placeholder = 'Callsign';
+
+        const skillSelect = document.createElement('select');
+        skillSelect.dataset.role = 'skill';
+        skillSelect.className = 'skill-select';
         for (let s = 1; s <= 5; s++) {
           const option = document.createElement('option');
           option.value = s;
@@ -537,18 +621,65 @@
           if (s === Math.min(3, 1 + i)) {
             option.selected = true;
           }
-          select.appendChild(option);
+          skillSelect.appendChild(option);
         }
+
+        const defaultCpuName = aiNames[(i) % aiNames.length];
+        const defaultHumanName = `Commander ${i + 2}`;
+        nameInput.value = defaultCpuName;
+        nameInput.dataset.defaultCpu = defaultCpuName;
+        nameInput.dataset.defaultHuman = defaultHumanName;
+
+        const handleTypeChange = () => {
+          const type = typeSelect.value;
+          if (type === 'cpu') {
+            skillSelect.classList.add('active');
+            if (!nameInput.dataset.touched || nameInput.value.trim() === '') {
+              nameInput.value = nameInput.dataset.defaultCpu;
+            }
+          } else {
+            skillSelect.classList.remove('active');
+            if (!nameInput.dataset.touched || nameInput.value.trim() === '' || nameInput.value === nameInput.dataset.defaultCpu) {
+              nameInput.value = nameInput.dataset.defaultHuman;
+            }
+          }
+        };
+
+        typeSelect.addEventListener('change', handleTypeChange);
+        nameInput.addEventListener('input', () => {
+          if (nameInput.value.trim().length > 0) {
+            nameInput.dataset.touched = 'true';
+          } else {
+            delete nameInput.dataset.touched;
+          }
+        });
+
+        controls.appendChild(typeSelect);
+        controls.appendChild(nameInput);
+        controls.appendChild(skillSelect);
         row.appendChild(label);
-        row.appendChild(select);
+        row.appendChild(controls);
         container.appendChild(row);
+        handleTypeChange();
       }
     }
 
-    function gatherSkillSelections() {
+    function gatherOpponentConfigurations() {
       const container = document.getElementById('opponentSelectors');
       if (!container) return [];
-      return Array.from(container.querySelectorAll('select')).map(select => Number(select.value));
+      const rows = Array.from(container.querySelectorAll('.opponent-row'));
+      return rows.map(row => {
+        const typeSelect = row.querySelector('select[data-role="type"]');
+        const nameInput = row.querySelector('input[data-role="name"]');
+        const skillSelect = row.querySelector('select[data-role="skill"]');
+        const type = typeSelect ? typeSelect.value : 'cpu';
+        const nameValue = nameInput ? nameInput.value.trim() : '';
+        const fallback = type === 'human' ? nameInput?.dataset.defaultHuman : nameInput?.dataset.defaultCpu;
+        const name = nameValue || fallback || (type === 'human' ? 'Commander' : 'CPU');
+        return type === 'human'
+          ? { type: 'human', name }
+          : { type: 'cpu', name, skill: Number(skillSelect ? skillSelect.value : 3) };
+      });
     }
 
     function hideSetupOverlay() {
@@ -586,26 +717,67 @@
       tank.lockedTargetId = null;
       tank.solutionMemory = {};
       tank.lastTargetId = null;
+      tank.selectedWeapon = 'Baby Missile';
+      tank.angle = 60;
+      tank.power = 65;
     }
 
-    function configureOpponents(skillLevels) {
-      opponents = skillLevels.map((skill, index) => {
-        const name = aiNames[index % aiNames.length];
-        const color = aiPalette[index % aiPalette.length];
-        const tank = createTank(name, color, { ai: true, skill });
-        tank.money = 0;
-        return tank;
+    function buildHuman(name, paletteIndex) {
+      const color = humanPalette[paletteIndex % humanPalette.length];
+      const tank = createTank(name, color, { ai: false });
+      tank.inventory['Baby Missile'] = Infinity;
+      return tank;
+    }
+
+    function ensureDefaultCommander() {
+      if (humanPlayers.length > 0) {
+        setActiveHuman(humanPlayers[0]);
+        return;
+      }
+      const commander = buildHuman('Commander', 0);
+      resetTankForCampaign(commander, true);
+      humanPlayers = [commander];
+      aiOpponents = [];
+      tanks = [commander];
+      currentPlayer = commander;
+      setActiveHuman(commander);
+    }
+
+    function configureRoster(configs) {
+      const commanderField = document.getElementById('commanderName');
+      const commanderName = commanderField && commanderField.value.trim().length
+        ? commanderField.value.trim()
+        : 'Commander';
+      humanPlayers = [buildHuman(commanderName, 0)];
+      aiOpponents = [];
+
+      configs.forEach((config, idx) => {
+        if (config.type === 'human') {
+          const humanIndex = humanPlayers.length;
+          humanPlayers.push(buildHuman(config.name || `Commander ${idx + 2}`, humanIndex));
+        } else {
+          const aiIndex = aiOpponents.length;
+          const color = aiPalette[aiIndex % aiPalette.length];
+          const aiName = config.name || aiNames[aiIndex % aiNames.length];
+          const tank = createTank(aiName, color, { ai: true, skill: config.skill ?? 3 });
+          tank.money = 0;
+          aiOpponents.push(tank);
+        }
       });
-      tanks = [player, ...opponents];
-      resetTankForCampaign(player, true);
-      opponents.forEach(tank => resetTankForCampaign(tank, true));
+
+      tanks = [...humanPlayers, ...aiOpponents];
+      humanPlayers.forEach(tank => resetTankForCampaign(tank, true));
+      aiOpponents.forEach(tank => resetTankForCampaign(tank, true));
       roundNumber = 0;
       wind = 0;
       roundStarterIndex = 0;
       currentPlayerIndex = 0;
-      currentPlayer = player;
+      currentPlayer = humanPlayers[0] || null;
+      shopQueue = [];
+      currentShopCommander = null;
       gameState = 'aim';
       hideSetupOverlay();
+      setActiveHuman(currentPlayer);
       startRound();
     }
 
@@ -622,11 +794,11 @@
       startGameBtn.addEventListener('click', () => {
         if (!opponentCountSelect) return;
         const count = Number(opponentCountSelect.value);
-        const skills = gatherSkillSelections();
-        if (skills.length !== count) {
+        const configs = gatherOpponentConfigurations();
+        if (configs.length !== count) {
           return;
         }
-        configureOpponents(skills);
+        configureRoster(configs);
       });
     }
 
@@ -740,6 +912,9 @@
 
     function startRound() {
       if (tanks.length === 0) return;
+      shopQueue = [];
+      currentShopCommander = null;
+      closeShopOverlay();
       roundNumber++;
       generateTerrain();
       smoothTerrain(3);
@@ -755,20 +930,27 @@
       currentPlayerIndex = roundStarterIndex;
       currentPlayer = tanks[currentPlayerIndex];
       gameState = 'aim';
-      setStatus(`Round ${roundNumber} begins. ${currentPlayer.isPlayer ? 'You fire first.' : currentPlayer.name + ' seizes the initiative.'}`);
-      updateHUD();
-      updateWeaponSelect();
-      updateInventoryUI();
+      const opener = currentPlayer.isPlayer
+        ? `${currentPlayer.name} takes the first shot.`
+        : `${currentPlayer.name} seizes the initiative.`;
+      setStatus(`Round ${roundNumber} begins. ${opener}`);
       if (currentPlayer.isPlayer) {
+        setActiveHuman(currentPlayer);
         enablePlayerControls();
       } else {
         disablePlayerControls();
+        if (humanPlayers.length > 0) {
+          setActiveHuman(activeHuman || humanPlayers[0]);
+        } else {
+          updateHUD();
+        }
         scheduleAiTurn(currentPlayer);
       }
+      updateFastForwardState();
     }
 
     function prepareAiInventory() {
-      opponents.forEach(tank => {
+      aiOpponents.forEach(tank => {
         tank.inventory = baseInventory();
         if (roundNumber > 3) {
           tank.inventory['Mega Nuke'] = 2;
@@ -801,27 +983,47 @@
     }
 
     function updateHUD() {
-      document.getElementById('roundDisplay').textContent = roundNumber;
+      const roundDisplay = document.getElementById('roundDisplay');
+      if (roundDisplay) {
+        roundDisplay.textContent = roundNumber;
+      }
       const windDisplay = document.getElementById('windDisplay');
-      if (Math.abs(wind) < 0.05) {
-        windDisplay.textContent = 'Calm';
-      } else if (wind > 0) {
-        windDisplay.textContent = `→ ${wind.toFixed(2)}`;
-      } else {
-        windDisplay.textContent = `← ${Math.abs(wind).toFixed(2)}`;
+      if (windDisplay) {
+        if (Math.abs(wind) < 0.05) {
+          windDisplay.textContent = 'Calm';
+        } else if (wind > 0) {
+          windDisplay.textContent = `→ ${wind.toFixed(2)}`;
+        } else {
+          windDisplay.textContent = `← ${Math.abs(wind).toFixed(2)}`;
+        }
       }
-      document.getElementById('moneyDisplay').textContent = player.money;
-      document.getElementById('turnDisplay').textContent = currentPlayer && currentPlayer.alive ? currentPlayer.name : '—';
+      const human = activeHuman;
+      const moneyDisplay = document.getElementById('moneyDisplay');
+      if (moneyDisplay) {
+        moneyDisplay.textContent = human ? human.money : 0;
+      }
+      const turnDisplay = document.getElementById('turnDisplay');
+      if (turnDisplay) {
+        turnDisplay.textContent = currentPlayer && currentPlayer.alive ? currentPlayer.name : '—';
+      }
       const angleSlider = document.getElementById('angleSlider');
-      if (angleSlider) {
-        angleSlider.value = player.angle;
-      }
-      document.getElementById('angleValue').textContent = `${Math.round(player.angle)}°`;
+      const angleValue = document.getElementById('angleValue');
       const powerSlider = document.getElementById('powerSlider');
-      if (powerSlider) {
-        powerSlider.value = player.power;
+      const powerValue = document.getElementById('powerValue');
+      const angle = human ? human.angle : 60;
+      const power = human ? human.power : 65;
+      if (angleSlider) {
+        angleSlider.value = angle;
       }
-      document.getElementById('powerValue').textContent = `${Math.round(player.power)}`;
+      if (angleValue) {
+        angleValue.textContent = `${Math.round(angle)}°`;
+      }
+      if (powerSlider) {
+        powerSlider.value = power;
+      }
+      if (powerValue) {
+        powerValue.textContent = `${Math.round(power)}`;
+      }
     }
 
     function formatInventoryCount(count) {
@@ -830,25 +1032,44 @@
 
     function updateInventoryUI() {
       const invDiv = document.getElementById('inventory');
+      if (!invDiv) return;
+      const human = activeHuman;
+      if (!human) {
+        invDiv.innerHTML = '';
+        return;
+      }
       const entries = [];
-      for (const [item, count] of Object.entries(player.inventory)) {
+      for (const [item, count] of Object.entries(human.inventory)) {
         if (count > 0) {
           entries.push(`<span>${item}: ${formatInventoryCount(count)}</span>`);
         }
       }
-      entries.push(`<span>Armor: ${Math.round(player.health)} / ${player.maxHealth}</span>`);
-      if (player.activeShield > 0.05) {
-        entries.push(`<span>Shield Strength: ${(player.activeShield * 100).toFixed(0)}%</span>`);
+      entries.push(`<span>Armor: ${Math.round(human.health)} / ${human.maxHealth}</span>`);
+      if (human.activeShield > 0.05) {
+        entries.push(`<span>Shield Strength: ${(human.activeShield * 100).toFixed(0)}%</span>`);
       }
       invDiv.innerHTML = entries.join('');
     }
 
     function updateWeaponSelect() {
       const select = document.getElementById('weaponSelect');
-      const selected = select.value;
+      if (!select) return;
+      const human = activeHuman;
+      const previous = select.value;
       select.innerHTML = '';
+      if (!human) {
+        const fallback = document.createElement('option');
+        fallback.value = '';
+        fallback.textContent = 'No commander';
+        select.appendChild(fallback);
+        select.disabled = true;
+        const fireBtn = document.getElementById('fireBtn');
+        if (fireBtn) fireBtn.disabled = true;
+        return;
+      }
       const options = [];
-      for (const [name, count] of Object.entries(player.inventory)) {
+      const fireBtn = document.getElementById('fireBtn');
+      for (const [name, count] of Object.entries(human.inventory)) {
         if ((weaponCatalog[name] || utilities[name]) && count > 0) {
           const option = document.createElement('option');
           option.value = name;
@@ -861,14 +1082,23 @@
         fallback.value = '';
         fallback.textContent = 'Out of ammo';
         options.push(fallback);
-        document.getElementById('fireBtn').disabled = true;
+        if (fireBtn) fireBtn.disabled = true;
+        select.disabled = true;
+      } else {
+        select.disabled = false;
+        if (fireBtn) fireBtn.disabled = false;
       }
       options.forEach(opt => select.appendChild(opt));
-      if (selected) {
-        const found = Array.from(options).find(o => o.value === selected);
-        if (found) {
-          select.value = selected;
-        }
+      let targetSelection = human.selectedWeapon;
+      if (!targetSelection || !human.inventory[targetSelection]) {
+        targetSelection = options.length > 0 ? options[0].value : '';
+      }
+      if (previous && human.inventory[previous] > 0) {
+        targetSelection = previous;
+      }
+      if (targetSelection) {
+        select.value = targetSelection;
+        human.selectedWeapon = targetSelection;
       }
     }
 
@@ -878,6 +1108,7 @@
       projectiles.push(projectile);
       gameState = 'projectile';
       disablePlayerControls();
+      updateFastForwardState();
     }
 
     function launchProjectile(tank, weaponName) {
@@ -922,17 +1153,20 @@
     }
 
     function fireSelectedWeapon() {
-      if (gameState !== 'aim' || currentPlayer !== player) return;
+      if (gameState !== 'aim' || !currentPlayer || !currentPlayer.isPlayer || currentPlayer !== activeHuman) return;
+      const tank = activeHuman;
+      if (!tank) return;
       const select = document.getElementById('weaponSelect');
+      if (!select) return;
       const weapon = select.value;
-      if (!weapon || !player.inventory[weapon]) {
+      if (!weapon || !tank.inventory[weapon]) {
         setStatus('No ammunition selected.');
         return;
       }
-      player.angle = Number(document.getElementById('angleSlider').value);
-      player.power = Number(document.getElementById('powerSlider').value);
+      tank.angle = Number(document.getElementById('angleSlider').value);
+      tank.power = Number(document.getElementById('powerSlider').value);
       if (utilities[weapon]) {
-        const used = useUtility(player, weapon);
+        const used = useUtility(tank, weapon);
         if (used) {
           endTurn();
         }
@@ -943,9 +1177,10 @@
         return;
       }
       if (weapon !== 'Baby Missile') {
-        player.inventory[weapon]--;
+        tank.inventory[weapon]--;
       }
-      launchProjectile(player, weapon);
+      tank.selectedWeapon = weapon;
+      launchProjectile(tank, weapon);
       updateInventoryUI();
       updateWeaponSelect();
     }
@@ -953,15 +1188,22 @@
     document.getElementById('fireBtn').addEventListener('click', fireSelectedWeapon);
     document.getElementById('weaponSelect').addEventListener('change', () => {
       const weapon = document.getElementById('weaponSelect').value;
+      if (activeHuman && weapon) {
+        activeHuman.selectedWeapon = weapon;
+      }
       setStatus(weapon ? `Selected ${weapon}.` : 'No weapon selected.');
     });
 
     document.getElementById('angleSlider').addEventListener('input', (e) => {
-      player.angle = Number(e.target.value);
+      if (activeHuman) {
+        activeHuman.angle = Number(e.target.value);
+      }
       document.getElementById('angleValue').textContent = `${e.target.value}°`;
     });
     document.getElementById('powerSlider').addEventListener('input', (e) => {
-      player.power = Number(e.target.value);
+      if (activeHuman) {
+        activeHuman.power = Number(e.target.value);
+      }
       document.getElementById('powerValue').textContent = `${e.target.value}`;
     });
 
@@ -971,7 +1213,7 @@
       if (!isArrow && !isSpace) {
         return;
       }
-      if (gameState !== 'aim' || currentPlayer !== player) {
+      if (gameState !== 'aim' || !currentPlayer || !currentPlayer.isPlayer || currentPlayer !== activeHuman) {
         return;
       }
       if (isSpace) {
@@ -1003,7 +1245,9 @@
           handled = true;
         }
         angleSlider.value = newAngle;
-        player.angle = newAngle;
+        if (activeHuman) {
+          activeHuman.angle = newAngle;
+        }
         document.getElementById('angleValue').textContent = `${Math.round(newAngle)}°`;
       }
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
@@ -1015,7 +1259,9 @@
           handled = true;
         }
         powerSlider.value = newPower;
-        player.power = newPower;
+        if (activeHuman) {
+          activeHuman.power = newPower;
+        }
         document.getElementById('powerValue').textContent = `${Math.round(newPower)}`;
       }
       if (handled) {
@@ -1023,35 +1269,63 @@
       }
     });
 
-    document.getElementById('shopBtn').addEventListener('click', () => {
-      if (gameState !== 'roundEnd') {
-        setStatus('You can visit the depot between rounds. Finish the fight!');
-        return;
-      }
-      openShop();
-    });
+    const shopBtn = document.getElementById('shopBtn');
+    if (shopBtn) {
+      shopBtn.addEventListener('click', () => {
+        if (gameState !== 'roundEnd') {
+          setStatus('You can visit the depot between rounds. Finish the fight!');
+          return;
+        }
+        if (currentShopCommander) {
+          openShopFor(currentShopCommander);
+          return;
+        }
+        if (shopQueue.length === 0 && humanPlayers.length > 0) {
+          shopQueue = humanPlayers.slice();
+        }
+        if (shopQueue.length > 0) {
+          openNextShopper();
+        }
+      });
+    }
+
+    const skipBtnControl = document.getElementById('skipFightBtn');
+    if (skipBtnControl) {
+      skipBtnControl.addEventListener('click', () => {
+        if (gameState === 'roundEnd') return;
+        skipCurrentFight();
+      });
+    }
 
     document.getElementById('closeShopBtn').addEventListener('click', () => {
-      closeShop();
+      closeShopOverlay();
     });
     document.getElementById('nextRoundBtn').addEventListener('click', () => {
       if (gameState !== 'roundEnd') {
-        closeShop();
+        closeShopOverlay();
         return;
       }
-      closeShop();
+      if (shopQueue.length > 0) {
+        openNextShopper();
+        return;
+      }
+      currentShopCommander = null;
+      closeShopOverlay();
       startRound();
     });
 
-    function openShop() {
+    function openShopFor(tank) {
+      currentShopCommander = tank;
+      setActiveHuman(tank);
       const overlay = document.getElementById('shopOverlay');
       const itemsDiv = document.getElementById('shopItems');
       itemsDiv.innerHTML = '';
-      document.getElementById('shopMoney').textContent = player.money;
+      document.getElementById('shopMoney').textContent = tank.money;
       const deployBtn = document.getElementById('nextRoundBtn');
       if (deployBtn) {
-        deployBtn.disabled = !player.alive;
-        deployBtn.textContent = player.alive ? 'Deploy Next Round' : 'Commander Down';
+        const remaining = shopQueue.length;
+        deployBtn.disabled = false;
+        deployBtn.textContent = remaining === 0 ? 'Deploy Next Round' : 'Next Commander';
       }
       storeItems.forEach(item => {
         const card = document.createElement('div');
@@ -1062,19 +1336,20 @@
         blurb.textContent = item.blurb;
         const btn = document.createElement('button');
         btn.textContent = `Purchase`;
-        if (player.money < item.cost) {
+        if (tank.money < item.cost) {
           btn.disabled = true;
           btn.textContent = 'Insufficient credits';
         }
         btn.addEventListener('click', () => {
-          if (player.money < item.cost) return;
-          player.money -= item.cost;
-          item.apply(player);
-          document.getElementById('shopMoney').textContent = player.money;
+          if (!currentShopCommander || currentShopCommander !== tank) return;
+          if (tank.money < item.cost) return;
+          tank.money -= item.cost;
+          item.apply(tank);
+          document.getElementById('shopMoney').textContent = tank.money;
           updateInventoryUI();
           updateWeaponSelect();
-          btn.disabled = player.money < item.cost;
-          setStatus(`Purchased ${item.title}.`);
+          btn.disabled = tank.money < item.cost;
+          setStatus(`Purchased ${item.title} for ${tank.name}.`);
         });
         card.appendChild(title);
         card.appendChild(blurb);
@@ -1084,9 +1359,36 @@
       overlay.classList.add('active');
     }
 
-    function closeShop() {
-      document.getElementById('shopOverlay').classList.remove('active');
-      document.getElementById('shopMoney').textContent = player.money;
+    function closeShopOverlay() {
+      const overlay = document.getElementById('shopOverlay');
+      if (overlay) {
+        overlay.classList.remove('active');
+      }
+      if (currentShopCommander) {
+        const moneyEl = document.getElementById('shopMoney');
+        if (moneyEl) {
+          moneyEl.textContent = currentShopCommander.money;
+        }
+      }
+    }
+
+    function openNextShopper() {
+      if (shopQueue.length === 0) {
+        currentShopCommander = null;
+        closeShopOverlay();
+        startRound();
+        return;
+      }
+      const next = shopQueue.shift();
+      openShopFor(next);
+    }
+
+    function skipCurrentFight() {
+      const remaining = tanks.filter(t => t.alive);
+      const winner = remaining[0] || null;
+      resetProjectiles();
+      particles.length = 0;
+      endRound(winner, 'Engagement skipped');
     }
 
     function carveTerrain(cx, cy, radius) {
@@ -1161,6 +1463,7 @@
         const winner = survivors[0] || source || null;
         endRound(winner, `${tank.name} destroyed`);
       }
+      updateFastForwardState();
     }
 
     function endRound(winner, reason) {
@@ -1168,17 +1471,25 @@
       gameState = 'roundEnd';
       disablePlayerControls();
       const victorName = winner ? winner.name : 'No commander';
-      const suffix = player.alive ? ' Visit the depot before redeploying.' : ' Recalibrate your forces to try again.';
+      fastForwardActive = false;
+      const suffix = humanPlayers.length > 0 ? ' Commanders may visit the depot before redeploying.' : '';
       setStatus(`Round ${roundNumber} complete: ${victorName} prevails — ${reason}.${suffix}`);
-      updateHUD();
-      if (player.alive) {
+      setActiveHuman(humanPlayers[0] || null);
+      shopQueue = humanPlayers.slice();
+      currentShopCommander = null;
+      updateFastForwardState();
+      if (shopQueue.length > 0) {
         setTimeout(() => {
-          openShop();
+          if (gameState === 'roundEnd') {
+            openNextShopper();
+          }
         }, 700);
       } else {
         setTimeout(() => {
-          showSetupOverlay();
-        }, 1100);
+          if (gameState === 'roundEnd') {
+            startRound();
+          }
+        }, 900);
       }
     }
 
@@ -1345,9 +1656,10 @@
         }
       }
       updateHUD();
-      if (currentPlayer.isPlayer && player.alive) {
+      if (currentPlayer && currentPlayer.isPlayer && currentPlayer.alive) {
+        setActiveHuman(currentPlayer);
         enablePlayerControls();
-        setStatus('Your move: adjust angle and power, then fire.');
+        setStatus(`${currentPlayer.name}, adjust angle and power, then fire.`);
       } else {
         disablePlayerControls();
         if (currentPlayer && currentPlayer.alive) {
@@ -1355,6 +1667,7 @@
           scheduleAiTurn(currentPlayer);
         }
       }
+      updateFastForwardState();
     }
 
     function updateFireZones(delta) {
@@ -1568,9 +1881,16 @@
     }
 
     function loop(timestamp) {
-      updateProjectiles(1);
-      updateFireZones(1);
-      updateParticles(1);
+      if (lastFrameTime === null) {
+        lastFrameTime = timestamp;
+      }
+      const frameDelta = (timestamp - lastFrameTime) / (1000 / 60);
+      lastFrameTime = timestamp;
+      const speed = fastForwardActive ? 5 : 1;
+      const delta = Math.min(frameDelta * speed, 5);
+      updateProjectiles(delta);
+      updateFireZones(delta);
+      updateParticles(delta);
       draw();
       requestAnimationFrame(loop);
     }
@@ -1720,7 +2040,9 @@
     }
 
     function scheduleAiTurn(tank) {
-      setTimeout(() => aiTakeTurn(tank), 900 + Math.random() * 500);
+      const baseDelay = 900 + Math.random() * 500;
+      const scale = fastForwardActive ? 5 : 1;
+      setTimeout(() => aiTakeTurn(tank), baseDelay / scale);
     }
 
     function aiTakeTurn(tank) {
@@ -1752,9 +2074,8 @@
     }
 
     function init() {
-      updateInventoryUI();
-      updateWeaponSelect();
-      updateHUD();
+      ensureDefaultCommander();
+      updateFastForwardState();
       setStatus('Configure opponents to begin the campaign.');
       requestAnimationFrame(loop);
     }
