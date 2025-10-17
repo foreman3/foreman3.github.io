@@ -634,6 +634,10 @@
       return angle * Math.PI / 180;
     }
 
+    function getLaunchRadians(angle, facing) {
+      return facing === 1 ? Math.PI - degToRad(angle) : degToRad(angle);
+    }
+
     function clamp(value, min, max) {
       return Math.max(min, Math.min(max, value));
     }
@@ -705,7 +709,7 @@
         tank.activeShield = Math.min(tank.activeShield, 0.6);
         tank.tracerCache = [];
         tank.lockedTargetId = tank.aiSkill && tank.aiSkill > 1 ? tank.lockedTargetId : null;
-        tank.angle = tank.x < canvas.width / 2 ? 60 : 120;
+        tank.angle = tank.x < canvas.width / 2 ? 120 : 60;
         tank.power = 65;
       });
       tanks.forEach(tank => {
@@ -720,7 +724,7 @@
           }, null);
           if (nearest) {
             tank.facing = nearest.tank.x >= tank.x ? 1 : -1;
-            tank.angle = tank.facing === 1 ? 60 : 120;
+            tank.angle = tank.facing === 1 ? 120 : 60;
           }
         } else {
           tank.facing = tank.x < canvas.width / 2 ? 1 : -1;
@@ -808,7 +812,15 @@
       }
       document.getElementById('moneyDisplay').textContent = player.money;
       document.getElementById('turnDisplay').textContent = currentPlayer && currentPlayer.alive ? currentPlayer.name : '—';
+      const angleSlider = document.getElementById('angleSlider');
+      if (angleSlider) {
+        angleSlider.value = player.angle;
+      }
       document.getElementById('angleValue').textContent = `${Math.round(player.angle)}°`;
+      const powerSlider = document.getElementById('powerSlider');
+      if (powerSlider) {
+        powerSlider.value = player.power;
+      }
       document.getElementById('powerValue').textContent = `${Math.round(player.power)}`;
     }
 
@@ -873,7 +885,7 @@
       if (!config) return;
       const angle = tank.angle;
       const power = tank.power;
-      const rad = tank.facing === 1 ? degToRad(angle) : Math.PI - degToRad(angle);
+      const rad = getLaunchRadians(angle, tank.facing);
       const speed = power * SPEED_SCALE * POWER_ATTENUATION;
       const vx = Math.cos(rad) * speed;
       const vy = -Math.sin(rad) * speed;
@@ -954,10 +966,29 @@
     });
 
     document.addEventListener('keydown', (e) => {
-      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+      const isSpace = e.code === 'Space' || e.key === ' ';
+      const isArrow = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key);
+      if (!isArrow && !isSpace) {
         return;
       }
       if (gameState !== 'aim' || currentPlayer !== player) {
+        return;
+      }
+      if (isSpace) {
+        const activeElement = document.activeElement;
+        if (activeElement) {
+          const tag = activeElement.tagName;
+          if (tag === 'INPUT') {
+            const type = activeElement.getAttribute('type');
+            if (type !== 'range') {
+              return;
+            }
+          } else if (tag === 'SELECT' || tag === 'TEXTAREA') {
+            return;
+          }
+        }
+        e.preventDefault();
+        fireSelectedWeapon();
         return;
       }
       const angleSlider = document.getElementById('angleSlider');
@@ -1433,7 +1464,7 @@
       ctx.fill();
       ctx.fillStyle = '#111821';
       ctx.fillRect(tank.x - tankWidth / 2, baseY - 6, tankWidth, 6);
-      const angle = tank.facing === 1 ? degToRad(tank.angle) : Math.PI - degToRad(tank.angle);
+      const angle = getLaunchRadians(tank.angle, tank.facing);
       const turretX = tank.x;
       const turretY = topY + 6;
       ctx.strokeStyle = '#d0f7ff';
@@ -1550,7 +1581,7 @@
         return { dist: Infinity, impactX: tank.x, impactY: tank.y };
       }
       const aimFacing = facing ?? (target && target.x < tank.x ? -1 : 1);
-      const rad = aimFacing === 1 ? degToRad(angle) : Math.PI - degToRad(angle);
+      const rad = getLaunchRadians(angle, aimFacing);
       const speed = power * SPEED_SCALE * POWER_ATTENUATION;
       let vx = Math.cos(rad) * speed;
       let vy = -Math.sin(rad) * speed;
