@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Video Poker Lounge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #1a093f, #060114 65%);
+      color: #f2f6ff;
+    }
+    #sidebar-placeholder {
+      min-width: 240px;
+      background: rgba(8, 5, 20, 0.85);
+      backdrop-filter: blur(6px);
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: clamp(1.5rem, 4vw, 3rem);
+      gap: 1.5rem;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    header h1 {
+      font-family: "Press Start 2P", cursive;
+      letter-spacing: 4px;
+      font-size: clamp(1.5rem, 4vw, 2.25rem);
+      margin: 0;
+      color: #78f3ff;
+      text-shadow: 0 0 18px rgba(120, 243, 255, 0.45);
+    }
+    header p {
+      margin: 0;
+      max-width: 540px;
+      color: rgba(230, 235, 255, 0.78);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .status-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      background: rgba(15, 9, 45, 0.65);
+      border: 1px solid rgba(120, 243, 255, 0.18);
+      border-radius: 18px;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 18px 35px rgba(6, 0, 25, 0.45);
+    }
+    .status-panel > div {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+    }
+    .status-panel button {
+      background: linear-gradient(135deg, #3f0da5, #8625ff);
+      border: none;
+      color: white;
+      padding: 0.45rem 0.85rem;
+      border-radius: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 8px 16px rgba(57, 18, 130, 0.45);
+    }
+    .status-panel button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .status-panel button:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 22px rgba(108, 30, 200, 0.55);
+    }
+    .cards-area {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: rgba(18, 10, 52, 0.7);
+      border-radius: 24px;
+      padding: 1.5rem;
+      border: 1px solid rgba(120, 243, 255, 0.15);
+      box-shadow: 0 30px 55px rgba(8, 1, 35, 0.45);
+    }
+    .card-row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(110px, 1fr));
+      gap: clamp(0.75rem, 2vw, 1.5rem);
+      justify-items: center;
+    }
+    .card-slot {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 0.72;
+      border-radius: 16px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.12), rgba(120,243,255,0.08));
+      border: 1px solid rgba(120, 243, 255, 0.22);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-slot.placeholder {
+      cursor: default;
+      display: grid;
+      place-items: center;
+      color: rgba(255,255,255,0.4);
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+    .card-slot:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 30px rgba(6, 0, 35, 0.35);
+    }
+    .card-slot.disabled,
+    .card-slot.placeholder {
+      transform: none;
+      box-shadow: none;
+    }
+    .card-face {
+      position: absolute;
+      inset: 0;
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: radial-gradient(circle at top, rgba(255,255,255,0.88), rgba(245,245,245,0.9));
+      color: #1a1232;
+    }
+    .card-face.red {
+      color: #b00047;
+    }
+    .card-rank {
+      font-size: clamp(1.5rem, 3vw, 2.4rem);
+      font-weight: 700;
+    }
+    .card-suit {
+      font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+      align-self: flex-end;
+    }
+    .hold-tag {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      background: rgba(120, 243, 255, 0.88);
+      color: #0b0424;
+      border-radius: 999px;
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .card-slot.held .hold-tag {
+      opacity: 1;
+    }
+    .card-slot.disabled {
+      pointer-events: none;
+      opacity: 0.75;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+    .actions button {
+      background: linear-gradient(135deg, #ff7bc0, #ff476a);
+      border: none;
+      border-radius: 12px;
+      padding: 0.6rem 1.3rem;
+      color: white;
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 12px 24px rgba(255, 99, 170, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .actions button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .actions button:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 28px rgba(255, 99, 170, 0.55);
+    }
+    .message {
+      min-height: 2rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    #payout-section {
+      background: rgba(10, 5, 30, 0.65);
+      border-radius: 22px;
+      padding: 1.25rem;
+      border: 1px solid rgba(120,243,255,0.14);
+      box-shadow: 0 20px 45px rgba(5, 0, 25, 0.45);
+      overflow-x: auto;
+    }
+    #payout-section h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #ff9df2;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 420px;
+    }
+    th, td {
+      padding: 0.55rem 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid rgba(120, 243, 255, 0.1);
+    }
+    th {
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      color: rgba(200, 240, 255, 0.9);
+      letter-spacing: 1.5px;
+    }
+    tbody tr.highlight {
+      background: rgba(120, 243, 255, 0.16);
+      box-shadow: inset 0 0 22px rgba(120,243,255,0.22);
+    }
+    tbody td.bet-highlight {
+      background: rgba(255, 119, 192, 0.28);
+      color: #fff;
+      font-weight: 700;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 2, 20, 0.8);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      z-index: 30;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+    .overlay-content {
+      background: rgba(15, 8, 45, 0.95);
+      padding: clamp(1.5rem, 3vw, 2.5rem);
+      border-radius: 24px;
+      border: 1px solid rgba(120, 243, 255, 0.2);
+      max-width: 880px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      box-shadow: 0 24px 65px rgba(2, 0, 25, 0.55);
+    }
+    .overlay-content h2 {
+      margin: 0;
+      font-size: clamp(1.4rem, 3vw, 1.8rem);
+      color: #ff9df2;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .machine-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+    .machine-card {
+      border: none;
+      border-radius: 20px;
+      padding: 1.25rem;
+      text-align: left;
+      background: linear-gradient(150deg, rgba(120, 243, 255, 0.15), rgba(255, 119, 192, 0.12));
+      color: inherit;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      box-shadow: 0 18px 35px rgba(5, 0, 30, 0.35);
+    }
+    .machine-card:hover,
+    .machine-card:focus-visible {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 40px rgba(10, 0, 45, 0.45);
+      background: linear-gradient(150deg, rgba(120, 243, 255, 0.25), rgba(255, 119, 192, 0.2));
+    }
+    .machine-card h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #78f3ff;
+      letter-spacing: 1.5px;
+    }
+    .machine-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: rgba(220, 235, 255, 0.8);
+      line-height: 1.5;
+    }
+    .machine-card .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .machine-card .tag {
+      background: rgba(255, 119, 192, 0.22);
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 600;
+    }
+    @media (max-width: 920px) {
+      body {
+        flex-direction: column;
+      }
+      #sidebar-placeholder {
+        width: 100%;
+        min-height: 60px;
+      }
+      main {
+        padding: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <main>
+    <header>
+      <h1>Video Poker Lounge</h1>
+      <p>Pick a machine, place your bet, and draw to the best poker hand you can. Each machine uses a fresh, fair 52-card shuffle
+        before every hand and pays exactly according to its posted table.</p>
+    </header>
+
+    <section class="status-panel">
+      <div>Credits: <span id="credit-display">100</span></div>
+      <div>
+        Bet:
+        <button type="button" id="bet-down">-</button>
+        <span id="bet-display">1</span>
+        <button type="button" id="bet-up">+</button>
+      </div>
+      <div class="actions">
+        <button type="button" id="deal-button">Deal</button>
+        <button type="button" id="change-machine">Change Machine</button>
+        <button type="button" id="add-credits">Add 50 Credits</button>
+      </div>
+    </section>
+
+    <section class="cards-area">
+      <div class="card-row" id="card-row"></div>
+      <div class="message" id="status-message">Select a machine to begin.</div>
+    </section>
+
+    <section id="payout-section">
+      <h2 id="payout-title">Payouts</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Hand</th>
+            <th>Bet 1</th>
+            <th>Bet 2</th>
+            <th>Bet 3</th>
+            <th>Bet 4</th>
+            <th>Bet 5</th>
+          </tr>
+        </thead>
+        <tbody id="payout-body"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div class="overlay active" id="machine-overlay" role="dialog" aria-modal="true">
+    <div class="overlay-content">
+      <h2>Choose Your Video Poker Machine</h2>
+      <p>Select a game to view its pay table and start playing. You can change machines at any time between hands.</p>
+      <div class="machine-grid" id="machine-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    const machines = [
+      {
+        id: 'jacks',
+        name: 'Jacks or Better',
+        description: 'Classic draw poker. Pair of jacks or higher to win and a 4,000 coin royal for five credits.',
+        tags: ['Standard Deck', '9/6 Payouts'],
+        payouts: [
+          { hand: 'Royal Flush', values: [250, 500, 750, 1000, 4000] },
+          { hand: 'Straight Flush', values: [50, 100, 150, 200, 250] },
+          { hand: 'Four of a Kind', values: [25, 50, 75, 100, 125] },
+          { hand: 'Full House', values: [9, 18, 27, 36, 45] },
+          { hand: 'Flush', values: [6, 12, 18, 24, 30] },
+          { hand: 'Straight', values: [4, 8, 12, 16, 20] },
+          { hand: 'Three of a Kind', values: [3, 6, 9, 12, 15] },
+          { hand: 'Two Pair', values: [2, 4, 6, 8, 10] },
+          { hand: 'Jacks or Better', values: [1, 2, 3, 4, 5] }
+        ]
+      },
+      {
+        id: 'bonus',
+        name: 'Bonus Poker',
+        description: 'Bonus payouts for four of a kind hands. Two pair pays even money like a true casino Bonus Poker game.',
+        tags: ['Bonus Quads', 'Classic Rules'],
+        payouts: [
+          { hand: 'Royal Flush', values: [250, 500, 750, 1000, 4000] },
+          { hand: 'Straight Flush', values: [50, 100, 150, 200, 250] },
+          { hand: 'Four Aces', values: [80, 160, 240, 320, 400] },
+          { hand: 'Four 2s-4s', values: [40, 80, 120, 160, 200] },
+          { hand: 'Four 5s-Ks', values: [25, 50, 75, 100, 125] },
+          { hand: 'Full House', values: [8, 16, 24, 32, 40] },
+          { hand: 'Flush', values: [5, 10, 15, 20, 25] },
+          { hand: 'Straight', values: [4, 8, 12, 16, 20] },
+          { hand: 'Three of a Kind', values: [3, 6, 9, 12, 15] },
+          { hand: 'Two Pair', values: [1, 2, 3, 4, 5] },
+          { hand: 'Jacks or Better', values: [1, 2, 3, 4, 5] }
+        ]
+      },
+      {
+        id: 'deuces',
+        name: 'Deuces Wild',
+        description: 'All twos are wild. Make the best hand you can with flexible straights, flushes, and five of a kind.',
+        tags: ['Wild Cards', 'Bonus Hands'],
+        payouts: [
+          { hand: 'Natural Royal Flush', values: [250, 500, 750, 1000, 4000] },
+          { hand: 'Four Deuces', values: [200, 400, 600, 800, 1000] },
+          { hand: 'Wild Royal Flush', values: [25, 50, 75, 100, 125] },
+          { hand: 'Five of a Kind', values: [16, 32, 48, 64, 80] },
+          { hand: 'Straight Flush', values: [13, 26, 39, 52, 65] },
+          { hand: 'Four of a Kind', values: [4, 8, 12, 16, 20] },
+          { hand: 'Full House', values: [3, 6, 9, 12, 15] },
+          { hand: 'Flush', values: [2, 4, 6, 8, 10] },
+          { hand: 'Straight', values: [2, 4, 6, 8, 10] },
+          { hand: 'Three of a Kind', values: [1, 2, 3, 4, 5] }
+        ]
+      }
+    ];
+
+    const suitSymbols = {
+      hearts: '♥',
+      diamonds: '♦',
+      clubs: '♣',
+      spades: '♠'
+    };
+
+    const rankLabels = {
+      11: 'J',
+      12: 'Q',
+      13: 'K',
+      14: 'A'
+    };
+
+    const cardRow = document.getElementById('card-row');
+    const statusMessage = document.getElementById('status-message');
+    const betDisplay = document.getElementById('bet-display');
+    const creditDisplay = document.getElementById('credit-display');
+    const betDown = document.getElementById('bet-down');
+    const betUp = document.getElementById('bet-up');
+    const dealButton = document.getElementById('deal-button');
+    const changeMachineButton = document.getElementById('change-machine');
+    const addCreditsButton = document.getElementById('add-credits');
+    const overlay = document.getElementById('machine-overlay');
+    const machineGrid = document.getElementById('machine-grid');
+    const payoutBody = document.getElementById('payout-body');
+    const payoutTitle = document.getElementById('payout-title');
+
+    let credits = 100;
+    let bet = 1;
+    let stage = 'select';
+    let deck = [];
+    let hand = [];
+    let held = [false, false, false, false, false];
+    let currentMachine = null;
+    let lastWinHand = null;
+
+    function buildMachineCards() {
+      machineGrid.innerHTML = '';
+      machines.forEach(machine => {
+        const card = document.createElement('button');
+        card.className = 'machine-card';
+        card.type = 'button';
+        card.dataset.machine = machine.id;
+        card.innerHTML = `
+          <h3>${machine.name}</h3>
+          <p>${machine.description}</p>
+          <div class="tags">${machine.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
+        `;
+        card.addEventListener('click', () => selectMachine(machine.id));
+        machineGrid.appendChild(card);
+      });
+    }
+
+    function selectMachine(id) {
+      const machine = machines.find(m => m.id === id);
+      if (!machine) return;
+      currentMachine = machine;
+      overlay.classList.remove('active');
+      stage = 'ready';
+      lastWinHand = null;
+      statusMessage.textContent = `Playing ${machine.name}. Place your bet and press Deal.`;
+      payoutTitle.textContent = `${machine.name} Payouts`;
+      renderPayoutTable();
+      resetHandDisplay();
+      updateBet(1);
+      updateCredits(0);
+    }
+
+    function resetHandDisplay() {
+      hand = [];
+      held = [false, false, false, false, false];
+      renderHand();
+    }
+
+    function renderPayoutTable() {
+      if (!currentMachine) {
+        payoutBody.innerHTML = '';
+        return;
+      }
+      payoutBody.innerHTML = '';
+      currentMachine.payouts.forEach(row => {
+        const tr = document.createElement('tr');
+        if (lastWinHand && lastWinHand === row.hand) {
+          tr.classList.add('highlight');
+        }
+        const nameCell = document.createElement('td');
+        nameCell.textContent = row.hand;
+        tr.appendChild(nameCell);
+        row.values.forEach((value, index) => {
+          const cell = document.createElement('td');
+          cell.textContent = value;
+          if (index === bet - 1) {
+            cell.classList.add('bet-highlight');
+          }
+          tr.appendChild(cell);
+        });
+        payoutBody.appendChild(tr);
+      });
+    }
+
+    function renderHand() {
+      cardRow.innerHTML = '';
+      for (let i = 0; i < 5; i++) {
+        const cardData = hand[i];
+        const slot = document.createElement('div');
+        slot.className = 'card-slot';
+        slot.dataset.index = i;
+        if (!cardData) {
+          slot.classList.add('placeholder', 'disabled');
+          slot.textContent = '—';
+        } else {
+          const face = document.createElement('div');
+          const isRed = cardData.suit === 'hearts' || cardData.suit === 'diamonds';
+          face.className = 'card-face' + (isRed ? ' red' : '');
+          const top = document.createElement('div');
+          top.className = 'card-rank';
+          top.textContent = rankLabels[cardData.value] || cardData.value;
+          const bottom = document.createElement('div');
+          bottom.className = 'card-suit';
+          bottom.textContent = suitSymbols[cardData.suit];
+          face.appendChild(top);
+          face.appendChild(bottom);
+          slot.appendChild(face);
+          const holdTag = document.createElement('div');
+          holdTag.className = 'hold-tag';
+          holdTag.textContent = 'HOLD';
+          slot.appendChild(holdTag);
+          if (held[i]) slot.classList.add('held');
+          if (stage !== 'drawing') {
+            slot.classList.add('disabled');
+          }
+          slot.addEventListener('click', () => toggleHold(i));
+        }
+        cardRow.appendChild(slot);
+      }
+    }
+
+    function toggleHold(index) {
+      if (stage !== 'drawing') return;
+      held[index] = !held[index];
+      renderHand();
+    }
+
+    function updateBet(newBet) {
+      const maxBet = Math.min(5, credits || 1);
+      bet = Math.min(Math.max(newBet, 1), maxBet);
+      betDisplay.textContent = bet;
+      renderPayoutTable();
+      updateBetButtons();
+    }
+
+    function updateBetButtons() {
+      const maxBet = Math.min(5, credits || 1);
+      betDown.disabled = stage !== 'ready' || bet <= 1;
+      betUp.disabled = stage !== 'ready' || bet >= maxBet;
+    }
+
+    function updateCredits(delta) {
+      credits += delta;
+      if (credits < 0) credits = 0;
+      creditDisplay.textContent = credits;
+      if (bet > Math.min(5, credits || 1)) {
+        updateBet(Math.min(5, credits || 1));
+      } else {
+        updateBetButtons();
+        renderPayoutTable();
+      }
+    }
+
+    function createDeck() {
+      const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+      const deck = [];
+      for (const suit of suits) {
+        for (let value = 2; value <= 14; value++) {
+          deck.push({ suit, value });
+        }
+      }
+      return deck;
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function startHand() {
+      if (!currentMachine) {
+        statusMessage.textContent = 'Choose a machine to get started.';
+        overlay.classList.add('active');
+        return;
+      }
+      if (stage !== 'ready') return;
+      if (bet > credits) {
+        statusMessage.textContent = 'Not enough credits for that bet. Add credits or lower the bet.';
+        return;
+      }
+      updateCredits(-bet);
+      deck = shuffle(createDeck());
+      hand = deck.splice(0, 5);
+      held = [false, false, false, false, false];
+      stage = 'drawing';
+      dealButton.textContent = 'Draw';
+      statusMessage.textContent = 'Choose cards to hold, then press Draw.';
+      lastWinHand = null;
+      renderHand();
+      renderPayoutTable();
+      updateBetButtons();
+    }
+
+    function finishHand() {
+      if (stage !== 'drawing') return;
+      hand = hand.map((card, index) => (held[index] ? card : deck.shift()));
+      stage = 'ready';
+      dealButton.textContent = 'Deal';
+      held = [false, false, false, false, false];
+      const result = evaluateHand(hand, currentMachine);
+      lastWinHand = result.hand && result.payout > 0 ? result.hand : null;
+      if (result.payout > 0) {
+        updateCredits(result.payout);
+        statusMessage.textContent = `${result.hand}! You win ${result.payout} credits.`;
+      } else {
+        statusMessage.textContent = result.hand === 'No Win' ? 'No win. Try again!' : `${result.hand}.`;
+      }
+      renderHand();
+      renderPayoutTable();
+      updateBetButtons();
+    }
+
+    function evaluateHand(cards, machine) {
+      if (!machine) return { hand: 'No Win', payout: 0 };
+      switch (machine.id) {
+        case 'jacks':
+          return evaluateJacksOrBetter(cards, machine);
+        case 'bonus':
+          return evaluateBonusPoker(cards, machine);
+        case 'deuces':
+          return evaluateDeucesWild(cards, machine);
+        default:
+          return { hand: 'No Win', payout: 0 };
+      }
+    }
+
+    function evaluateJacksOrBetter(cards, machine) {
+      const values = cards.map(c => c.value).sort((a, b) => a - b);
+      const counts = getCounts(values);
+      const suits = cards.map(c => c.suit);
+      const flush = suits.every(s => s === suits[0]);
+      const straightInfo = getStraightInfo(values);
+      const hasFour = Object.values(counts).includes(4);
+      const hasThree = Object.values(counts).includes(3);
+      const pairValues = Object.entries(counts)
+        .filter(([, count]) => count === 2)
+        .map(([value]) => Number(value));
+
+      if (flush && straightInfo.isStraight && straightInfo.high === 14 && straightInfo.low === 10) {
+        return resultFor('Royal Flush', machine);
+      }
+      if (flush && straightInfo.isStraight) {
+        return resultFor('Straight Flush', machine);
+      }
+      if (hasFour) {
+        return resultFor('Four of a Kind', machine);
+      }
+      if (hasThree && pairValues.length === 1) {
+        return resultFor('Full House', machine);
+      }
+      if (flush) {
+        return resultFor('Flush', machine);
+      }
+      if (straightInfo.isStraight) {
+        return resultFor('Straight', machine);
+      }
+      if (hasThree) {
+        return resultFor('Three of a Kind', machine);
+      }
+      if (pairValues.length === 2) {
+        return resultFor('Two Pair', machine);
+      }
+      if (pairValues.length === 1 && pairValues[0] >= 11) {
+        return resultFor('Jacks or Better', machine);
+      }
+      return { hand: 'No Win', payout: 0 };
+    }
+
+    function evaluateBonusPoker(cards, machine) {
+      const values = cards.map(c => c.value).sort((a, b) => a - b);
+      const counts = getCounts(values);
+      const suits = cards.map(c => c.suit);
+      const flush = suits.every(s => s === suits[0]);
+      const straightInfo = getStraightInfo(values);
+      const countValues = Object.values(counts);
+      const hasFour = countValues.includes(4);
+      const hasThree = countValues.includes(3);
+      const pairValues = Object.entries(counts)
+        .filter(([, count]) => count === 2)
+        .map(([value]) => Number(value));
+
+      if (flush && straightInfo.isStraight && straightInfo.high === 14 && straightInfo.low === 10) {
+        return resultFor('Royal Flush', machine);
+      }
+      if (flush && straightInfo.isStraight) {
+        return resultFor('Straight Flush', machine);
+      }
+      if (hasFour) {
+        const fourRank = Number(Object.keys(counts).find(value => counts[value] === 4));
+        if (fourRank === 14) {
+          return resultFor('Four Aces', machine);
+        }
+        if (fourRank >= 2 && fourRank <= 4) {
+          return resultFor('Four 2s-4s', machine);
+        }
+        return resultFor('Four 5s-Ks', machine);
+      }
+      if (hasThree && pairValues.length === 1) {
+        return resultFor('Full House', machine);
+      }
+      if (flush) {
+        return resultFor('Flush', machine);
+      }
+      if (straightInfo.isStraight) {
+        return resultFor('Straight', machine);
+      }
+      if (hasThree) {
+        return resultFor('Three of a Kind', machine);
+      }
+      if (pairValues.length === 2) {
+        return resultFor('Two Pair', machine);
+      }
+      if (pairValues.length === 1 && pairValues[0] >= 11) {
+        return resultFor('Jacks or Better', machine);
+      }
+      return { hand: 'No Win', payout: 0 };
+    }
+
+    function evaluateDeucesWild(cards, machine) {
+      const wilds = cards.filter(c => c.value === 2);
+      const wildCount = wilds.length;
+      const nonWild = cards.filter(c => c.value !== 2);
+      const suits = cards.map(c => c.suit);
+      const nonWildValues = nonWild.map(c => c.value);
+      const counts = getCounts(nonWildValues);
+      const suitsCounts = getSuitCounts(nonWild);
+
+      if (wildCount === 0) {
+        const suitsNoWild = cards.map(c => c.suit);
+        const values = cards.map(c => c.value).sort((a, b) => a - b);
+        const flush = suitsNoWild.every(s => s === suitsNoWild[0]);
+        const straightInfo = getStraightInfo(values);
+        if (flush && straightInfo.isStraight && straightInfo.high === 14 && straightInfo.low === 10) {
+          return resultFor('Natural Royal Flush', machine);
+        }
+      }
+
+      if (wildCount === 4) {
+        return resultFor('Four Deuces', machine);
+      }
+
+      if (canMakeRoyalWithWilds(suitsCounts, wildCount)) {
+        return resultFor('Wild Royal Flush', machine);
+      }
+
+      if (canMakeFiveOfAKind(counts, wildCount)) {
+        return resultFor('Five of a Kind', machine);
+      }
+
+      if (canMakeStraightFlush(suitsCounts, wildCount)) {
+        return resultFor('Straight Flush', machine);
+      }
+
+      if (canMakeFourOfAKind(counts, wildCount)) {
+        return resultFor('Four of a Kind', machine);
+      }
+
+      if (canMakeFullHouse(counts, wildCount)) {
+        return resultFor('Full House', machine);
+      }
+
+      if (canMakeFlush(suitsCounts, wildCount)) {
+        return resultFor('Flush', machine);
+      }
+
+      if (canMakeStraight(counts, wildCount)) {
+        return resultFor('Straight', machine);
+      }
+
+      if (canMakeThreeOfAKind(counts, wildCount)) {
+        return resultFor('Three of a Kind', machine);
+      }
+
+      return { hand: 'No Win', payout: 0 };
+    }
+
+    function resultFor(handName, machine) {
+      const row = machine.payouts.find(row => row.hand === handName);
+      const payout = row ? row.values[bet - 1] : 0;
+      return { hand: handName, payout };
+    }
+
+    function getCounts(values) {
+      const counts = {};
+      values.forEach(value => {
+        counts[value] = (counts[value] || 0) + 1;
+      });
+      return counts;
+    }
+
+    function getSuitCounts(cards) {
+      const suits = {};
+      cards.forEach(card => {
+        suits[card.suit] = suits[card.suit] || { values: [] };
+        suits[card.suit].values.push(card.value);
+      });
+      return suits;
+    }
+
+    function getStraightInfo(sortedValues) {
+      const unique = Array.from(new Set(sortedValues));
+      if (unique.length !== 5) {
+        return { isStraight: false, high: unique[unique.length - 1] || null, low: unique[0] || null };
+      }
+      const isRegularStraight = unique.every((value, index) => index === 0 || value - unique[index - 1] === 1);
+      const isWheel = unique.toString() === '2,3,4,5,14';
+      return {
+        isStraight: isRegularStraight || isWheel,
+        high: isWheel ? 5 : unique[unique.length - 1],
+        low: isWheel ? 1 : unique[0]
+      };
+    }
+
+    function canMakeRoyalWithWilds(suitsCounts, wildCount) {
+      if (wildCount === 0) return false;
+      const target = [10, 11, 12, 13, 14];
+      for (const suit in suitsCounts) {
+        const suitCounts = getCounts(suitsCounts[suit].values);
+        if (canFormSequence(target, suitCounts, wildCount)) {
+          return true;
+        }
+      }
+      if (Object.keys(suitsCounts).length === 0 && wildCount >= 5) {
+        return true;
+      }
+      return false;
+    }
+
+    function canMakeFiveOfAKind(counts, wildCount) {
+      for (let rank = 2; rank <= 14; rank++) {
+        const need = 5 - (counts[rank] || 0);
+        if (need <= wildCount) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function canMakeStraightFlush(suitsCounts, wildCount) {
+      for (const suit in suitsCounts) {
+        const suitCounts = getCounts(suitsCounts[suit].values);
+        if (canFormAnyStraight(suitCounts, wildCount)) {
+          return true;
+        }
+      }
+      if (Object.keys(suitsCounts).length === 0 && wildCount >= 5) {
+        return true;
+      }
+      return false;
+    }
+
+    function canMakeFourOfAKind(counts, wildCount) {
+      for (let rank = 2; rank <= 14; rank++) {
+        const need = 4 - (counts[rank] || 0);
+        if (need <= wildCount) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function canMakeFullHouse(counts, wildCount) {
+      for (let triple = 2; triple <= 14; triple++) {
+        const haveTriple = counts[triple] || 0;
+        const needTriple = Math.max(0, 3 - haveTriple);
+        if (needTriple > wildCount) continue;
+        const remainingWilds = wildCount - needTriple;
+        for (let pair = 2; pair <= 14; pair++) {
+          if (pair === triple) continue;
+          const havePair = counts[pair] || 0;
+          const needPair = Math.max(0, 2 - havePair);
+          if (needPair <= remainingWilds) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function canMakeFlush(suitsCounts, wildCount) {
+      const suitTotals = Object.values(suitsCounts).map(entry => entry.values.length);
+      const maxSuit = suitTotals.length ? Math.max(...suitTotals) : 0;
+      return maxSuit + wildCount >= 5;
+    }
+
+    function canMakeStraight(counts, wildCount) {
+      return canFormAnyStraight(counts, wildCount);
+    }
+
+    function canMakeThreeOfAKind(counts, wildCount) {
+      for (let rank = 2; rank <= 14; rank++) {
+        const need = 3 - (counts[rank] || 0);
+        if (need <= wildCount) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function canFormAnyStraight(counts, wildCount) {
+      const sequences = [];
+      for (let start = 2; start <= 10; start++) {
+        sequences.push([start, start + 1, start + 2, start + 3, start + 4]);
+      }
+      sequences.push([14, 2, 3, 4, 5]);
+      return sequences.some(seq => canFormSequence(seq, counts, wildCount));
+    }
+
+    function canFormSequence(sequence, counts, wildCount) {
+      let remainingWilds = wildCount;
+      const used = {};
+      for (const rank of sequence) {
+        const available = (counts[rank] || 0) - (used[rank] || 0);
+        if (available > 0) {
+          used[rank] = (used[rank] || 0) + 1;
+        } else if (remainingWilds > 0) {
+          remainingWilds--;
+        } else {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    dealButton.addEventListener('click', () => {
+      if (stage === 'drawing') {
+        finishHand();
+      } else {
+        startHand();
+      }
+    });
+
+    betDown.addEventListener('click', () => {
+      if (stage === 'ready') {
+        updateBet(bet - 1);
+      }
+    });
+
+    betUp.addEventListener('click', () => {
+      if (stage === 'ready') {
+        updateBet(bet + 1);
+      }
+    });
+
+    changeMachineButton.addEventListener('click', () => {
+      if (stage === 'drawing') {
+        statusMessage.textContent = 'Finish the current hand before switching machines.';
+        return;
+      }
+      overlay.classList.add('active');
+      stage = 'select';
+      statusMessage.textContent = 'Select a machine to begin.';
+      renderPayoutTable();
+      updateBetButtons();
+    });
+
+    addCreditsButton.addEventListener('click', () => {
+      updateCredits(50);
+      statusMessage.textContent = 'Added 50 credits to your balance.';
+    });
+
+    buildMachineCards();
+    resetHandDisplay();
+    updateBetButtons();
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
