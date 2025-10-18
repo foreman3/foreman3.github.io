@@ -467,8 +467,14 @@ function triggerFall(piece){
   spawnParticles(piece.x + 1, piece.y - 0.5, '#ffcf5d', 8);
 }
 
-function ladderAt(x, y){
-  return ladders.some(l => Math.abs(l.x - x) < 0.35 && y >= l.top - 0.25 && y <= l.bottom);
+function ladderAt(x, y, toleranceX = 0.45){
+  const centerX = x + 0.5;
+  return ladders.find(l => {
+    const ladderCenter = l.x + 0.5;
+    return Math.abs(ladderCenter - centerX) <= toleranceX &&
+      y >= (l.top - 0.6) &&
+      y <= (l.bottom + 0.2);
+  }) || null;
 }
 
 function ridePieces(entity){
@@ -670,16 +676,26 @@ function handlePlayer(){
   player.x += player.vx;
   climbOntoPiece(player);
 
-  const onLadder = ladderAt(player.x, player.y);
-  const movingVertically = (keys.up && onLadder) || (keys.down && onLadder);
+  const wantsToClimb = keys.up || keys.down;
+  let onLadder = ladderAt(player.x, player.y);
+  if(wantsToClimb){
+    const snapCandidate = onLadder || ladderAt(player.x, player.y - 0.4, 0.7) || ladderAt(player.x, player.y + 0.4, 0.7);
+    if(snapCandidate){
+      onLadder = snapCandidate;
+      player.x = snapCandidate.x;
+      player.vx = 0;
+    }
+  }
 
-  if(keys.up && onLadder) player.y -= 0.12;
-  if(keys.down && onLadder) player.y += 0.12;
+  if(onLadder){
+    if(keys.up) player.y -= 0.12;
+    if(keys.down) player.y += 0.12;
 
-  if(onLadder && !movingVertically){
-    const snapFloor = floors.find(f => Math.abs(player.y - f) < 0.18);
-    if(snapFloor !== undefined){
-      player.y = snapFloor;
+    if(!wantsToClimb){
+      const snapFloor = floors.find(f => Math.abs(player.y - f) < 0.18);
+      if(snapFloor !== undefined){
+        player.y = snapFloor;
+      }
     }
   }
 
@@ -845,16 +861,18 @@ function drawLadders(){
   ctx.save();
   ctx.lineWidth = 0.05;
   for(const l of ladders){
-    const grad = ctx.createLinearGradient(l.x, l.top, l.x, l.bottom);
+    const top = l.top - 0.6;
+    const bottom = l.bottom + 0.2;
+    const grad = ctx.createLinearGradient(l.x, top, l.x, bottom);
     grad.addColorStop(0, '#fffd9a');
     grad.addColorStop(1, '#ffb347');
     ctx.strokeStyle = grad;
     ctx.beginPath();
-    ctx.moveTo(l.x + 0.25, l.top);
-    ctx.lineTo(l.x + 0.25, l.bottom);
-    ctx.moveTo(l.x + 0.75, l.top);
-    ctx.lineTo(l.x + 0.75, l.bottom);
-    for(let y = l.top + 0.5; y < l.bottom; y += 0.5){
+    ctx.moveTo(l.x + 0.25, top);
+    ctx.lineTo(l.x + 0.25, bottom);
+    ctx.moveTo(l.x + 0.75, top);
+    ctx.lineTo(l.x + 0.75, bottom);
+    for(let y = top + 0.5; y < bottom; y += 0.5){
       ctx.moveTo(l.x + 0.25, y);
       ctx.lineTo(l.x + 0.75, y);
     }
