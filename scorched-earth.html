@@ -170,6 +170,12 @@
       flex-direction: column;
       gap: 16px;
     }
+    .setup-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
     #opponentSelectors {
       display: flex;
       flex-direction: column;
@@ -214,11 +220,26 @@
       letter-spacing: 0.03em;
       text-transform: uppercase;
     }
-    #startGameBtn {
-      align-self: flex-end;
+    #startGameBtn,
+    #weaponsTestBtn {
       padding: 10px 20px;
       font-weight: 600;
       letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    #startGameBtn {
+      background: linear-gradient(135deg, rgba(90,214,255,0.3), rgba(10,94,135,0.85));
+      border-color: rgba(90,214,255,0.5);
+    }
+    #startGameBtn:hover {
+      box-shadow: 0 12px 28px rgba(90,214,255,0.35);
+    }
+    #weaponsTestBtn {
+      background: linear-gradient(135deg, rgba(255,168,120,0.24), rgba(190,82,34,0.82));
+      border-color: rgba(255,168,120,0.55);
+    }
+    #weaponsTestBtn:hover {
+      box-shadow: 0 12px 28px rgba(255,168,120,0.38);
     }
     #shopPanel {
       width: min(720px, 90vw);
@@ -301,7 +322,10 @@
           </select>
         </label>
         <div id="opponentSelectors"></div>
-        <button id="startGameBtn">Deploy Forces</button>
+        <div class="setup-actions">
+          <button id="startGameBtn">Deploy Forces</button>
+          <button id="weaponsTestBtn">Weapons Test</button>
+        </div>
       </div>
     </div>
   </div>
@@ -501,6 +525,15 @@
       };
     }
 
+    function grantWeaponsTestLoadout(tank) {
+      Object.keys(weaponCatalog).forEach(name => {
+        tank.inventory[name] = Infinity;
+      });
+      Object.keys(utilities).forEach(name => {
+        tank.inventory[name] = Infinity;
+      });
+    }
+
     function createTank(name, color, options = {}) {
       const skill = options.skill ?? 3;
       return {
@@ -546,6 +579,7 @@
     let currentShopCommander = null;
     let fastForwardActive = false;
     let lastFrameTime = null;
+    let weaponsTestMode = false;
 
     const projectiles = [];
     const particles = [];
@@ -573,7 +607,7 @@
       fastForwardActive = shouldFastForward;
       const skipBtn = document.getElementById('skipFightBtn');
       if (skipBtn) {
-        if (shouldFastForward && gameState !== 'roundEnd') {
+        if (!weaponsTestMode && shouldFastForward && gameState !== 'roundEnd') {
           skipBtn.style.display = 'inline-flex';
           skipBtn.disabled = false;
         } else {
@@ -694,6 +728,7 @@
       if (overlay) {
         overlay.classList.add('active');
       }
+      weaponsTestMode = false;
       gameState = 'setup';
       disablePlayerControls();
       setStatus('Configure opponents to begin the campaign.');
@@ -705,7 +740,11 @@
     function resetTankForCampaign(tank, resetMoney = true) {
       tank.inventory = baseInventory();
       if (tank.isPlayer) {
-        tank.inventory['Baby Missile'] = Infinity;
+        if (weaponsTestMode) {
+          grantWeaponsTestLoadout(tank);
+        } else {
+          tank.inventory['Baby Missile'] = Infinity;
+        }
       }
       if (resetMoney) {
         tank.money = tank.isPlayer ? 400 : 0;
@@ -725,7 +764,11 @@
     function buildHuman(name, paletteIndex) {
       const color = humanPalette[paletteIndex % humanPalette.length];
       const tank = createTank(name, color, { ai: false });
-      tank.inventory['Baby Missile'] = Infinity;
+      if (weaponsTestMode) {
+        grantWeaponsTestLoadout(tank);
+      } else {
+        tank.inventory['Baby Missile'] = Infinity;
+      }
       return tank;
     }
 
@@ -743,7 +786,9 @@
       setActiveHuman(commander);
     }
 
-    function configureRoster(configs) {
+    function configureRoster(configs, options = {}) {
+      const isWeaponsTest = !!options.weaponsTest;
+      weaponsTestMode = isWeaponsTest;
       const commanderField = document.getElementById('commanderName');
       const commanderName = commanderField && commanderField.value.trim().length
         ? commanderField.value.trim()
@@ -751,23 +796,28 @@
       humanPlayers = [buildHuman(commanderName, 0)];
       aiOpponents = [];
 
-      configs.forEach((config, idx) => {
-        if (config.type === 'human') {
-          const humanIndex = humanPlayers.length;
-          humanPlayers.push(buildHuman(config.name || `Commander ${idx + 2}`, humanIndex));
-        } else {
-          const aiIndex = aiOpponents.length;
-          const color = aiPalette[aiIndex % aiPalette.length];
-          const aiName = config.name || aiNames[aiIndex % aiNames.length];
-          const tank = createTank(aiName, color, { ai: true, skill: config.skill ?? 3 });
-          tank.money = 0;
-          aiOpponents.push(tank);
-        }
-      });
+      if (!isWeaponsTest) {
+        configs.forEach((config, idx) => {
+          if (config.type === 'human') {
+            const humanIndex = humanPlayers.length;
+            humanPlayers.push(buildHuman(config.name || `Commander ${idx + 2}`, humanIndex));
+          } else {
+            const aiIndex = aiOpponents.length;
+            const color = aiPalette[aiIndex % aiPalette.length];
+            const aiName = config.name || aiNames[aiIndex % aiNames.length];
+            const tank = createTank(aiName, color, { ai: true, skill: config.skill ?? 3 });
+            tank.money = 0;
+            aiOpponents.push(tank);
+          }
+        });
+      }
 
       tanks = [...humanPlayers, ...aiOpponents];
-      humanPlayers.forEach(tank => resetTankForCampaign(tank, true));
-      aiOpponents.forEach(tank => resetTankForCampaign(tank, true));
+      const resetMoney = !isWeaponsTest;
+      humanPlayers.forEach(tank => resetTankForCampaign(tank, resetMoney));
+      if (!isWeaponsTest) {
+        aiOpponents.forEach(tank => resetTankForCampaign(tank, true));
+      }
       roundNumber = 0;
       wind = 0;
       roundStarterIndex = 0;
@@ -799,6 +849,13 @@
           return;
         }
         configureRoster(configs);
+      });
+    }
+
+    const weaponsTestBtn = document.getElementById('weaponsTestBtn');
+    if (weaponsTestBtn) {
+      weaponsTestBtn.addEventListener('click', () => {
+        configureRoster([], { weaponsTest: true });
       });
     }
 
@@ -915,7 +972,11 @@
       shopQueue = [];
       currentShopCommander = null;
       closeShopOverlay();
-      roundNumber++;
+      if (weaponsTestMode) {
+        roundNumber = roundNumber === 0 ? 1 : roundNumber;
+      } else {
+        roundNumber++;
+      }
       generateTerrain();
       smoothTerrain(3);
       placeTanks();
@@ -930,10 +991,14 @@
       currentPlayerIndex = roundStarterIndex;
       currentPlayer = tanks[currentPlayerIndex];
       gameState = 'aim';
-      const opener = currentPlayer.isPlayer
-        ? `${currentPlayer.name} takes the first shot.`
-        : `${currentPlayer.name} seizes the initiative.`;
-      setStatus(`Round ${roundNumber} begins. ${opener}`);
+      if (weaponsTestMode) {
+        setStatus('Weapons test range ready. Fire at will.');
+      } else {
+        const opener = currentPlayer.isPlayer
+          ? `${currentPlayer.name} takes the first shot.`
+          : `${currentPlayer.name} seizes the initiative.`;
+        setStatus(`Round ${roundNumber} begins. ${opener}`);
+      }
       if (currentPlayer.isPlayer) {
         setActiveHuman(currentPlayer);
         enablePlayerControls();
@@ -985,7 +1050,7 @@
     function updateHUD() {
       const roundDisplay = document.getElementById('roundDisplay');
       if (roundDisplay) {
-        roundDisplay.textContent = roundNumber;
+        roundDisplay.textContent = weaponsTestMode ? 'Test' : roundNumber;
       }
       const windDisplay = document.getElementById('windDisplay');
       if (windDisplay) {
@@ -1000,7 +1065,11 @@
       const human = activeHuman;
       const moneyDisplay = document.getElementById('moneyDisplay');
       if (moneyDisplay) {
-        moneyDisplay.textContent = human ? human.money : 0;
+        if (weaponsTestMode) {
+          moneyDisplay.textContent = '∞';
+        } else {
+          moneyDisplay.textContent = human ? human.money : 0;
+        }
       }
       const turnDisplay = document.getElementById('turnDisplay');
       if (turnDisplay) {
@@ -1272,6 +1341,10 @@
     const shopBtn = document.getElementById('shopBtn');
     if (shopBtn) {
       shopBtn.addEventListener('click', () => {
+        if (weaponsTestMode) {
+          setStatus('Weapons Test supplies are limitless—no depot required.');
+          return;
+        }
         if (gameState !== 'roundEnd') {
           setStatus('You can visit the depot between rounds. Finish the fight!');
           return;
@@ -1384,6 +1457,10 @@
     }
 
     function skipCurrentFight() {
+      if (weaponsTestMode) {
+        setStatus('Weapons Test mode has no rival commanders to skip.');
+        return;
+      }
       const remaining = tanks.filter(t => t.alive);
       const winner = remaining[0] || null;
       resetProjectiles();
@@ -1460,6 +1537,27 @@
       updateHUD();
       const survivors = tanks.filter(t => t.alive);
       if (survivors.length <= 1) {
+        if (weaponsTestMode) {
+          const tester = humanPlayers[0] || survivors[0] || tank;
+          resetProjectiles();
+          particles.length = 0;
+          fireZones.length = 0;
+          if (tester) {
+            resetTankForCampaign(tester, false);
+          }
+          tanks = humanPlayers.slice();
+          currentPlayerIndex = 0;
+          currentPlayer = tester || null;
+          setActiveHuman(tester || null);
+          setStatus('Weapons test recalibrating...');
+          setTimeout(() => {
+            if (tester && !tester.alive) {
+              tester.alive = true;
+            }
+            startRound();
+          }, 600);
+          return;
+        }
         const winner = survivors[0] || source || null;
         endRound(winner, `${tank.name} destroyed`);
       }
