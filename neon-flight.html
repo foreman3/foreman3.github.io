@@ -100,6 +100,11 @@
       };
     }
 
+    function damp(current, target, lambda, dt){
+      const t = 1 - Math.exp(-lambda * dt);
+      return lerp(current, target, clamp(t, 0, 1));
+    }
+
     function resizeGame(){
       const sidebar = document.getElementById('sidebar');
       const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
@@ -145,13 +150,32 @@
 
     let plane, buildings, rings, distance, score, nextRing, running;
     let playerZ, nextBuildingZ;
-    let left=false, right=false, up=false, down=false;
+    const keyState = new Set();
+    const controlState = { lateral: 0, vertical: 0, throttle: 0 };
     let stars = [];
     let nebulae = [];
     let auroraBands = [];
 
     function resetGame(){
-      plane = { x:0, y:50, z:PLANE_Z, speed:8 };
+      plane = {
+        x: 0,
+        y: 70,
+        z: PLANE_Z,
+        forwardSpeed: 420,
+        minSpeed: 320,
+        maxSpeed: 640,
+        cruiseSpeed: 420,
+        throttleResponse: 420,
+        maxStrafeSpeed: 280,
+        maxClimbSpeed: 220,
+        steerResponsiveness: 7.5,
+        maxRoll: 32,
+        maxPitch: 18,
+        vx: 0,
+        vy: 0,
+        roll: 0,
+        pitch: 0
+      };
       buildings = [];
       rings = [];
       distance = 0;
@@ -160,7 +184,15 @@
       running = true;
       playerZ = 0;
       nextBuildingZ = BUILDING_SPAWN_START;
-      document.getElementById('message').textContent = '';
+      controlState.lateral = 0;
+      controlState.vertical = 0;
+      controlState.throttle = 0;
+      keyState.delete('Space');
+      keyState.delete('ShiftLeft');
+      keyState.delete('ShiftRight');
+      keyState.delete('KeyE');
+      keyState.delete('KeyQ');
+      document.getElementById('message').textContent = 'WASD/Arrow keys steer · Space boosts · Shift slows';
       stars = Array.from({length:160}, () => ({
         x: Math.random()*canvas.width,
         y: Math.random()*canvas.height,
@@ -536,29 +568,82 @@
     }
   }
 
-    function update(){
-      if(!running) return;
-      const ctrl = 8;
-      if(left) plane.x -= ctrl;
-      if(right) plane.x += ctrl;
-      if(up) plane.y += ctrl;
-      if(down) plane.y -= ctrl;
-      plane.x = Math.max(-300, Math.min(300, plane.x));
-      plane.y = Math.max(20, Math.min(150, plane.y));
+  function isKeyDown(...codes){
+    return codes.some(code => keyState.has(code));
+  }
+
+  function readInputAxes(){
+    let lateral = 0;
+    let vertical = 0;
+    let throttle = 0;
+    if(isKeyDown('ArrowLeft', 'KeyA')) lateral -= 1;
+    if(isKeyDown('ArrowRight', 'KeyD')) lateral += 1;
+    if(isKeyDown('ArrowUp', 'KeyW')) vertical += 1;
+    if(isKeyDown('ArrowDown', 'KeyS')) vertical -= 1;
+    if(isKeyDown('ShiftLeft', 'ShiftRight', 'KeyQ')) throttle -= 1;
+    if(isKeyDown('Space', 'KeyE')) throttle += 1;
+    return { lateral, vertical, throttle };
+  }
+
+  function updateControls(dt, active){
+    const { lateral, vertical, throttle } = readInputAxes();
+    const response = active ? 8 : 5;
+    controlState.lateral = damp(controlState.lateral, active ? lateral : 0, response, dt);
+    controlState.vertical = damp(controlState.vertical, active ? vertical : 0, response, dt);
+    controlState.throttle = damp(controlState.throttle, active ? throttle : 0, 4.5, dt);
+
+    const targetVx = controlState.lateral * plane.maxStrafeSpeed;
+    const targetVy = controlState.vertical * plane.maxClimbSpeed;
+    plane.vx = damp(plane.vx, targetVx, plane.steerResponsiveness, dt);
+    plane.vy = damp(plane.vy, targetVy, plane.steerResponsiveness, dt);
+
+    const rollTarget = -controlState.lateral * plane.maxRoll;
+    plane.roll = damp(plane.roll, rollTarget, 5.5, dt);
+    const speedDelta = clamp((plane.forwardSpeed - plane.cruiseSpeed) / plane.cruiseSpeed, -1, 1);
+    const pitchTarget = controlState.vertical * plane.maxPitch - speedDelta * plane.maxPitch * 0.25;
+    plane.pitch = damp(plane.pitch, pitchTarget, 4.2, dt);
+
+    if(active){
+      plane.forwardSpeed = clamp(
+        plane.forwardSpeed + controlState.throttle * plane.throttleResponse * dt,
+        plane.minSpeed,
+        plane.maxSpeed
+      );
+      plane.x += plane.vx * dt;
+      plane.y -= plane.vy * dt;
+    } else {
+      plane.forwardSpeed = damp(plane.forwardSpeed, 0, 2.2, dt);
+      plane.vx = damp(plane.vx, 0, plane.steerResponsiveness, dt);
+      plane.vy = damp(plane.vy, 0, plane.steerResponsiveness, dt);
+    }
+
+    plane.x = clamp(plane.x, -300, 300);
+    plane.y = clamp(plane.y, 20, 170);
+  }
+
+    function update(dt){
+      updateControls(dt, running);
+
+      const starDrift = plane.forwardSpeed * dt * 0.28;
       for(const s of stars){
-        s.y += plane.speed*0.25 * s.speed;
-        s.phase += 0.02;
+        s.y += starDrift * s.speed;
+        s.phase += dt * 2.4;
         if(s.y > canvas.height){
-          s.y = 0;
+          s.y = -s.size;
           s.x = Math.random()*canvas.width;
           s.speed = 0.4 + Math.random()*0.6;
         }
       }
       for(const band of auroraBands){
-        band.phase += band.speed * plane.speed;
+        band.phase += band.speed * plane.forwardSpeed * dt * 1.15;
       }
 
-      playerZ += plane.speed;
+      if(!running){
+        document.getElementById('info').textContent = `Distance: ${Math.floor(distance)} | Score: ${score}`;
+        return;
+      }
+
+      playerZ += plane.forwardSpeed * dt;
       distance = playerZ;
 
       const crashed = updateBuildings();
@@ -566,7 +651,9 @@
 
       if(crashed){
         running = false;
-        document.getElementById('message').textContent = 'Crash! Press Space';
+        document.getElementById('message').textContent = 'Crash! Press Space to restart';
+        document.getElementById('info').textContent = `Distance: ${Math.floor(distance)} | Score: ${score}`;
+        return;
       }
 
       updateRings();
@@ -1227,15 +1314,17 @@
     const x = canvas.width/2;
     const y = canvas.height*0.7;
     ctx.save();
+    ctx.translate(x, y + plane.pitch * 1.5);
+    ctx.rotate((plane.roll || 0) * Math.PI / 180 * 0.35);
     ctx.strokeStyle = 'rgba(120,255,210,0.9)';
     ctx.lineWidth = 1.3;
     ctx.shadowColor = 'rgba(120,255,210,0.6)';
     ctx.shadowBlur = 8;
     ctx.beginPath();
-    ctx.moveTo(x - len, y);
-    ctx.lineTo(x + len, y);
-    ctx.moveTo(x, y - len);
-    ctx.lineTo(x, y + len);
+    ctx.moveTo(-len, 0);
+    ctx.lineTo(len, 0);
+    ctx.moveTo(0, -len);
+    ctx.lineTo(0, len);
     ctx.stroke();
     ctx.shadowBlur = 0;
     ctx.restore();
@@ -1267,29 +1356,50 @@
       drawCrosshair();
     }
 
-    function loop(){
-      update();
+    let lastTimestamp = 0;
+    function frame(timestamp){
+      if(!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min(0.05, (timestamp - lastTimestamp)/1000);
+      lastTimestamp = timestamp;
+      update(dt);
       draw();
+      requestAnimationFrame(frame);
     }
 
+    const CONTROL_KEYS = new Set([
+      'ArrowLeft','ArrowRight','ArrowUp','ArrowDown',
+      'KeyW','KeyA','KeyS','KeyD',
+      'ShiftLeft','ShiftRight','KeyQ','KeyE','Space'
+    ]);
+
     window.addEventListener('keydown', e => {
-      if(e.code === 'ArrowLeft'){ left = true; }
-      if(e.code === 'ArrowRight'){ right = true; }
-      if(e.code === 'ArrowUp'){ up = true; }
-      if(e.code === 'ArrowDown'){ down = true; }
-      if(e.code === 'Space' && !running) resetGame();
+      keyState.add(e.code);
+      if(CONTROL_KEYS.has(e.code)){
+        e.preventDefault();
+      }
+      if(e.code === 'Space' && !running){
+        resetGame();
+        lastTimestamp = 0;
+      }
     });
     window.addEventListener('keyup', e => {
-      if(e.code === 'ArrowLeft') left = false;
-      if(e.code === 'ArrowRight') right = false;
-      if(e.code === 'ArrowUp') up = false;
-      if(e.code === 'ArrowDown') down = false;
+      keyState.delete(e.code);
+      if(CONTROL_KEYS.has(e.code)){
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      keyState.clear();
+      controlState.lateral = 0;
+      controlState.vertical = 0;
+      controlState.throttle = 0;
     });
 
     window.addEventListener('load', () => {
       resizeGame();
       resetGame();
-      setInterval(loop, 1000/60);
+      requestAnimationFrame(frame);
     });
     window.addEventListener('resize', resizeGame);
   </script>
