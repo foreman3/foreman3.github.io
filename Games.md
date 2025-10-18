@@ -23,4 +23,5 @@ This repository hosts simple arcade-style video games.
 - [Boxing](boxing.html) - Step into a 3D ring and dodge telegraphed punches from varied opponents.
 - [Neon Flight](neon-flight.html) - Dodge wireframe skyscrapers in a glowing city.
 - [Excitebike](excitebike.html) - Race over jumps and dodge obstacles.
+- [Number Munchers](number-munchers.html) - Devour correct answers while dodging Troggles.
 

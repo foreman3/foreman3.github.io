@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Number Munchers</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top, #0d2342 0%, #040b18 65%, #02060f 100%);
+      color: #f4fbff;
+    }
+    #sidebar-placeholder {
+      width: 220px;
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 28px 48px;
+      gap: 18px;
+    }
+    h1 {
+      font-size: clamp(2rem, 3.5vw, 3.4rem);
+      letter-spacing: 2px;
+      margin: 0;
+      text-shadow: 0 10px 22px rgba(0, 0, 0, 0.7);
+    }
+    #mode-panel {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      align-items: center;
+    }
+    .mode-button,
+    #challengeToggle,
+    #resetGame {
+      background: rgba(12, 33, 62, 0.85);
+      border: 1px solid rgba(104, 220, 255, 0.55);
+      color: #f4fbff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.3s ease;
+    }
+    .mode-button:hover,
+    #challengeToggle:hover,
+    #resetGame:hover,
+    .mode-button:focus-visible,
+    #challengeToggle:focus-visible,
+    #resetGame:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(82, 200, 255, 0.35);
+      outline: none;
+      background: rgba(30, 82, 135, 0.9);
+    }
+    .mode-button.active {
+      background: linear-gradient(135deg, rgba(104, 220, 255, 0.9), rgba(31, 158, 255, 0.85));
+      color: #071019;
+      box-shadow: 0 12px 35px rgba(31, 158, 255, 0.5);
+    }
+    #challengeToggle.active {
+      background: linear-gradient(135deg, rgba(255, 153, 102, 0.95), rgba(255, 94, 165, 0.85));
+      border-color: rgba(255, 188, 150, 0.7);
+      color: #0d0311;
+    }
+    #rule-banner {
+      max-width: 740px;
+      background: linear-gradient(135deg, rgba(17, 49, 88, 0.9), rgba(10, 29, 52, 0.95));
+      border: 1px solid rgba(97, 186, 255, 0.35);
+      border-radius: 18px;
+      padding: 14px 22px;
+      text-align: center;
+      box-shadow: 0 18px 45px rgba(4, 13, 25, 0.65);
+    }
+    #rule-label {
+      display: block;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    #mode-description {
+      display: block;
+      margin-top: 6px;
+      color: rgba(212, 232, 255, 0.85);
+      font-size: 0.95rem;
+    }
+    canvas {
+      width: min(90vw, 520px);
+      height: min(90vw, 520px);
+      max-width: 520px;
+      max-height: 520px;
+      border-radius: 24px;
+      border: 4px solid rgba(97, 186, 255, 0.5);
+      background: radial-gradient(circle at top, #0a1d35 0%, #051124 80%);
+      box-shadow: 0 30px 60px rgba(3, 10, 24, 0.7);
+    }
+    #hud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+      font-size: 1.05rem;
+    }
+    #hud span {
+      background: rgba(9, 27, 52, 0.75);
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(94, 200, 255, 0.35);
+      letter-spacing: 0.5px;
+    }
+    #message {
+      min-height: 28px;
+      font-size: 1.1rem;
+      text-align: center;
+      color: #f7d776;
+      text-shadow: 0 5px 12px rgba(0, 0, 0, 0.6);
+    }
+    #legend {
+      max-width: 760px;
+      background: rgba(7, 18, 34, 0.8);
+      border-radius: 16px;
+      padding: 16px 24px 22px;
+      border: 1px solid rgba(75, 140, 214, 0.4);
+      box-shadow: 0 20px 50px rgba(3, 12, 30, 0.65);
+    }
+    #legend h2 {
+      margin: 0 0 12px;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+    }
+    #legend ul {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.6;
+      color: rgba(207, 225, 255, 0.9);
+    }
+    .chip {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      margin-right: 6px;
+      box-shadow: 0 0 8px currentColor;
+    }
+    .chip.reggie { color: #ff6b6b; background: #ff6b6b; }
+    .chip.bashful { color: #6bc5ff; background: #6bc5ff; }
+    .chip.helper { color: #7bff9f; background: #7bff9f; }
+    .chip.worker { color: #d7a8ff; background: #d7a8ff; }
+    .chip.smartie { color: #ffd86f; background: #ffd86f; }
+    .chip.safety { color: #f4fbff; background: #f4fbff; }
+    @media (max-width: 860px) {
+      body { flex-direction: column; align-items: center; }
+      #sidebar-placeholder { width: 100%; }
+      #game-container { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Number Munchers</h1>
+    <div id="mode-panel">
+      <button class="mode-button" data-mode="multiples">Multiples</button>
+      <button class="mode-button" data-mode="factors">Factors</button>
+      <button class="mode-button" data-mode="primes">Primes</button>
+      <button class="mode-button" data-mode="equalities">Equalities</button>
+      <button class="mode-button" data-mode="inequalities">Inequalities</button>
+      <button id="challengeToggle">Challenge Mode: Off</button>
+      <button id="resetGame">New Game</button>
+    </div>
+    <div id="rule-banner">
+      <span id="rule-label">Welcome to the grid.</span>
+      <span id="mode-description">Choose a mode or toggle Challenge to cycle the classic math hunts.</span>
+    </div>
+    <canvas id="board" width="520" height="520" aria-label="Number Munchers board" role="img"></canvas>
+    <div id="hud">
+      <span id="score">Score: 0</span>
+      <span id="lives">Lives: 4</span>
+      <span id="level">Level: 1</span>
+      <span id="troggles">Troggles: 0</span>
+    </div>
+    <div id="message"></div>
+    <div id="legend">
+      <h2>Troggle Report</h2>
+      <ul>
+        <li><span class="chip reggie"></span>Reggies march in straight lines until something forces a turn.</li>
+        <li><span class="chip bashful"></span>Bashfuls wander but shy away when you get too close.</li>
+        <li><span class="chip helper"></span>Helpers gobble everything in sight, answers included.</li>
+        <li><span class="chip worker"></span>Workers rewrite tiles, swapping numbers and equations as they roam.</li>
+        <li><span class="chip smartie"></span>Smarties wear glasses for a reason—they beeline straight for you.</li>
+        <li><span class="chip safety"></span>Safety squares shimmer with four white corners—Troggles can’t enter.</li>
+      </ul>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
+        if (typeof radius === 'number') {
+          radius = { tl: radius, tr: radius, br: radius, bl: radius };
+        } else {
+          radius = Object.assign({ tl: 0, tr: 0, br: 0, bl: 0 }, radius);
+        }
+        this.moveTo(x + radius.tl, y);
+        this.lineTo(x + width - radius.tr, y);
+        this.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+        this.lineTo(x + width, y + height - radius.br);
+        this.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+        this.lineTo(x + radius.bl, y + height);
+        this.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+        this.lineTo(x, y + radius.tl);
+        this.quadraticCurveTo(x, y, x + radius.tl, y);
+        this.closePath();
+        return this;
+      };
+    }
+    const GRID = 5;
+    const CELL = canvas.width / GRID;
+
+    const directions = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 }
+    ];
+
+    const troggleDefinitions = [
+      { id: 'reggie', name: 'Reggie', color: '#ff6b6b', behavior: 'reggie' },
+      { id: 'bashful', name: 'Bashful', color: '#6bc5ff', behavior: 'bashful' },
+      { id: 'helper', name: 'Helper', color: '#7bff9f', behavior: 'helper' },
+      { id: 'worker', name: 'Worker', color: '#d7a8ff', behavior: 'worker' },
+      { id: 'smartie', name: 'Smartie', color: '#ffd86f', behavior: 'smartie' }
+    ];
+
+    const modes = [
+      {
+        id: 'multiples',
+        name: 'Multiples',
+        description: 'Munch every tile that is a multiple of the featured number.',
+        generate(level) {
+          const base = randomInt(2, Math.min(12, 3 + Math.floor(level / 2)));
+          const max = Math.max(base * (4 + Math.floor(level / 3)), 18 + level * 3);
+          const rule = {
+            ruleText: `Munch every multiple of ${base}.`,
+            description: this.description,
+            details: { base, max },
+            check(tile) {
+              return tile.value % base === 0;
+            },
+            mutate(tile) {
+              tile.value = randomInt(2, max + 6);
+              tile.text = String(tile.value);
+            }
+          };
+          rule.tiles = createNumberTiles(rule, {
+            min: 2,
+            max,
+            makeCorrect: () => base * randomInt(1, 6 + Math.floor(level / 2))
+          });
+          return rule;
+        }
+      },
+      {
+        id: 'factors',
+        name: 'Factors',
+        description: 'Find every factor of the highlighted number.',
+        generate(level) {
+          let target = randomInt(8, 20 + level * 3);
+          while (isPrime(target)) {
+            target += 1;
+          }
+          const factors = getFactors(target);
+          const max = Math.max(target + 14, 28 + level * 4);
+          const rule = {
+            ruleText: `Munch every factor of ${target}.`,
+            description: this.description,
+            details: { target, max, factors },
+            check(tile) {
+              return target % tile.value === 0;
+            },
+            mutate(tile) {
+              if (Math.random() < 0.45) {
+                tile.value = randomChoice(factors);
+              } else {
+                tile.value = randomInt(2, max);
+              }
+              tile.text = String(tile.value);
+            }
+          };
+          rule.tiles = createNumberTiles(rule, {
+            min: 2,
+            max,
+            makeCorrect: () => randomChoice(factors)
+          });
+          return rule;
+        }
+      },
+      {
+        id: 'primes',
+        name: 'Primes',
+        description: 'Only prime numbers are safe to munch.',
+        generate(level) {
+          const max = Math.max(50, 26 + level * 5);
+          const rule = {
+            ruleText: 'Munch the prime numbers.',
+            description: this.description,
+            details: { max },
+            check(tile) {
+              return isPrime(tile.value);
+            },
+            mutate(tile) {
+              tile.value = randomInt(2, max + 10);
+              tile.text = String(tile.value);
+            }
+          };
+          rule.tiles = createNumberTiles(rule, {
+            min: 2,
+            max,
+            makeCorrect: () => randomPrimeBelow(max + 10)
+          });
+          return rule;
+        }
+      },
+      {
+        id: 'equalities',
+        name: 'Equalities',
+        description: 'Equations that equal the featured number are tasty.',
+        generate(level) {
+          const target = randomInt(4, 12 + Math.floor(level * 1.2));
+          const rule = {
+            ruleText: `Munch equations equal to ${target}.`,
+            description: this.description,
+            details: { target, level },
+            check(tile) {
+              return tile.value === target;
+            },
+            mutate(tile) {
+              setExpressionTile(tile, target, Math.random() < 0.5, level);
+            }
+          };
+          rule.tiles = createExpressionTiles(rule, true);
+          return rule;
+        }
+      },
+      {
+        id: 'inequalities',
+        name: 'Inequalities',
+        description: 'Only equations that do NOT equal the target are safe.',
+        generate(level) {
+          const target = randomInt(4, 14 + Math.floor(level * 1.3));
+          const rule = {
+            ruleText: `Avoid matches—munch expressions NOT equal to ${target}.`,
+            description: this.description,
+            details: { target, level },
+            check(tile) {
+              return tile.value !== target;
+            },
+            mutate(tile) {
+              setExpressionTile(tile, target, Math.random() < 0.35, level);
+            }
+          };
+          rule.tiles = createExpressionTiles(rule, false);
+          return rule;
+        }
+      }
+    ];
+
+    let currentMode = modes[0];
+    let activeRule = null;
+    let activeMode = currentMode;
+    let challengeMode = false;
+    let tiles = [];
+    let troggles = [];
+    let muncher = { x: Math.floor(GRID / 2), y: Math.floor(GRID / 2) };
+    let lives = 4;
+    let score = 0;
+    let level = 1;
+    let message = '';
+    let nextLifeScore = 2500;
+    let troggleTimer = null;
+    let gameOver = false;
+    let safetySquare = { index: null, timer: 0 };
+
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const levelEl = document.getElementById('level');
+    const troggleEl = document.getElementById('troggles');
+    const messageEl = document.getElementById('message');
+    const ruleEl = document.getElementById('rule-label');
+    const descriptionEl = document.getElementById('mode-description');
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomChoice(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function isPrime(n) {
+      if (n < 2) return false;
+      if (n % 2 === 0) return n === 2;
+      const limit = Math.sqrt(n);
+      for (let i = 3; i <= limit; i += 2) {
+        if (n % i === 0) return false;
+      }
+      return true;
+    }
+
+    function randomPrimeBelow(max) {
+      const primes = [];
+      for (let i = 2; i <= max; i++) {
+        if (isPrime(i)) primes.push(i);
+      }
+      return primes.length ? randomChoice(primes) : 2;
+    }
+
+    function getFactors(n) {
+      const out = [];
+      for (let i = 1; i <= n; i++) {
+        if (n % i === 0) out.push(i);
+      }
+      return out;
+    }
+
+    function createNumberTiles(rule, options) {
+      const total = GRID * GRID;
+      const tiles = [];
+      const desiredCorrect = Math.max(5, Math.floor(total * 0.35));
+      let correctCount = 0;
+      for (let i = 0; i < total; i++) {
+        const value = randomInt(options.min, options.max);
+        const tile = {
+          text: String(value),
+          value,
+          type: 'number',
+          eaten: false,
+          helperCleared: false,
+          mistake: false
+        };
+        tile.correct = rule.check(tile);
+        if (tile.correct) correctCount++;
+        tiles.push(tile);
+      }
+      let cursor = 0;
+      while (correctCount < desiredCorrect && cursor < tiles.length * 2) {
+        const tile = tiles[cursor % tiles.length];
+        if (!tile.correct) {
+          const value = options.makeCorrect();
+          tile.value = value;
+          tile.text = String(value);
+          tile.correct = true;
+          correctCount++;
+        }
+        cursor++;
+      }
+      return tiles;
+    }
+
+    function setExpressionTile(tile, target, makeEqual, level) {
+      const variants = [
+        (t) => {
+          const add = randomInt(1, Math.max(2, Math.floor(t / 2)));
+          return { text: `${t - add} + ${add}`, value: t };
+        },
+        (t) => {
+          const extra = randomInt(1, Math.max(2, 6 + Math.floor(level / 2)));
+          return { text: `${t + extra} - ${extra}`, value: t };
+        },
+        (t) => {
+          const factors = getFactors(t).filter((f) => f !== 1 && f !== t);
+          if (!factors.length) return null;
+          const a = randomChoice(factors);
+          const b = t / a;
+          return { text: `${a} × ${b}`, value: t };
+        },
+        (t) => {
+          const multiplier = randomInt(2, Math.max(3, 4 + Math.floor(level / 3)));
+          return { text: `${t * multiplier} ÷ ${multiplier}`, value: t };
+        }
+      ];
+      const missVariants = [
+        (t) => {
+          const offset = randomInt(1, 6 + Math.floor(level / 2));
+          return { text: `${t} + ${offset}`, value: t + offset };
+        },
+        (t) => {
+          const offset = randomInt(1, Math.max(2, Math.floor(t / 2)));
+          return { text: `${t} - ${offset}`, value: t - offset };
+        },
+        (t) => {
+          const a = randomInt(2, Math.max(3, t + Math.floor(level)));
+          const b = randomInt(2, 9 + Math.floor(level / 2));
+          return { text: `${a} × ${b}`, value: a * b };
+        },
+        (t) => {
+          const numerator = randomInt(t + 4, t + 12 + level * 2);
+          const denominator = randomInt(2, 9);
+          const value = Math.round((numerator / denominator) * 100) / 100;
+          return { text: `${numerator} ÷ ${denominator}`, value };
+        }
+      ];
+      const pool = makeEqual ? variants : missVariants;
+      let pick = null;
+      let attempts = 0;
+      while (!pick && attempts < 10) {
+        pick = randomChoice(pool)(target);
+        attempts++;
+      }
+      if (!pick) {
+        pick = { text: `${target} + 1`, value: target + 1 };
+      }
+      tile.text = pick.text;
+      tile.value = pick.value;
+      tile.type = 'expression';
+      tile.eaten = false;
+      tile.helperCleared = false;
+      tile.mistake = false;
+      tile.displayValue = pick.value;
+    }
+
+    function createExpressionTiles(rule, equalMode) {
+      const total = GRID * GRID;
+      const tiles = new Array(total).fill(null).map(() => ({
+        text: '',
+        value: 0,
+        type: 'expression',
+        eaten: false,
+        helperCleared: false,
+        mistake: false
+      }));
+      let equalCount = 0;
+      let notEqualCount = 0;
+      const minEach = Math.max(4, Math.floor(total * 0.25));
+      tiles.forEach((tile, idx) => {
+        let makeEqual;
+        if (equalCount < minEach && notEqualCount < minEach) {
+          makeEqual = idx % 2 === 0;
+        } else if (equalCount < minEach) {
+          makeEqual = true;
+        } else if (notEqualCount < minEach) {
+          makeEqual = false;
+        } else {
+          makeEqual = Math.random() < 0.5;
+        }
+        setExpressionTile(tile, rule.details.target, makeEqual, rule.details.level);
+        tile.correct = rule.check(tile);
+        if (tile.correct) {
+          if (equalMode) equalCount++; else notEqualCount++;
+        } else {
+          if (equalMode) notEqualCount++; else equalCount++;
+        }
+      });
+      return tiles;
+    }
+
+    function chooseTroggleTypesForLevel(level) {
+      if (level < 2) return troggleDefinitions.slice(0, 1);
+      if (level < 4) return troggleDefinitions.slice(0, 2);
+      if (level < 6) return troggleDefinitions.slice(0, 3);
+      if (level < 8) return troggleDefinitions.slice(0, 4);
+      return troggleDefinitions;
+    }
+
+    function trogglesForLevel(level) {
+      if (level >= 8) return 3;
+      if (level >= 4) return 2;
+      return 1;
+    }
+
+    function troggleSpeedForLevel(level) {
+      const base = Math.max(240, 700 - level * 28);
+      if (level > 18) {
+        return Math.max(140, base - (level - 18) * 18);
+      }
+      return base;
+    }
+
+    function startGame(resetEverything = true) {
+      if (resetEverything) {
+        level = 1;
+        score = 0;
+        lives = 4;
+        nextLifeScore = 2500;
+      }
+      gameOver = false;
+      muncher.x = Math.floor(GRID / 2);
+      muncher.y = Math.floor(GRID / 2);
+      prepareLevel();
+      updateHud();
+      message = 'Arrow keys move the Muncher. Eat wisely!';
+      messageEl.textContent = message;
+    }
+
+    function prepareLevel() {
+      activeMode = challengeMode ? randomChoice(modes) : currentMode;
+      activeRule = activeMode.generate(level);
+      tiles = activeRule.tiles;
+      safetySquare.index = null;
+      safetySquare.timer = 0;
+      ruleEl.textContent = activeRule.ruleText;
+      descriptionEl.textContent = activeRule.description;
+      troggles = [];
+      const desired = trogglesForLevel(level);
+      const allowedTypes = chooseTroggleTypesForLevel(level);
+      const occupied = new Set();
+      occupied.add(positionKey(muncher.x, muncher.y));
+      for (let i = 0; i < desired; i++) {
+        let placed = false;
+        let attempts = 0;
+        while (!placed && attempts < 25) {
+          const x = randomInt(0, GRID - 1);
+          const y = randomInt(0, GRID - 1);
+          const key = positionKey(x, y);
+          if (!occupied.has(key)) {
+            const type = randomChoice(allowedTypes);
+            troggles.push({
+              x,
+              y,
+              dir: randomChoice(directions),
+              type,
+              steps: 0
+            });
+            occupied.add(key);
+            placed = true;
+          }
+          attempts++;
+        }
+        if (!placed) {
+          const type = randomChoice(allowedTypes);
+          troggles.push({ x: 0, y: 0, dir: randomChoice(directions), type, steps: 0 });
+        }
+      }
+      restartTroggleTimer();
+    }
+
+    function restartTroggleTimer() {
+      if (troggleTimer) clearInterval(troggleTimer);
+      troggleTimer = setInterval(() => {
+        if (!gameOver) {
+          advanceTroggles();
+          maybeSpawnSafety();
+        }
+      }, troggleSpeedForLevel(level));
+    }
+
+    function positionKey(x, y) {
+      return `${x},${y}`;
+    }
+
+    function advanceTroggles() {
+      const toRemove = new Set();
+      troggles.forEach((troggle, index) => {
+        const moved = updateTroggle(troggle);
+        if (!moved) {
+          troggle.dir = randomChoice(directions);
+        }
+        handleTroggleTile(troggle);
+        if (safetySquare.index !== null && safetySquare.index === tileIndex(troggle.x, troggle.y)) {
+          toRemove.add(index);
+        }
+      });
+      const collisions = new Map();
+      troggles.forEach((troggle, index) => {
+        const key = positionKey(troggle.x, troggle.y);
+        if (!collisions.has(key)) collisions.set(key, []);
+        collisions.get(key).push(index);
+      });
+      collisions.forEach((indices) => {
+        if (indices.length > 1) {
+          indices.sort((a, b) => b - a);
+          for (let i = 1; i < indices.length; i++) {
+            toRemove.add(indices[i]);
+          }
+          if (indices.length > 1) {
+            message = 'Troggles devoured each other!';
+            messageEl.textContent = message;
+          }
+        }
+      });
+      if (toRemove.size) {
+        const sorted = Array.from(toRemove).sort((a, b) => b - a);
+        sorted.forEach((idx) => troggles.splice(idx, 1));
+      }
+      checkTroggleCollision();
+      updateHud();
+    }
+
+    function handleTroggleTile(troggle) {
+      const index = tileIndex(troggle.x, troggle.y);
+      if (safetySquare.index === index) {
+        return;
+      }
+      const tile = tiles[index];
+      if (!tile) return;
+      if (troggle.type.behavior === 'helper') {
+        if (!tile.eaten) {
+          tile.eaten = true;
+          tile.helperCleared = true;
+          if (tile.correct) {
+            message = 'A Helper ate an answer!';
+            messageEl.textContent = message;
+            checkLevelCleared();
+          }
+        }
+      }
+      if (troggle.type.behavior === 'worker' && !tile.eaten) {
+        if (typeof activeRule.mutate === 'function') {
+          activeRule.mutate(tile);
+          tile.correct = activeRule.check(tile);
+        }
+      }
+    }
+
+    function updateTroggle(troggle) {
+      const behavior = troggle.type.behavior;
+      let dir = troggle.dir;
+      if (behavior === 'reggie') {
+        if (!canMove(troggle, dir)) {
+          dir = randomChoice(directions);
+          troggle.dir = dir;
+        }
+      } else if (behavior === 'bashful') {
+        const dx = muncher.x - troggle.x;
+        const dy = muncher.y - troggle.y;
+        const distance = Math.abs(dx) + Math.abs(dy);
+        if (distance <= 2) {
+          dir = chooseBestDirection(troggle, -Math.sign(dx), -Math.sign(dy));
+        } else if (!canMove(troggle, dir) || Math.random() < 0.35) {
+          dir = randomChoice(directions);
+        }
+        troggle.dir = dir;
+      } else if (behavior === 'helper' || behavior === 'worker') {
+        if (!canMove(troggle, dir) || Math.random() < 0.4) {
+          dir = randomChoice(directions);
+          troggle.dir = dir;
+        }
+      } else if (behavior === 'smartie') {
+        dir = chaseMuncher(troggle);
+        troggle.dir = dir;
+      }
+      return moveTroggle(troggle, dir);
+    }
+
+    function chooseBestDirection(troggle, xBias, yBias) {
+      const choices = [];
+      if (xBias !== 0) choices.push({ x: xBias, y: 0 });
+      if (yBias !== 0) choices.push({ x: 0, y: yBias });
+      while (choices.length < 2) {
+        choices.push(randomChoice(directions));
+      }
+      for (const dir of choices) {
+        if (canMove(troggle, dir)) return dir;
+      }
+      return randomChoice(directions);
+    }
+
+    function chaseMuncher(troggle) {
+      const options = directions.slice().sort((a, b) => {
+        const da = Math.abs((troggle.x + a.x) - muncher.x) + Math.abs((troggle.y + a.y) - muncher.y);
+        const db = Math.abs((troggle.x + b.x) - muncher.x) + Math.abs((troggle.y + b.y) - muncher.y);
+        return da - db;
+      });
+      for (const dir of options) {
+        if (canMove(troggle, dir)) return dir;
+      }
+      return randomChoice(directions);
+    }
+    function canMove(troggle, dir) {
+      const nx = troggle.x + dir.x;
+      const ny = troggle.y + dir.y;
+      if (nx < 0 || ny < 0 || nx >= GRID || ny >= GRID) return false;
+      const targetIndex = tileIndex(nx, ny);
+      if (safetySquare.index === targetIndex) return false;
+      return true;
+    }
+
+    function moveTroggle(troggle, dir) {
+      if (!canMove(troggle, dir)) return false;
+      troggle.x += dir.x;
+      troggle.y += dir.y;
+      return true;
+    }
+
+    function tileIndex(x, y) {
+      return y * GRID + x;
+    }
+
+    function maybeSpawnSafety() {
+      if (safetySquare.index !== null) {
+        safetySquare.timer--;
+        if (safetySquare.timer <= 0) {
+          safetySquare.index = null;
+          message = 'Safety square faded.';
+          messageEl.textContent = message;
+        }
+        return;
+      }
+      const chance = level > 10 ? 0.18 : 0.12;
+      if (Math.random() < chance) {
+        spawnSafetySquare();
+      }
+    }
+
+    function spawnSafetySquare() {
+      const available = tiles
+        .map((tile, idx) => ({ tile, idx }))
+        .filter(({ tile }) => !tile.eaten);
+      if (!available.length) return;
+      const choice = randomChoice(available);
+      safetySquare.index = choice.idx;
+      safetySquare.timer = 6 + Math.floor(level / 2);
+      const removed = [];
+      troggles = troggles.filter((troggle, index) => {
+        if (tileIndex(troggle.x, troggle.y) === safetySquare.index) {
+          removed.push(troggle.type.name);
+          return false;
+        }
+        return true;
+      });
+      if (removed.length) {
+        message = `Safety square zapped a ${removed.join(', ')}!`;
+      } else {
+        message = 'A safety square appeared!';
+      }
+      messageEl.textContent = message;
+      updateHud();
+    }
+
+    function checkTroggleCollision() {
+      if (safetySquare.index !== null && safetySquare.index === tileIndex(muncher.x, muncher.y)) {
+        return;
+      }
+      const hit = troggles.some((troggle) => troggle.x === muncher.x && troggle.y === muncher.y);
+      if (hit) {
+        loseLife('A Troggle caught you!');
+      }
+    }
+
+    function loseLife(reason) {
+      if (gameOver) return;
+      lives--;
+      message = reason;
+      messageEl.textContent = message;
+      if (lives <= 0) {
+        endGame();
+        return;
+      }
+      muncher.x = Math.floor(GRID / 2);
+      muncher.y = Math.floor(GRID / 2);
+      const allowedTypes = chooseTroggleTypesForLevel(level);
+      troggles = troggles.map(() => ({
+        x: randomInt(0, GRID - 1),
+        y: randomInt(0, GRID - 1),
+        dir: randomChoice(directions),
+        type: randomChoice(allowedTypes),
+        steps: 0
+      }));
+      safetySquare.index = null;
+      safetySquare.timer = 0;
+      updateHud();
+    }
+
+    function endGame() {
+      gameOver = true;
+      if (troggleTimer) clearInterval(troggleTimer);
+      message = 'Game over! Press Enter to start again.';
+      messageEl.textContent = message;
+    }
+
+    function updateHud() {
+      scoreEl.textContent = `Score: ${score}`;
+      livesEl.textContent = `Lives: ${lives}`;
+      levelEl.textContent = `Level: ${level}`;
+      troggleEl.textContent = `Troggles: ${troggles.length}`;
+    }
+
+    function checkLevelCleared() {
+      const remaining = tiles.some((tile) => tile.correct && !tile.eaten);
+      if (!remaining) {
+        score += 500 + level * 25;
+        level++;
+        message = 'Level cleared! Brace for trickier logic.';
+        messageEl.textContent = message;
+        prepareLevel();
+        updateHud();
+      }
+    }
+
+    function awardForCorrect(tile) {
+      tile.eaten = true;
+      tile.helperCleared = false;
+      tile.mistake = false;
+      const gained = 100 + level * 10;
+      score += gained;
+      message = `Crunch! +${gained} points.`;
+      if (score >= nextLifeScore) {
+        lives++;
+        nextLifeScore += 2500;
+        message += ' Extra life earned!';
+      }
+      messageEl.textContent = message;
+      updateHud();
+      checkLevelCleared();
+    }
+
+    function handleIncorrect(tile) {
+      tile.mistake = true;
+      message = 'Oops! That did not match the rule.';
+      messageEl.textContent = message;
+      loseLife('Wrong munch!');
+    }
+
+    function moveMuncher(dx, dy) {
+      if (gameOver) return;
+      const nx = muncher.x + dx;
+      const ny = muncher.y + dy;
+      if (nx < 0 || ny < 0 || nx >= GRID || ny >= GRID) return;
+      muncher.x = nx;
+      muncher.y = ny;
+      const tile = tiles[tileIndex(nx, ny)];
+      if (!tile || tile.eaten) {
+        message = 'That tile is empty.';
+        messageEl.textContent = message;
+        return;
+      }
+      if (tile.correct) {
+        awardForCorrect(tile);
+      } else {
+        handleIncorrect(tile);
+      }
+    }
+
+    function handleKey(event) {
+      if (event.defaultPrevented) return;
+      if (gameOver && event.key === 'Enter') {
+        startGame(true);
+        event.preventDefault();
+        return;
+      }
+      switch (event.key) {
+        case 'ArrowLeft':
+          moveMuncher(-1, 0);
+          event.preventDefault();
+          break;
+        case 'ArrowRight':
+          moveMuncher(1, 0);
+          event.preventDefault();
+          break;
+        case 'ArrowUp':
+          moveMuncher(0, -1);
+          event.preventDefault();
+          break;
+        case 'ArrowDown':
+          moveMuncher(0, 1);
+          event.preventDefault();
+          break;
+      }
+    }
+
+    document.addEventListener('keydown', handleKey, { passive: false });
+
+    function drawMuncher() {
+      const x = muncher.x * CELL + CELL / 2;
+      const y = muncher.y * CELL + CELL / 2;
+      const radius = CELL * 0.35;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = '#9bff80';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, radius, Math.PI / 6, (Math.PI * 11) / 6, false);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawTroggle(troggle) {
+      const x = troggle.x * CELL + CELL / 2;
+      const y = troggle.y * CELL + CELL / 2;
+      const radius = CELL * 0.3;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = troggle.type.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius, radius * 1.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#051221';
+      ctx.beginPath();
+      ctx.arc(-radius * 0.35, -radius * 0.2, radius * 0.18, 0, Math.PI * 2);
+      ctx.arc(radius * 0.35, -radius * 0.2, radius * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawSafetySquare() {
+      if (safetySquare.index === null) return;
+      const x = (safetySquare.index % GRID) * CELL;
+      const y = Math.floor(safetySquare.index / GRID) * CELL;
+      ctx.save();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.globalAlpha = 0.9;
+      const inset = CELL * 0.12;
+      ctx.strokeRect(x + inset, y + inset, CELL - inset * 2, CELL - inset * 2);
+      ctx.restore();
+    }
+
+    function drawTiles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#041225';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      tiles.forEach((tile, index) => {
+        const x = (index % GRID) * CELL;
+        const y = Math.floor(index / GRID) * CELL;
+        ctx.save();
+        const baseColor = tile.eaten
+          ? 'rgba(20, 52, 84, 0.75)'
+          : tile.correct
+          ? 'rgba(27, 86, 146, 0.85)'
+          : 'rgba(14, 40, 70, 0.85)';
+        ctx.fillStyle = baseColor;
+        ctx.strokeStyle = 'rgba(95, 178, 255, 0.45)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(x + 6, y + 6, CELL - 12, CELL - 12, 12);
+        ctx.fill();
+        ctx.stroke();
+        if (tile.helperCleared) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.beginPath();
+          ctx.roundRect(x + 6, y + 6, CELL - 12, CELL - 12, 12);
+          ctx.fill();
+        }
+        if (tile.mistake) {
+          ctx.fillStyle = 'rgba(255, 82, 112, 0.35)';
+          ctx.beginPath();
+          ctx.roundRect(x + 6, y + 6, CELL - 12, CELL - 12, 12);
+          ctx.fill();
+        }
+        ctx.fillStyle = tile.eaten ? 'rgba(210, 228, 255, 0.55)' : '#f4fbff';
+        ctx.font = `${Math.min(26, CELL * 0.32)}px "Segoe UI", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(tile.text), x + CELL / 2, y + CELL / 2);
+        ctx.restore();
+      });
+    }
+
+    function draw() {
+      drawTiles();
+      drawSafetySquare();
+      drawMuncher();
+      troggles.forEach(drawTroggle);
+      requestAnimationFrame(draw);
+    }
+
+    function setMode(modeId) {
+      const mode = modes.find((m) => m.id === modeId);
+      if (!mode) return;
+      currentMode = mode;
+      challengeMode = false;
+      document.getElementById('challengeToggle').classList.remove('active');
+      document.getElementById('challengeToggle').textContent = 'Challenge Mode: Off';
+      updateModeButtons();
+      startGame(true);
+    }
+
+    function updateModeButtons() {
+      const buttons = document.querySelectorAll('.mode-button');
+      buttons.forEach((btn) => {
+        if (btn.dataset.mode === currentMode.id && !challengeMode) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      if (challengeMode) {
+        buttons.forEach((btn) => btn.classList.remove('active'));
+      }
+    }
+
+    document.querySelectorAll('.mode-button').forEach((button) => {
+      button.addEventListener('click', () => setMode(button.dataset.mode));
+    });
+
+    const challengeButton = document.getElementById('challengeToggle');
+    challengeButton.addEventListener('click', () => {
+      challengeMode = !challengeMode;
+      if (challengeMode) {
+        challengeButton.classList.add('active');
+        challengeButton.textContent = 'Challenge Mode: On';
+        message = 'Challenge engaged! Modes rotate every level.';
+      } else {
+        challengeButton.classList.remove('active');
+        challengeButton.textContent = 'Challenge Mode: Off';
+        message = 'Challenge disengaged.';
+      }
+      messageEl.textContent = message;
+      updateModeButtons();
+      startGame(true);
+    });
+
+    document.getElementById('resetGame').addEventListener('click', () => {
+      startGame(true);
+    });
+
+    function checkTileUnderMuncher() {
+      const index = tileIndex(muncher.x, muncher.y);
+      const tile = tiles[index];
+      if (!tile || tile.eaten) return;
+      if (tile.correct) {
+        awardForCorrect(tile);
+      } else {
+        handleIncorrect(tile);
+      }
+    }
+
+    function checkTrogglePositions() {
+      troggles.forEach((troggle) => {
+        if (troggle.x === muncher.x && troggle.y === muncher.y) {
+          checkTroggleCollision();
+        }
+      });
+    }
+
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const gridX = Math.floor(x / CELL);
+      const gridY = Math.floor(y / CELL);
+      if (gridX === muncher.x && gridY === muncher.y) {
+        checkTileUnderMuncher();
+      }
+    });
+
+    startGame(true);
+    updateModeButtons();
+    draw();
+  </script>
+  <script>
+    fetch('sidebar.html')
+      .then((r) => r.text())
+      .then((html) => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
