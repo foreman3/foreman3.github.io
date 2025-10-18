@@ -148,12 +148,15 @@ const MODE_SEQUENCE = [
   { mode: 'chase', duration: Infinity }
 ];
 
+const TURN_THRESHOLD = 0.12;
+const SNAP_THRESHOLD = 0.12;
+
 const pacman = {
   x: 9,
   y: 15,
   dir: { x: 0, y: 0 },
   nextDir: { x: 0, y: 0 },
-  speed: 0.16
+  speed: 0.128
 };
 
 const GHOST_TEMPLATES = [
@@ -164,7 +167,7 @@ const GHOST_TEMPLATES = [
     x: 9,
     y: 8,
     dir: { x: 1, y: 0 },
-    speed: 0.15,
+    speed: 0.12,
     state: 'chase'
   },
   {
@@ -174,7 +177,7 @@ const GHOST_TEMPLATES = [
     x: 9,
     y: 10,
     dir: { x: -1, y: 0 },
-    speed: 0.145,
+    speed: 0.116,
     state: 'in-house',
     releaseDelay: 120
   },
@@ -185,7 +188,7 @@ const GHOST_TEMPLATES = [
     x: 10,
     y: 10,
     dir: { x: 1, y: 0 },
-    speed: 0.145,
+    speed: 0.116,
     state: 'in-house',
     releaseDelay: 240
   },
@@ -196,7 +199,7 @@ const GHOST_TEMPLATES = [
     x: 8,
     y: 10,
     dir: { x: -1, y: 0 },
-    speed: 0.14,
+    speed: 0.112,
     state: 'in-house',
     releaseDelay: 360
   }
@@ -240,13 +243,13 @@ function isWall(x, y) {
 }
 
 function isIntersection(entity) {
-  return Math.abs(entity.x - Math.round(entity.x)) < 0.01 &&
-         Math.abs(entity.y - Math.round(entity.y)) < 0.01;
+  return Math.abs(entity.x - Math.round(entity.x)) < TURN_THRESHOLD &&
+         Math.abs(entity.y - Math.round(entity.y)) < TURN_THRESHOLD;
 }
 
 function snapToGrid(entity) {
-  if (Math.abs(entity.x - Math.round(entity.x)) < 0.03) entity.x = Math.round(entity.x);
-  if (Math.abs(entity.y - Math.round(entity.y)) < 0.03) entity.y = Math.round(entity.y);
+  if (Math.abs(entity.x - Math.round(entity.x)) < SNAP_THRESHOLD) entity.x = Math.round(entity.x);
+  if (Math.abs(entity.y - Math.round(entity.y)) < SNAP_THRESHOLD) entity.y = Math.round(entity.y);
 }
 
 function move(entity, dir) {
@@ -290,7 +293,7 @@ function updatePacman() {
       ghosts.forEach(g => {
         if (g.state !== 'eaten') {
           g.state = 'frightened';
-          g.speed = 0.10;
+          g.speed = 0.08;
           g.dir = { x: -g.dir.x, y: -g.dir.y };
         }
       });
@@ -318,7 +321,7 @@ function resetPositions() {
   pacman.y = 15;
   pacman.dir = { x: 0, y: 0 };
   pacman.nextDir = { x: 0, y: 0 };
-  pacman.speed = 0.16;
+  pacman.speed = 0.128;
   ghosts.forEach(resetGhost);
   frightTimer = 0;
   frightChain = 0;
@@ -740,11 +743,15 @@ function gameLoop() {
 }
 
 function handleKeyDown(e) {
-  if (e.key === 'ArrowLeft') pacman.nextDir = { x: -1, y: 0 };
-  if (e.key === 'ArrowRight') pacman.nextDir = { x: 1, y: 0 };
-  if (e.key === 'ArrowUp') pacman.nextDir = { x: 0, y: -1 };
-  if (e.key === 'ArrowDown') pacman.nextDir = { x: 0, y: 1 };
-  if (e.key === ' ' && lives <= 0) {
+  const key = e.key;
+  if (key.startsWith('Arrow')) {
+    e.preventDefault();
+  }
+  if (key === 'ArrowLeft' || key === 'a' || key === 'A') pacman.nextDir = { x: -1, y: 0 };
+  if (key === 'ArrowRight' || key === 'd' || key === 'D') pacman.nextDir = { x: 1, y: 0 };
+  if (key === 'ArrowUp' || key === 'w' || key === 'W') pacman.nextDir = { x: 0, y: -1 };
+  if (key === 'ArrowDown' || key === 's' || key === 'S') pacman.nextDir = { x: 0, y: 1 };
+  if (key === ' ' && lives <= 0) {
     resetGame();
   }
 }
