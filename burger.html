@@ -305,9 +305,12 @@ let comboTimer = 0;
 let gameOver = false;
 let win = false;
 
-const FRAME_TIME = 1000 / 60;
+const BASE_FPS = 60;
+const FRAME_TIME = 1000 / BASE_FPS;
+const FIXED_DT = FRAME_TIME / 1000;
+const MAX_CATCHUP_STEPS = 5;
 let accumulator = 0;
-let lastTimestamp = performance.now();
+let lastTimestamp = null;
 
 const skylineShapes = Array.from({length: 10}, () => ({
   x: Math.random() * canvas.width,
@@ -348,7 +351,8 @@ function addScore(amount, x, y, color = '#ffe27a'){
 }
 
 function spawnParticles(x, y, color, count = 12){
-  for(let i = 0; i < count; i++){
+  const amount = Math.max(1, Math.round(count));
+  for(let i = 0; i < amount; i++){
     const angle = Math.random() * Math.PI * 2;
     const speed = 0.05 + Math.random() * 0.12;
     particles.push({
@@ -477,10 +481,10 @@ function ladderAt(x, y, toleranceX = 0.45){
   }) || null;
 }
 
-function ridePieces(entity){
+function ridePieces(entity, step){
   for(const p of pieces){
     if(p.falling && entity.x >= p.x && entity.x <= p.x + 2 && Math.abs(entity.y - (p.y - 1)) < 0.12){
-      entity.y += 0.1;
+      entity.y += 0.1 * step;
     }
   }
 }
@@ -494,9 +498,9 @@ function climbOntoPiece(entity){
   }
 }
 
-function applyGravity(entity){
+function applyGravity(entity, step){
   if(!isOnFloor(entity) && !isOnPiece(entity) && !ladderAt(entity.x, entity.y)){
-    entity.y += 0.12;
+    entity.y += 0.12 * step;
   }
 }
 
@@ -514,7 +518,7 @@ function finalizePiece(piece){
   spawnParticles(piece.x + 1, ROWS - stackHeight * 0.6, '#ff9d2f', 18);
 }
 
-function updatePieces(){
+function updatePieces(step){
   for(const p of pieces){
     if(!p.falling) continue;
     let safety = 0;
@@ -524,7 +528,7 @@ function updatePieces(){
         p.y = p.support.y - 1;
         if(!p.support.falling){
           p.floorIndex = p.support.floorIndex;
-          if(p.remaining > 0) p.remaining--;
+          if(p.remaining > 0) p.remaining = Math.max(0, p.remaining - step);
           if(p.remaining <= 0){
             p.falling = false;
             if(p.y >= ROWS) finalizePiece(p);
@@ -535,13 +539,13 @@ function updatePieces(){
         continue;
       }
 
-      p.y += 0.22;
+      p.y += 0.22 * step;
 
       const belowPiece = pieces.find(o => o !== p && !o.complete && Math.abs(p.y - (o.y - 1)) < 0.05 && p.x + 2 > o.x && p.x < o.x + 2);
       if(belowPiece){
         p.y = belowPiece.y - 1;
         p.floorIndex = belowPiece.floorIndex;
-        if(p.remaining > 0) p.remaining--;
+        if(p.remaining > 0) p.remaining = Math.max(0, p.remaining - step);
         p.support = belowPiece;
         triggerFall(belowPiece);
         continue;
@@ -551,7 +555,7 @@ function updatePieces(){
       if(nextFloor !== undefined && p.y >= nextFloor){
         p.y = nextFloor;
         p.floorIndex++;
-        if(p.remaining > 0) p.remaining--;
+        if(p.remaining > 0) p.remaining = Math.max(0, p.remaining - step);
         if(p.remaining <= 0){
           p.falling = false;
           if(p.y >= ROWS) finalizePiece(p);
@@ -585,12 +589,12 @@ function playerHit(){
   resetCombo();
 }
 
-function updatePepperBursts(){
+function updatePepperBursts(step){
   for(let i = pepperBursts.length - 1; i >= 0; i--){
     const burst = pepperBursts[i];
-    burst.x += burst.dir * 0.45;
-    burst.life--;
-    spawnParticles(burst.x, burst.y, 'rgba(156,246,255,0.5)', 2);
+    burst.x += burst.dir * 0.45 * step;
+    burst.life -= step;
+    spawnParticles(burst.x, burst.y, 'rgba(156,246,255,0.5)', Math.max(1, Math.round(2 * step)));
     for(const enemy of enemies){
       if(enemy.stunned > 0) continue;
       if(Math.abs(enemy.x + 0.5 - burst.x) < 0.8 && Math.abs(enemy.y - burst.y) < 0.9){
@@ -607,41 +611,41 @@ function updatePepperBursts(){
   }
 }
 
-function updateParticles(){
+function updateParticles(step){
   for(let i = particles.length - 1; i >= 0; i--){
     const p = particles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.01;
-    p.life--;
+    p.x += p.vx * step;
+    p.y += p.vy * step;
+    p.vy += 0.01 * step;
+    p.life -= step;
     if(p.life <= 0){
       particles.splice(i, 1);
     }
   }
 }
 
-function updateFloatingText(){
+function updateFloatingText(step){
   for(let i = floatingText.length - 1; i >= 0; i--){
     const ft = floatingText[i];
-    ft.y -= 0.02;
-    ft.life--;
+    ft.y -= 0.02 * step;
+    ft.life -= step;
     if(ft.life <= 0){
       floatingText.splice(i, 1);
     }
   }
 }
 
-function updateCondiments(){
+function updateCondiments(step){
   for(let i = condiments.length - 1; i >= 0; i--){
     const c = condiments[i];
     if(c.collected){
-      c.fade++;
+      c.fade += step;
       if(c.fade > 30){
         condiments.splice(i, 1);
       }
       continue;
     }
-    c.bob += 0.12;
+    c.bob += 0.12 * step;
     if(Math.abs(player.x - c.x) < 0.6 && Math.abs(player.y - c.y) < 0.8){
       c.collected = true;
       player.pepper = Math.min(player.pepper + 1, 6);
@@ -653,9 +657,9 @@ function updateCondiments(){
   }
 }
 
-function handlePlayer(){
-  if(player.cooldown > 0) player.cooldown--;
-  if(player.invulnerable > 0) player.invulnerable--;
+function handlePlayer(step){
+  if(player.cooldown > 0) player.cooldown = Math.max(0, player.cooldown - step);
+  if(player.invulnerable > 0) player.invulnerable = Math.max(0, player.invulnerable - step);
 
   const alignedLadder = ladderAt(player.x, player.y);
   const nearFloor = floors.some(f => Math.abs(player.y - f) < 0.18);
@@ -670,10 +674,10 @@ function handlePlayer(){
       player.vx = 0;
     }
   } else {
-    player.vx *= 0.92;
+    player.vx *= Math.pow(0.92, step);
   }
 
-  player.x += player.vx;
+  player.x += player.vx * step;
   climbOntoPiece(player);
 
   const wantsToClimb = keys.up || keys.down;
@@ -688,8 +692,8 @@ function handlePlayer(){
   }
 
   if(onLadder){
-    if(keys.up) player.y -= 0.12;
-    if(keys.down) player.y += 0.12;
+    if(keys.up) player.y -= 0.12 * step;
+    if(keys.down) player.y += 0.12 * step;
 
     if(!wantsToClimb){
       const snapFloor = floors.find(f => Math.abs(player.y - f) < 0.18);
@@ -707,17 +711,17 @@ function handlePlayer(){
     triggerFall(piece);
   }
 
-  ridePieces(player);
-  applyGravity(player);
+  ridePieces(player, step);
+  applyGravity(player, step);
 }
 
-function handleEnemies(){
+function handleEnemies(step){
   for(const enemy of enemies){
-    enemy.timer++;
+    enemy.timer += step;
     if(enemy.stunned > 0){
-      enemy.stunned--;
-      ridePieces(enemy);
-      applyGravity(enemy);
+      enemy.stunned = Math.max(0, enemy.stunned - step);
+      ridePieces(enemy, step);
+      applyGravity(enemy, step);
       continue;
     }
 
@@ -731,7 +735,8 @@ function handleEnemies(){
       }
     }
 
-    if(enemy.type === 'hotdog' && enemy.timer % def.dashCooldown === 0){
+    if(enemy.type === 'hotdog' && enemy.timer >= def.dashCooldown){
+      enemy.timer -= def.dashCooldown;
       if(Math.abs(enemy.y - player.y) < 0.8){
         enemy.vx = (enemy.x < player.x ? 1 : -1) * def.dashSpeed;
         spawnParticles(enemy.x + 0.5, enemy.y - 0.5, '#ff5f6d', 12);
@@ -739,16 +744,16 @@ function handleEnemies(){
     }
 
     if(enemy.type === 'soda'){
-      enemy.floatPhase += def.floatSpeed;
-      enemy.vx += Math.sin(enemy.floatPhase) * 0.005;
+      enemy.floatPhase += def.floatSpeed * step;
+      enemy.vx += Math.sin(enemy.floatPhase) * 0.005 * step;
     }
 
-    enemy.x += enemy.vx;
+    enemy.x += enemy.vx * step;
     climbOntoPiece(enemy);
 
     if(Math.abs(enemy.x - player.x) < 1 && ladderAt(enemy.x, enemy.y)){
-      if(enemy.y < player.y) enemy.y += def.climbSpeed;
-      else if(enemy.y > player.y) enemy.y -= def.climbSpeed * 0.85;
+      if(enemy.y < player.y) enemy.y += def.climbSpeed * step;
+      else if(enemy.y > player.y) enemy.y -= def.climbSpeed * 0.85 * step;
     }
 
     enemy.x = Math.max(0, Math.min(COLS - 1, enemy.x));
@@ -759,8 +764,8 @@ function handleEnemies(){
       triggerFall(piece);
     }
 
-    ridePieces(enemy);
-    applyGravity(enemy);
+    ridePieces(enemy, step);
+    applyGravity(enemy, step);
 
     if(Math.abs(enemy.x - player.x) < 0.6 && Math.abs(enemy.y - player.y) < 0.7){
       playerHit();
@@ -768,39 +773,40 @@ function handleEnemies(){
   }
 }
 
-function updateSpawns(){
+function updateSpawns(step){
   for(let i = pendingSpawns.length - 1; i >= 0; i--){
     const spawn = pendingSpawns[i];
-    spawn.delay--;
+    spawn.delay -= step;
     if(spawn.delay <= 0){
       spawnEnemy(spawn.type, spawn);
       pendingSpawns.splice(i, 1);
     }
   }
-  if(enemies.length < 2 && pendingSpawns.length === 0 && Math.random() < 0.01){
+  if(enemies.length < 2 && pendingSpawns.length === 0 && Math.random() < 0.01 * step){
     const types = Object.keys(enemyTypes);
     const type = types[Math.floor(Math.random() * types.length)];
     spawnEnemy(type, { floor: Math.floor(Math.random() * floors.length), x: Math.random() < 0.5 ? 1 : COLS - 2 });
   }
 }
 
-function stepGame(){
-  updatePepperBursts();
-  updateParticles();
-  updateFloatingText();
-  updateCondiments();
+function stepGame(dt){
+  const step = dt * BASE_FPS;
+  updatePepperBursts(step);
+  updateParticles(step);
+  updateFloatingText(step);
+  updateCondiments(step);
 
   if(gameOver || win) return;
 
   if(comboTimer > 0){
-    comboTimer--;
+    comboTimer = Math.max(0, comboTimer - step);
     if(comboTimer <= 0) resetCombo();
   }
 
-  updateSpawns();
-  handlePlayer();
-  updatePieces();
-  handleEnemies();
+  updateSpawns(step);
+  handlePlayer(step);
+  updatePieces(step);
+  handleEnemies(step);
 
   if(pieces.every(p => p.complete)){
     if(!win){
@@ -1065,12 +1071,19 @@ function usePepper(){
 }
 
 function gameLoop(timestamp){
-  const delta = timestamp - lastTimestamp;
+  if(lastTimestamp === null) lastTimestamp = timestamp;
+  const delta = Math.min(timestamp - lastTimestamp, FRAME_TIME * MAX_CATCHUP_STEPS);
   lastTimestamp = timestamp;
   accumulator += delta;
+  let steps = 0;
   while(accumulator >= FRAME_TIME){
-    stepGame();
+    stepGame(FIXED_DT);
     accumulator -= FRAME_TIME;
+    steps++;
+    if(steps >= MAX_CATCHUP_STEPS){
+      accumulator = 0;
+      break;
+    }
   }
   draw();
   requestAnimationFrame(gameLoop);
