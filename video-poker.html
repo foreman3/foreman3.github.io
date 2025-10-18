@@ -174,15 +174,40 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 0.35rem 0.25rem;
       filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.18));
+      color: #2433d9;
     }
     .card-art svg {
-      width: clamp(48px, 9vw, 72px);
+      width: clamp(54px, 10vw, 82px);
       height: auto;
-      color: #3b4bd9;
     }
-    .card-face.red .card-art svg {
-      color: #d82f72;
+    .card-art.face-card svg {
+      width: clamp(70px, 12vw, 96px);
+    }
+    .card-art.ace svg {
+      width: clamp(62px, 11vw, 90px);
+    }
+    .card-face.red .card-art {
+      color: #c51f5d;
+    }
+    .card-pips {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      gap: 0.1rem;
+    }
+    .card-pip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-pip svg {
+      width: clamp(18px, 3.6vw, 26px);
+      height: auto;
+      color: inherit;
     }
     .hold-tag {
       position: absolute;
@@ -505,76 +530,281 @@
       spades: '♠'
     };
 
-    const suitArtTemplates = {
-      hearts: `
-        <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
-          <defs>
-            <linearGradient id="{{GRADIENT_ID}}" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.85)" />
-              <stop offset="45%" stop-color="currentColor" />
-              <stop offset="100%" stop-color="rgba(120, 0, 60, 0.95)" />
-            </linearGradient>
-          </defs>
-          <path d="M60 100 C60 100 16 76 16 46 C16 28 28 16 42 16 C52 16 58 22 60 28 C62 22 68 16 78 16 C92 16 104 28 104 46 C104 76 60 100 60 100 Z" fill="url(#{{GRADIENT_ID}})" />
-          <path d="M60 40 C52 30 42 24 32 28" stroke="rgba(255,255,255,0.35)" stroke-width="4" stroke-linecap="round" fill="none" />
-        </svg>
-      `,
-      diamonds: `
-        <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
-          <defs>
-            <linearGradient id="{{GRADIENT_ID}}" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.9)" />
-              <stop offset="35%" stop-color="currentColor" />
-              <stop offset="100%" stop-color="rgba(120, 0, 60, 0.95)" />
-            </linearGradient>
-          </defs>
-          <polygon points="60,10 102,60 60,110 18,60" fill="url(#{{GRADIENT_ID}})" />
-          <polygon points="60,28 84,60 60,92 36,60" fill="rgba(255,255,255,0.15)" />
-        </svg>
-      `,
-      clubs: `
-        <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
-          <defs>
-            <linearGradient id="{{GRADIENT_ID}}" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.9)" />
-              <stop offset="40%" stop-color="currentColor" />
-              <stop offset="100%" stop-color="rgba(15, 32, 140, 0.95)" />
-            </linearGradient>
-          </defs>
-          <g fill="url(#{{GRADIENT_ID}})">
-            <circle cx="60" cy="36" r="22" />
-            <circle cx="36" cy="68" r="22" />
-            <circle cx="84" cy="68" r="22" />
-            <path d="M60 46 C48 66 42 82 42 96 C42 108 48 116 60 116 C72 116 78 108 78 96 C78 82 72 66 60 46 Z" />
-          </g>
-          <path d="M60 52 C50 40 38 40 30 48" stroke="rgba(255,255,255,0.35)" stroke-width="4" stroke-linecap="round" fill="none" />
-        </svg>
-      `,
-      spades: `
-        <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
-          <defs>
-            <linearGradient id="{{GRADIENT_ID}}" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.92)" />
-              <stop offset="40%" stop-color="currentColor" />
-              <stop offset="100%" stop-color="rgba(15, 32, 140, 0.95)" />
-            </linearGradient>
-          </defs>
-          <path d="M60 14 C60 14 18 56 18 86 C18 102 30 112 44 112 C52 112 58 108 60 104 C62 108 68 112 76 112 C90 112 102 102 102 86 C102 56 60 14 60 14 Z" fill="url(#{{GRADIENT_ID}})" />
-          <path d="M60 72 C52 86 52 102 52 112 L68 112 C68 102 68 86 60 72 Z" fill="rgba(255,255,255,0.2)" />
-          <path d="M60 38 C48 38 36 50 32 62" stroke="rgba(255,255,255,0.35)" stroke-width="4" stroke-linecap="round" fill="none" />
-        </svg>
-      `
+    const suitSvgTemplates = {
+      pip: {
+        hearts: `
+          <svg viewBox="0 0 40 40" role="img" aria-hidden="true">
+            <path d="M20 35 C20 35 4 25 4 14 C4 8 8 4 14 4 C18 4 20 6 20 9 C20 6 22 4 26 4 C32 4 36 8 36 14 C36 25 20 35 20 35 Z" fill="currentColor" />
+            <path d="M20 14 C17 10 12 8 8 11" stroke="rgba(255,255,255,0.6)" stroke-width="3" stroke-linecap="round" fill="none" />
+          </svg>
+        `,
+        diamonds: `
+          <svg viewBox="0 0 40 40" role="img" aria-hidden="true">
+            <polygon points="20,3 36,20 20,37 4,20" fill="currentColor" />
+            <polygon points="20,9 30,20 20,31 10,20" fill="rgba(255,255,255,0.45)" />
+          </svg>
+        `,
+        clubs: `
+          <svg viewBox="0 0 40 40" role="img" aria-hidden="true">
+            <circle cx="20" cy="11" r="9" fill="currentColor" />
+            <circle cx="11" cy="23" r="9" fill="currentColor" />
+            <circle cx="29" cy="23" r="9" fill="currentColor" />
+            <path d="M20 20 C16 27 15 31 15 35 L25 35 C25 31 24 27 20 20 Z" fill="currentColor" />
+            <path d="M22 9 C20 6 15 6 12 9" stroke="rgba(255,255,255,0.55)" stroke-width="2.6" stroke-linecap="round" fill="none" />
+          </svg>
+        `,
+        spades: `
+          <svg viewBox="0 0 40 40" role="img" aria-hidden="true">
+            <path d="M20 4 C20 4 4 20 4 30 C4 34 7 37 11 37 C14 37 17 35 18.5 33 C18.8 35.5 19.6 37 20 37 C20.4 37 21.2 35.5 21.5 33 C23 35 26 37 29 37 C33 37 36 34 36 30 C36 20 20 4 20 4 Z" fill="currentColor" />
+            <path d="M20 23 C17 28 17 33 17 37 L23 37 C23 33 23 28 20 23 Z" fill="rgba(255,255,255,0.45)" />
+            <path d="M20 12 C15 12 10 17 8.5 22" stroke="rgba(255,255,255,0.55)" stroke-width="2.6" stroke-linecap="round" fill="none" />
+          </svg>
+        `
+      },
+      emblem: {
+        hearts: `
+          <svg viewBox="0 0 140 140" role="img" aria-hidden="true">
+            <rect x="12" y="12" width="116" height="116" rx="28" fill="rgba(255, 239, 246, 0.92)" stroke="rgba(197, 31, 93, 0.38)" stroke-width="6" />
+            <path d="M70 112 C70 112 26 84 26 54 C26 36 38 24 52 24 C62 24 68 30 70 38 C72 30 78 24 88 24 C102 24 114 36 114 54 C114 84 70 112 70 112 Z" fill="currentColor" />
+            <path d="M70 50 C60 38 48 32 36 36" stroke="rgba(255,255,255,0.6)" stroke-width="6" stroke-linecap="round" fill="none" />
+            <circle cx="70" cy="60" r="14" fill="rgba(255,255,255,0.25)" />
+          </svg>
+        `,
+        diamonds: `
+          <svg viewBox="0 0 140 140" role="img" aria-hidden="true">
+            <rect x="12" y="12" width="116" height="116" rx="28" fill="rgba(240, 250, 255, 0.9)" stroke="rgba(205, 45, 90, 0.38)" stroke-width="6" />
+            <polygon points="70,18 118,70 70,122 22,70" fill="currentColor" />
+            <polygon points="70,36 100,70 70,104 40,70" fill="rgba(255,255,255,0.45)" />
+            <polygon points="70,52 86,70 70,88 54,70" fill="rgba(255,255,255,0.25)" />
+          </svg>
+        `,
+        clubs: `
+          <svg viewBox="0 0 140 140" role="img" aria-hidden="true">
+            <rect x="12" y="12" width="116" height="116" rx="28" fill="rgba(237, 245, 255, 0.92)" stroke="rgba(34, 54, 140, 0.42)" stroke-width="6" />
+            <circle cx="70" cy="36" r="24" fill="currentColor" />
+            <circle cx="42" cy="74" r="24" fill="currentColor" />
+            <circle cx="98" cy="74" r="24" fill="currentColor" />
+            <path d="M70 58 C56 84 52 100 52 118 L88 118 C88 100 84 84 70 58 Z" fill="currentColor" />
+            <path d="M80 34 C76 28 60 26 50 34" stroke="rgba(255,255,255,0.6)" stroke-width="6" stroke-linecap="round" fill="none" />
+          </svg>
+        `,
+        spades: `
+          <svg viewBox="0 0 140 140" role="img" aria-hidden="true">
+            <rect x="12" y="12" width="116" height="116" rx="28" fill="rgba(232, 240, 255, 0.92)" stroke="rgba(33, 48, 138, 0.42)" stroke-width="6" />
+            <path d="M70 18 C70 18 22 70 22 102 C22 118 34 130 50 130 C58 130 64 126 68 120 C69 124 72 128 76 130 C92 130 104 118 104 102 C104 70 70 18 70 18 Z" fill="currentColor" />
+            <path d="M70 78 C60 94 60 110 60 130 L80 130 C80 110 80 94 70 78 Z" fill="rgba(255,255,255,0.35)" />
+            <path d="M70 40 C54 40 36 58 32 78" stroke="rgba(255,255,255,0.55)" stroke-width="6" stroke-linecap="round" fill="none" />
+          </svg>
+        `
+      }
     };
 
-    let suitArtCounter = 0;
+    const pipLayouts = {
+      2: [[0, 1], [4, 1]],
+      3: [[0, 1], [2, 1], [4, 1]],
+      4: [[0, 0], [0, 2], [4, 0], [4, 2]],
+      5: [[0, 0], [0, 2], [2, 1], [4, 0], [4, 2]],
+      6: [[0, 0], [0, 2], [2, 0], [2, 2], [4, 0], [4, 2]],
+      7: [[0, 0], [0, 2], [2, 0], [2, 2], [4, 0], [4, 2], [1, 1]],
+      8: [[0, 0], [0, 2], [2, 0], [2, 2], [4, 0], [4, 2], [1, 1], [3, 1]],
+      9: [[0, 0], [0, 2], [2, 0], [2, 2], [4, 0], [4, 2], [1, 1], [3, 1], [2, 1]],
+      10: [[0, 0], [0, 2], [1, 0], [1, 2], [2, 0], [2, 2], [3, 0], [3, 2], [4, 0], [4, 2]]
+    };
 
-    function getSuitArt(suit) {
-      const template = suitArtTemplates[suit];
-      if (!template) return '';
-      const gradientId = `${suit}-gradient-${suitArtCounter++}`;
-      return template.replace(/\{\{GRADIENT_ID\}\}/g, gradientId);
+    const faceArtTemplates = {
+      11: {
+        hearts: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="26" fill="#ffe5ef" stroke="#d66aa7" stroke-width="6" />
+            <path d="M80 34 C66 34 54 46 54 60 L54 72 L44 88 L80 104 L116 88 L106 72 L106 60 C106 46 94 34 80 34 Z" fill="#f2b3cc" />
+            <circle cx="80" cy="78" r="22" fill="#f9d9ba" />
+            <path d="M66 70 C70 62 90 62 94 70" stroke="#532323" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M70 86 C74 90 86 90 90 86" stroke="#532323" stroke-width="4" stroke-linecap="round" fill="none" />
+            <path d="M60 118 L80 108 L100 118 L92 134 L68 134 Z" fill="#c23a63" />
+            <path d="M80 40 L88 54 L72 54 Z" fill="#8b2a4a" />
+            <path d="M80 120 C72 120 64 128 64 136 C72 136 88 136 96 136 C96 128 88 120 80 120 Z" fill="#f9d9ba" opacity="0.4" />
+          </svg>
+        `,
+        diamonds: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="26" fill="#f0f7ff" stroke="#2d88c4" stroke-width="6" />
+            <path d="M80 36 C66 36 54 48 54 62 L54 78 L44 94 L80 110 L116 94 L106 78 L106 62 C106 48 94 36 80 36 Z" fill="#8bd2ff" />
+            <circle cx="80" cy="80" r="22" fill="#f2d7b0" />
+            <path d="M68 72 C74 68 86 68 92 72" stroke="#4a2b16" stroke-width="5" stroke-linecap="round" fill="none" />
+            <path d="M72 90 C76 92 84 92 88 90" stroke="#4a2b16" stroke-width="4" stroke-linecap="round" fill="none" />
+            <rect x="60" y="118" width="40" height="20" rx="10" fill="#2068b1" />
+            <path d="M80 40 L90 58 L70 58 Z" fill="#154a7a" />
+            <polygon points="80,122 90,138 70,138" fill="#8bd2ff" />
+          </svg>
+        `,
+        clubs: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="26" fill="#eaf4ff" stroke="#24467d" stroke-width="6" />
+            <path d="M80 38 C64 38 52 52 52 70 L52 82 L40 98 L80 118 L120 98 L108 82 L108 70 C108 52 96 38 80 38 Z" fill="#6b8dd8" />
+            <circle cx="80" cy="82" r="22" fill="#f0cfa1" />
+            <path d="M68 74 C72 70 88 70 92 74" stroke="#3b2713" stroke-width="5" stroke-linecap="round" fill="none" />
+            <path d="M74 92 C78 94 82 94 86 92" stroke="#3b2713" stroke-width="4" stroke-linecap="round" fill="none" />
+            <path d="M80 42 L92 58 L68 58 Z" fill="#1c2f57" />
+            <path d="M58 118 C64 106 96 106 102 118 L96 138 L64 138 Z" fill="#12213f" />
+            <circle cx="80" cy="124" r="10" fill="#6b8dd8" />
+          </svg>
+        `,
+        spades: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="26" fill="#e9edff" stroke="#29316f" stroke-width="6" />
+            <path d="M80 36 C62 36 50 50 50 70 L50 82 L40 100 L80 118 L120 100 L110 82 L110 70 C110 50 98 36 80 36 Z" fill="#5460b9" />
+            <circle cx="80" cy="82" r="22" fill="#edd0a2" />
+            <path d="M66 76 C72 68 88 68 94 76" stroke="#352516" stroke-width="5" stroke-linecap="round" fill="none" />
+            <path d="M72 94 C78 98 82 98 88 94" stroke="#352516" stroke-width="4" stroke-linecap="round" fill="none" />
+            <path d="M80 40 L94 60 L66 60 Z" fill="#1d2455" />
+            <path d="M62 118 L80 108 L98 118 L92 138 L68 138 Z" fill="#1d2455" />
+            <circle cx="80" cy="122" r="9" fill="#5460b9" />
+          </svg>
+        `
+      },
+      12: {
+        hearts: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="30" fill="#ffe4f5" stroke="#d95b9f" stroke-width="6" />
+            <path d="M80 30 C60 30 46 48 46 68 L46 84 L32 104 L80 126 L128 104 L114 84 L114 68 C114 48 100 30 80 30 Z" fill="#f7a2c5" />
+            <circle cx="80" cy="78" r="26" fill="#fcdcc2" />
+            <path d="M64 76 C70 70 90 70 96 76" stroke="#5a2c1c" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M70 96 C76 102 84 102 90 96" stroke="#5a2c1c" stroke-width="4" stroke-linecap="round" fill="none" />
+            <path d="M80 40 L104 70 L56 70 Z" fill="#c94986" />
+            <path d="M58 120 L80 110 L102 120 L94 140 L66 140 Z" fill="#a83470" />
+            <path d="M80 56 C70 56 62 64 62 72 C68 74 92 74 98 72 C98 64 90 56 80 56 Z" fill="#fcdcc2" opacity="0.55" />
+          </svg>
+        `,
+        diamonds: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="30" fill="#f4faff" stroke="#3a94d6" stroke-width="6" />
+            <path d="M80 32 C60 32 48 50 48 72 L48 86 L34 108 L80 128 L126 108 L112 86 L112 72 C112 50 100 32 80 32 Z" fill="#79c1f0" />
+            <circle cx="80" cy="82" r="26" fill="#f8ddc0" />
+            <path d="M66 78 C72 74 88 74 94 78" stroke="#4d2d12" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M72 98 C78 102 82 102 88 98" stroke="#4d2d12" stroke-width="4" stroke-linecap="round" fill="none" />
+            <polygon points="80,40 106,74 54,74" fill="#2371b3" />
+            <path d="M58 120 L80 110 L102 120 L94 140 L66 140 Z" fill="#1a4f83" />
+            <polygon points="80,118 94,140 66,140" fill="#79c1f0" opacity="0.6" />
+          </svg>
+        `,
+        clubs: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="30" fill="#ecf6ff" stroke="#1f4c6f" stroke-width="6" />
+            <path d="M80 32 C58 32 46 52 46 76 L46 90 L32 110 L80 132 L128 110 L114 90 L114 76 C114 52 102 32 80 32 Z" fill="#5aa9d8" />
+            <circle cx="80" cy="82" r="26" fill="#f5d8b6" />
+            <path d="M64 78 C70 72 90 72 96 78" stroke="#442912" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M72 100 C78 104 84 104 90 100" stroke="#442912" stroke-width="4" stroke-linecap="round" fill="none" />
+            <polygon points="80,40 108,78 52,78" fill="#1c395a" />
+            <path d="M60 122 L80 112 L100 122 L92 142 L68 142 Z" fill="#13253d" />
+            <circle cx="80" cy="124" r="11" fill="#5aa9d8" />
+          </svg>
+        `,
+        spades: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="30" fill="#e8efff" stroke="#1d3166" stroke-width="6" />
+            <path d="M80 30 C58 30 44 50 44 76 L44 92 L30 112 L80 134 L130 112 L116 92 L116 76 C116 50 102 30 80 30 Z" fill="#4f67c0" />
+            <circle cx="80" cy="82" r="26" fill="#f1d6b3" />
+            <path d="M62 80 C70 72 90 72 98 80" stroke="#3a2614" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M70 102 C78 106 82 106 90 102" stroke="#3a2614" stroke-width="4" stroke-linecap="round" fill="none" />
+            <polygon points="80,38 110,80 50,80" fill="#1b2759" />
+            <path d="M60 122 L80 112 L100 122 L92 142 L68 142 Z" fill="#101b45" />
+            <path d="M80 60 C70 60 62 68 62 78 C70 80 90 80 98 78 C98 68 90 60 80 60 Z" fill="#f1d6b3" opacity="0.55" />
+          </svg>
+        `
+      },
+      13: {
+        hearts: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="32" fill="#ffe7f2" stroke="#d34986" stroke-width="6" />
+            <path d="M80 28 C56 28 40 52 40 80 L40 96 L26 118 L80 138 L134 118 L120 96 L120 80 C120 52 104 28 80 28 Z" fill="#f58ab9" />
+            <circle cx="80" cy="80" r="28" fill="#f5d4ad" />
+            <path d="M62 82 C70 72 90 72 98 82" stroke="#4e291c" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M70 106 C78 110 82 110 90 106" stroke="#4e291c" stroke-width="4" stroke-linecap="round" fill="none" />
+            <path d="M80 34 L112 78 L48 78 Z" fill="#c9346f" />
+            <path d="M56 124 L80 112 L104 124 L96 144 L64 144 Z" fill="#9f2555" />
+            <path d="M80 60 C68 60 58 70 58 82 C68 84 92 84 102 82 C102 70 92 60 80 60 Z" fill="#f5d4ad" opacity="0.55" />
+            <polygon points="80,32 96,56 64,56" fill="#ffefd8" opacity="0.6" />
+          </svg>
+        `,
+        diamonds: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="32" fill="#f1f7ff" stroke="#287ec4" stroke-width="6" />
+            <path d="M80 28 C56 28 42 54 42 82 L42 98 L28 120 L80 140 L132 120 L118 98 L118 82 C118 54 104 28 80 28 Z" fill="#6ab0e8" />
+            <circle cx="80" cy="82" r="28" fill="#f4d7ac" />
+            <path d="M64 80 C72 74 88 74 96 80" stroke="#3f2710" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M70 106 C78 110 82 110 90 106" stroke="#3f2710" stroke-width="4" stroke-linecap="round" fill="none" />
+            <polygon points="80,34 114,82 46,82" fill="#1c5f9a" />
+            <path d="M58 126 L80 114 L102 126 L94 146 L66 146 Z" fill="#143f6a" />
+            <polygon points="80,118 96,146 64,146" fill="#6ab0e8" opacity="0.6" />
+          </svg>
+        `,
+        clubs: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="32" fill="#eaf4ff" stroke="#234b72" stroke-width="6" />
+            <path d="M80 28 C54 28 40 56 40 88 L40 102 L26 124 L80 144 L134 124 L120 102 L120 88 C120 56 106 28 80 28 Z" fill="#558dd4" />
+            <circle cx="80" cy="82" r="28" fill="#f3d6b0" />
+            <path d="M64 80 C70 74 90 74 96 80" stroke="#402612" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M72 108 C80 112 84 112 92 108" stroke="#402612" stroke-width="4" stroke-linecap="round" fill="none" />
+            <polygon points="80,34 116,84 44,84" fill="#163b63" />
+            <path d="M58 128 L80 116 L102 128 L94 148 L66 148 Z" fill="#0f2742" />
+            <circle cx="80" cy="126" r="12" fill="#558dd4" />
+          </svg>
+        `,
+        spades: `
+          <svg viewBox="0 0 160 160" role="img" aria-hidden="true">
+            <rect x="10" y="10" width="140" height="140" rx="32" fill="#e7ecff" stroke="#1d2f5a" stroke-width="6" />
+            <path d="M80 26 C54 26 38 56 38 90 L38 104 L24 126 L80 148 L136 126 L122 104 L122 90 C122 56 106 26 80 26 Z" fill="#4a63be" />
+            <circle cx="80" cy="82" r="28" fill="#f0d4ab" />
+            <path d="M62 82 C70 74 90 74 98 82" stroke="#38220f" stroke-width="6" stroke-linecap="round" fill="none" />
+            <path d="M70 110 C80 114 84 114 94 110" stroke="#38220f" stroke-width="4" stroke-linecap="round" fill="none" />
+            <polygon points="80,32 118,86 42,86" fill="#152757" />
+            <path d="M58 130 L80 118 L102 130 L94 150 L66 150 Z" fill="#0d1b3e" />
+            <path d="M80 60 C66 60 56 72 56 84 C68 86 92 86 104 84 C104 72 94 60 80 60 Z" fill="#f0d4ab" opacity="0.55" />
+          </svg>
+        `
+      }
+    };
+
+    function getSuitSvg(suit, variant) {
+      const template = suitSvgTemplates[variant]?.[suit];
+      return template ? template.trim() : '';
     }
 
+    function getFaceArt(value, suit) {
+      const template = faceArtTemplates[value]?.[suit];
+      return template ? template.trim() : '';
+    }
+
+    function createPipGrid(card) {
+      const grid = document.createElement('div');
+      grid.className = 'card-pips';
+      const layout = pipLayouts[card.value];
+      const positions = layout && layout.length ? layout : [[2, 1]];
+      positions.forEach(([row, col]) => {
+        const pip = document.createElement('div');
+        pip.className = 'card-pip';
+        pip.style.gridRow = String(row + 1);
+        pip.style.gridColumn = String(col + 1);
+        pip.innerHTML = getSuitSvg(card.suit, 'pip');
+        grid.appendChild(pip);
+      });
+      return grid;
+    }
+
+    function createCardArt(card) {
+      const art = document.createElement('div');
+      art.className = 'card-art';
+      if (card.value >= 2 && card.value <= 10) {
+        art.appendChild(createPipGrid(card));
+      } else if (card.value >= 11 && card.value <= 13) {
+        art.classList.add('face-card');
+        art.innerHTML = getFaceArt(card.value, card.suit) || getSuitSvg(card.suit, 'emblem');
+      } else {
+        art.classList.add('ace');
+        art.innerHTML = getSuitSvg(card.suit, 'emblem');
+      }
+      return art;
+    }
     const rankLabels = {
       11: 'J',
       12: 'Q',
@@ -686,9 +916,7 @@
           const top = document.createElement('div');
           top.className = 'card-rank';
           top.textContent = rankLabels[cardData.value] || cardData.value;
-          const art = document.createElement('div');
-          art.className = 'card-art';
-          art.innerHTML = getSuitArt(cardData.suit);
+          const art = createCardArt(cardData);
           const bottom = document.createElement('div');
           bottom.className = 'card-suit';
           bottom.textContent = suitSymbols[cardData.suit];
