@@ -123,6 +123,8 @@
     }
 
     const FOV = 300;
+    const NEAR_FOCUS_DISTANCE = 220;
+    const MIN_PERSPECTIVE_CLAMP = 8;
     const PLANE_Z = -FOV * 0.8; // place the plane further down the z-axis
     const BUILDING_VIEW_DISTANCE = 2200;
     const BUILDING_DESPAWN_DISTANCE = 350;
@@ -576,12 +578,24 @@
       document.getElementById('info').textContent = `Distance: ${Math.floor(distance)} | Score: ${score}`;
     }
 
-    function project(x, y, z){
-      const relativeZ = Math.max(1, z - plane.z);
-      const scale = FOV / (FOV + relativeZ);
+    function project(x, y, z, options = {}){
+      const { boostNear = true } = options;
+      const relativeZ = z - plane.z;
+      let depthForScale;
+      if(boostNear){
+        depthForScale = relativeZ - NEAR_FOCUS_DISTANCE;
+        const minDepth = -FOV + MIN_PERSPECTIVE_CLAMP;
+        if(depthForScale < minDepth){
+          depthForScale = minDepth;
+        }
+      } else {
+        depthForScale = Math.max(MIN_PERSPECTIVE_CLAMP, relativeZ);
+      }
+      const scale = FOV / (FOV + depthForScale);
       return {
         x: canvas.width/2 + (x - plane.x) * scale,
-        y: canvas.height*0.7 - (y - plane.y) * scale
+        y: canvas.height*0.7 - (y - plane.y) * scale,
+        scale
       };
     }
 
@@ -700,8 +714,8 @@
       ctx.lineWidth = 1;
       for(let i=1;i<16;i++){
         const z = plane.z + i*120;
-        const left = project(-450, 0, z);
-        const right = project(450, 0, z);
+        const left = project(-450, 0, z, { boostNear: false });
+        const right = project(450, 0, z, { boostNear: false });
         ctx.beginPath();
         ctx.moveTo(left.x, left.y);
         ctx.lineTo(right.x, right.y);
@@ -710,8 +724,8 @@
       ctx.strokeStyle = 'rgba(100,255,190,0.18)';
       for(let i=-6;i<=6;i++){
         const x = i * 90;
-        const near = project(x, 0, plane.z + 40);
-        const far = project(x, 0, plane.z + 900);
+        const near = project(x, 0, plane.z + 40, { boostNear: false });
+        const far = project(x, 0, plane.z + 900, { boostNear: false });
         ctx.beginPath();
         ctx.moveTo(near.x, near.y);
         ctx.lineTo(far.x, far.y);
@@ -1186,9 +1200,7 @@
 
   function drawRing(r){
     const center = project(r.x, r.y, r.z);
-    const relativeZ = Math.max(1, r.z - plane.z);
-    const scale = FOV / (FOV + relativeZ);
-    const rad = r.radius * scale;
+    const rad = r.radius * center.scale;
     ctx.save();
     const glow = ctx.createRadialGradient(center.x, center.y, rad*0.2, center.x, center.y, rad);
     glow.addColorStop(0, 'rgba(255,255,200,0.7)');
