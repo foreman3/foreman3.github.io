@@ -248,7 +248,9 @@
         name: 'Multiples',
         description: 'Munch every tile that is a multiple of the featured number.',
         generate(level) {
-          const base = randomInt(2, Math.min(12, 3 + Math.floor(level / 2)));
+          const baseMin = Math.max(2, level + 1);
+          const baseMax = baseMin + 2;
+          const base = randomInt(baseMin, baseMax);
           const max = Math.max(base * (4 + Math.floor(level / 3)), 18 + level * 3);
           const rule = {
             ruleText: `Munch every multiple of ${base}.`,
