@@ -795,6 +795,29 @@
       ctx.fillRect(0, horizonY - 120, canvas.width, 240);
     }
 
+    function drawGroundSurface(){
+      const horizonY = canvas.height * 0.72;
+      const ground = ctx.createLinearGradient(0, horizonY, 0, canvas.height);
+      ground.addColorStop(0, 'rgba(10, 40, 35, 0.7)');
+      ground.addColorStop(0.45, 'rgba(6, 28, 32, 0.85)');
+      ground.addColorStop(1, 'rgba(0, 12, 18, 0.95)');
+      ctx.fillStyle = ground;
+      ctx.fillRect(0, horizonY, canvas.width, canvas.height - horizonY);
+
+      const bloom = ctx.createRadialGradient(
+        canvas.width / 2,
+        horizonY + canvas.height * 0.25,
+        canvas.height * 0.05,
+        canvas.width / 2,
+        horizonY + canvas.height * 0.25,
+        canvas.height * 0.45
+      );
+      bloom.addColorStop(0, 'rgba(30, 255, 210, 0.18)');
+      bloom.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = bloom;
+      ctx.fillRect(0, horizonY, canvas.width, canvas.height - horizonY);
+    }
+
     function drawGroundGrid(){
       ctx.save();
       ctx.strokeStyle = 'rgba(100,255,190,0.25)';
@@ -1337,6 +1360,7 @@
       drawStars();
       drawDistantCity();
       drawHorizonGlow();
+      drawGroundSurface();
       drawGroundGrid();
 
       const visibleBuildings = buildings
