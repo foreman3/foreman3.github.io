@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720">
+  <defs>
+    <linearGradient id="command-sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#09142f" />
+      <stop offset="60%" stop-color="#02000e" />
+      <stop offset="100%" stop-color="#000000" />
+    </linearGradient>
+    <radialGradient id="scanner" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#55f8ff" stop-opacity="0.45" />
+      <stop offset="80%" stop-color="#26064a" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#050014" />
+    </radialGradient>
+    <linearGradient id="target" x1="0%" x2="100%">
+      <stop offset="0%" stop-color="#ff8aff" />
+      <stop offset="100%" stop-color="#ffc45a" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="720" fill="url(#command-sky)" />
+  <circle cx="480" cy="360" r="320" fill="url(#scanner)" />
+  <g stroke="#4dfffe" stroke-width="2" opacity="0.35">
+    <circle cx="480" cy="360" r="260" fill="none" />
+    <circle cx="480" cy="360" r="200" fill="none" />
+    <circle cx="480" cy="360" r="140" fill="none" />
+    <circle cx="480" cy="360" r="80" fill="none" />
+    <line x1="160" y1="360" x2="800" y2="360" />
+    <line x1="480" y1="40" x2="480" y2="680" />
+  </g>
+  <g stroke="#ff7df2" stroke-width="4" stroke-dasharray="18 12" opacity="0.6">
+    <path d="M120 120l180 120" />
+    <path d="M840 120l-180 120" />
+    <path d="M120 600l180-120" />
+    <path d="M840 600l-180-120" />
+  </g>
+  <g fill="#62f9ff" opacity="0.45">
+    <circle cx="260" cy="160" r="12" />
+    <circle cx="700" cy="140" r="10" />
+    <circle cx="740" cy="520" r="16" />
+    <circle cx="220" cy="520" r="14" />
+  </g>
+  <g>
+    <path d="M480 150l-90 60 90 60 90-60z" fill="#2ef7ff" opacity="0.6" />
+    <path d="M480 210l-70 46 70 46 70-46z" fill="#ff63d9" opacity="0.7" />
+    <path d="M480 260l-50 34 50 34 50-34z" fill="#ffe660" opacity="0.7" />
+    <path d="M480 300l-30 20 30 20 30-20z" fill="#ff2f88" opacity="0.8" />
+  </g>
+  <g>
+    <circle cx="480" cy="360" r="90" fill="#090029" opacity="0.9" />
+    <circle cx="480" cy="360" r="72" fill="#1b0044" opacity="0.85" />
+    <path d="M480 298l-52 62 52 62 52-62z" fill="#2af7ff" opacity="0.8" />
+    <path d="M480 318l-32 42 32 42 32-42z" fill="#ff6ae6" opacity="0.7" />
+    <circle cx="480" cy="360" r="18" fill="#ffffff" />
+  </g>
+  <g stroke="url(#target)" stroke-width="10" opacity="0.8" stroke-linecap="round">
+    <path d="M480 120v-60" />
+    <path d="M480 660v-60" />
+    <path d="M840 360h60" />
+    <path d="M120 360h-60" />
+  </g>
+  <g fill="#ff82ff" opacity="0.6">
+    <circle cx="480" cy="120" r="18" />
+    <circle cx="840" cy="360" r="18" />
+    <circle cx="120" cy="360" r="18" />
+    <circle cx="480" cy="600" r="18" />
+  </g>
+  <g>
+    <path d="M360 560h240l-20 80H380z" fill="#0b1738" />
+    <rect x="420" y="520" width="120" height="40" rx="12" fill="#21d7ff" />
+    <rect x="440" y="500" width="80" height="24" rx="12" fill="#ff7dfa" />
+    <path d="M480 520l-28-70h56z" fill="#72f5ff" />
+    <path d="M420 560l-40 60h80z" fill="#1e0f45" />
+    <path d="M540 560l40 60h-80z" fill="#1e0f45" />
+  </g>
+</svg>

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720">
+  <defs>
+    <radialGradient id="starfield" cx="50%" cy="45%" r="80%">
+      <stop offset="0%" stop-color="#2af7ff" stop-opacity="0.35" />
+      <stop offset="60%" stop-color="#0a0d4a" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#010018" />
+    </radialGradient>
+    <linearGradient id="ship" x1="0%" x2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#5ff7ff" />
+    </linearGradient>
+    <linearGradient id="thrust" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#fffe8a" />
+      <stop offset="100%" stop-color="#ff3366" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="720" fill="url(#starfield)" />
+  <g opacity="0.4" stroke="#61f8ff" stroke-width="2" fill="none">
+    <circle cx="160" cy="180" r="44" />
+    <circle cx="420" cy="120" r="36" />
+    <circle cx="680" cy="160" r="28" />
+    <circle cx="840" cy="240" r="52" />
+  </g>
+  <g opacity="0.6" fill="#ffffff">
+    <circle cx="140" cy="90" r="3" />
+    <circle cx="260" cy="180" r="2" />
+    <circle cx="520" cy="140" r="4" />
+    <circle cx="620" cy="100" r="2" />
+    <circle cx="760" cy="220" r="3" />
+    <circle cx="880" cy="120" r="2" />
+    <circle cx="320" cy="260" r="2" />
+    <circle cx="500" cy="200" r="2" />
+  </g>
+  <g opacity="0.45" stroke="#42ffdf" stroke-width="4">
+    <path d="M120 420l60-140 120 40 40 120-120 80z" fill="#161d5a" />
+    <path d="M400 360l64-120 112 44 24 124-132 68z" fill="#1b266a" />
+    <path d="M700 420l70-130 140 70-40 140-150 32z" fill="#121a53" />
+  </g>
+  <g opacity="0.65" fill="#2ef1ff">
+    <circle cx="230" cy="360" r="8" />
+    <circle cx="300" cy="330" r="6" />
+    <circle cx="340" cy="420" r="10" />
+    <circle cx="520" cy="320" r="6" />
+    <circle cx="580" cy="380" r="8" />
+    <circle cx="620" cy="440" r="6" />
+  </g>
+  <g>
+    <g transform="translate(0,-40)">
+      <path d="M468 420l24-80 24 80-24 18z" fill="url(#ship)" />
+      <path d="M460 460l32-22 32 22-32 40z" fill="#3c96ff" />
+      <path d="M492 500l-18 84 18-12 18 12z" fill="url(#thrust)" />
+      <path d="M460 458l-28 16 28 18z" fill="#41f5ff" opacity="0.8" />
+      <path d="M524 458l28 16-28 18z" fill="#41f5ff" opacity="0.8" />
+    </g>
+    <path d="M474 560l-18 100 18-16 18 16 18-100z" fill="url(#thrust)" opacity="0.85" />
+  </g>
+  <g stroke="#ff8ef5" stroke-width="10" stroke-linecap="round" opacity="0.45">
+    <path d="M520 520l120-40" />
+    <path d="M504 540l160-10" />
+  </g>
+  <g opacity="0.4" fill="#40faff">
+    <circle cx="320" cy="520" r="24" />
+    <circle cx="380" cy="580" r="18" />
+    <circle cx="600" cy="520" r="16" />
+    <circle cx="660" cy="560" r="12" />
+  </g>
+</svg>

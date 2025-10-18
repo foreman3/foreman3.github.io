@@ -137,28 +137,32 @@
 
       .game-card {
         position: relative;
-        border-radius: 24px;
+        border-radius: 26px;
         overflow: hidden;
         text-decoration: none;
         color: inherit;
-        padding: 1.75rem 1.5rem;
-        min-height: 260px;
+        padding: 1.75rem;
+        min-height: clamp(360px, 65vw, 540px);
         display: flex;
-        align-items: flex-end;
+        flex-direction: column;
+        gap: 1.5rem;
         isolation: isolate;
         transition: transform 0.4s ease, box-shadow 0.4s ease;
-        box-shadow: 0 12px 35px rgba(8, 0, 30, 0.55);
+        box-shadow: 0 18px 40px rgba(8, 0, 30, 0.55);
+        background: linear-gradient(170deg, rgba(6, 1, 21, 0.92), rgba(19, 4, 52, 0.85));
       }
 
       .game-card::before {
         content: "";
         position: absolute;
-        inset: 0;
-        background:
-          linear-gradient(185deg, rgba(6, 1, 21, 0.2) 0%, rgba(6, 1, 21, 0.9) 75%),
-          var(--card-image) center / cover no-repeat;
+        inset: 18px;
+        border-radius: 20px;
+        background: radial-gradient(circle at 20% 20%, rgba(103, 247, 255, 0.18), transparent 55%),
+          radial-gradient(circle at 80% 30%, rgba(255, 107, 203, 0.22), transparent 60%),
+          radial-gradient(circle at 50% 80%, rgba(103, 247, 255, 0.18), transparent 65%);
         z-index: -2;
         transition: transform 0.6s ease;
+        filter: blur(0.5px);
       }
 
       .game-card::after {
@@ -176,17 +180,44 @@
       .game-card:hover,
       .game-card:focus-visible {
         transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 18px 45px rgba(255, 107, 203, 0.35);
+        box-shadow: 0 20px 55px rgba(255, 107, 203, 0.35);
       }
 
       .game-card:hover::before,
       .game-card:focus-visible::before {
-        transform: scale(1.08);
+        transform: scale(1.06);
       }
 
       .game-card:hover::after,
       .game-card:focus-visible::after {
         opacity: 1;
+      }
+
+      .game-card__art {
+        position: relative;
+        margin: 0;
+        border-radius: 20px;
+        overflow: hidden;
+        height: clamp(18rem, 36vw, 26rem);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(140deg, rgba(9, 3, 30, 0.9), rgba(33, 6, 70, 0.75));
+        box-shadow: inset 0 0 0 1px rgba(103, 247, 255, 0.1), 0 12px 32px rgba(10, 0, 35, 0.6);
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+      }
+
+      .game-card__art img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        mix-blend-mode: normal;
+      }
+
+      .game-card:hover .game-card__art,
+      .game-card:focus-visible .game-card__art {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 18px 40px rgba(18, 0, 60, 0.65);
       }
 
       .game-card__content {
@@ -197,6 +228,7 @@
         padding: 1.25rem;
         border-radius: 18px;
         border: 1px solid rgba(103, 247, 255, 0.25);
+        box-shadow: inset 0 0 0 1px rgba(103, 247, 255, 0.08);
       }
 
       .game-card h2 {
@@ -264,11 +296,15 @@
         }
 
         .game-card {
-          min-height: 220px;
+          padding: 1.4rem;
+        }
+
+        .game-card__art {
+          height: clamp(14rem, 55vw, 20rem);
         }
 
         .game-card__content {
-          padding: 1rem;
+          padding: 1.1rem;
         }
       }
     </style>
@@ -293,11 +329,10 @@
       </div>
 
       <section class="game-grid" aria-label="Game selection grid">
-        <a
-          class="game-card"
-          href="drop-game.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1502741471662-5a59824b2412?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="drop-game.html">
+          <figure class="game-card__art">
+            <img src="images/menu-drop-game.svg" alt="Colorful fruit tumbling toward a glowing basket" />
+          </figure>
           <div class="game-card__content">
             <h2>Drop Game</h2>
             <p>Catch juicy fruit as it rains from above—keep your basket moving and your reflexes sharp.</p>
@@ -308,11 +343,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="flappy.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="flappy.html">
+          <figure class="game-card__art">
+            <img src="images/menu-flappy.svg" alt="Retro bird weaving between neon pipes" />
+          </figure>
           <div class="game-card__content">
             <h2>Flappy</h2>
             <p>Swoop through neon gates and tap to survive an endless obstacle gauntlet.</p>
@@ -323,11 +357,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="qbert.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="qbert.html">
+          <figure class="game-card__art">
+            <img src="images/menu-qbert.svg" alt="Isometric pyramid glowing under a bouncing hero" />
+          </figure>
           <div class="game-card__content">
             <h2>Q*bert Clone</h2>
             <p>Hop diagonally across pyramids and flip every tile while outsmarting oddball foes.</p>
@@ -338,11 +371,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="asteroids.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="asteroids.html">
+          <figure class="game-card__art">
+            <img src="images/menu-asteroids.svg" alt="Vector ship blasting apart swirling asteroids" />
+          </figure>
           <div class="game-card__content">
             <h2>Asteroids</h2>
             <p>Spin, thrust, and shatter cosmic boulders into stardust—just don’t get caught in the debris.</p>
@@ -353,11 +385,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="space-invaders.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="space-invaders.html">
+          <figure class="game-card__art">
+            <img src="images/menu-space-invaders.svg" alt="Columns of neon aliens drifting above a laser cannon" />
+          </figure>
           <div class="game-card__content">
             <h2>Space Invaders</h2>
             <p>Hold the line as pixelated aliens march downward in ever-faster waves.</p>
@@ -368,11 +399,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="space-invaders-command.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1475906089153-644d9452ce87?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="space-invaders-command.html">
+          <figure class="game-card__art">
+            <img src="images/menu-invaders-command.svg" alt="Command console targeting an alien cruiser" />
+          </figure>
           <div class="game-card__content">
             <h2>Invaders Command</h2>
             <p>Deploy smart missiles and intercept alien barrages before they vaporize your bases.</p>
@@ -383,11 +413,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="missile-command.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1541870730196-cd1efcbf5649?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="missile-command.html">
+          <figure class="game-card__art">
+            <img src="images/menu-missile-command.svg" alt="City skyline shielded by interceptor rockets" />
+          </figure>
           <div class="game-card__content">
             <h2>Missile Command</h2>
             <p>Guide defense rockets to intercept incoming warheads and protect every city light.</p>
@@ -398,11 +427,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="tetris.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="tetris.html">
+          <figure class="game-card__art">
+            <img src="images/menu-tetris.svg" alt="Falling tetrominoes locking into a glowing skyline" />
+          </figure>
           <div class="game-card__content">
             <h2>Tetris</h2>
             <p>Slot falling tetrominoes into perfect lines to keep the well from overflowing.</p>
@@ -413,11 +441,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="tanks.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="tanks.html">
+          <figure class="game-card__art">
+            <img src="images/menu-tanks.svg" alt="Retro tanks dueling with ricocheting shells" />
+          </figure>
           <div class="game-card__content">
             <h2>Tanks</h2>
             <p>Navigate tight arenas, bank shots off walls, and outmaneuver enemy armor.</p>
@@ -428,11 +455,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="ultra-tanks.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1473445730015-841f29a9490b?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="ultra-tanks.html">
+          <figure class="game-card__art">
+            <img src="images/menu-ultra-tanks.svg" alt="Heavy tanks unleashing a screen-filling bombardment" />
+          </figure>
           <div class="game-card__content">
             <h2>Ultra Tanks</h2>
             <p>Blast ricocheting projectiles and unleash screen-filling air raids to dominate.</p>
@@ -443,11 +469,10 @@
           </div>
         </a>
 
-        <a
-          class="game-card"
-          href="neon-flight.html"
-          style="--card-image: url('https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=800&q=80');"
-        >
+        <a class="game-card" href="neon-flight.html">
+          <figure class="game-card__art">
+            <img src="images/menu-neon-flight.svg" alt="Synthwave jet racing above neon skyscrapers" />
+          </figure>
           <div class="game-card__content">
             <h2>Neon Flight</h2>
             <p>Thread a glowing jet through wireframe skyscrapers in synthwave twilight.</p>

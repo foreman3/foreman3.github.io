@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720">
+  <defs>
+    <linearGradient id="invader-sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e0a53" />
+      <stop offset="45%" stop-color="#050019" />
+      <stop offset="100%" stop-color="#000000" />
+    </linearGradient>
+    <linearGradient id="shield" x1="0%" x2="100%">
+      <stop offset="0%" stop-color="#65f6ff" />
+      <stop offset="100%" stop-color="#ff76ff" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="720" fill="url(#invader-sky)" />
+  <g opacity="0.35" fill="#40faff">
+    <circle cx="140" cy="120" r="4" />
+    <circle cx="260" cy="80" r="5" />
+    <circle cx="380" cy="140" r="3" />
+    <circle cx="520" cy="100" r="4" />
+    <circle cx="640" cy="160" r="3" />
+    <circle cx="780" cy="100" r="5" />
+    <circle cx="860" cy="140" r="3" />
+  </g>
+  <g fill="#3cf6ff" opacity="0.45">
+    <rect x="120" y="220" width="720" height="2" />
+    <rect x="140" y="280" width="680" height="2" />
+    <rect x="180" y="340" width="600" height="2" />
+  </g>
+  <g transform="translate(0,-20)">
+    <g fill="#ff6be8">
+      <rect x="220" y="180" width="60" height="40" rx="10" />
+      <rect x="320" y="180" width="60" height="40" rx="10" />
+      <rect x="420" y="180" width="60" height="40" rx="10" />
+      <rect x="520" y="180" width="60" height="40" rx="10" />
+      <rect x="620" y="180" width="60" height="40" rx="10" />
+    </g>
+    <g fill="#5cfffe" transform="translate(0,80)">
+      <rect x="240" y="180" width="60" height="40" rx="10" />
+      <rect x="340" y="180" width="60" height="40" rx="10" />
+      <rect x="440" y="180" width="60" height="40" rx="10" />
+      <rect x="540" y="180" width="60" height="40" rx="10" />
+      <rect x="640" y="180" width="60" height="40" rx="10" />
+    </g>
+    <g fill="#ffe56e" transform="translate(0,160)">
+      <rect x="220" y="180" width="60" height="40" rx="10" />
+      <rect x="320" y="180" width="60" height="40" rx="10" />
+      <rect x="420" y="180" width="60" height="40" rx="10" />
+      <rect x="520" y="180" width="60" height="40" rx="10" />
+      <rect x="620" y="180" width="60" height="40" rx="10" />
+    </g>
+  </g>
+  <g opacity="0.7" fill="#ff86ff">
+    <rect x="210" y="220" width="12" height="36" rx="6" />
+    <rect x="310" y="220" width="12" height="36" rx="6" />
+    <rect x="410" y="220" width="12" height="36" rx="6" />
+    <rect x="510" y="220" width="12" height="36" rx="6" />
+    <rect x="610" y="220" width="12" height="36" rx="6" />
+    <rect x="710" y="220" width="12" height="36" rx="6" />
+  </g>
+  <g opacity="0.7" fill="#88f7ff">
+    <rect x="250" y="300" width="12" height="36" rx="6" />
+    <rect x="350" y="300" width="12" height="36" rx="6" />
+    <rect x="450" y="300" width="12" height="36" rx="6" />
+    <rect x="550" y="300" width="12" height="36" rx="6" />
+    <rect x="650" y="300" width="12" height="36" rx="6" />
+  </g>
+  <g opacity="0.5" fill="#ffe566">
+    <rect x="210" y="380" width="12" height="36" rx="6" />
+    <rect x="310" y="380" width="12" height="36" rx="6" />
+    <rect x="410" y="380" width="12" height="36" rx="6" />
+    <rect x="510" y="380" width="12" height="36" rx="6" />
+    <rect x="610" y="380" width="12" height="36" rx="6" />
+    <rect x="710" y="380" width="12" height="36" rx="6" />
+  </g>
+  <g>
+    <rect x="420" y="520" width="120" height="24" rx="12" fill="#2affff" />
+    <rect x="456" y="486" width="48" height="50" rx="16" fill="#21d7ff" />
+    <path d="M480 520v-120" stroke="#6bfffb" stroke-width="12" stroke-linecap="round" />
+    <path d="M480 400l-18-28h36z" fill="#ffffff" />
+  </g>
+  <path d="M160 620h640" stroke="url(#shield)" stroke-width="18" stroke-linecap="round" opacity="0.65" />
+  <g opacity="0.3" fill="#62f7ff">
+    <circle cx="220" cy="600" r="18" />
+    <circle cx="340" cy="640" r="12" />
+    <circle cx="480" cy="600" r="22" />
+    <circle cx="620" cy="640" r="14" />
+    <circle cx="740" cy="600" r="16" />
+  </g>
+</svg>

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720">
+  <defs>
+    <linearGradient id="nebula" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff7bff" />
+      <stop offset="50%" stop-color="#4d1caa" />
+      <stop offset="100%" stop-color="#0c002a" />
+    </linearGradient>
+    <linearGradient id="pyramid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffef9d" />
+      <stop offset="100%" stop-color="#ff6ad0" />
+    </linearGradient>
+    <linearGradient id="hero" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffc9b" />
+      <stop offset="100%" stop-color="#ff5f3b" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="720" fill="url(#nebula)" />
+  <g opacity="0.25" stroke="#ffc1ff" stroke-width="4" fill="none">
+    <path d="M220 120l260 150 260-150" />
+    <path d="M180 240l300 170 300-170" />
+    <path d="M140 360l340 190 340-190" />
+  </g>
+  <g opacity="0.4" fill="#ffe5ff">
+    <circle cx="200" cy="160" r="10" />
+    <circle cx="340" cy="100" r="14" />
+    <circle cx="520" cy="80" r="16" />
+    <circle cx="700" cy="140" r="12" />
+    <circle cx="820" cy="220" r="18" />
+  </g>
+  <g transform="translate(0,40)">
+    <path d="M320 260l160-92 160 92-160 92z" fill="#2e1162" opacity="0.6" />
+    <path d="M240 360l240-138 240 138-240 138z" fill="#32137a" opacity="0.65" />
+    <path d="M160 460l320-184 320 184-320 184z" fill="#37188f" opacity="0.7" />
+  </g>
+  <g transform="translate(0,20)">
+    <path d="M320 240l160-92 160 92-160 92z" fill="url(#pyramid)" />
+    <path d="M240 340l240-138 240 138-240 138z" fill="url(#pyramid)" opacity="0.85" />
+    <path d="M160 440l320-184 320 184-320 184z" fill="url(#pyramid)" opacity="0.75" />
+    <g fill="#ff7ef8" opacity="0.4">
+      <path d="M320 240l160-92v184l-160 92z" />
+      <path d="M480 148l160 92-160 92z" />
+      <path d="M240 340l240-138v276l-240 138z" />
+      <path d="M480 202l240 138-240 138z" />
+    </g>
+  </g>
+  <g transform="translate(0,-40)">
+    <ellipse cx="470" cy="270" rx="64" ry="44" fill="#190741" opacity="0.6" />
+    <ellipse cx="470" cy="256" rx="58" ry="40" fill="#ff7ec2" opacity="0.65" />
+    <ellipse cx="470" cy="244" rx="40" ry="28" fill="#ffb36a" opacity="0.8" />
+  </g>
+  <g transform="translate(0,-80)">
+    <ellipse cx="460" cy="246" rx="64" ry="58" fill="url(#hero)" />
+    <ellipse cx="510" cy="226" rx="36" ry="34" fill="#fff3d6" />
+    <circle cx="520" cy="226" r="10" fill="#2b003d" />
+    <circle cx="430" cy="262" r="12" fill="#43124e" />
+    <path d="M452 294c-24 12-28 38-10 58s54 24 78 4c18-16 12-42-10-56-18 10-38 12-58-6z" fill="#ff8f2a" />
+    <path d="M416 320l-38 80 58-18c12-30 8-52-20-62z" fill="#ff6f52" />
+    <path d="M510 304l80 38-54 26c-30-16-42-42-26-64z" fill="#ff6f52" />
+  </g>
+  <g opacity="0.3" fill="#ffe5ff">
+    <circle cx="200" cy="520" r="14" />
+    <circle cx="320" cy="600" r="10" />
+    <circle cx="420" cy="560" r="18" />
+    <circle cx="560" cy="620" r="16" />
+    <circle cx="700" cy="560" r="14" />
+    <circle cx="820" cy="620" r="12" />
+  </g>
+</svg>
