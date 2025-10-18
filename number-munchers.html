@@ -564,6 +564,74 @@
       return tiles;
     }
 
+    function markCorrectTiles(rule) {
+      if (!rule || typeof rule.check !== 'function' || !Array.isArray(rule.tiles)) {
+        return 0;
+      }
+      let correctCount = 0;
+      rule.tiles.forEach((tile) => {
+        const isCorrect = rule.check(tile);
+        tile.correct = isCorrect;
+        if (isCorrect) correctCount++;
+      });
+      return correctCount;
+    }
+
+    function guaranteeSolvableTile(rule, mode) {
+      if (!rule || !Array.isArray(rule.tiles) || !rule.tiles.length) return;
+      const tile = rule.tiles.find((t) => !t.eaten) || rule.tiles[0];
+      if (!tile) return;
+      const details = rule.details || {};
+      if (mode.id === 'multiples' && typeof details.base === 'number') {
+        tile.type = 'number';
+        tile.value = details.base * 2;
+        tile.text = String(tile.value);
+      } else if (mode.id === 'factors' && Array.isArray(details.factors) && details.factors.length) {
+        const chosen = details.factors.find((factor) => factor > 1) || details.factors[0];
+        tile.type = 'number';
+        tile.value = chosen;
+        tile.text = String(tile.value);
+      } else if (mode.id === 'primes') {
+        tile.type = 'number';
+        tile.value = 2;
+        tile.text = '2';
+      } else if (mode.id === 'equalities' && typeof details.target === 'number') {
+        tile.type = 'expression';
+        tile.value = details.target;
+        tile.text = `${details.target} + 0`;
+        tile.displayValue = tile.value;
+      } else if (mode.id === 'inequalities' && typeof details.target === 'number') {
+        tile.type = 'expression';
+        tile.value = details.target + 1;
+        tile.text = `${details.target} + 1`;
+        tile.displayValue = tile.value;
+      } else if (typeof rule.mutate === 'function') {
+        let attempts = 0;
+        while (attempts < 12 && !rule.check(tile)) {
+          rule.mutate(tile);
+          attempts++;
+        }
+      }
+      tile.correct = rule.check(tile);
+      tile.eaten = false;
+      tile.helperCleared = false;
+      tile.mistake = false;
+    }
+
+    function generateSolvableRule(mode, level) {
+      const MAX_ATTEMPTS = 30;
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        const candidate = mode.generate(level);
+        if (markCorrectTiles(candidate) > 0) {
+          return candidate;
+        }
+      }
+      const fallback = mode.generate(level);
+      guaranteeSolvableTile(fallback, mode);
+      markCorrectTiles(fallback);
+      return fallback;
+    }
+
     function chooseTroggleTypesForLevel(level) {
       if (level < 2) return troggleDefinitions.slice(0, 1);
       if (level < 4) return troggleDefinitions.slice(0, 2);
@@ -604,8 +672,8 @@
 
     function prepareLevel() {
       activeMode = challengeMode ? randomChoice(modes) : currentMode;
-      activeRule = activeMode.generate(level);
-      tiles = activeRule.tiles;
+      activeRule = generateSolvableRule(activeMode, level);
+      tiles = Array.isArray(activeRule.tiles) ? activeRule.tiles : [];
       safetySquare.index = null;
       safetySquare.timer = 0;
       ruleEl.textContent = activeRule.ruleText;
