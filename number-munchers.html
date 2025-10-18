@@ -577,57 +577,181 @@
       return correctCount;
     }
 
-    function guaranteeSolvableTile(rule, mode) {
-      if (!rule || !Array.isArray(rule.tiles) || !rule.tiles.length) return;
-      const tile = rule.tiles.find((t) => !t.eaten) || rule.tiles[0];
-      if (!tile) return;
+    function setTileToCorrect(tile, rule, mode) {
+      if (!tile || !rule || typeof rule.check !== 'function') return false;
       const details = rule.details || {};
-      if (mode.id === 'multiples' && typeof details.base === 'number') {
+      tile.eaten = false;
+      tile.helperCleared = false;
+      tile.mistake = false;
+
+      let assigned = false;
+      if (mode && mode.id === 'multiples' && typeof details.base === 'number') {
+        const maxValue = details.max || details.base * 6;
+        const maxMultiplier = Math.max(1, Math.floor(maxValue / details.base));
+        const multiplier = randomInt(1, Math.max(1, maxMultiplier));
         tile.type = 'number';
-        tile.value = details.base * 2;
+        tile.value = details.base * multiplier;
         tile.text = String(tile.value);
-      } else if (mode.id === 'factors' && Array.isArray(details.factors) && details.factors.length) {
-        const chosen = details.factors.find((factor) => factor > 1) || details.factors[0];
+        assigned = true;
+      } else if (mode && mode.id === 'factors' && Array.isArray(details.factors)) {
+        const pick = details.factors.find((factor) => factor > 1) || details.factors[0] || 1;
         tile.type = 'number';
-        tile.value = chosen;
+        tile.value = pick;
         tile.text = String(tile.value);
-      } else if (mode.id === 'primes') {
+        assigned = true;
+      } else if (mode && mode.id === 'primes') {
+        const prime = randomPrimeBelow((details.max || 50) + 10);
         tile.type = 'number';
-        tile.value = 2;
-        tile.text = '2';
-      } else if (mode.id === 'equalities' && typeof details.target === 'number') {
+        tile.value = prime;
+        tile.text = String(tile.value);
+        assigned = true;
+      } else if (mode && mode.id === 'equalities' && typeof details.target === 'number') {
         tile.type = 'expression';
         tile.value = details.target;
         tile.text = `${details.target} + 0`;
         tile.displayValue = tile.value;
-      } else if (mode.id === 'inequalities' && typeof details.target === 'number') {
+        assigned = true;
+      } else if (mode && mode.id === 'inequalities' && typeof details.target === 'number') {
         tile.type = 'expression';
-        tile.value = details.target + 1;
-        tile.text = `${details.target} + 1`;
+        const offset = Math.max(1, Math.floor(details.level || 1));
+        tile.value = details.target + offset;
+        tile.text = `${details.target} + ${offset}`;
         tile.displayValue = tile.value;
-      } else if (typeof rule.mutate === 'function') {
+        assigned = true;
+      }
+
+      if (!assigned && typeof rule.mutate === 'function') {
         let attempts = 0;
-        while (attempts < 12 && !rule.check(tile)) {
+        while (attempts < 16 && !rule.check(tile)) {
           rule.mutate(tile);
           attempts++;
         }
       }
+
       tile.correct = rule.check(tile);
-      tile.eaten = false;
-      tile.helperCleared = false;
-      tile.mistake = false;
+      return tile.correct;
+    }
+
+    function indexToCoord(index) {
+      return { x: index % GRID, y: Math.floor(index / GRID) };
+    }
+
+    function correctTileComponents(rule) {
+      if (!rule || !Array.isArray(rule.tiles)) return [];
+      const tiles = rule.tiles;
+      const visited = new Array(tiles.length).fill(false);
+      const components = [];
+
+      tiles.forEach((tile, index) => {
+        if (!tile || !tile.correct || visited[index]) return;
+        const component = [];
+        const queue = [index];
+        visited[index] = true;
+        while (queue.length) {
+          const current = queue.shift();
+          component.push(current);
+          const { x, y } = indexToCoord(current);
+          const neighbors = [
+            { x: x + 1, y },
+            { x: x - 1, y },
+            { x, y: y + 1 },
+            { x, y: y - 1 }
+          ];
+          neighbors.forEach(({ x: nx, y: ny }) => {
+            if (nx < 0 || ny < 0 || nx >= GRID || ny >= GRID) return;
+            const neighborIndex = ny * GRID + nx;
+            if (!visited[neighborIndex] && tiles[neighborIndex] && tiles[neighborIndex].correct) {
+              visited[neighborIndex] = true;
+              queue.push(neighborIndex);
+            }
+          });
+        }
+        components.push(component);
+      });
+      return components;
+    }
+
+    function closestIndices(baseSet, component) {
+      let bestBase = null;
+      let bestTarget = component[0];
+      let bestDistance = Infinity;
+      component.forEach((targetIndex) => {
+        const targetCoord = indexToCoord(targetIndex);
+        baseSet.forEach((baseIndex) => {
+          const baseCoord = indexToCoord(baseIndex);
+          const distance = Math.abs(baseCoord.x - targetCoord.x) + Math.abs(baseCoord.y - targetCoord.y);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestBase = baseIndex;
+            bestTarget = targetIndex;
+          }
+        });
+      });
+      return { baseIndex: bestBase, targetIndex: bestTarget };
+    }
+
+    function pathBetween(start, end) {
+      const path = [];
+      let { x, y } = start;
+      while (x !== end.x) {
+        x += x < end.x ? 1 : -1;
+        path.push(y * GRID + x);
+      }
+      while (y !== end.y) {
+        y += y < end.y ? 1 : -1;
+        path.push(y * GRID + x);
+      }
+      return path;
+    }
+
+    function ensureConnectedCorrectTiles(rule, mode) {
+      const components = correctTileComponents(rule);
+      if (!components.length) return false;
+      if (components.length === 1) return true;
+
+      const tiles = rule.tiles;
+      const connected = new Set(components.shift());
+
+      components.forEach((component) => {
+        const { baseIndex, targetIndex } = closestIndices(connected, component);
+        const startCoord = indexToCoord(baseIndex);
+        const targetCoord = indexToCoord(targetIndex);
+        const path = pathBetween(startCoord, targetCoord);
+        path.forEach((index) => {
+          const tile = tiles[index];
+          if (!tile) return;
+          if (!tile.correct) {
+            setTileToCorrect(tile, rule, mode);
+          }
+          connected.add(index);
+        });
+        component.forEach((index) => connected.add(index));
+      });
+
+      markCorrectTiles(rule);
+      return correctTileComponents(rule).length === 1;
+    }
+
+    function guaranteeSolvableTile(rule, mode) {
+      if (!rule || !Array.isArray(rule.tiles) || !rule.tiles.length) return;
+      const tile = rule.tiles.find((t) => !t.eaten) || rule.tiles[0];
+      if (!tile) return;
+      setTileToCorrect(tile, rule, mode);
     }
 
     function generateSolvableRule(mode, level) {
-      const MAX_ATTEMPTS = 30;
+      const MAX_ATTEMPTS = 40;
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         const candidate = mode.generate(level);
-        if (markCorrectTiles(candidate) > 0) {
+        const correctCount = markCorrectTiles(candidate);
+        if (correctCount > 0 && ensureConnectedCorrectTiles(candidate, mode)) {
           return candidate;
         }
       }
       const fallback = mode.generate(level);
       guaranteeSolvableTile(fallback, mode);
+      markCorrectTiles(fallback);
+      ensureConnectedCorrectTiles(fallback, mode);
       markCorrectTiles(fallback);
       return fallback;
     }
