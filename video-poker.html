@@ -143,11 +143,23 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      background: radial-gradient(circle at top, rgba(255,255,255,0.88), rgba(245,245,245,0.9));
+      background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.96), rgba(249, 249, 249, 0.95)),
+        radial-gradient(circle at bottom right, rgba(120, 243, 255, 0.12), transparent 65%),
+        radial-gradient(circle at top left, rgba(255, 119, 192, 0.12), transparent 60%);
       color: #1a1232;
+      overflow: hidden;
     }
     .card-face.red {
       color: #b00047;
+    }
+    .card-face::after {
+      content: "";
+      position: absolute;
+      inset: 12%;
+      border-radius: 18px;
+      border: 1px dashed rgba(26, 18, 50, 0.08);
+      pointer-events: none;
     }
     .card-rank {
       font-size: clamp(1.5rem, 3vw, 2.4rem);
@@ -156,6 +168,21 @@
     .card-suit {
       font-size: clamp(1.2rem, 2.5vw, 1.8rem);
       align-self: flex-end;
+    }
+    .card-art {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.18));
+    }
+    .card-art svg {
+      width: clamp(48px, 9vw, 72px);
+      height: auto;
+      color: #3b4bd9;
+    }
+    .card-face.red .card-art svg {
+      color: #d82f72;
     }
     .hold-tag {
       position: absolute;
@@ -478,6 +505,76 @@
       spades: '♠'
     };
 
+    const suitArtTemplates = {
+      hearts: `
+        <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="{{GRADIENT_ID}}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.85)" />
+              <stop offset="45%" stop-color="currentColor" />
+              <stop offset="100%" stop-color="rgba(120, 0, 60, 0.95)" />
+            </linearGradient>
+          </defs>
+          <path d="M60 100 C60 100 16 76 16 46 C16 28 28 16 42 16 C52 16 58 22 60 28 C62 22 68 16 78 16 C92 16 104 28 104 46 C104 76 60 100 60 100 Z" fill="url(#{{GRADIENT_ID}})" />
+          <path d="M60 40 C52 30 42 24 32 28" stroke="rgba(255,255,255,0.35)" stroke-width="4" stroke-linecap="round" fill="none" />
+        </svg>
+      `,
+      diamonds: `
+        <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="{{GRADIENT_ID}}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.9)" />
+              <stop offset="35%" stop-color="currentColor" />
+              <stop offset="100%" stop-color="rgba(120, 0, 60, 0.95)" />
+            </linearGradient>
+          </defs>
+          <polygon points="60,10 102,60 60,110 18,60" fill="url(#{{GRADIENT_ID}})" />
+          <polygon points="60,28 84,60 60,92 36,60" fill="rgba(255,255,255,0.15)" />
+        </svg>
+      `,
+      clubs: `
+        <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="{{GRADIENT_ID}}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.9)" />
+              <stop offset="40%" stop-color="currentColor" />
+              <stop offset="100%" stop-color="rgba(15, 32, 140, 0.95)" />
+            </linearGradient>
+          </defs>
+          <g fill="url(#{{GRADIENT_ID}})">
+            <circle cx="60" cy="36" r="22" />
+            <circle cx="36" cy="68" r="22" />
+            <circle cx="84" cy="68" r="22" />
+            <path d="M60 46 C48 66 42 82 42 96 C42 108 48 116 60 116 C72 116 78 108 78 96 C78 82 72 66 60 46 Z" />
+          </g>
+          <path d="M60 52 C50 40 38 40 30 48" stroke="rgba(255,255,255,0.35)" stroke-width="4" stroke-linecap="round" fill="none" />
+        </svg>
+      `,
+      spades: `
+        <svg viewBox="0 0 120 120" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="{{GRADIENT_ID}}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="rgba(255, 255, 255, 0.92)" />
+              <stop offset="40%" stop-color="currentColor" />
+              <stop offset="100%" stop-color="rgba(15, 32, 140, 0.95)" />
+            </linearGradient>
+          </defs>
+          <path d="M60 14 C60 14 18 56 18 86 C18 102 30 112 44 112 C52 112 58 108 60 104 C62 108 68 112 76 112 C90 112 102 102 102 86 C102 56 60 14 60 14 Z" fill="url(#{{GRADIENT_ID}})" />
+          <path d="M60 72 C52 86 52 102 52 112 L68 112 C68 102 68 86 60 72 Z" fill="rgba(255,255,255,0.2)" />
+          <path d="M60 38 C48 38 36 50 32 62" stroke="rgba(255,255,255,0.35)" stroke-width="4" stroke-linecap="round" fill="none" />
+        </svg>
+      `
+    };
+
+    let suitArtCounter = 0;
+
+    function getSuitArt(suit) {
+      const template = suitArtTemplates[suit];
+      if (!template) return '';
+      const gradientId = `${suit}-gradient-${suitArtCounter++}`;
+      return template.replace(/\{\{GRADIENT_ID\}\}/g, gradientId);
+    }
+
     const rankLabels = {
       11: 'J',
       12: 'Q',
@@ -589,10 +686,14 @@
           const top = document.createElement('div');
           top.className = 'card-rank';
           top.textContent = rankLabels[cardData.value] || cardData.value;
+          const art = document.createElement('div');
+          art.className = 'card-art';
+          art.innerHTML = getSuitArt(cardData.suit);
           const bottom = document.createElement('div');
           bottom.className = 'card-suit';
           bottom.textContent = suitSymbols[cardData.suit];
           face.appendChild(top);
+          face.appendChild(art);
           face.appendChild(bottom);
           slot.appendChild(face);
           const holdTag = document.createElement('div');
