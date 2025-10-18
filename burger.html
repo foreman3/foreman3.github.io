@@ -661,8 +661,10 @@ function handlePlayer(step){
   if(player.cooldown > 0) player.cooldown = Math.max(0, player.cooldown - step);
   if(player.invulnerable > 0) player.invulnerable = Math.max(0, player.invulnerable - step);
 
+  const horizontalIntent = keys.left || keys.right;
+  const nearFloorMatch = floors.find(f => Math.abs(player.y - f) < 0.22);
+  const nearFloor = nearFloorMatch !== undefined;
   const alignedLadder = ladderAt(player.x, player.y);
-  const nearFloor = floors.some(f => Math.abs(player.y - f) < 0.18);
   if(isOnFloor(player) || isOnPiece(player) || (alignedLadder && nearFloor)){
     if(keys.left){
       player.vx = -0.14;
@@ -680,7 +682,8 @@ function handlePlayer(step){
   player.x += player.vx * step;
   climbOntoPiece(player);
 
-  const wantsToClimb = keys.up || keys.down;
+  const verticalIntent = keys.up || keys.down;
+  const wantsToClimb = verticalIntent && !(horizontalIntent && nearFloor);
   let onLadder = ladderAt(player.x, player.y);
   if(wantsToClimb){
     const snapCandidate = onLadder || ladderAt(player.x, player.y - 0.4, 0.7) || ladderAt(player.x, player.y + 0.4, 0.7);
@@ -692,11 +695,13 @@ function handlePlayer(step){
   }
 
   if(onLadder){
-    if(keys.up) player.y -= 0.12 * step;
-    if(keys.down) player.y += 0.12 * step;
+    if(!(horizontalIntent && nearFloor)){
+      if(keys.up) player.y -= 0.12 * step;
+      if(keys.down) player.y += 0.12 * step;
+    }
 
     if(!wantsToClimb){
-      const snapFloor = floors.find(f => Math.abs(player.y - f) < 0.18);
+      const snapFloor = floors.find(f => Math.abs(player.y - f) < 0.22);
       if(snapFloor !== undefined){
         player.y = snapFloor;
       }
