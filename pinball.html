@@ -2,803 +2,1920 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Pinball</title>
+  <title>Pinball Trilogy Ultra</title>
   <style>
-    @keyframes aurora {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    :root {
+      --pinball-bg: radial-gradient(circle at 20% 20%, #0d1029, #030510 70%);
+      --pinball-frame: rgba(120, 188, 255, 0.4);
+      --pinball-text: #ecf4ff;
+      --pinball-pill: rgba(12, 30, 68, 0.7);
+      --pinball-button-bg: rgba(30, 70, 150, 0.85);
+      --pinball-button-text: #e5f6ff;
+      --pinball-button-glow: rgba(130, 210, 255, 0.75);
+      --pinball-card-glow: rgba(110, 200, 255, 0.35);
+      --pinball-pill-border: rgba(150, 220, 255, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
       margin: 0;
-      display: flex;
       min-height: 100vh;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      color: #f9f9ff;
-      background: radial-gradient(circle at 20% 20%, #1b1b46, #040414 70%),
-                  radial-gradient(circle at 80% 0%, rgba(0,255,255,0.25), transparent 55%),
-                  linear-gradient(135deg, #0f1020, #1b0b3a 40%, #082f64);
-      background-size: 300% 300%;
-      animation: aurora 20s infinite alternate ease-in-out;
+      display: flex;
+      background: var(--pinball-bg);
+      font-family: "Segoe UI", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--pinball-text);
+      align-items: stretch;
+      position: relative;
+      overflow-x: hidden;
     }
 
     body::before {
       content: "";
       position: fixed;
-      inset: 0;
+      inset: -20%;
+      background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.08), transparent 55%),
+                  radial-gradient(circle at 80% 75%, rgba(90,200,255,0.12), transparent 65%);
+      filter: blur(40px);
+      z-index: -2;
       pointer-events: none;
-      background: radial-gradient(circle at 50% 10%, rgba(255,255,255,0.08), transparent 45%),
-                  radial-gradient(circle at 80% 80%, rgba(255,0,200,0.08), transparent 50%);
-      mix-blend-mode: screen;
-      z-index: -1;
-    }
-
-    #sidebar {
-      width: 240px;
-      background: rgba(4, 12, 36, 0.78);
-      padding: 24px 20px 40px;
-      box-shadow: 0 0 35px rgba(10, 20, 60, 0.65);
-      backdrop-filter: blur(6px);
-      border-right: 1px solid rgba(120, 180, 255, 0.2);
-    }
-
-    #sidebar ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    #sidebar li {
-      margin: 15px 0;
-    }
-
-    #sidebar a {
-      color: #e2f1ff;
-      text-decoration: none;
-      letter-spacing: 0.03em;
-      font-weight: 600;
-      transition: color 0.3s, text-shadow 0.3s;
-    }
-
-    #sidebar a:hover {
-      color: #86f0ff;
-      text-shadow: 0 0 8px rgba(134, 240, 255, 0.75);
     }
 
     #game-container {
       flex: 1;
+      padding: 44px 32px 56px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 20px 60px;
+      gap: 22px;
       position: relative;
     }
 
-    h1 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 3.4em;
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
       text-transform: uppercase;
-      letter-spacing: 0.18em;
-      text-shadow: 0 0 15px rgba(0, 220, 255, 0.75), 0 0 40px rgba(255, 0, 220, 0.4);
+      letter-spacing: 0.22em;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 3.2em;
+      text-shadow: 0 0 22px rgba(120, 200, 255, 0.7), 0 0 45px rgba(255, 90, 210, 0.4);
+    }
+
+    #table-pill {
+      font-size: 0.85em;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: var(--pinball-pill);
+      border: 1px solid var(--pinball-pill-border);
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      letter-spacing: 0.08em;
+      box-shadow: 0 0 18px rgba(40, 120, 220, 0.28);
     }
 
     #status-bar {
       display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 10px;
       flex-wrap: wrap;
       justify-content: center;
+      align-items: center;
+      gap: 14px;
     }
 
     #info, #combo {
-      font-size: 18px;
-      padding: 8px 18px;
+      font-size: 1.05em;
+      padding: 10px 22px;
       border-radius: 999px;
-      background: linear-gradient(135deg, rgba(21, 34, 84, 0.85), rgba(6, 12, 30, 0.85));
-      box-shadow: 0 0 12px rgba(0, 214, 255, 0.3);
-      border: 1px solid rgba(110, 200, 255, 0.35);
-      text-transform: uppercase;
+      background: var(--pinball-pill);
+      border: 1px solid var(--pinball-pill-border);
+      box-shadow: 0 0 16px rgba(60, 150, 255, 0.3);
       letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
 
     #combo {
-      color: #9cf6ff;
       transition: transform 0.25s ease, color 0.25s ease, opacity 0.25s ease;
+      opacity: 0.85;
+    }
+
+    #change-table {
+      background: var(--pinball-button-bg);
+      color: var(--pinball-button-text);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 999px;
+      padding: 10px 22px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 18px var(--pinball-button-glow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #change-table:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 28px var(--pinball-button-glow);
+    }
+
+    #change-table:focus-visible,
+    #begin-play:focus-visible,
+    .table-card:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 3px;
     }
 
     #gameSVG {
-      background: radial-gradient(circle at 50% 25%, rgba(40,60,120,0.7), rgba(5,10,20,0.85));
-      border: 3px solid rgba(140, 210, 255, 0.6);
-      margin-top: 10px;
-      border-radius: 18px;
-      box-shadow: 0 0 45px rgba(0, 180, 255, 0.3), inset 0 0 30px rgba(0, 12, 32, 0.8);
+      width: 440px;
+      height: 640px;
+      border-radius: 22px;
+      border: 3px solid var(--pinball-frame);
+      box-shadow: 0 0 40px rgba(30, 120, 255, 0.35), inset 0 0 36px rgba(0, 0, 0, 0.6);
+      background: radial-gradient(circle at 50% 28%, rgba(100,160,255,0.15), transparent 65%),
+                  radial-gradient(circle at 50% 80%, rgba(255,255,255,0.04), transparent 70%);
+      backdrop-filter: blur(6px);
     }
 
     #message {
-      margin-top: 16px;
       min-height: 28px;
-      font-size: 22px;
-      letter-spacing: 0.12em;
-      color: #fdbaff;
-      text-shadow: 0 0 10px rgba(255, 90, 255, 0.7);
+      font-size: 1.3em;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #ffd9ff;
+      text-shadow: 0 0 16px rgba(255, 120, 220, 0.7);
       transition: opacity 0.4s ease;
+      opacity: 0;
+    }
+
+    #quest-log {
+      width: min(440px, 100%);
+      background: rgba(8, 20, 48, 0.7);
+      border: 1px solid rgba(120, 200, 255, 0.28);
+      border-radius: 16px;
+      padding: 18px 22px 20px;
+      box-shadow: 0 0 26px rgba(40, 120, 220, 0.25);
+    }
+
+    #quest-log h2 {
+      margin: 0 0 12px;
+      font-size: 1em;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(214, 236, 255, 0.8);
+    }
+
+    #objective-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    #objective-list li {
+      position: relative;
+      padding-left: 24px;
+      line-height: 1.4;
+      color: rgba(226, 238, 255, 0.9);
+      font-size: 0.95em;
+    }
+
+    #objective-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid rgba(150, 220, 255, 0.65);
+      box-shadow: 0 0 12px rgba(90, 190, 255, 0.35);
+    }
+
+    #objective-list li.complete {
+      color: #8fffd8;
+    }
+
+    #objective-list li.complete::before {
+      background: linear-gradient(135deg, #53ffc0, #1cd4a8);
+      border-color: rgba(90, 255, 210, 0.9);
+      box-shadow: 0 0 14px rgba(90, 255, 210, 0.6);
     }
 
     #controls {
-      margin-top: 22px;
-      max-width: 420px;
+      width: min(460px, 95%);
       text-align: center;
-      font-size: 16px;
+      font-size: 0.95em;
       line-height: 1.6;
-      color: rgba(214, 236, 255, 0.85);
-      background: linear-gradient(135deg, rgba(10, 18, 44, 0.8), rgba(7, 12, 26, 0.9));
-      padding: 18px 20px;
+      color: rgba(220, 235, 255, 0.85);
+      background: linear-gradient(135deg, rgba(8, 18, 46, 0.85), rgba(10, 24, 52, 0.9));
       border-radius: 16px;
-      border: 1px solid rgba(90, 130, 255, 0.3);
-      box-shadow: 0 0 25px rgba(32, 110, 220, 0.25);
+      padding: 18px 26px;
+      border: 1px solid rgba(120, 180, 255, 0.28);
+      box-shadow: 0 0 26px rgba(20, 70, 180, 0.25);
+      margin-bottom: 32px;
     }
 
     #controls span {
-      color: #86f0ff;
+      color: #8ff6ff;
       font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+
+    #table-selector {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 30%, rgba(40, 100, 255, 0.2), rgba(5, 10, 40, 0.92));
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    #table-selector.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #table-selector .modal {
+      background: rgba(6, 12, 36, 0.92);
+      border: 1px solid rgba(150, 220, 255, 0.28);
+      border-radius: 20px;
+      width: min(900px, 95%);
+      max-height: 85vh;
+      padding: 32px 34px 28px;
+      box-shadow: 0 0 45px rgba(60, 160, 255, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    #table-selector h2 {
+      margin: 0;
+      font-size: 2em;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      text-align: center;
+      text-shadow: 0 0 22px rgba(130, 210, 255, 0.7);
+    }
+
+    #table-cards {
+      display: grid;
+      gap: 22px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .table-card {
+      position: relative;
+      border: none;
+      border-radius: 18px;
+      padding: 22px 20px 24px;
+      background: rgba(12, 26, 60, 0.75);
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border 0.25s ease;
+      border: 1px solid rgba(130, 200, 255, 0.22);
+      box-shadow: 0 0 18px rgba(80, 160, 255, 0.22);
+    }
+
+    .table-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 55%);
+      opacity: 0.8;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .table-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 0 32px rgba(130, 210, 255, 0.4);
+      border-color: rgba(150, 220, 255, 0.55);
+    }
+
+    .table-card.selected {
+      border: 1px solid rgba(120, 255, 220, 0.85);
+      box-shadow: 0 0 36px rgba(90, 255, 220, 0.55);
+    }
+
+    .table-card h3 {
+      margin: 0;
+      font-size: 1.35em;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .table-card .tagline {
+      font-size: 0.9em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(180, 220, 255, 0.9);
+    }
+
+    .table-card p {
+      margin: 0;
+      font-size: 0.9em;
+      line-height: 1.5;
+      color: rgba(210, 230, 255, 0.82);
+    }
+
+    .table-card .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    .table-card .badge {
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(90, 160, 255, 0.18);
+      border: 1px solid rgba(150, 220, 255, 0.32);
+    }
+
+    #begin-play {
+      align-self: center;
+      padding: 12px 32px;
+      border-radius: 999px;
+      border: 1px solid rgba(220, 255, 255, 0.4);
+      background: linear-gradient(135deg, rgba(40, 150, 255, 0.85), rgba(180, 70, 255, 0.85));
+      color: #f2fbff;
+      font-size: 1em;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 35px rgba(140, 220, 255, 0.55);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    #begin-play:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 0 42px rgba(160, 235, 255, 0.7);
+    }
+
+    #begin-play:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    @media (max-width: 960px) {
+      body {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      #game-container {
+        padding: 32px 20px 40px;
+      }
+
+      header h1 {
+        font-size: 2.4em;
+      }
     }
   </style>
 </head>
 <body>
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
-    <h1>Neon Pinball Remix</h1>
+    <header>
+      <h1>Pinball Trilogy Ultra</h1>
+      <div id="table-pill">Active Table: <span id="active-table-name">None</span></div>
+    </header>
     <div id="status-bar">
       <div id="info">Score: 0 | Balls: 3</div>
-      <div id="combo">Build your combo!</div>
+      <div id="combo">Ignite the combo core</div>
+      <button id="change-table">Switch Table</button>
     </div>
-    <svg id="gameSVG" width="400" height="600"></svg>
+    <svg id="gameSVG" width="440" height="640"></svg>
     <div id="message"></div>
+    <section id="quest-log">
+      <h2>Table Objectives</h2>
+      <ul id="objective-list"></ul>
+    </section>
     <div id="controls">
-      Rip the flippers with <span>← / Z</span> and <span>→ / /</span>. Launch using <span>Space</span> or <span>↓</span>.
-      Chain quick hits to fuel the <span>combo reactor</span> for bonus points!
+      Unleash the flippers with <span>← / Z</span> and <span>→ / /</span>. Launch the ball using <span>Space</span> or <span>↓</span>.
+      Swap tables anytime with the <span>Switch Table</span> button. Chain shots, trigger ramps, and chase jackpots to rule every arena.
+    </div>
+  </div>
+  <div id="table-selector" class="visible">
+    <div class="modal">
+      <h2>Select Your Realm</h2>
+      <div id="table-cards"></div>
+      <button id="begin-play" disabled>Enter The Table</button>
     </div>
   </div>
   <script>
-    const svg = document.getElementById('gameSVG');
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const canvas = { width: parseFloat(svg.getAttribute('width')), height: parseFloat(svg.getAttribute('height')) };
-    const gravity = 0.18;
-    const ballRadius = 8;
-    const walls = { left: 10, right: canvas.width - 10, top: 10 };
-    const launchLane = { x: walls.right - 30, width: 20, gap: 90 };
-    const plunger = {
-      power: 0,
-      maxPower: 60,
-      charging: false,
-      startY: canvas.height * 0.8
-    };
-
-    const launchScale = 0.45;
-    const maxSpeed = 15;
-    const energyDamping = 0.94;
-
-    const curveRadius = 60;
-    const topCurve = { x: walls.left + curveRadius, y: walls.top + curveRadius, r: curveRadius };
-
-    let ball, score = 0, balls = 3, gameOver = false;
-    let comboTimer = 0, comboCount = 0, messageTimer = 0;
-
-    const comboElem = document.getElementById('combo');
-    const messageElem = document.getElementById('message');
-
-    const bumpers = [
-      {x: 100, y: 200, r: 20, score: 100},
-      {x: 300, y: 250, r: 20, score: 100},
-      {x: 200, y: 120, r: 25, score: 150},
-      {x: walls.left + curveRadius * 0.6, y: walls.top + curveRadius * 0.6, r: 12, score: 0, damping: 0.5}
-    ];
-
-    const flippers = {
-      left:  {x1: 69.22, y1: canvas.height-80, length: 121, angle: 30,  activeAngle: -20, active:false, t:0, prev_t:0},
-      right: {x1: canvas.width-69.22, y1: canvas.height-80, length: 121, angle: 150, activeAngle:200, active:false, t:0, prev_t:0}
-    };
-
-    const outlaneOffset = ballRadius * 4;
-    const slingshots = {
-      left: {
-        points: [
-          {x: walls.left + outlaneOffset, y: flippers.left.y1 - 70},
-          {x: walls.left + outlaneOffset, y: flippers.left.y1 - 20},
-          {x: flippers.left.x1 + 15,      y: flippers.left.y1 - 20}
-        ]
-      },
-      right: {
-        points: [
-          {x: walls.right - outlaneOffset, y: flippers.right.y1 - 70},
-          {x: walls.right - outlaneOffset, y: flippers.right.y1 - 20},
-          {x: flippers.right.x1 - 15,      y: flippers.right.y1 - 20}
-        ]
-      }
-    };
-
-    const targetGroups = [
-      [
-        {x: 50,  y: 180, w: 8, h: 20, up:true, score:150},
-        {x: 50,  y: 210, w: 8, h: 20, up:true, score:150},
-        {x: 50,  y: 240, w: 8, h: 20, up:true, score:150},
-        {x: 50,  y: 270, w: 8, h: 20, up:true, score:150}
-      ],[
-        {x: 350, y: 180, w: 8, h: 20, up:true, score:150},
-        {x: 350, y: 210, w: 8, h: 20, up:true, score:150},
-        {x: 350, y: 240, w: 8, h: 20, up:true, score:150},
-        {x: 350, y: 270, w: 8, h: 20, up:true, score:150}
-      ],[
-        {x: 160, y: 350, w: 8, h: 20, up:true, score:150},
-        {x: 190, y: 350, w: 8, h: 20, up:true, score:150},
-        {x: 220, y: 350, w: 8, h: 20, up:true, score:150},
-        {x: 250, y: 350, w: 8, h: 20, up:true, score:150}
-      ]
-    ];
-    const targets = targetGroups.flat();
-
-    const trailLength = 12;
-    const ballTrail = [];
-    const ballTrailElems = [];
-    let ballElem, plungerElem;
-
-    function svgElem(type, attrs, parent = svg){
-      const el = document.createElementNS(svgNS, type);
-      Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
-      parent.appendChild(el);
-      return el;
-    }
-
-    function lineEndAt(f, t){
-      const ang = (f.angle * (1 - t) + f.activeAngle * t) * Math.PI/180;
-      return {x:f.x1 + Math.cos(ang)*f.length, y:f.y1 + Math.sin(ang)*f.length, ang};
-    }
-
-    function lineEnd(f){
-      return lineEndAt(f, f.t);
-    }
-
-    function updateFlippers(dt){
-      const rate = dt / 0.1;
-      for(const key in flippers){
-        const f = flippers[key];
-        const target = f.active ? 1 : 0;
-        f.prev_t = f.t;
-        if(f.t < target){
-          f.t = Math.min(target, f.t + rate);
-        } else if(f.t > target){
-          f.t = Math.max(target, f.t - rate);
-        }
-      }
-    }
-
-    function resetBall(){
-      ball = {
-        x: launchLane.x + launchLane.width/2,
-        y: plunger.startY - ballRadius,
-        vx: 0,
-        vy: 0,
-        inLaunch: true
+    (() => {
+      const svg = document.getElementById('gameSVG');
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const canvas = {
+        width: parseFloat(svg.getAttribute('width')),
+        height: parseFloat(svg.getAttribute('height'))
       };
-      plunger.power = 0;
-      ballTrail.length = 0;
-      ballTrailElems.forEach(elem => elem.setAttribute('opacity', 0));
-    }
 
-    function initSVG(){
-      const defs = svgElem('defs', {});
-      function defElem(type, attrs, parent = defs){
-        return svgElem(type, attrs, parent);
+      const comboElem = document.getElementById('combo');
+      const messageElem = document.getElementById('message');
+      const infoElem = document.getElementById('info');
+      const objectiveList = document.getElementById('objective-list');
+      const activeTableName = document.getElementById('active-table-name');
+      const changeTableBtn = document.getElementById('change-table');
+      const selectorOverlay = document.getElementById('table-selector');
+      const tableCardsContainer = document.getElementById('table-cards');
+      const beginPlayBtn = document.getElementById('begin-play');
+
+      const defaultGeometry = {
+        walls: { left: 18, right: canvas.width - 18, top: 18, bottom: canvas.height - 16 },
+        topCurve: { x: 18 + 70, y: 18 + 70, r: 70 },
+        launchLane: { x: canvas.width - 42, width: 26, gap: 120 },
+        outlaneOffset: 32
+      };
+
+      const state = {
+        currentTable: null,
+        tableState: {},
+        geometry: structuredClone(defaultGeometry),
+        layout: { bumpers: [], targets: [], slings: [], arcs: [], ramps: [], portals: [], zones: [] },
+        balls: [],
+        ballsRemaining: 3,
+        score: 0,
+        comboCount: 0,
+        comboTimer: 0,
+        messageTimer: 0,
+        gameOver: false,
+        flippers: null,
+        plunger: { power: 0, maxPower: 75, charging: false, startY: canvas.height * 0.78 },
+        launchScale: 0.5,
+        gravity: 0.22,
+        maxSpeed: 16,
+        energyDamping: 0.94,
+        layers: { background: null, board: null, art: null, interactives: null, trails: null, balls: null, overlay: null },
+        filters: {},
+        running: false
+      };
+
+      function structuredClone(obj) {
+        return JSON.parse(JSON.stringify(obj));
       }
 
-      const boardGrad = defElem('linearGradient', {id:'boardGradient', x1:'0%', y1:'0%', x2:'0%', y2:'100%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#0f2045'}, boardGrad);
-      svgElem('stop', {offset:'60%', 'stop-color':'#061026'}, boardGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#020510'}, boardGrad);
-
-      const boardHighlight = defElem('radialGradient', {id:'boardHighlight', cx:'50%', cy:'15%', r:'80%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'rgba(100,255,255,0.35)'}, boardHighlight);
-      svgElem('stop', {offset:'70%', 'stop-color':'rgba(100,255,255,0)'}, boardHighlight);
-
-      const bumperGrad = defElem('radialGradient', {id:'bumperGradient', cx:'50%', cy:'50%', r:'50%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#ffffff'}, bumperGrad);
-      svgElem('stop', {offset:'60%', 'stop-color':'#46d9ff'}, bumperGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#006bff'}, bumperGrad);
-
-      const bumperGlowGrad = defElem('radialGradient', {id:'bumperGlowGradient', cx:'50%', cy:'50%', r:'50%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'rgba(120,220,255,0.9)'}, bumperGlowGrad);
-      svgElem('stop', {offset:'80%', 'stop-color':'rgba(0,130,255,0.1)'}, bumperGlowGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'rgba(0,130,255,0)'}, bumperGlowGrad);
-
-      const flipperGrad = defElem('linearGradient', {id:'flipperGradient', x1:'0%', y1:'0%', x2:'0%', y2:'100%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#ff8df4'}, flipperGrad);
-      svgElem('stop', {offset:'50%', 'stop-color':'#ff2bd6'}, flipperGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#6314c5'}, flipperGrad);
-
-      const ballGrad = defElem('radialGradient', {id:'ballGradient', cx:'40%', cy:'35%', r:'65%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#fffbd5'}, ballGrad);
-      svgElem('stop', {offset:'50%', 'stop-color':'#ffd056'}, ballGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#ff7b2f'}, ballGrad);
-
-      const trailGrad = defElem('radialGradient', {id:'trailGradient', cx:'50%', cy:'50%', r:'50%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'rgba(255,224,180,0.8)'}, trailGrad);
-      svgElem('stop', {offset:'60%', 'stop-color':'rgba(255,120,70,0.35)'}, trailGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'rgba(255,40,120,0)'}, trailGrad);
-
-      const targetGrad = defElem('linearGradient', {id:'targetGradient', x1:'0%', y1:'0%', x2:'0%', y2:'100%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#ffe06d'}, targetGrad);
-      svgElem('stop', {offset:'50%', 'stop-color':'#ffa13f'}, targetGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#ff4f7a'}, targetGrad);
-
-      const slingGrad = defElem('linearGradient', {id:'slingGradient', x1:'0%', y1:'0%', x2:'100%', y2:'100%'});
-      svgElem('stop', {offset:'0%', 'stop-color':'#5fffd2'}, slingGrad);
-      svgElem('stop', {offset:'100%', 'stop-color':'#008cff'}, slingGrad);
-
-      const glowFilter = defElem('filter', {id:'glowFilter', x:'-50%', y:'-50%', width:'200%', height:'200%'});
-      svgElem('feGaussianBlur', {'in':'SourceGraphic', stdDeviation:'4', result:'blur'}, glowFilter);
-      const glowMerge = svgElem('feMerge', {}, glowFilter);
-      svgElem('feMergeNode', {'in':'blur'}, glowMerge);
-      svgElem('feMergeNode', {'in':'SourceGraphic'}, glowMerge);
-
-      const sparkFilter = defElem('filter', {id:'sparkFilter', x:'-50%', y:'-50%', width:'200%', height:'200%'});
-      svgElem('feGaussianBlur', {'in':'SourceGraphic', stdDeviation:'12', result:'b1'}, sparkFilter);
-      svgElem('feColorMatrix', {type:'matrix', values:'1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7'}, sparkFilter);
-
-      const boardPath = [
-        `M ${walls.right} ${walls.top}`,
-        `L ${walls.left + curveRadius} ${walls.top}`,
-        `A ${curveRadius} ${curveRadius} 0 0 0 ${walls.left} ${walls.top + curveRadius}`,
-        `L ${walls.left} ${canvas.height}`,
-        `L ${walls.right} ${canvas.height}`,
-        'Z'
-      ].join(' ');
-      svgElem('path', {d: boardPath, fill:'url(#boardGradient)', stroke:'rgba(150,220,255,0.65)', 'stroke-width':4});
-      svgElem('path', {d: boardPath, fill:'url(#boardHighlight)', opacity:'0.5'});
-
-      const decorGroup = svgElem('g', {'stroke-width':1.5, 'stroke-linecap':'round'});
-      const laneInset = 24;
-      for(let i=0; i<8; i++){
-        const y = walls.top + 60 + i*60;
-        const line = svgElem('line', {x1:walls.left + laneInset, y1:y, x2:launchLane.x - laneInset, y2:y, stroke:`rgba(80,160,255,${0.18 + i*0.03})`}, decorGroup);
-        line.setAttribute('filter', 'url(#glowFilter)');
-      }
-      const orbit = svgElem('path', {d:`M ${walls.left+60} ${walls.top+140} C ${canvas.width*0.35} ${walls.top+20}, ${canvas.width*0.65} ${walls.top+280}, ${launchLane.x-20} ${walls.top+200}`, stroke:'rgba(255,140,220,0.45)', fill:'none'}, decorGroup);
-      orbit.setAttribute('filter', 'url(#glowFilter)');
-
-      const starGroup = svgElem('g', {opacity:'0.55'});
-      for(let i=0; i<35; i++){
-        const star = svgElem('circle', {cx: Math.random()*(canvas.width-60)+30, cy: Math.random()*canvas.height*0.55 + 20, r: Math.random()*1.8 + 0.6, fill:'rgba(255,255,255,0.6)'}, starGroup);
-        star.setAttribute('filter', 'url(#sparkFilter)');
-      }
-
-      svgElem('line', {x1:launchLane.x, y1:launchLane.gap, x2:launchLane.x, y2:canvas.height, stroke:'rgba(150,220,255,0.7)', 'stroke-width':4});
-      plungerElem = svgElem('rect', {x: launchLane.x + launchLane.width/2 - 4, y: plunger.startY, width:8, height:22, rx:3, fill:'#85a9ff'});
-
-      const bumperGroup = svgElem('g', {});
-      bumpers.forEach(b=>{
-        b.flashTimer = 0;
-        b.glow = svgElem('circle', {cx:b.x, cy:b.y, r:b.r*1.7, fill:'url(#bumperGlowGradient)', opacity:0}, bumperGroup);
-        b.elem = svgElem('circle', {cx:b.x, cy:b.y, r:b.r, fill:'url(#bumperGradient)', stroke:'#39c1ff', 'stroke-width':2});
-        b.elem.setAttribute('filter', 'url(#glowFilter)');
-      });
-
-      for(const key in slingshots){
-        const pts = slingshots[key].points.map(p=>`${p.x},${p.y}`).join(' ');
-        slingshots[key].elem = svgElem('polygon', {points:pts, fill:'url(#slingGradient)', stroke:'#86f0ff', 'stroke-width':2});
-        slingshots[key].elem.setAttribute('opacity', '0.9');
-        slingshots[key].elem.setAttribute('filter', 'url(#glowFilter)');
-      }
-
-      for(const key in flippers){
-        const f = flippers[key];
-        const end = lineEnd(f);
-        f.elem = svgElem('line', {x1:f.x1, y1:f.y1, x2:end.x, y2:end.y, stroke:'url(#flipperGradient)', 'stroke-width':14, 'stroke-linecap':'round'});
-        f.elem.setAttribute('filter', 'url(#glowFilter)');
-      }
-
-      targets.forEach(t=>{
-        t.elem = svgElem('rect', {x:t.x - t.w/2, y:t.y - t.h, width:t.w, height:t.h, fill:'url(#targetGradient)', stroke:'#ff6ea9', 'stroke-width':1.4, rx:2});
-        t.elem.setAttribute('filter', 'url(#glowFilter)');
-      });
-
-      const trailGroup = svgElem('g', {});
-      for(let i=0; i<trailLength; i++){
-        const elem = svgElem('circle', {cx:ball.x, cy:ball.y, r:ballRadius, fill:'url(#trailGradient)', opacity:0}, trailGroup);
-        ballTrailElems.push(elem);
-      }
-
-      ballElem = svgElem('circle', {cx:ball.x, cy:ball.y, r:ballRadius, fill:'url(#ballGradient)', stroke:'#ffef9d', 'stroke-width':1});
-      ballElem.setAttribute('filter', 'url(#glowFilter)');
-    }
-
-    function drawBall(){
-      ballTrail.unshift({x:ball.x, y:ball.y});
-      if(ballTrail.length > trailLength){
-        ballTrail.pop();
-      }
-      for(let i=0; i<ballTrailElems.length; i++){
-        const p = ballTrail[i];
-        if(!p){
-          ballTrailElems[i].setAttribute('opacity', 0);
-          continue;
-        }
-        const progress = 1 - i / trailLength;
-        const r = ballRadius * (0.45 + progress * 0.55);
-        ballTrailElems[i].setAttribute('cx', p.x);
-        ballTrailElems[i].setAttribute('cy', p.y);
-        ballTrailElems[i].setAttribute('r', r);
-        ballTrailElems[i].setAttribute('opacity', 0.12 + progress * 0.35);
-      }
-      ballElem.setAttribute('cx', ball.x);
-      ballElem.setAttribute('cy', ball.y);
-    }
-
-    function drawFlippers(){
-      for(const key in flippers){
-        const f = flippers[key];
-        const end = lineEnd(f);
-        f.elem.setAttribute('x2', end.x);
-        f.elem.setAttribute('y2', end.y);
-      }
-    }
-
-    function drawTargets(){
-      targets.forEach(t=>{
-        t.elem.style.display = t.up ? 'block' : 'none';
-      });
-    }
-
-    function reflectBall(normalX, normalY){
-      const dot = ball.vx*normalX + ball.vy*normalY;
-      ball.vx -= 2*dot*normalX;
-      ball.vy -= 2*dot*normalY;
-    }
-
-    function segmentCollision(x1, y1, x2, y2){
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const lenSq = dx*dx + dy*dy;
-      const t = ((ball.x - x1)*dx + (ball.y - y1)*dy) / lenSq;
-      const u = Math.max(0, Math.min(1, t));
-      const cx = x1 + u*dx;
-      const cy = y1 + u*dy;
-      const distX = ball.x - cx;
-      const distY = ball.y - cy;
-      const distSq = distX*distX + distY*distY;
-      if(distSq < ballRadius*ballRadius){
-        const dist = Math.sqrt(distSq) || 0.0001;
-        const nx = distX/dist;
-        const ny = distY/dist;
-        ball.x = cx + nx*ballRadius;
-        ball.y = cy + ny*ballRadius;
-        reflectBall(nx, ny);
-        ball.vx *= 1.1;
-        ball.vy *= 1.1;
-        return true;
-      }
-      return false;
-    }
-
-    function triangleCollision(tri){
-      const p = tri.points;
-      return segmentCollision(p[0].x, p[0].y, p[1].x, p[1].y) ||
-             segmentCollision(p[1].x, p[1].y, p[2].x, p[2].y) ||
-             segmentCollision(p[2].x, p[2].y, p[0].x, p[0].y);
-    }
-
-    function arcCollision(arc){
-      const dx = ball.x - arc.x;
-      const dy = ball.y - arc.y;
-      if(ball.x < arc.x && ball.y < arc.y){
-        const dist = Math.sqrt(dx*dx + dy*dy) || 0.0001;
-        const nx = dx / dist;
-        const ny = dy / dist;
-        ball.x = arc.x + nx*(arc.r + ballRadius);
-        ball.y = arc.y + ny*(arc.r + ballRadius);
-        reflectBall(nx, ny);
-      }
-    }
-
-    function rectCollision(t){
-      const left = t.x - t.w/2;
-      const right = t.x + t.w/2;
-      const top = t.y - t.h;
-      const bottom = t.y;
-      const cx = Math.max(left, Math.min(ball.x, right));
-      const cy = Math.max(top, Math.min(ball.y, bottom));
-      const dx = ball.x - cx;
-      const dy = ball.y - cy;
-      if(dx*dx + dy*dy < ballRadius*ballRadius){
-        if(Math.abs(dx) > Math.abs(dy)){
-          reflectBall(Math.sign(dx), 0);
-        }else{
-          reflectBall(0, Math.sign(dy));
-        }
-        return true;
-      }
-      return false;
-    }
-
-    function dampExcessEnergy(){
-      const speed = Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy);
-      if(speed > maxSpeed){
-        ball.vx *= energyDamping;
-        ball.vy *= energyDamping;
-      }
-    }
-
-    function updatePhysics(){
-      if(gameOver) return;
-      if(ball.inLaunch){
-        if(plunger.charging){
-          plunger.power = Math.min(plunger.maxPower, plunger.power + 0.6);
-        }
-        const plungerY = plunger.startY + plunger.power;
-        ball.vy += gravity;
-        ball.y += ball.vy;
-        ball.x = launchLane.x + launchLane.width/2;
-        if(ball.y + ballRadius > plungerY){
-          ball.y = plungerY - ballRadius;
-          ball.vy = 0;
-        }
-        if(ball.y + ballRadius > canvas.height){
-          ball.y = canvas.height - ballRadius;
-          ball.vy = 0;
-        }
-        if(ball.y - ballRadius < launchLane.gap){
-          ball.inLaunch = false;
-          ball.x = launchLane.x - ballRadius;
-          ball.vx = -2;
-          plunger.power = 0;
-        }
-        return;
-      }
-      ball.vy += gravity;
-      ball.x += ball.vx;
-      ball.y += ball.vy;
-
-      arcCollision(topCurve);
-      const inTopCurve = ball.x < topCurve.x && ball.y < topCurve.y;
-
-      if(ball.x - ballRadius < walls.left && !inTopCurve){
-        ball.x = walls.left + ballRadius;
-        ball.vx = Math.abs(ball.vx);
-      }
-      if(ball.x + ballRadius > walls.right){
-        ball.x = walls.right - ballRadius;
-        ball.vx = -Math.abs(ball.vx);
-      }
-      if(ball.x + ballRadius > launchLane.x && ball.y > launchLane.gap){
-        ball.x = launchLane.x - ballRadius;
-        ball.vx = -Math.abs(ball.vx);
-      }
-      if(ball.y - ballRadius < walls.top && !inTopCurve){
-        ball.y = walls.top + ballRadius;
-        ball.vy = Math.abs(ball.vy);
-      }
-      if(ball.y - ballRadius > canvas.height){
-        balls--;
-        if(balls>0){
-          resetBall();
-          comboCount = 0;
-          comboTimer = 0;
-          updateComboDisplay();
-          showMessage('Ball lost! Keep the rhythm.', '#ff6f9f');
-        } else {
-          gameOver = true;
-          showMessage('Game Over', '#ff4f6d');
-        }
-        updateInfo();
-        return;
-      }
-
-      bumpers.forEach(b=>{
-        const dx = ball.x - b.x;
-        const dy = ball.y - b.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if(dist < ballRadius + b.r){
-          const nx = dx/dist;
-          const ny = dy/dist;
-          reflectBall(nx, ny);
-          ball.x = b.x + nx*(ballRadius + b.r);
-          ball.y = b.y + ny*(ballRadius + b.r);
-          if(b.damping){
-            ball.vx *= b.damping;
-            ball.vy *= b.damping;
-          }
-          score += b.score;
-          triggerCombo(b.score);
-          updateInfo();
-          b.flashTimer = 0.4;
-        }
-      });
-
-      for(const key in slingshots){
-        triangleCollision(slingshots[key]);
-      }
-
-      targetGroups.forEach(group => {
-        let allDown = true;
-        group.forEach(t => {
-          if(t.up){
-            if(rectCollision(t)){
-              t.up = false;
-              score += t.score;
-              triggerCombo(t.score);
-              updateInfo();
-            }
-            if(t.up) allDown = false;
+      function svgElem(type, attrs, parent = svg) {
+        const el = document.createElementNS(svgNS, type);
+        Object.entries(attrs || {}).forEach(([k, v]) => {
+          if (v !== undefined && v !== null) {
+            el.setAttribute(k, v);
           }
         });
-        if(allDown){
-          group.forEach(t=> t.up = true);
-          showMessage('Target wave reset!', '#8ef7ff');
-        }
-      });
+        parent.appendChild(el);
+        return el;
+      }
 
-      for(const key in flippers){
-        const f = flippers[key];
-        const segments = [
-          {s:{x:f.x1,y:f.y1}, e:lineEndAt(f, f.prev_t), hitPosFunc:u=>u},
-          {s:{x:f.x1,y:f.y1}, e:lineEnd(f), hitPosFunc:u=>u},
-          {s:lineEndAt(f, f.prev_t), e:lineEnd(f), hitPosFunc:()=>1}
+      function clearSVG() {
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+      }
+
+      function applyCssVariables(table) {
+        const vars = table.palette?.cssVars || {};
+        Object.entries(vars).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(key, value);
+        });
+      }
+
+      function createPaletteDefs(defs, palette) {
+        const boardGrad = svgElem('linearGradient', { id: 'boardGradient', x1: '0%', y1: '0%', x2: '0%', y2: '100%' }, defs);
+        const boardStops = palette.boardStops || ['#0b142d', '#060b1a', '#02040b'];
+        boardStops.forEach((color, index) => {
+          const offset = boardStops.length === 1 ? '0%' : `${Math.round((index / (boardStops.length - 1)) * 100)}%`;
+          svgElem('stop', { offset, 'stop-color': color }, boardGrad);
+        });
+
+        const highlight = svgElem('radialGradient', { id: 'boardHighlight', cx: '50%', cy: '20%', r: '70%' }, defs);
+        const highlightStops = palette.boardHighlightStops || ['rgba(160, 220, 255, 0.3)', 'rgba(160, 220, 255, 0)'];
+        highlightStops.forEach((color, index) => {
+          svgElem('stop', { offset: `${index === 0 ? 0 : 100}%`, 'stop-color': color }, highlight);
+        });
+
+        const bumperGrad = svgElem('radialGradient', { id: 'bumperGradient', cx: '50%', cy: '50%', r: '55%' }, defs);
+        const bumperStops = palette.bumperStops || { center: '#fff', mid: '#7ce8ff', outer: '#0072ff', glow: '#39c1ff' };
+        svgElem('stop', { offset: '0%', 'stop-color': bumperStops.center }, bumperGrad);
+        svgElem('stop', { offset: '60%', 'stop-color': bumperStops.mid }, bumperGrad);
+        svgElem('stop', { offset: '100%', 'stop-color': bumperStops.outer }, bumperGrad);
+
+        const bumperGlow = svgElem('radialGradient', { id: 'bumperGlow', cx: '50%', cy: '50%', r: '50%' }, defs);
+        svgElem('stop', { offset: '0%', 'stop-color': 'rgba(255,255,255,0.8)' }, bumperGlow);
+        svgElem('stop', { offset: '100%', 'stop-color': palette.accentGlow || 'rgba(70,180,255,0)' }, bumperGlow);
+
+        const ballGrad = svgElem('radialGradient', { id: 'ballGradient', cx: '40%', cy: '35%', r: '65%' }, defs);
+        const ballStops = palette.ballStops || ['#fff3bf', '#ffd86c', '#ff9258'];
+        ballStops.forEach((color, index) => {
+          svgElem('stop', { offset: `${Math.round((index / (ballStops.length - 1)) * 100)}%`, 'stop-color': color }, ballGrad);
+        });
+
+        const trailGrad = svgElem('radialGradient', { id: 'trailGradient', cx: '50%', cy: '50%', r: '50%' }, defs);
+        const trailStops = palette.trailStops || ['rgba(255,220,180,0.7)', 'rgba(255,80,140,0)'];
+        svgElem('stop', { offset: '0%', 'stop-color': trailStops[0] }, trailGrad);
+        svgElem('stop', { offset: '100%', 'stop-color': trailStops[1] || 'rgba(255,80,140,0)' }, trailGrad);
+
+        const targetGrad = svgElem('linearGradient', { id: 'targetGradient', x1: '0%', y1: '0%', x2: '0%', y2: '100%' }, defs);
+        const targetStops = palette.targetStops || ['#ffe06d', '#ff4f9d'];
+        targetStops.forEach((color, index) => {
+          svgElem('stop', { offset: `${Math.round((index / (targetStops.length - 1)) * 100)}%`, 'stop-color': color }, targetGrad);
+        });
+
+        const slingGrad = svgElem('linearGradient', { id: 'slingGradient', x1: '0%', y1: '0%', x2: '100%', y2: '100%' }, defs);
+        const slingStops = palette.slingStops || ['#56ffd6', '#3775ff'];
+        svgElem('stop', { offset: '0%', 'stop-color': slingStops[0] }, slingGrad);
+        svgElem('stop', { offset: '100%', 'stop-color': slingStops[1] || slingStops[0] }, slingGrad);
+
+        const flipperGrad = svgElem('linearGradient', { id: 'flipperGradient', x1: '0%', y1: '0%', x2: '0%', y2: '100%' }, defs);
+        const flipperStops = palette.flipperStops || ['#ff9df7', '#7d38ff', '#31118f'];
+        flipperStops.forEach((color, index) => {
+          svgElem('stop', { offset: `${Math.round((index / (flipperStops.length - 1)) * 100)}%`, 'stop-color': color }, flipperGrad);
+        });
+
+        const glowFilter = svgElem('filter', { id: 'glowFilter', x: '-50%', y: '-50%', width: '200%', height: '200%' }, defs);
+        svgElem('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: '4', result: 'blur' }, glowFilter);
+        const merge = svgElem('feMerge', {}, glowFilter);
+        svgElem('feMergeNode', { in: 'blur' }, merge);
+        svgElem('feMergeNode', { in: 'SourceGraphic' }, merge);
+        state.filters.glow = 'url(#glowFilter)';
+
+        const sparkFilter = svgElem('filter', { id: 'sparkFilter', x: '-50%', y: '-50%', width: '200%', height: '200%' }, defs);
+        svgElem('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: '10', result: 'b1' }, sparkFilter);
+        svgElem('feColorMatrix', { type: 'matrix', values: '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7' }, sparkFilter);
+        state.filters.spark = 'url(#sparkFilter)';
+      }
+
+      function createBaseGroups() {
+        state.layers.background = svgElem('g', { id: 'backgroundLayer' });
+        state.layers.board = svgElem('g', { id: 'boardLayer' });
+        state.layers.art = svgElem('g', { id: 'artLayer' });
+        state.layers.interactives = svgElem('g', { id: 'interactiveLayer' });
+        state.layers.trails = svgElem('g', { id: 'trailLayer' });
+        state.layers.balls = svgElem('g', { id: 'ballLayer' });
+        state.layers.overlay = svgElem('g', { id: 'overlayLayer' });
+      }
+
+      function drawBoardGeometry(palette) {
+        const { walls, topCurve, launchLane } = state.geometry;
+        const pathParts = [
+          `M ${walls.right} ${walls.top}`,
+          `L ${topCurve.x} ${walls.top}`,
+          `A ${topCurve.r} ${topCurve.r} 0 0 0 ${walls.left} ${topCurve.y}`,
+          `L ${walls.left} ${state.geometry.bottom}`,
+          `L ${walls.right} ${state.geometry.bottom}`,
+          'Z'
         ];
-        const reach = ballRadius + 4;
-        for(const seg of segments){
-          const dx = seg.e.x - seg.s.x;
-          const dy = seg.e.y - seg.s.y;
-          const lenSq = dx*dx + dy*dy;
-          if(lenSq === 0) continue;
-          const t = ((ball.x - seg.s.x)*dx + (ball.y - seg.s.y)*dy) / lenSq;
-          const u = Math.max(0, Math.min(1, t));
-          const cx = seg.s.x + u*dx;
-          const cy = seg.s.y + u*dy;
+        svgElem('path', { d: pathParts.join(' '), fill: 'url(#boardGradient)', stroke: 'rgba(160, 220, 255, 0.55)', 'stroke-width': 4 }, state.layers.board);
+        svgElem('path', { d: pathParts.join(' '), fill: 'url(#boardHighlight)', opacity: '0.6' }, state.layers.board);
+        svgElem('line', { x1: launchLane.x, y1: launchLane.gap, x2: launchLane.x, y2: state.geometry.bottom, stroke: 'rgba(150,220,255,0.6)', 'stroke-width': 4 }, state.layers.board);
+      }
+
+      function createStarfield(count, area) {
+        for (let i = 0; i < count; i++) {
+          const cx = area.left + Math.random() * area.width;
+          const cy = area.top + Math.random() * area.height;
+          const r = Math.random() * 1.4 + 0.6;
+          const star = svgElem('circle', { cx, cy, r, fill: 'rgba(255,255,255,0.7)', opacity: Math.random() * 0.6 + 0.3 }, state.layers.art);
+          star.setAttribute('filter', state.filters.spark);
+        }
+      }
+
+      function resetState(preserveScore = false, preserveBalls = false) {
+        state.layout = { bumpers: [], targets: [], slings: [], arcs: [], ramps: [], portals: [], zones: [] };
+        state.geometry = structuredClone(defaultGeometry);
+        state.plunger = { power: 0, maxPower: 75, charging: false, startY: canvas.height * 0.78 };
+        state.launchScale = 0.5;
+        state.gravity = 0.22;
+        state.maxSpeed = 16;
+        state.energyDamping = 0.94;
+        state.flippers = null;
+        state.filters = {};
+        state.balls.forEach(ball => removeBall(ball));
+        state.balls = [];
+        if (!preserveScore) state.score = 0;
+        if (!preserveBalls) state.ballsRemaining = 3;
+        state.comboCount = 0;
+        state.comboTimer = 0;
+        state.messageTimer = 0;
+        state.gameOver = false;
+        updateInfo();
+        updateComboDisplay();
+        messageElem.style.opacity = 0;
+      }
+
+      function removeBall(ball) {
+        if (ball.elem && ball.elem.parentNode) ball.elem.parentNode.removeChild(ball.elem);
+        if (ball.trailElems) {
+          ball.trailElems.forEach(el => {
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+          });
+        }
+      }
+
+      function initFlippers(config, palette) {
+        const { walls } = state.geometry;
+        const base = {
+          left: { x1: walls.left + 72, y1: canvas.height - 92, length: 122, restAngle: 22, activeAngle: -30 },
+          right: { x1: walls.right - 72, y1: canvas.height - 92, length: 122, restAngle: 158, activeAngle: 212 }
+        };
+        const data = config || base;
+        state.flippers = {
+          left: { ...base.left, ...data.left, active: false, t: 0, prev_t: 0 },
+          right: { ...base.right, ...data.right, active: false, t: 0, prev_t: 0 }
+        };
+        Object.values(state.flippers).forEach(f => {
+          const end = lineEnd(f);
+          f.elem = svgElem('line', { x1: f.x1, y1: f.y1, x2: end.x, y2: end.y, stroke: 'url(#flipperGradient)', 'stroke-width': 14, 'stroke-linecap': 'round' }, state.layers.interactives);
+          f.elem.setAttribute('filter', state.filters.glow);
+        });
+      }
+
+      function lineEndAt(f, t) {
+        const ang = (f.restAngle * (1 - t) + f.activeAngle * t) * Math.PI / 180;
+        return { x: f.x1 + Math.cos(ang) * f.length, y: f.y1 + Math.sin(ang) * f.length, ang };
+      }
+
+      function lineEnd(f) {
+        return lineEndAt(f, f.t);
+      }
+
+      function drawFlippers() {
+        Object.values(state.flippers || {}).forEach(f => {
+          if (!f.elem) return;
+          const end = lineEnd(f);
+          f.elem.setAttribute('x2', end.x);
+          f.elem.setAttribute('y2', end.y);
+        });
+      }
+
+      function updateFlippers(dt) {
+        const rate = dt / 0.12;
+        Object.values(state.flippers || {}).forEach(f => {
+          const target = f.active ? 1 : 0;
+          f.prev_t = f.t;
+          if (f.t < target) {
+            f.t = Math.min(target, f.t + rate);
+          } else if (f.t > target) {
+            f.t = Math.max(target, f.t - rate);
+          }
+        });
+      }
+
+      function createPlunger(palette) {
+        const { launchLane } = state.geometry;
+        state.plunger.elem = svgElem('rect', { x: launchLane.x + launchLane.width / 2 - 4, y: state.plunger.startY, width: 8, height: 26, rx: 3, fill: palette.plunger || '#8fb8ff' }, state.layers.interactives);
+      }
+
+      function addTopOrbits(color) {
+        const { walls, topCurve, launchLane } = state.geometry;
+        const orbit = svgElem('path', { d: `M ${walls.left + 70} ${walls.top + 150} C ${canvas.width * 0.38} ${walls.top + 20}, ${canvas.width * 0.7} ${walls.top + 260}, ${launchLane.x - 18} ${walls.top + 210}`, stroke: color, 'stroke-width': 4, fill: 'none', opacity: 0.5 }, state.layers.art);
+        orbit.setAttribute('filter', state.filters.glow);
+        const arc = { x: topCurve.x, y: topCurve.y, r: topCurve.r };
+        state.layout.arcs.push(arc);
+      }
+
+      function createBumper(config) {
+        const bumper = {
+          x: config.x,
+          y: config.y,
+          r: config.r,
+          score: config.score ?? 120,
+          elasticity: config.elasticity ?? 1.1,
+          flashTimer: 0,
+          onHit: config.onHit
+        };
+        bumper.glow = svgElem('circle', { cx: bumper.x, cy: bumper.y, r: bumper.r * 1.6, fill: 'url(#bumperGlow)', opacity: 0 }, state.layers.interactives);
+        bumper.elem = svgElem('circle', { cx: bumper.x, cy: bumper.y, r: bumper.r, fill: 'url(#bumperGradient)', stroke: 'rgba(160, 220, 255, 0.65)', 'stroke-width': 2.6 }, state.layers.interactives);
+        bumper.elem.setAttribute('filter', state.filters.glow);
+        state.layout.bumpers.push(bumper);
+        return bumper;
+      }
+
+      function createDropTarget(config) {
+        const target = {
+          id: config.id || `target-${Date.now()}-${Math.random()}`,
+          x: config.x,
+          y: config.y,
+          w: config.w ?? 12,
+          h: config.h ?? 28,
+          up: true,
+          score: config.score ?? 150,
+          group: config.group,
+          type: config.type || 'drop',
+          resetDelay: config.resetDelay ?? 0,
+          onHit: config.onHit,
+          light: null,
+          elem: null
+        };
+        target.elem = svgElem('rect', { x: target.x - target.w / 2, y: target.y - target.h, width: target.w, height: target.h, rx: 2, fill: 'url(#targetGradient)', stroke: 'rgba(255, 210, 255, 0.75)', 'stroke-width': 1.6 }, state.layers.interactives);
+        target.elem.setAttribute('filter', state.filters.glow);
+        target.light = svgElem('rect', { x: target.x - target.w / 2 - 2, y: target.y - target.h - 6, width: target.w + 4, height: target.h + 12, rx: 4, fill: 'rgba(120, 240, 255, 0.18)', opacity: 0 }, state.layers.interactives);
+        state.layers.interactives.appendChild(target.elem);
+        state.layout.targets.push(target);
+        return target;
+      }
+
+      function createSling(config) {
+        const sling = {
+          id: config.id || `sling-${Math.random()}`,
+          points: config.points,
+          onHit: config.onHit
+        };
+        sling.elem = svgElem('polygon', { points: sling.points.map(p => `${p.x},${p.y}`).join(' '), fill: 'url(#slingGradient)', stroke: 'rgba(150, 220, 255, 0.7)', 'stroke-width': 2.2, opacity: 0.92 }, state.layers.interactives);
+        sling.elem.setAttribute('filter', state.filters.glow);
+        state.layout.slings.push(sling);
+        return sling;
+      }
+
+      function createRamp(config) {
+        const ramp = {
+          id: config.id || `ramp-${Math.random()}`,
+          bounds: config.bounds,
+          exit: config.exit,
+          score: config.score ?? 200,
+          onEnter: config.onEnter,
+          cooldown: config.cooldown ?? 0.6,
+          light: null
+        };
+        if (config.visual) {
+          ramp.light = svgElem('path', { d: config.visual.path, stroke: config.visual.stroke || 'rgba(180, 240, 255, 0.55)', 'stroke-width': config.visual.strokeWidth || 6, fill: 'none', opacity: config.visual.opacity ?? 0.7 }, state.layers.art);
+          ramp.light.setAttribute('stroke-linecap', 'round');
+          if (config.visual.glow) ramp.light.setAttribute('filter', state.filters.glow);
+        }
+        state.layout.ramps.push(ramp);
+        return ramp;
+      }
+
+      function createZone(config) {
+        const zone = { id: config.id || `zone-${Math.random()}`, bounds: config.bounds, onEnter: config.onEnter, cooldown: config.cooldown ?? 0.6, type: config.type };
+        state.layout.zones.push(zone);
+        if (config.visual) {
+          const vis = svgElem(config.visual.type || 'path', config.visual.attrs || {}, state.layers.art);
+          if (config.visual.filter) vis.setAttribute('filter', state.filters.glow);
+          zone.visual = vis;
+        }
+        return zone;
+      }
+
+      function createPortal(config) {
+        const portal = { id: config.id || `portal-${Math.random()}`, bounds: config.bounds, target: config.target, score: config.score ?? 0, cooldown: config.cooldown ?? 1.2, onEnter: config.onEnter };
+        if (config.visual) {
+          portal.visual = svgElem('circle', { cx: config.visual.cx, cy: config.visual.cy, r: config.visual.r, stroke: config.visual.stroke, 'stroke-width': config.visual.strokeWidth || 3, fill: 'none', opacity: config.visual.opacity ?? 0.7 }, state.layers.art);
+          portal.visual.setAttribute('filter', state.filters.glow);
+        }
+        state.layout.portals.push(portal);
+        return portal;
+      }
+
+      function setObjectives(table, stateSource = state.tableState) {
+        const contextState = stateSource || {};
+        const statuses = table.getObjectives ? table.getObjectives(contextState) : [];
+        objectiveList.innerHTML = '';
+        statuses.forEach(status => {
+          const li = document.createElement('li');
+          li.textContent = status.label;
+          if (status.complete) li.classList.add('complete');
+          objectiveList.appendChild(li);
+        });
+      }
+
+      function updateObjectives() {
+        if (!state.currentTable) return;
+        setObjectives(state.currentTable, state.tableState);
+      }
+
+      function showMessage(text, color = '#ffd6ff') {
+        messageElem.textContent = text;
+        messageElem.style.color = color;
+        messageElem.style.opacity = 1;
+        state.messageTimer = 2.4;
+      }
+
+      function triggerCombo(points) {
+        if (points <= 0) return;
+        if (state.comboTimer > 0) {
+          state.comboCount += 1;
+        } else {
+          state.comboCount = 1;
+        }
+        state.comboTimer = 1.4;
+        if (state.comboCount > 1) {
+          const bonus = Math.round(points * Math.min(3.5, 0.35 * state.comboCount + 0.8));
+          state.score += bonus;
+          showMessage(`Combo x${state.comboCount}! Bonus +${bonus}`, '#8ff6ff');
+        }
+        updateComboDisplay();
+      }
+
+      function updateComboDisplay() {
+        if (state.comboCount > 1) {
+          comboElem.textContent = `Combo x${state.comboCount}`;
+          comboElem.style.color = '#f7f7ff';
+          comboElem.style.transform = 'scale(1.1)';
+          comboElem.style.opacity = 1;
+        } else {
+          comboElem.textContent = 'Ignite the combo core';
+          comboElem.style.color = '#b8dcff';
+          comboElem.style.transform = 'scale(1)';
+          comboElem.style.opacity = 0.85;
+        }
+      }
+
+      function updateInfo() {
+        infoElem.textContent = `Score: ${state.score} | Balls: ${state.ballsRemaining}`;
+      }
+
+      function updateEffects(dt) {
+        if (state.comboTimer > 0) {
+          state.comboTimer = Math.max(0, state.comboTimer - dt);
+          if (state.comboTimer === 0) {
+            state.comboCount = 0;
+            updateComboDisplay();
+          }
+        }
+
+        state.layout.bumpers.forEach(b => {
+          if (b.flashTimer > 0) {
+            b.flashTimer = Math.max(0, b.flashTimer - dt);
+            const t = b.flashTimer / 0.4;
+            b.glow.setAttribute('opacity', 0.5 + t * 0.4);
+            b.glow.setAttribute('r', b.r * (1.5 + t * 0.6));
+          } else {
+            b.glow.setAttribute('opacity', 0);
+          }
+        });
+
+        if (state.messageTimer > 0) {
+          state.messageTimer = Math.max(0, state.messageTimer - dt);
+          if (state.messageTimer <= 0) messageElem.style.opacity = 0;
+        }
+
+        if (state.currentTable && state.currentTable.updateArt) {
+          state.currentTable.updateArt(state.tableState, dt);
+        }
+      }
+
+      function createBall(options) {
+        const ball = {
+          id: `ball-${Date.now()}-${Math.random()}`,
+          x: options.x,
+          y: options.y,
+          vx: options.vx ?? 0,
+          vy: options.vy ?? 0,
+          inLaunch: options.inLaunch ?? false,
+          isMultiball: options.isMultiball ?? false,
+          radius: options.radius ?? 8,
+          trail: [],
+          trailElems: [],
+          cooldowns: {}
+        };
+        for (let i = 0; i < 12; i++) {
+          const trail = svgElem('circle', { cx: ball.x, cy: ball.y, r: ball.radius, fill: 'url(#trailGradient)', opacity: 0 }, state.layers.trails);
+          ball.trailElems.push(trail);
+        }
+        ball.elem = svgElem('circle', { cx: ball.x, cy: ball.y, r: ball.radius, fill: 'url(#ballGradient)', stroke: 'rgba(255, 240, 180, 0.85)', 'stroke-width': 1.4 }, state.layers.balls);
+        ball.elem.setAttribute('filter', state.filters.glow);
+        state.balls.push(ball);
+        return ball;
+      }
+
+      function launchBallToPlay(ball) {
+        const { launchLane } = state.geometry;
+        ball.inLaunch = false;
+        ball.x = launchLane.x - ball.radius - 1;
+        ball.vx = -2.5;
+        ball.vy = -state.plunger.power * state.launchScale;
+        state.plunger.power = 0;
+      }
+
+      function queueBallInLaunch() {
+        const { launchLane } = state.geometry;
+        const ball = createBall({
+          x: launchLane.x + launchLane.width / 2,
+          y: state.plunger.startY - 8,
+          vx: 0,
+          vy: 0,
+          inLaunch: true
+        });
+        return ball;
+      }
+
+      function spawnMultiBall(count, options = {}) {
+        for (let i = 0; i < count; i++) {
+          const x = options.x !== undefined ? options.x + (options.offsetX || 20) * i : state.geometry.walls.left + 80 + i * 32;
+          const y = options.y !== undefined ? options.y : state.geometry.walls.top + 80;
+          const vx = options.vx !== undefined ? options.vx + (options.vxVariance || 1.2) * (i - (count - 1) / 2) : (Math.random() * 6 - 3);
+          const vy = options.vy !== undefined ? options.vy : (Math.random() * -4 - 2);
+          createBall({ x, y, vx, vy, inLaunch: false, isMultiball: true });
+        }
+        showMessage(options.message || 'Multi-ball Frenzy!', options.color || '#8fffd8');
+      }
+
+      function reflectBall(ball, nx, ny, elasticity = 1) {
+        const dot = ball.vx * nx + ball.vy * ny;
+        ball.vx = (ball.vx - 2 * dot * nx) * elasticity;
+        ball.vy = (ball.vy - 2 * dot * ny) * elasticity;
+      }
+
+      function arcCollision(ball, arc) {
+        const dx = ball.x - arc.x;
+        const dy = ball.y - arc.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < ball.radius + arc.r) {
+          const nx = dx / dist;
+          const ny = dy / dist;
+          ball.x = arc.x + nx * (ball.radius + arc.r);
+          ball.y = arc.y + ny * (ball.radius + arc.r);
+          reflectBall(ball, nx, ny, 1.05);
+          return true;
+        }
+        return false;
+      }
+
+      function triangleCollision(ball, tri) {
+        const reach = ball.radius + 4;
+        const pts = tri.points;
+        for (let i = 0; i < pts.length; i++) {
+          const a = pts[i];
+          const b = pts[(i + 1) % pts.length];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const lenSq = dx * dx + dy * dy;
+          if (lenSq === 0) continue;
+          const t = ((ball.x - a.x) * dx + (ball.y - a.y) * dy) / lenSq;
+          const clamped = Math.max(0, Math.min(1, t));
+          const cx = a.x + clamped * dx;
+          const cy = a.y + clamped * dy;
           const distX = ball.x - cx;
           const distY = ball.y - cy;
-          const distSq = distX*distX + distY*distY;
-          if(distSq < reach*reach && ball.vy>0){
+          const distSq = distX * distX + distY * distY;
+          if (distSq < reach * reach && ball.vy > 0) {
             const dist = Math.sqrt(distSq) || 0.0001;
             const nx = distX / dist;
             const ny = distY / dist;
-            ball.x = cx + nx*reach;
-            ball.y = cy + ny*reach;
-            reflectBall(nx, ny);
-            let motionPower = 0.75;
-            if(f.t > f.prev_t) motionPower = 1.25;
-            else if(f.t < f.prev_t) motionPower = 0.5;
-            const hitPos = seg.hitPosFunc(u);
-            const tipMult = 1 + hitPos * 2;
-            const factor = motionPower * tipMult * 0.7;
-            ball.vx *= factor;
-            ball.vy *= factor;
-            break;
+            ball.x = cx + nx * reach;
+            ball.y = cy + ny * reach;
+            reflectBall(ball, nx, ny, 1.1);
+            ball.vx *= 1.05;
+            ball.vy *= 1.05;
+            if (tri.onHit) tri.onHit(ball, state);
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function rectCollision(ball, rect) {
+        if (!rect.up && rect.type === 'drop') return false;
+        const halfW = rect.w / 2;
+        const closestX = Math.max(rect.x - halfW, Math.min(ball.x, rect.x + halfW));
+        const closestY = Math.max(rect.y - rect.h, Math.min(ball.y, rect.y));
+        const dx = ball.x - closestX;
+        const dy = ball.y - closestY;
+        const distSq = dx * dx + dy * dy;
+        if (distSq < ball.radius * ball.radius) {
+          const dist = Math.sqrt(distSq) || 0.0001;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          ball.x = closestX + nx * ball.radius;
+          ball.y = closestY + ny * ball.radius;
+          reflectBall(ball, nx, ny, 0.95);
+          return true;
+        }
+        return false;
+      }
+
+      function handleTargets(ball) {
+        state.layout.targets.forEach(target => {
+          if (!target.up && target.type === 'drop' && !target.resetDelay) return;
+          if (target.type !== 'drop' || target.up) {
+            if (rectCollision(ball, target)) {
+              if (target.type === 'drop') {
+                target.up = false;
+                target.light.setAttribute('opacity', 0.85);
+                target.elem.setAttribute('opacity', 0.2);
+              }
+              state.score += target.score;
+              triggerCombo(target.score);
+              if (target.onHit) target.onHit(ball, target, state);
+              updateInfo();
+            }
+          }
+        });
+      }
+
+      function handleRamps(ball) {
+        state.layout.ramps.forEach(ramp => {
+          const cd = ball.cooldowns[ramp.id] || 0;
+          if (cd > 0) return;
+          const { x1, x2, y1, y2 } = ramp.bounds;
+          if (ball.x > x1 && ball.x < x2 && ball.y > y1 && ball.y < y2) {
+            ball.cooldowns[ramp.id] = ramp.cooldown;
+            ball.x = ramp.exit.x;
+            ball.y = ramp.exit.y;
+            ball.vx = ramp.exit.vx;
+            ball.vy = ramp.exit.vy;
+            state.score += ramp.score;
+            triggerCombo(ramp.score);
+            updateInfo();
+            if (ramp.onEnter) ramp.onEnter(ball, state);
+            if (ramp.light) ramp.light.setAttribute('stroke-width', parseFloat(ramp.light.getAttribute('stroke-width')) + 1.2);
+          }
+        });
+      }
+
+      function handleZones(ball) {
+        state.layout.zones.forEach(zone => {
+          const cd = ball.cooldowns[zone.id] || 0;
+          if (cd > 0) return;
+          const { x1, x2, y1, y2 } = zone.bounds;
+          if (ball.x > x1 && ball.x < x2 && ball.y > y1 && ball.y < y2) {
+            ball.cooldowns[zone.id] = zone.cooldown;
+            if (zone.onEnter) zone.onEnter(ball, state);
+          }
+        });
+      }
+
+      function handlePortals(ball) {
+        state.layout.portals.forEach(portal => {
+          const cd = ball.cooldowns[portal.id] || 0;
+          if (cd > 0) return;
+          const { x1, x2, y1, y2 } = portal.bounds;
+          if (ball.x > x1 && ball.x < x2 && ball.y > y1 && ball.y < y2) {
+            ball.cooldowns[portal.id] = portal.cooldown;
+            ball.x = portal.target.x;
+            ball.y = portal.target.y;
+            ball.vx = portal.target.vx;
+            ball.vy = portal.target.vy;
+            if (portal.score) {
+              state.score += portal.score;
+              triggerCombo(portal.score);
+              updateInfo();
+            }
+            if (portal.onEnter) portal.onEnter(ball, state);
+          }
+        });
+      }
+
+      function updateBallCooldowns(ball, dt) {
+        Object.keys(ball.cooldowns).forEach(key => {
+          ball.cooldowns[key] = Math.max(0, ball.cooldowns[key] - dt);
+        });
+      }
+
+      function handleWalls(ball) {
+        const { walls, topCurve, launchLane } = state.geometry;
+        const inTopCurve = ball.x < topCurve.x && ball.y < topCurve.y;
+        if (arcCollision(ball, topCurve)) return;
+        if (ball.x - ball.radius < walls.left && !inTopCurve) {
+          ball.x = walls.left + ball.radius;
+          ball.vx = Math.abs(ball.vx);
+        }
+        if (ball.x + ball.radius > walls.right) {
+          if (ball.y > launchLane.gap) {
+            ball.x = launchLane.x - ball.radius;
+            ball.vx = -Math.abs(ball.vx);
+          } else {
+            ball.x = walls.right - ball.radius;
+            ball.vx = -Math.abs(ball.vx);
+          }
+        }
+        if (ball.y - ball.radius < walls.top && !inTopCurve) {
+          ball.y = walls.top + ball.radius;
+          ball.vy = Math.abs(ball.vy);
+        }
+      }
+
+      function handleBumpers(ball) {
+        state.layout.bumpers.forEach(b => {
+          const dx = ball.x - b.x;
+          const dy = ball.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < ball.radius + b.r) {
+            const nx = dx / dist;
+            const ny = dy / dist;
+            ball.x = b.x + nx * (ball.radius + b.r);
+            ball.y = b.y + ny * (ball.radius + b.r);
+            reflectBall(ball, nx, ny, b.elasticity);
+            state.score += b.score;
+            triggerCombo(b.score);
+            updateInfo();
+            b.flashTimer = 0.4;
+            if (b.onHit) b.onHit(ball, b, state);
+          }
+        });
+      }
+
+      function handleFlipperCollision(ball) {
+        Object.values(state.flippers || {}).forEach(f => {
+          const segments = [
+            { s: { x: f.x1, y: f.y1 }, e: lineEndAt(f, f.prev_t), hitPosFunc: u => u },
+            { s: { x: f.x1, y: f.y1 }, e: lineEnd(f), hitPosFunc: u => u },
+            { s: lineEndAt(f, f.prev_t), e: lineEnd(f), hitPosFunc: () => 1 }
+          ];
+          const reach = ball.radius + 4;
+          for (const seg of segments) {
+            const dx = seg.e.x - seg.s.x;
+            const dy = seg.e.y - seg.s.y;
+            const lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) continue;
+            const t = ((ball.x - seg.s.x) * dx + (ball.y - seg.s.y) * dy) / lenSq;
+            const u = Math.max(0, Math.min(1, t));
+            const cx = seg.s.x + u * dx;
+            const cy = seg.s.y + u * dy;
+            const distX = ball.x - cx;
+            const distY = ball.y - cy;
+            const distSq = distX * distX + distY * distY;
+            if (distSq < reach * reach && ball.vy > 0) {
+              const dist = Math.sqrt(distSq) || 0.0001;
+              const nx = distX / dist;
+              const ny = distY / dist;
+              ball.x = cx + nx * reach;
+              ball.y = cy + ny * reach;
+              reflectBall(ball, nx, ny, 1.02);
+              let motionPower = 0.75;
+              if (f.t > f.prev_t) motionPower = 1.35;
+              else if (f.t < f.prev_t) motionPower = 0.5;
+              const hitPos = seg.hitPosFunc(u);
+              const tipMultiplier = 1 + hitPos * 1.9;
+              const factor = motionPower * tipMultiplier * 0.78;
+              ball.vx *= factor;
+              ball.vy *= factor;
+              break;
+            }
+          }
+        });
+      }
+
+      function dampEnergy(ball) {
+        const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+        if (speed > state.maxSpeed) {
+          ball.vx *= state.energyDamping;
+          ball.vy *= state.energyDamping;
+        }
+      }
+
+      function updateBallTrail(ball) {
+        ball.trail.unshift({ x: ball.x, y: ball.y });
+        if (ball.trail.length > ball.trailElems.length) ball.trail.pop();
+        for (let i = 0; i < ball.trailElems.length; i++) {
+          const p = ball.trail[i];
+          const el = ball.trailElems[i];
+          if (!p) {
+            el.setAttribute('opacity', 0);
+            continue;
+          }
+          const progress = 1 - i / ball.trailElems.length;
+          const r = ball.radius * (0.4 + progress * 0.6);
+          el.setAttribute('cx', p.x);
+          el.setAttribute('cy', p.y);
+          el.setAttribute('r', r);
+          el.setAttribute('opacity', 0.1 + progress * 0.35);
+        }
+      }
+
+      function handleBallDrain(ball) {
+        const index = state.balls.indexOf(ball);
+        if (index >= 0) {
+          state.balls.splice(index, 1);
+          removeBall(ball);
+        }
+        if (state.balls.length === 0) {
+          state.ballsRemaining -= 1;
+          updateInfo();
+          if (state.ballsRemaining > 0) {
+            queueBallInLaunch();
+            showMessage('Ball saved! Launch again.', '#86f0ff');
+          } else {
+            state.gameOver = true;
+            showMessage('Game Over - Switch tables to play again', '#ff6699');
           }
         }
       }
-      dampExcessEnergy();
-    }
 
-    function updateInfo(){
-      document.getElementById('info').textContent = `Score: ${score} | Balls: ${balls}`;
-    }
+      function updateBalls(dt) {
+        if (state.gameOver) return;
+        const { launchLane } = state.geometry;
+        state.balls.forEach(ball => {
+          if (ball.inLaunch) {
+            if (state.plunger.charging) {
+              state.plunger.power = Math.min(state.plunger.maxPower, state.plunger.power + 0.65);
+            }
+            const plungerY = state.plunger.startY + state.plunger.power;
+            ball.vy += state.gravity * 0.35;
+            ball.y += ball.vy;
+            ball.x = launchLane.x + launchLane.width / 2;
+            if (ball.y + ball.radius > plungerY) {
+              ball.y = plungerY - ball.radius;
+              ball.vy = 0;
+            }
+            if (ball.y + ball.radius > state.geometry.bottom) {
+              ball.y = state.geometry.bottom - ball.radius;
+              ball.vy = 0;
+            }
+            if (ball.y - ball.radius < launchLane.gap) {
+              launchBallToPlay(ball);
+            }
+          } else {
+            ball.vy += state.gravity;
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+            handleWalls(ball);
+            handleBumpers(ball);
+            state.layout.slings.forEach(s => triangleCollision(ball, s));
+            handleTargets(ball);
+            handleRamps(ball);
+            handleZones(ball);
+            handlePortals(ball);
+            handleFlipperCollision(ball);
+            dampEnergy(ball);
+          }
+          updateBallCooldowns(ball, dt);
+        });
 
-    function updateComboDisplay(){
-      if(comboCount > 1){
-        comboElem.textContent = `Combo x${comboCount}`;
-        comboElem.style.color = '#f7f7ff';
-        comboElem.style.transform = 'scale(1.1)';
-        comboElem.style.opacity = 1;
-      } else {
-        comboElem.textContent = 'Build your combo!';
-        comboElem.style.color = '#9cf6ff';
-        comboElem.style.transform = 'scale(1)';
-        comboElem.style.opacity = 0.85;
-      }
-    }
+        if (state.currentTable && state.currentTable.updatePhysics) {
+          state.currentTable.updatePhysics(state.tableState, state.balls, dt, state);
+        }
 
-    function showMessage(text, color = '#fdbaff'){
-      messageElem.textContent = text;
-      messageElem.style.color = color;
-      messageElem.style.opacity = 1;
-      messageTimer = 2.2;
-    }
-
-    function triggerCombo(points){
-      if(points <= 0) return;
-      if(comboTimer > 0){
-        comboCount += 1;
-      } else {
-        comboCount = 1;
-      }
-      comboTimer = 1.2;
-      if(comboCount > 1){
-        const bonus = Math.round(points * comboCount * 0.35);
-        score += bonus;
-        showMessage(`Combo x${comboCount}! Bonus +${bonus}`, '#9cf6ff');
-      }
-      updateComboDisplay();
-    }
-
-    function updateEffects(dt){
-      if(comboTimer > 0){
-        comboTimer = Math.max(0, comboTimer - dt);
-        if(comboTimer === 0){
-          comboCount = 0;
-          updateComboDisplay();
+        for (let i = state.balls.length - 1; i >= 0; i--) {
+          const ball = state.balls[i];
+          if (!ball.inLaunch && ball.y - ball.radius > state.geometry.bottom + 30) {
+            handleBallDrain(ball);
+          }
         }
       }
 
-      bumpers.forEach(b=>{
-        if(b.flashTimer > 0){
-          b.flashTimer = Math.max(0, b.flashTimer - dt);
-          const intensity = b.flashTimer / 0.4;
-          b.glow.setAttribute('opacity', 0.4 + intensity * 0.6);
-          b.glow.setAttribute('r', b.r * (1.5 + intensity * 0.6));
-        } else {
-          b.glow.setAttribute('opacity', 0);
+      function drawBalls() {
+        state.balls.forEach(ball => {
+          ball.elem.setAttribute('cx', ball.x);
+          ball.elem.setAttribute('cy', ball.y);
+          updateBallTrail(ball);
+        });
+      }
+
+      function step() {
+        const dt = 1 / 60;
+        updateFlippers(dt);
+        updateBalls(dt);
+        updateEffects(dt);
+        drawFlippers();
+        drawBalls();
+        if (state.plunger.elem) {
+          state.plunger.elem.setAttribute('y', state.plunger.startY + state.plunger.power);
         }
+        updateObjectives();
+      }
+
+      function gameLoop() {
+        if (state.running) step();
+        requestAnimationFrame(gameLoop);
+      }
+
+      function handleKeyDown(e) {
+        if (e.repeat) return;
+        if (!state.currentTable) return;
+        if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'z') {
+          if (state.flippers?.left) state.flippers.left.active = true;
+        }
+        if (e.key === 'ArrowRight' || e.key === '/') {
+          if (state.flippers?.right) state.flippers.right.active = true;
+        }
+        if (e.key === ' ' || e.key === 'ArrowDown') {
+          state.plunger.charging = true;
+          e.preventDefault();
+        }
+      }
+
+      function handleKeyUp(e) {
+        if (!state.currentTable) return;
+        if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'z') {
+          if (state.flippers?.left) state.flippers.left.active = false;
+        }
+        if (e.key === 'ArrowRight' || e.key === '/') {
+          if (state.flippers?.right) state.flippers.right.active = false;
+        }
+        if (e.key === ' ' || e.key === 'ArrowDown') {
+          if (state.plunger.charging) {
+            state.plunger.charging = false;
+            const launchBall = state.balls.find(b => b.inLaunch);
+            if (launchBall) launchBallToPlay(launchBall);
+          }
+          e.preventDefault();
+        }
+      }
+
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keyup', handleKeyUp);
+
+      function activateTable(table, { preserveScore = false, preserveBalls = false } = {}) {
+        state.currentTable = table;
+        activeTableName.textContent = table.name;
+        applyCssVariables(table);
+        resetState(preserveScore, preserveBalls);
+        state.tableState = table.createState ? table.createState() : {};
+        clearSVG();
+        const defs = svgElem('defs', {});
+        createPaletteDefs(defs, table.palette || {});
+        createBaseGroups();
+        drawBoardGeometry(table.palette || {});
+        if (table.decorateBackground) table.decorateBackground(state, { svgElem, createStarfield });
+        addTopOrbits(table.palette?.laneGlow || 'rgba(180,220,255,0.45)');
+        initFlippers(table.flippers, table.palette || {});
+        createPlunger(table.palette || {});
+        if (table.buildLayout) table.buildLayout(state, { createBumper, createDropTarget, createSling, createRamp, createZone, createPortal, svgElem });
+        setObjectives(table, state.tableState);
+        updateInfo();
+        updateComboDisplay();
+        queueBallInLaunch();
+        state.running = true;
+      }
+
+      function tableCardTemplate(table) {
+        const card = document.createElement('button');
+        card.className = 'table-card';
+        card.type = 'button';
+        card.dataset.tableId = table.id;
+        card.innerHTML = `
+          <h3>${table.name}</h3>
+          <div class="tagline">${table.tagline}</div>
+          <p>${table.description}</p>
+          <div class="badges">${table.badges.map(b => `<span class="badge">${b}</span>`).join('')}</div>
+        `;
+        return card;
+      }
+
+      function openSelector(mode = 'switch') {
+        selectorOverlay.classList.add('visible');
+        selectorOverlay.dataset.mode = mode;
+        beginPlayBtn.textContent = mode === 'start' ? 'Enter The Table' : 'Switch Table';
+        beginPlayBtn.disabled = !selectedTable;
+      }
+
+      function closeSelector() {
+        selectorOverlay.classList.remove('visible');
+      }
+
+      let selectedTable = null;
+
+      function selectTable(table) {
+        selectedTable = table;
+        [...tableCardsContainer.children].forEach(card => {
+          card.classList.toggle('selected', card.dataset.tableId === table.id);
+        });
+        beginPlayBtn.disabled = false;
+        if (selectorOverlay.classList.contains('visible')) {
+          const mode = selectorOverlay.dataset.mode || 'switch';
+          beginPlayBtn.textContent = mode === 'start' ? `Enter ${table.name}` : `Switch to ${table.name}`;
+        }
+        const previewState = table.createState ? table.createState() : {};
+        setObjectives(table, previewState);
+      }
+
+      changeTableBtn.addEventListener('click', () => {
+        openSelector('switch');
       });
 
-      if(messageTimer > 0){
-        messageTimer = Math.max(0, messageTimer - dt);
-        if(messageTimer <= 0){
-          messageElem.style.opacity = 0;
-        }
+      beginPlayBtn.addEventListener('click', () => {
+        if (!selectedTable) return;
+        const mode = selectorOverlay.dataset.mode || 'switch';
+        const preserveScore = mode === 'switch';
+        const preserveBalls = mode === 'switch';
+        activateTable(selectedTable, { preserveScore, preserveBalls });
+        closeSelector();
+      });
+
+      const tables = createTables();
+      tables.forEach(table => {
+        const card = tableCardTemplate(table);
+        card.addEventListener('click', () => selectTable(table));
+        tableCardsContainer.appendChild(card);
+      });
+
+      if (tables.length > 0) {
+        selectTable(tables[0]);
+        openSelector('start');
       }
-    }
 
-    function draw(){
-      const plungerY = plunger.startY + plunger.power;
-      plungerElem.setAttribute('y', plungerY);
-      drawFlippers();
-      drawTargets();
-      drawBall();
-    }
+      requestAnimationFrame(gameLoop);
 
-    function step(){
-      const dt = 1/60;
-      updateFlippers(dt);
-      updatePhysics();
-      updateEffects(dt);
-      draw();
-    }
+      function createTables() {
+        const stellarForge = {
+          id: 'stellar-forge',
+          name: 'Stellar Forge',
+          tagline: 'Shape the constellations',
+          description: 'Surf cosmic currents, ignite constellations, and drop into the supernova lane for an interstellar jackpot.',
+          badges: ['Gravity Well', 'Nebula Multiball', 'Supernova Jackpot'],
+          palette: {
+            cssVars: {
+              '--pinball-bg': 'radial-gradient(circle at 30% 20%, #04081d, #010011 75%)',
+              '--pinball-frame': 'rgba(110, 200, 255, 0.45)',
+              '--pinball-text': '#e7f9ff',
+              '--pinball-pill': 'rgba(10, 25, 60, 0.72)',
+              '--pinball-pill-border': 'rgba(140, 220, 255, 0.45)',
+              '--pinball-button-bg': 'rgba(40, 100, 220, 0.85)',
+              '--pinball-button-glow': 'rgba(120, 210, 255, 0.8)'
+            },
+            boardStops: ['#091a44', '#050b22', '#030314'],
+            boardHighlightStops: ['rgba(120,200,255,0.45)', 'rgba(120,200,255,0)'],
+            bumperStops: { center: '#fffdf2', mid: '#6ff0ff', outer: '#1979ff' },
+            ballStops: ['#fff4ce', '#ffd86a', '#ff9254'],
+            trailStops: ['rgba(255,220,170,0.75)', 'rgba(90,200,255,0)'],
+            targetStops: ['#ffe693', '#ff4fce'],
+            slingStops: ['#4ff3ff', '#3b6aff'],
+            flipperStops: ['#8cceff', '#4f73ff', '#233cff'],
+            accentGlow: 'rgba(100,220,255,0.5)',
+            laneGlow: 'rgba(160,220,255,0.55)',
+            plunger: '#8fb4ff'
+          },
+          createState() {
+            return {
+              constellationTargets: [],
+              constellationsLit: 0,
+              jackpotReady: false,
+              nebulaHits: 0,
+              gravityWell: { x: canvas.width * 0.45, y: canvas.height * 0.48, r: 52 },
+              gravityPulse: 0
+            };
+          },
+          decorateBackground(stateRef, helpers) {
+            createStarfield(45, { left: stateRef.geometry.walls.left + 20, top: stateRef.geometry.walls.top + 10, width: canvas.width - 100, height: canvas.height * 0.6 });
+            const aurora = svgElem('path', { d: `M ${stateRef.geometry.walls.left + 40} ${stateRef.geometry.walls.top + 120} C ${canvas.width * 0.35} ${stateRef.geometry.walls.top + 10}, ${canvas.width * 0.7} ${stateRef.geometry.walls.top + 260}, ${stateRef.geometry.launchLane.x - 30} ${stateRef.geometry.walls.top + 210}`, stroke: 'rgba(130, 220, 255, 0.35)', 'stroke-width': 8, fill: 'none', opacity: 0.6 }, state.layers.art);
+            aurora.setAttribute('filter', state.filters.glow);
+          },
+          buildLayout(stateRef, helpers) {
+            const { walls, topCurve, launchLane } = stateRef.geometry;
+            const gravity = stateRef.tableState.gravityWell;
+            const halo = svgElem('circle', { cx: gravity.x, cy: gravity.y, r: gravity.r + 8, fill: 'rgba(100,200,255,0.08)', stroke: 'rgba(130,230,255,0.35)', 'stroke-width': 4 }, state.layers.art);
+            halo.setAttribute('filter', state.filters.glow);
+            stateRef.tableState.gravityHalo = halo;
 
-    document.addEventListener('keydown', e=>{
-      if(e.key==='ArrowLeft' || e.key==='z') flippers.left.active = true;
-      if(e.key==='ArrowRight' || e.key=='/') flippers.right.active = true;
-      if(e.key===' ' || e.key==='ArrowDown') plunger.charging = true;
-    });
-    document.addEventListener('keyup', e=>{
-      if(e.key==='ArrowLeft' || e.key==='z') flippers.left.active = false;
-      if(e.key==='ArrowRight' || e.key=='/') flippers.right.active = false;
-      if(e.key===' ' || e.key==='ArrowDown'){
-        plunger.charging = false;
-        if(ball.inLaunch){
-          ball.vy = -plunger.power * launchScale;
-        }
+            helpers.createBumper({ x: walls.left + 110, y: walls.top + 180, r: 22, score: 180, onHit() { stateRef.tableState.nebulaHits = Math.min(3, stateRef.tableState.nebulaHits + 1); if (stateRef.tableState.nebulaHits >= 3) { stateRef.tableState.nebulaHits = 0; spawnMultiBall(2, { x: walls.right - 120, y: walls.top + 100, vx: -4, vy: -2.5, message: 'Meteor Shower Multiball!' }); } } });
+            helpers.createBumper({ x: walls.right - 120, y: walls.top + 220, r: 20, score: 150 });
+            helpers.createBumper({ x: walls.left + 200, y: walls.top + 120, r: 18, score: 160 });
+
+            const dropXs = [walls.right - 80, walls.right - 110, walls.right - 140];
+            dropXs.forEach((x, index) => {
+              const target = helpers.createDropTarget({
+                x,
+                y: walls.top + 210,
+                w: 12,
+                h: 28,
+                group: 'constellation',
+                score: 220,
+                onHit(ball, targetRef) {
+                  stateRef.tableState.constellationsLit += 1;
+                  if (stateRef.tableState.constellationsLit >= dropXs.length) {
+                    stateRef.tableState.jackpotReady = true;
+                    showMessage('Constellations lit! Supernova ready.', '#8fffd8');
+                    stateRef.tableState.constellationTargets.forEach(t => {
+                      t.light.setAttribute('opacity', 1);
+                    });
+                  }
+                }
+              });
+              stateRef.tableState.constellationTargets.push(target);
+            });
+
+            const slingLeft = [
+              { x: walls.left + stateRef.geometry.outlaneOffset, y: canvas.height - 180 },
+              { x: walls.left + stateRef.geometry.outlaneOffset, y: canvas.height - 130 },
+              { x: stateRef.flippers.left?.x1 + 12 || (walls.left + 90), y: canvas.height - 130 }
+            ];
+            const slingRight = [
+              { x: walls.right - stateRef.geometry.outlaneOffset, y: canvas.height - 180 },
+              { x: walls.right - stateRef.geometry.outlaneOffset, y: canvas.height - 130 },
+              { x: stateRef.flippers.right?.x1 - 12 || (walls.right - 90), y: canvas.height - 130 }
+            ];
+            helpers.createSling({ id: 'left-sling', points: slingLeft });
+            helpers.createSling({ id: 'right-sling', points: slingRight });
+
+            helpers.createRamp({
+              id: 'solar-ramp',
+              bounds: { x1: launchLane.x - 40, x2: launchLane.x - 4, y1: walls.top + 160, y2: walls.top + 260 },
+              exit: { x: walls.left + 90, y: walls.top + 120, vx: -4.5, vy: -2 },
+              score: 360,
+              visual: { path: `M ${launchLane.x - 20} ${walls.top + 260} C ${canvas.width * 0.6} ${walls.top + 80}, ${canvas.width * 0.4} ${walls.top + 90}, ${walls.left + 120} ${walls.top + 120}`, stroke: 'rgba(180, 255, 255, 0.5)', strokeWidth: 6, opacity: 0.7, glow: true },
+              onEnter() {
+                showMessage('Solar sling boost!', '#9cf6ff');
+              }
+            });
+
+            helpers.createZone({
+              id: 'supernova-zone',
+              bounds: { x1: walls.left + 10, x2: walls.left + 70, y1: walls.top + 80, y2: canvas.height * 0.65 },
+              cooldown: 1.2,
+              onEnter() {
+                if (stateRef.tableState.jackpotReady) {
+                  stateRef.tableState.jackpotReady = false;
+                  stateRef.tableState.constellationsLit = 0;
+                  stateRef.tableState.constellationTargets.forEach(t => {
+                    t.up = true;
+                    t.elem.setAttribute('opacity', 1);
+                    t.light.setAttribute('opacity', 0);
+                  });
+                  stateRef.score += 2500;
+                  triggerCombo(1200);
+                  updateInfo();
+                  showMessage('SUPER NOVA JACKPOT +2500!', '#ffd98f');
+                }
+              },
+              visual: {
+                type: 'path',
+                attrs: { d: `M ${walls.left + 50} ${walls.top + 90} L ${walls.left + 30} ${walls.top + 140} L ${walls.left + 50} ${walls.top + 200} L ${walls.left + 30} ${walls.top + 260}`, stroke: 'rgba(255,220,120,0.6)', 'stroke-width': 5, fill: 'none', opacity: 0.8 },
+                filter: true
+              }
+            });
+          },
+          updatePhysics(tableState, balls, dt, gameState) {
+            const { gravityWell } = tableState;
+            balls.forEach(ball => {
+              const dx = gravityWell.x - ball.x;
+              const dy = gravityWell.y - ball.y;
+              const distSq = dx * dx + dy * dy;
+              if (distSq < gravityWell.r * gravityWell.r * 4) {
+                const dist = Math.sqrt(distSq) || 0.001;
+                const pull = Math.min(0.65, (gravityWell.r * gravityWell.r) / (distSq + 60));
+                ball.vx += (dx / dist) * pull * dt * 50;
+                ball.vy += (dy / dist) * pull * dt * 50;
+                tableState.gravityPulse = Math.min(1, tableState.gravityPulse + dt * 3);
+              }
+            });
+          },
+          updateArt(tableState, dt) {
+            tableState.gravityPulse = Math.max(0, tableState.gravityPulse - dt * 0.6);
+            if (tableState.gravityHalo) {
+              const scale = 1 + tableState.gravityPulse * 0.25;
+              const cx = tableState.gravityWell.x;
+              const cy = tableState.gravityWell.y;
+              tableState.gravityHalo.setAttribute('transform', `translate(${cx}, ${cy}) scale(${scale}) translate(${-cx}, ${-cy})`);
+              tableState.gravityHalo.setAttribute('opacity', 0.12 + tableState.gravityPulse * 0.35);
+            }
+          },
+          getObjectives(tableState) {
+            return [
+              { label: `${Math.min(3, tableState.constellationsLit)}/3 constellations lit`, complete: tableState.constellationsLit >= 3 },
+              { label: tableState.jackpotReady ? 'Supernova lane flashing – claim jackpot!' : 'Charge the supernova lane', complete: tableState.jackpotReady },
+              { label: `${tableState.nebulaHits}/3 nebula charges for multiball`, complete: false }
+            ];
+          }
+        };
+
+        const neonSkyline = {
+          id: 'neon-skyline',
+          name: 'Neon Skyline',
+          tagline: 'Hack the night grid',
+          description: 'Ride holographic ramps, light the skyline targets, and drop into drone mode for a laser jackpot.',
+          badges: ['Holo Ramp', 'Drone Multiball', 'City Jackpot'],
+          palette: {
+            cssVars: {
+              '--pinball-bg': 'radial-gradient(circle at 60% 10%, #110222, #020005 70%)',
+              '--pinball-frame': 'rgba(255, 120, 255, 0.45)',
+              '--pinball-text': '#f7e6ff',
+              '--pinball-pill': 'rgba(40, 0, 66, 0.68)',
+              '--pinball-pill-border': 'rgba(250, 140, 255, 0.45)',
+              '--pinball-button-bg': 'rgba(180, 40, 255, 0.85)',
+              '--pinball-button-glow': 'rgba(255, 140, 255, 0.7)'
+            },
+            boardStops: ['#1b0038', '#0f0022', '#060013'],
+            boardHighlightStops: ['rgba(255,80,200,0.45)', 'rgba(255,80,200,0)'],
+            bumperStops: { center: '#ffffff', mid: '#ff8df7', outer: '#6a28ff' },
+            ballStops: ['#ffe0ff', '#ff9cff', '#ff58bf'],
+            trailStops: ['rgba(255,140,255,0.75)', 'rgba(0,0,0,0)'],
+            targetStops: ['#fef06d', '#ff4ce2'],
+            slingStops: ['#ff66ff', '#4c6bff'],
+            flipperStops: ['#ffd86f', '#ff5cb8', '#8024ff'],
+            accentGlow: 'rgba(255,120,255,0.5)',
+            laneGlow: 'rgba(255,120,255,0.5)',
+            plunger: '#ff79ff'
+          },
+          createState() {
+            return {
+              holoTargets: [],
+              litTargets: 0,
+              jackpotReady: false,
+              droneHits: 0,
+              rampHeat: 0,
+              neonPulse: 0
+            };
+          },
+          decorateBackground(stateRef) {
+            const grid = svgElem('path', { d: `M ${stateRef.geometry.walls.left} ${canvas.height - 140} L ${stateRef.geometry.walls.right} ${canvas.height - 140}`, stroke: 'rgba(255,100,255,0.35)', 'stroke-width': 2 }, state.layers.art);
+            grid.setAttribute('filter', state.filters.glow);
+            for (let i = 0; i < 8; i++) {
+              const x = stateRef.geometry.walls.left + 30 + i * 40;
+              const building = svgElem('rect', { x, y: canvas.height - 140 - Math.random() * 120, width: 24, height: 160, fill: 'rgba(70,0,120,0.5)', stroke: 'rgba(255,120,255,0.3)', 'stroke-width': 2 }, state.layers.art);
+              building.setAttribute('filter', state.filters.glow);
+            }
+          },
+          buildLayout(stateRef, helpers) {
+            const { walls, launchLane } = stateRef.geometry;
+            helpers.createBumper({ x: walls.left + 120, y: walls.top + 180, r: 22, score: 160 });
+            helpers.createBumper({ x: walls.right - 150, y: walls.top + 150, r: 20, score: 170 });
+            helpers.createBumper({ x: walls.left + 220, y: walls.top + 210, r: 22, score: 170 });
+
+            const holoXs = [walls.left + 90, walls.left + 130, walls.left + 170, walls.left + 210];
+            holoXs.forEach((x, i) => {
+              const target = helpers.createDropTarget({
+                x,
+                y: walls.top + 250,
+                w: 14,
+                h: 30,
+                group: 'holo',
+                score: 200,
+                onHit() {
+                  stateRef.tableState.litTargets += 1;
+                  stateRef.tableState.neonPulse = 1;
+                  if (stateRef.tableState.litTargets >= holoXs.length) {
+                    stateRef.tableState.jackpotReady = true;
+                    showMessage('City lights primed! Ramp for jackpot.', '#ff9cff');
+                  }
+                }
+              });
+              stateRef.tableState.holoTargets.push(target);
+            });
+
+            helpers.createRamp({
+              id: 'holo-ramp',
+              bounds: { x1: walls.left + 40, x2: walls.left + 120, y1: canvas.height * 0.55, y2: canvas.height * 0.73 },
+              exit: { x: launchLane.x - 50, y: walls.top + 140, vx: 5.2, vy: -4.2 },
+              score: 420,
+              cooldown: 0.8,
+              visual: { path: `M ${walls.left + 80} ${canvas.height * 0.72} C ${walls.left + 50} ${canvas.height * 0.5}, ${walls.right - 120} ${walls.top + 200}, ${launchLane.x - 40} ${walls.top + 150}`, stroke: 'rgba(255,120,255,0.6)', strokeWidth: 6, opacity: 0.8, glow: true },
+              onEnter() {
+                if (stateRef.tableState.jackpotReady) {
+                  stateRef.score += 3500;
+                  triggerCombo(1600);
+                  updateInfo();
+                  stateRef.tableState.jackpotReady = false;
+                  stateRef.tableState.litTargets = 0;
+                  stateRef.tableState.holoTargets.forEach(t => {
+                    t.up = true;
+                    t.elem.setAttribute('opacity', 1);
+                    t.light.setAttribute('opacity', 0);
+                  });
+                  showMessage('CITY JACKPOT +3500!', '#ffd86f');
+                } else {
+                  stateRef.tableState.rampHeat = Math.min(3, stateRef.tableState.rampHeat + 1);
+                }
+              }
+            });
+
+            helpers.createZone({
+              id: 'drone-scoop',
+              bounds: { x1: launchLane.x - 60, x2: launchLane.x - 20, y1: canvas.height * 0.6, y2: canvas.height - 160 },
+              cooldown: 1.2,
+              onEnter() {
+                stateRef.tableState.droneHits += 1;
+                if (stateRef.tableState.droneHits >= 2) {
+                  stateRef.tableState.droneHits = 0;
+                  spawnMultiBall(2, { x: walls.left + 160, y: walls.top + 100, vx: 3, vy: -3, message: 'Drone Multiball!' });
+                }
+              },
+              visual: { type: 'path', attrs: { d: `M ${launchLane.x - 40} ${canvas.height * 0.6} L ${launchLane.x - 50} ${canvas.height * 0.7}`, stroke: 'rgba(255,120,255,0.6)', 'stroke-width': 5, fill: 'none' }, filter: true }
+            });
+
+            helpers.createZone({
+              id: 'magnet-zone',
+              bounds: { x1: walls.left + 160, x2: walls.left + 260, y1: walls.top + 110, y2: walls.top + 210 },
+              cooldown: 0.8,
+              onEnter(ball) {
+                ball.vx *= 0.6;
+                ball.vy *= 0.6;
+                stateRef.score += 120;
+                triggerCombo(100);
+                updateInfo();
+              },
+              visual: { type: 'circle', attrs: { cx: walls.left + 210, cy: walls.top + 160, r: 38, stroke: 'rgba(255,120,255,0.45)', 'stroke-width': 4, fill: 'none' }, filter: true }
+            });
+
+            const slingLeft = [
+              { x: walls.left + stateRef.geometry.outlaneOffset, y: canvas.height - 200 },
+              { x: walls.left + stateRef.geometry.outlaneOffset + 4, y: canvas.height - 140 },
+              { x: stateRef.flippers.left?.x1 + 14 || walls.left + 96, y: canvas.height - 145 }
+            ];
+            const slingRight = [
+              { x: walls.right - stateRef.geometry.outlaneOffset, y: canvas.height - 200 },
+              { x: walls.right - stateRef.geometry.outlaneOffset - 4, y: canvas.height - 140 },
+              { x: stateRef.flippers.right?.x1 - 14 || walls.right - 96, y: canvas.height - 145 }
+            ];
+            helpers.createSling({ points: slingLeft });
+            helpers.createSling({ points: slingRight });
+          },
+          updatePhysics(tableState, balls, dt) {
+            if (tableState.rampHeat > 0) {
+              tableState.rampHeat = Math.max(0, tableState.rampHeat - dt);
+              balls.forEach(ball => {
+                if (ball.y < canvas.height * 0.45) {
+                  ball.vx *= 1 + 0.15 * dt * tableState.rampHeat;
+                  ball.vy *= 1 + 0.05 * dt * tableState.rampHeat;
+                }
+              });
+            }
+          },
+          updateArt(tableState, dt) {
+            if (tableState.neonPulse > 0) {
+              tableState.neonPulse = Math.max(0, tableState.neonPulse - dt * 1.8);
+              tableState.holoTargets.forEach(t => {
+                t.light.setAttribute('opacity', 0.3 + tableState.neonPulse * 0.7);
+              });
+            }
+          },
+          getObjectives(tableState) {
+            return [
+              { label: `${Math.min(4, tableState.litTargets)}/4 skyline nodes hacked`, complete: tableState.litTargets >= 4 },
+              { label: tableState.jackpotReady ? 'Ramp lit for jackpot!' : 'Light the holo ramp for jackpot', complete: tableState.jackpotReady },
+              { label: `${tableState.droneHits}/2 drone scoop hits for multiball`, complete: false }
+            ];
+          }
+        };
+
+        const templeSerpent = {
+          id: 'temple-serpent',
+          name: 'Temple of the Silver Serpent',
+          tagline: 'Awaken the guardian idol',
+          description: 'Scale vine ramps, awaken idols, and slip through secret passages to unleash ancient jackpots and chaos multiball.',
+          badges: ['Serpent Ramp', 'Totem Multiball', 'Secret Portal'],
+          palette: {
+            cssVars: {
+              '--pinball-bg': 'radial-gradient(circle at 30% 30%, #031307, #010603 72%)',
+              '--pinball-frame': 'rgba(140, 220, 160, 0.45)',
+              '--pinball-text': '#e9ffef',
+              '--pinball-pill': 'rgba(8, 40, 20, 0.72)',
+              '--pinball-pill-border': 'rgba(140, 220, 160, 0.45)',
+              '--pinball-button-bg': 'rgba(40, 150, 100, 0.85)',
+              '--pinball-button-glow': 'rgba(140, 255, 200, 0.7)'
+            },
+            boardStops: ['#052013', '#04150d', '#020906'],
+            boardHighlightStops: ['rgba(140, 255, 200, 0.4)', 'rgba(140, 255, 200, 0)'],
+            bumperStops: { center: '#fff', mid: '#9cffc4', outer: '#26a860' },
+            ballStops: ['#fff9d1', '#ffcb6f', '#ff8a4f'],
+            trailStops: ['rgba(255,200,130,0.7)', 'rgba(0,0,0,0)'],
+            targetStops: ['#ffe6a0', '#8cff9e'],
+            slingStops: ['#42e7b3', '#26885f'],
+            flipperStops: ['#ffdd8a', '#5ad27a', '#1b743f'],
+            accentGlow: 'rgba(140,255,200,0.45)',
+            laneGlow: 'rgba(120,255,200,0.55)',
+            plunger: '#5fd08c'
+          },
+          createState() {
+            return {
+              idols: [],
+              idolHits: 0,
+              serpentReady: false,
+              jackpotReady: false,
+              portalCooldown: 0,
+              vineGlow: 0
+            };
+          },
+          decorateBackground(stateRef) {
+            const vines = svgElem('path', { d: `M ${stateRef.geometry.walls.right - 40} ${stateRef.geometry.walls.top + 30} C ${canvas.width - 120} ${canvas.height * 0.3}, ${canvas.width - 40} ${canvas.height * 0.45}, ${stateRef.geometry.walls.left + 120} ${canvas.height - 220}`, stroke: 'rgba(80, 200, 140, 0.3)', 'stroke-width': 10, fill: 'none' }, state.layers.art);
+            vines.setAttribute('filter', state.filters.glow);
+          },
+          buildLayout(stateRef, helpers) {
+            const { walls, launchLane } = stateRef.geometry;
+            helpers.createBumper({ x: walls.left + 120, y: walls.top + 180, r: 22, score: 150 });
+            helpers.createBumper({ x: walls.right - 130, y: walls.top + 200, r: 20, score: 160 });
+            helpers.createBumper({ x: walls.left + 220, y: walls.top + 140, r: 18, score: 170 });
+
+            const idolXs = [walls.right - 90, walls.right - 130, walls.right - 170];
+            idolXs.forEach(x => {
+              const target = helpers.createDropTarget({
+                x,
+                y: walls.top + 260,
+                w: 14,
+                h: 32,
+                score: 240,
+                group: 'idol',
+                onHit(targetBall, targetRef) {
+                  stateRef.tableState.idolHits += 1;
+                  if (stateRef.tableState.idolHits >= idolXs.length) {
+                    stateRef.tableState.jackpotReady = true;
+                    spawnMultiBall(3, { x: walls.left + 120, y: walls.top + 90, vx: 2, vy: -3.5, message: 'Idol Awakens! Chaos Multiball!' });
+                  }
+                }
+              });
+              stateRef.tableState.idols.push(target);
+            });
+
+            helpers.createRamp({
+              id: 'serpent-ramp',
+              bounds: { x1: walls.right - 140, x2: walls.right - 60, y1: canvas.height * 0.55, y2: canvas.height * 0.76 },
+              exit: { x: walls.left + 80, y: walls.top + 110, vx: -5.5, vy: -3.2 },
+              score: 420,
+              visual: { path: `M ${walls.right - 90} ${canvas.height * 0.74} C ${walls.right - 80} ${canvas.height * 0.5}, ${walls.left + 180} ${walls.top + 160}, ${walls.left + 100} ${walls.top + 120}`, stroke: 'rgba(120,255,200,0.6)', strokeWidth: 6, opacity: 0.78, glow: true },
+              onEnter() {
+                if (stateRef.tableState.jackpotReady) {
+                  stateRef.score += 3200;
+                  triggerCombo(1400);
+                  updateInfo();
+                  stateRef.tableState.jackpotReady = false;
+                  stateRef.tableState.idolHits = 0;
+                  stateRef.tableState.idols.forEach(t => {
+                    t.up = true;
+                    t.elem.setAttribute('opacity', 1);
+                    t.light.setAttribute('opacity', 0);
+                  });
+                  showMessage('SERPENT JACKPOT +3200!', '#ffef8f');
+                } else {
+                  stateRef.tableState.vineGlow = 1;
+                }
+              }
+            });
+
+            helpers.createPortal({
+              id: 'secret-pass',
+              bounds: { x1: walls.left + 20, x2: walls.left + 70, y1: walls.top + 220, y2: walls.top + 320 },
+              target: { x: launchLane.x - 70, y: walls.top + 90, vx: 4, vy: -3 },
+              score: 260,
+              cooldown: 1.4,
+              onEnter() {
+                showMessage('Secret passage warp!', '#9cffae');
+              },
+              visual: { cx: walls.left + 46, cy: walls.top + 270, r: 26, stroke: 'rgba(120,255,200,0.6)', strokeWidth: 4, opacity: 0.8 }
+            });
+
+            helpers.createZone({
+              id: 'idol-reset',
+              bounds: { x1: walls.right - 120, x2: walls.right - 60, y1: walls.top + 100, y2: walls.top + 220 },
+              cooldown: 2,
+              onEnter() {
+                if (!stateRef.tableState.jackpotReady) {
+                  stateRef.tableState.idols.forEach(t => {
+                    t.up = true;
+                    t.elem.setAttribute('opacity', 1);
+                    t.light.setAttribute('opacity', 0);
+                  });
+                  stateRef.tableState.idolHits = 0;
+                  showMessage('Idol reset - go again!', '#8fffd4');
+                }
+              }
+            });
+
+            const slingLeft = [
+              { x: walls.left + stateRef.geometry.outlaneOffset, y: canvas.height - 200 },
+              { x: walls.left + stateRef.geometry.outlaneOffset + 4, y: canvas.height - 140 },
+              { x: stateRef.flippers.left?.x1 + 16 || walls.left + 100, y: canvas.height - 150 }
+            ];
+            const slingRight = [
+              { x: walls.right - stateRef.geometry.outlaneOffset, y: canvas.height - 200 },
+              { x: walls.right - stateRef.geometry.outlaneOffset - 4, y: canvas.height - 140 },
+              { x: stateRef.flippers.right?.x1 - 16 || walls.right - 100, y: canvas.height - 150 }
+            ];
+            helpers.createSling({ points: slingLeft });
+            helpers.createSling({ points: slingRight });
+          },
+          updatePhysics(tableState, balls, dt) {
+            tableState.portalCooldown = Math.max(0, tableState.portalCooldown - dt);
+          },
+          updateArt(tableState, dt) {
+            if (tableState.vineGlow > 0) {
+              tableState.vineGlow = Math.max(0, tableState.vineGlow - dt * 1.4);
+            }
+            tableState.idols.forEach(target => {
+              if (!target.up) {
+                target.light.setAttribute('opacity', 0.6 + 0.3 * Math.sin(Date.now() / 200));
+              }
+            });
+          },
+          getObjectives(tableState) {
+            return [
+              { label: `${Math.min(3, tableState.idolHits)}/3 idols awakened`, complete: tableState.idolHits >= 3 },
+              { label: tableState.jackpotReady ? 'Serpent ramp lit - claim jackpot!' : 'Light serpent ramp jackpot', complete: tableState.jackpotReady },
+              { label: 'Discover the secret passage warp', complete: false }
+            ];
+          }
+        };
+
+        return [stellarForge, neonSkyline, templeSerpent];
       }
-    });
-
-    resetBall();
-    initSVG();
-    updateInfo();
-    updateComboDisplay();
-
-    function loop(){
-      step();
-      requestAnimationFrame(loop);
-    }
-    requestAnimationFrame(loop);
+    })();
   </script>
   <script>
     fetch('sidebar.html')
       .then(r => r.text())
       .then(html => {
         const placeholder = document.getElementById('sidebar-placeholder');
-        if(placeholder) placeholder.outerHTML = html;
+        if (placeholder) placeholder.outerHTML = html;
       });
   </script>
 </body>
