@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720">
+  <defs>
+    <linearGradient id="skyline" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b00ff" />
+      <stop offset="50%" stop-color="#060035" />
+      <stop offset="100%" stop-color="#000000" />
+    </linearGradient>
+    <linearGradient id="jet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73faff" />
+      <stop offset="100%" stop-color="#ff68d7" />
+    </linearGradient>
+    <linearGradient id="trail" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe86e" />
+      <stop offset="100%" stop-color="#ff2a88" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="720" fill="url(#skyline)" />
+  <g opacity="0.35" stroke="#68faff" stroke-width="3">
+    <path d="M80 540h800" />
+    <path d="M80 480h800" stroke-dasharray="18 18" />
+    <path d="M80 600h800" stroke-dasharray="24 20" />
+  </g>
+  <g opacity="0.4" fill="#68faff">
+    <circle cx="160" cy="460" r="14" />
+    <circle cx="260" cy="500" r="12" />
+    <circle cx="360" cy="460" r="16" />
+    <circle cx="560" cy="500" r="12" />
+    <circle cx="660" cy="460" r="14" />
+    <circle cx="780" cy="500" r="16" />
+  </g>
+  <g>
+    <path d="M120 600h720v120H120z" fill="#030022" />
+    <g fill="#09044a">
+      <rect x="160" y="520" width="60" height="200" />
+      <rect x="260" y="540" width="80" height="180" />
+      <rect x="380" y="560" width="70" height="160" />
+      <rect x="470" y="530" width="110" height="190" />
+      <rect x="620" y="560" width="70" height="160" />
+      <rect x="720" y="540" width="90" height="180" />
+      <rect x="830" y="520" width="50" height="200" />
+    </g>
+    <g fill="#ff79ff">
+      <rect x="176" y="560" width="20" height="30" />
+      <rect x="176" y="610" width="20" height="30" />
+      <rect x="176" y="660" width="20" height="30" />
+      <rect x="296" y="590" width="20" height="30" />
+      <rect x="296" y="640" width="20" height="30" />
+      <rect x="386" y="600" width="20" height="30" />
+      <rect x="386" y="650" width="20" height="30" />
+      <rect x="506" y="580" width="20" height="30" />
+      <rect x="506" y="630" width="20" height="30" />
+      <rect x="636" y="600" width="20" height="30" />
+      <rect x="636" y="650" width="20" height="30" />
+      <rect x="746" y="590" width="20" height="30" />
+      <rect x="746" y="640" width="20" height="30" />
+      <rect x="846" y="560" width="20" height="30" />
+      <rect x="846" y="610" width="20" height="30" />
+      <rect x="846" y="660" width="20" height="30" />
+    </g>
+  </g>
+  <g opacity="0.5" stroke="#ff2adc" stroke-width="12" stroke-linecap="round">
+    <path d="M320 420l140-100" />
+    <path d="M640 420l-140-100" />
+  </g>
+  <g>
+    <path d="M480 200l-120 200h240z" fill="url(#jet)" />
+    <path d="M480 200l-40 160h80z" fill="#ffffff" opacity="0.7" />
+    <path d="M480 200l-20 80h40z" fill="#1b0035" opacity="0.6" />
+  </g>
+  <g>
+    <path d="M480 400v180" stroke="url(#trail)" stroke-width="28" stroke-linecap="round" opacity="0.85" />
+    <path d="M480 520v120" stroke="#ff8eff" stroke-width="14" stroke-linecap="round" opacity="0.7" />
+  </g>
+  <g opacity="0.55" fill="#73faff">
+    <circle cx="220" cy="160" r="18" />
+    <circle cx="360" cy="120" r="22" />
+    <circle cx="520" cy="100" r="18" />
+    <circle cx="660" cy="140" r="20" />
+    <circle cx="780" cy="120" r="16" />
+  </g>
+</svg>

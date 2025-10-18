@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720">
+  <defs>
+    <linearGradient id="storm" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1d0244" />
+      <stop offset="50%" stop-color="#080020" />
+      <stop offset="100%" stop-color="#000000" />
+    </linearGradient>
+    <radialGradient id="explosion" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe98a" />
+      <stop offset="50%" stop-color="#ff5a5a" />
+      <stop offset="100%" stop-color="#3c0028" />
+    </radialGradient>
+    <linearGradient id="tank-a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#63faff" />
+      <stop offset="100%" stop-color="#1a61ff" />
+    </linearGradient>
+    <linearGradient id="tank-b" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd86e" />
+      <stop offset="100%" stop-color="#ff3d85" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="720" fill="url(#storm)" />
+  <circle cx="480" cy="220" r="180" fill="url(#explosion)" opacity="0.8" />
+  <g opacity="0.5" stroke="#65faff" stroke-width="3">
+    <path d="M180 560h600" />
+    <path d="M160 600h640" stroke-dasharray="26 18" />
+    <path d="M200 640h560" stroke-dasharray="18 14" />
+  </g>
+  <g opacity="0.35" fill="#65faff">
+    <circle cx="240" cy="520" r="12" />
+    <circle cx="360" cy="540" r="14" />
+    <circle cx="480" cy="520" r="16" />
+    <circle cx="600" cy="540" r="14" />
+    <circle cx="720" cy="520" r="12" />
+  </g>
+  <g>
+    <g transform="translate(260,440)">
+      <rect x="-70" y="80" width="140" height="50" rx="18" fill="url(#tank-a)" />
+      <rect x="-44" y="52" width="88" height="44" rx="18" fill="#2cc7ff" />
+      <rect x="18" y="34" width="160" height="24" rx="12" fill="#5dfaff" />
+      <rect x="160" y="40" width="120" height="12" rx="6" fill="#ffffff" />
+      <circle cx="-36" cy="134" r="20" fill="#020818" />
+      <circle cx="36" cy="134" r="20" fill="#020818" />
+      <circle cx="-36" cy="134" r="10" fill="#54f8ff" />
+      <circle cx="36" cy="134" r="10" fill="#54f8ff" />
+    </g>
+    <g transform="translate(640,440)">
+      <rect x="-70" y="80" width="140" height="50" rx="18" fill="url(#tank-b)" />
+      <rect x="-44" y="52" width="88" height="44" rx="18" fill="#ff8f66" />
+      <rect x="-182" y="34" width="160" height="24" rx="12" fill="#ffd463" />
+      <rect x="-294" y="40" width="120" height="12" rx="6" fill="#ffe8b4" />
+      <circle cx="-36" cy="134" r="20" fill="#26000b" />
+      <circle cx="36" cy="134" r="20" fill="#26000b" />
+      <circle cx="-36" cy="134" r="10" fill="#ff9d6c" />
+      <circle cx="36" cy="134" r="10" fill="#ff9d6c" />
+    </g>
+  </g>
+  <g opacity="0.75" stroke="#ff9ef8" stroke-width="12" stroke-linecap="round">
+    <path d="M340 440l160-100" />
+    <path d="M620 440l-160-100" />
+  </g>
+  <g opacity="0.6" fill="#ffffff">
+    <circle cx="480" cy="340" r="22" />
+    <circle cx="420" cy="320" r="14" />
+    <circle cx="540" cy="320" r="14" />
+  </g>
+  <g opacity="0.45" stroke="#ffe76c" stroke-width="10" stroke-linecap="round">
+    <path d="M480 340v-160" />
+    <path d="M440 360l-80-120" />
+    <path d="M520 360l80-120" />
+  </g>
+  <g opacity="0.5" fill="#65faff">
+    <circle cx="200" cy="660" r="16" />
+    <circle cx="760" cy="660" r="16" />
+    <circle cx="480" cy="660" r="18" />
+  </g>
+</svg>

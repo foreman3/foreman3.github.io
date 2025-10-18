@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720">
+  <defs>
+    <radialGradient id="drop-bg" cx="50%" cy="15%" r="80%">
+      <stop offset="0%" stop-color="#ffb6ff" stop-opacity="0.65" />
+      <stop offset="50%" stop-color="#8433ff" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#14002b" />
+    </radialGradient>
+    <linearGradient id="basket" x1="0%" x2="0%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffaf3f" />
+      <stop offset="100%" stop-color="#b85812" />
+    </linearGradient>
+    <linearGradient id="fruit-glow" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffe066" />
+      <stop offset="100%" stop-color="#ff2fb5" />
+    </linearGradient>
+    <linearGradient id="fruit-berry" x1="0%" x2="100%">
+      <stop offset="0%" stop-color="#77ffef" />
+      <stop offset="100%" stop-color="#4d39ff" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="720" fill="url(#drop-bg)" />
+  <g fill="none" stroke="#ffe9ff" stroke-opacity="0.4" stroke-width="6">
+    <path d="M184 80c32 32 52 68 52 102" />
+    <path d="M340 60c42 32 68 82 62 140" />
+    <path d="M510 90c32 18 54 64 40 130" />
+    <path d="M698 120c30 28 48 72 34 132" />
+    <path d="M830 80c30 30 48 82 30 146" />
+  </g>
+  <g>
+    <ellipse cx="250" cy="210" rx="66" ry="86" fill="url(#fruit-glow)" transform="rotate(-18 250 210)" />
+    <circle cx="580" cy="160" r="72" fill="url(#fruit-berry)" />
+    <circle cx="430" cy="260" r="48" fill="#ff6bd6" />
+    <circle cx="730" cy="230" r="62" fill="#74ffe1" />
+    <circle cx="360" cy="120" r="36" fill="#fffe8a" />
+    <ellipse cx="700" cy="120" rx="26" ry="40" fill="#ff8a47" />
+  </g>
+  <g opacity="0.45" fill="#ffe2ff">
+    <circle cx="220" cy="340" r="18" />
+    <circle cx="620" cy="300" r="22" />
+    <circle cx="760" cy="320" r="14" />
+    <circle cx="520" cy="320" r="16" />
+  </g>
+  <g>
+    <path d="M260 482c70-32 144-48 220-48s150 16 220 48" stroke="#ffefc7" stroke-width="16" stroke-linecap="round" stroke-opacity="0.7" />
+    <path d="M220 512h520l-36 132H256z" fill="url(#basket)" />
+    <path d="M256 620h448" stroke="#ffe5c7" stroke-width="18" stroke-linecap="round" stroke-opacity="0.7" />
+    <path d="M260 512c60 40 126 60 220 60s160-20 220-60" fill="none" stroke="#ffa43f" stroke-width="18" stroke-linecap="round" stroke-opacity="0.55" />
+  </g>
+  <g opacity="0.6">
+    <circle cx="350" cy="438" r="28" fill="#ff68c0" />
+    <circle cx="440" cy="422" r="32" fill="#ffd85e" />
+    <circle cx="520" cy="432" r="24" fill="#75f6ff" />
+    <circle cx="610" cy="446" r="30" fill="#ff79ff" />
+  </g>
+</svg>
