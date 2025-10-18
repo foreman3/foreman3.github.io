@@ -1,9 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 128">
-  <rect x="18" y="4" width="28" height="80" fill="#42a5f5"/>
-  <rect x="12" y="0" width="40" height="8" fill="#1e88e5"/>
-  <rect x="16" y="20" width="32" height="24" fill="#bbdefb"/>
-  <rect x="16" y="48" width="32" height="24" fill="#bbdefb"/>
-  <rect x="4" y="60" width="12" height="20" fill="#424242"/>
-  <rect x="48" y="60" width="12" height="20" fill="#424242"/>
-  <rect x="18" y="84" width="28" height="20" fill="#212121"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 160">
+  <defs>
+    <linearGradient id="rival-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#63f1ff"/>
+      <stop offset="45%" stop-color="#3bb4ff"/>
+      <stop offset="100%" stop-color="#2b5bff"/>
+    </linearGradient>
+    <linearGradient id="rival-nose" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffe0ff"/>
+      <stop offset="100%" stop-color="#bb89ff"/>
+    </linearGradient>
+    <linearGradient id="rival-seat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1c1f4f"/>
+      <stop offset="100%" stop-color="#090a23"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="128" height="160" fill="none"/>
+  <g transform="translate(8 6)">
+    <path d="M52 0h8c8 0 16 6 20 14l18 32c4 7 4 15 0 22l-8 14c-2 4-2 8 0 12l10 18c4 7 4 16-1 23l-8 12c-6 8-15 13-25 13H54c-10 0-19-5-25-13l-8-12c-5-7-5-16-1-23l10-18c2-4 2-8 0-12l-8-14c-4-7-4-15 0-22l18-32C36 6 44 0 52 0Z" fill="url(#rival-body)"/>
+    <path d="M28 54h64l10 22H18l10-22Z" fill="#7bf4ff" opacity="0.35"/>
+    <path d="M32 18h56l14 24H18l14-24Z" fill="#d7f4ff" opacity="0.35"/>
+    <path d="M44 34h40l10 18H34l10-18Z" fill="#ffffff" opacity="0.18"/>
+    <path d="M48 10h32c5 0 9 3 11 7l12 20H25l12-20c2-4 6-7 11-7Z" fill="url(#rival-seat)"/>
+    <path d="M54 40h20c5 0 9 3 11 8l8 18c2 4 2 8 0 12l-8 18c-2 5-6 8-11 8H54c-5 0-9-3-11-8l-8-18c-2-4-2-8 0-12l8-18c2-5 6-8 11-8Z" fill="#161a39" opacity="0.75"/>
+    <path d="M40 70h40l16 30H24l16-30Z" fill="#c7abff" opacity="0.3"/>
+    <path d="M52 120h24l10 24H42l10-24Z" fill="url(#rival-nose)"/>
+    <ellipse cx="64" cy="118" rx="26" ry="10" fill="#c99cff" opacity="0.65"/>
+    <path d="M64 128c18 0 32 8 36 20l-6 10c-4 8-12 12-21 12H55c-9 0-17-4-21-12l-6-10c4-12 18-20 36-20Z" fill="#f4f8ff" opacity="0.2"/>
+    <g fill="#0c0f24">
+      <path d="M6 64h16c4 0 7 2 9 5l7 13c3 5 3 10 0 15l-7 13c-2 3-5 5-9 5H6c-4 0-7-2-9-5l-5-8c-3-5-3-10 0-15l5-8c2-3 5-5 9-5Z"/>
+      <path d="M114 64h-16c-4 0-7 2-9 5l-7 13c-3 5-3 10 0 15l7 13c2 3 5 5 9 5h16c4 0 7-2 9-5l5-8c3-5 3-10 0-15l-5-8c-2-3-5-5-9-5Z"/>
+    </g>
+    <g fill="#344066">
+      <ellipse cx="16" cy="96" rx="10" ry="6"/>
+      <ellipse cx="112" cy="96" rx="10" ry="6"/>
+    </g>
+    <path d="M50 24h28l6 10H44l6-10Z" fill="#f1ecff" opacity="0.7"/>
+    <path d="M56 44h16c3 0 6 2 7 5l4 8H45l4-8c1-3 4-5 7-5Z" fill="#1d2445"/>
+    <circle cx="64" cy="54" r="6" fill="#2b365d"/>
+    <path d="M44 140h40l4 12H40l4-12Z" fill="#e3c5ff" opacity="0.7"/>
+  </g>
 </svg>
