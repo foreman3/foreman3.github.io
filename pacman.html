@@ -259,6 +259,10 @@ function move(entity, dir) {
   const ny = entity.y + dir.y * speed;
   const futureTile = tileAt(nx, ny);
   if (isWallTile(futureTile)) {
+    if (dir.x > 0) entity.x = Math.floor(entity.x);
+    else if (dir.x < 0) entity.x = Math.ceil(entity.x);
+    if (dir.y > 0) entity.y = Math.floor(entity.y);
+    else if (dir.y < 0) entity.y = Math.ceil(entity.y);
     return false;
   }
   entity.x = nx;
