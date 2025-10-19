@@ -1339,7 +1339,7 @@
     const y = canvas.height*0.7;
     ctx.save();
     ctx.translate(x, y + plane.pitch * 1.5);
-    ctx.rotate((plane.roll || 0) * Math.PI / 180 * 0.35);
+    ctx.rotate(-(plane.roll || 0) * Math.PI / 180 * 0.35);
     ctx.strokeStyle = 'rgba(120,255,210,0.9)';
     ctx.lineWidth = 1.3;
     ctx.shadowColor = 'rgba(120,255,210,0.6)';
