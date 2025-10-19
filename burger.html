@@ -190,6 +190,11 @@ const ROWS = 18;
 canvas.width = COLS * TILE;
 canvas.height = ROWS * TILE;
 
+const backgroundCache = document.createElement('canvas');
+const backgroundCtx = backgroundCache.getContext('2d');
+const boardCache = document.createElement('canvas');
+const boardCacheCtx = boardCache.getContext('2d');
+
 const ASSET_PATHS = {
   cook: 'images/cook.svg',
   burger_top: 'images/burger_top.svg',
@@ -314,10 +319,14 @@ const pieces = [];
 let condiments = [];
 const pepperBursts = [];
 const particles = [];
+const particlePool = [];
+const MAX_PARTICLES = 180;
 const floatingText = [];
 let enemies = [];
 let pendingSpawns = [];
 const completedStacks = new Map();
+const pieceColumnIndex = new Map();
+let columnSpans = [];
 
 let score = 0;
 let lives = 3;
@@ -339,6 +348,8 @@ const skylineShapes = Array.from({length: 10}, () => ({
   width: 80 + Math.random() * 120,
   height: 60 + Math.random() * 160
 }));
+
+rebuildBackgroundCache();
 
 const hudLevel = document.getElementById('hud-level');
 const hudScore = document.getElementById('hud-score');
@@ -372,21 +383,114 @@ function addScore(amount, x, y, color = '#ffe27a'){
   updateHud();
 }
 
+function rebuildPieceColumnIndex(){
+  pieceColumnIndex.clear();
+  for(const piece of pieces){
+    let columnSet = pieceColumnIndex.get(piece.x);
+    if(!columnSet){
+      columnSet = [];
+      pieceColumnIndex.set(piece.x, columnSet);
+    }
+    columnSet.push(piece);
+  }
+}
+
+function removePieceFromIndex(piece){
+  const columnSet = pieceColumnIndex.get(piece.x);
+  if(!columnSet) return;
+  const idx = columnSet.indexOf(piece);
+  if(idx === -1) return;
+  const lastIndex = columnSet.length - 1;
+  if(idx !== lastIndex){
+    columnSet[idx] = columnSet[lastIndex];
+  }
+  columnSet.pop();
+}
+
+function getColumnsForX(x){
+  const matches = [];
+  for(const span of columnSpans){
+    if(x >= span.min - 0.001 && x <= span.max + 0.001){
+      matches.push(span.key);
+    }
+  }
+  return matches;
+}
+
+function getColumnsForSpan(start, end){
+  const matches = [];
+  for(const span of columnSpans){
+    if(span.max >= start && span.min <= end){
+      matches.push(span.key);
+    }
+  }
+  return matches;
+}
+
+function forEachPieceAtX(x, callback){
+  const columns = getColumnsForX(x);
+  for(const key of columns){
+    const columnSet = pieceColumnIndex.get(key);
+    if(!columnSet) continue;
+    for(const piece of columnSet){
+      if(piece.complete) continue;
+      if(x >= piece.x && x <= piece.x + 2){
+        if(callback(piece) === true) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function findSupportingPiece(piece){
+  let closest = null;
+  let bestDelta = Infinity;
+  const start = piece.x;
+  const end = piece.x + 2;
+  const columns = getColumnsForSpan(start, end);
+  for(const key of columns){
+    const columnSet = pieceColumnIndex.get(key);
+    if(!columnSet) continue;
+    for(const candidate of columnSet){
+      if(candidate === piece || candidate.complete) continue;
+      if(candidate.x + 2 <= start || candidate.x >= end) continue;
+      const delta = Math.abs(piece.y - (candidate.y - 1));
+      if(delta < 0.12 && delta < bestDelta){
+        bestDelta = delta;
+        closest = candidate;
+      }
+    }
+  }
+  return closest;
+}
+
 function spawnParticles(x, y, color, count = 12){
-  const amount = Math.max(1, Math.round(count));
+  if(particles.length >= MAX_PARTICLES) return;
+  const available = MAX_PARTICLES - particles.length;
+  const amount = Math.min(available, Math.max(1, Math.round(count)));
   for(let i = 0; i < amount; i++){
+    const particle = particlePool.pop() ?? {};
     const angle = Math.random() * Math.PI * 2;
     const speed = 0.05 + Math.random() * 0.12;
-    particles.push({
-      x,
-      y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 0.03,
-      life: 60 + Math.random() * 30,
-      color,
-      size: 0.08 + Math.random() * 0.08
-    });
+    particle.x = x;
+    particle.y = y;
+    particle.vx = Math.cos(angle) * speed;
+    particle.vy = Math.sin(angle) * speed - 0.03;
+    particle.life = 60 + Math.random() * 30;
+    particle.color = color;
+    particle.size = 0.08 + Math.random() * 0.08;
+    particles.push(particle);
   }
+}
+
+function recycleParticleAt(index){
+  const lastIndex = particles.length - 1;
+  const removed = particles[index];
+  if(index !== lastIndex){
+    particles[index] = particles[lastIndex];
+  }
+  particles.pop();
+  particlePool.push(removed);
 }
 
 function loadLevel(index){
@@ -397,7 +501,9 @@ function loadLevel(index){
   floors = level.floors.slice();
   ladders = level.ladders.map(l => ({...l}));
   burgerColumns = level.burgerX.slice();
+  columnSpans = burgerColumns.map(column => ({ key: column, min: column, max: column + 2 }));
   pieces.length = 0;
+  pieceColumnIndex.clear();
   completedStacks.clear();
   condiments = level.condiments.map(c => ({
     x: c.x,
@@ -427,6 +533,8 @@ function loadLevel(index){
     }
     completedStacks.set(column, []);
   }
+  rebuildPieceColumnIndex();
+  rebuildBoardCache();
   resetActors();
   resetCombo();
   gameOver = false;
@@ -473,11 +581,25 @@ function isOnFloor(obj){
 }
 
 function isOnPiece(obj){
-  return pieces.some(p => !p.complete && Math.abs(obj.y - (p.y - 1)) < 0.12 && obj.x >= p.x && obj.x <= p.x + 2);
+  let result = false;
+  forEachPieceAtX(obj.x, piece => {
+    if(Math.abs(obj.y - (piece.y - 1)) < 0.12){
+      result = true;
+      return true;
+    }
+  });
+  return result;
 }
 
 function pieceUnder(obj){
-  return pieces.find(p => !p.complete && Math.abs(obj.y - (p.y - 1)) < 0.12 && obj.x >= p.x && obj.x <= p.x + 2);
+  let match = null;
+  forEachPieceAtX(obj.x, piece => {
+    if(Math.abs(obj.y - (piece.y - 1)) < 0.12){
+      match = piece;
+      return true;
+    }
+  });
+  return match;
 }
 
 function enemiesOnPiece(piece){
@@ -506,20 +628,20 @@ function ladderAt(x, y, toleranceX = 0.45){
 }
 
 function ridePieces(entity, step){
-  for(const p of pieces){
-    if(p.falling && entity.x >= p.x && entity.x <= p.x + 2 && Math.abs(entity.y - (p.y - 1)) < 0.12){
+  forEachPieceAtX(entity.x, piece => {
+    if(piece.falling && Math.abs(entity.y - (piece.y - 1)) < 0.12){
       entity.y += 0.1 * step;
     }
-  }
+  });
 }
 
 function climbOntoPiece(entity){
-  for(const p of pieces){
-    if(!p.falling && !p.complete && Math.abs(entity.y - p.y) < 0.12 && entity.x >= p.x && entity.x <= p.x + 2){
-      entity.y = p.y - 1;
-      break;
+  forEachPieceAtX(entity.x, piece => {
+    if(!piece.falling && Math.abs(entity.y - piece.y) < 0.12){
+      entity.y = piece.y - 1;
+      return true;
     }
-  }
+  });
 }
 
 function applyGravity(entity, step){
@@ -533,6 +655,7 @@ function finalizePiece(piece){
   piece.y = ROWS;
   piece.falling = false;
   piece.complete = true;
+  removePieceFromIndex(piece);
   const stack = completedStacks.get(piece.x) ?? [];
   stack.push(piece.type);
   completedStacks.set(piece.x, stack);
@@ -579,7 +702,7 @@ function updatePieces(step){
 
       p.y += 0.22 * step;
 
-      const belowPiece = pieces.find(o => o !== p && !o.complete && Math.abs(p.y - (o.y - 1)) < 0.12 && p.x + 2 > o.x && p.x < o.x + 2);
+      const belowPiece = findSupportingPiece(p);
       if(belowPiece){
         p.y = belowPiece.y - 1;
         p.floorIndex = belowPiece.floorIndex;
@@ -657,7 +780,7 @@ function updateParticles(step){
     p.vy += 0.01 * step;
     p.life -= step;
     if(p.life <= 0){
-      particles.splice(i, 1);
+      recycleParticleAt(i);
     }
   }
 }
@@ -864,70 +987,92 @@ function stepGame(dt){
   }
 }
 
-function drawBackground(){
-  ctx.fillStyle = '#120805';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const radial = ctx.createRadialGradient(canvas.width * 0.5, canvas.height * 0.22, 60, canvas.width * 0.5, canvas.height * 0.22, canvas.width * 0.9);
+function drawBackground(targetCtx = ctx){
+  const { width, height } = targetCtx.canvas;
+  targetCtx.fillStyle = '#120805';
+  targetCtx.fillRect(0, 0, width, height);
+  const radial = targetCtx.createRadialGradient(width * 0.5, height * 0.22, 60, width * 0.5, height * 0.22, width * 0.9);
   radial.addColorStop(0, 'rgba(255, 214, 163, 0.35)');
   radial.addColorStop(1, 'rgba(18, 8, 5, 0)');
-  ctx.fillStyle = radial;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  targetCtx.fillStyle = radial;
+  targetCtx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-  const skylineHeight = canvas.height * 0.55;
+  targetCtx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  const skylineHeight = height * 0.55;
   for(const building of skylineShapes){
-    ctx.fillRect(building.x, skylineHeight - building.height, building.width, building.height);
+    targetCtx.fillRect(building.x, skylineHeight - building.height, building.width, building.height);
   }
 }
 
-function drawPlates(){
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  ctx.lineWidth = 0.04;
+function drawPlates(targetCtx = ctx){
+  targetCtx.save();
+  targetCtx.strokeStyle = 'rgba(255,255,255,0.25)';
+  targetCtx.fillStyle = 'rgba(255,255,255,0.08)';
+  targetCtx.lineWidth = 0.04;
   for(const column of burgerColumns){
-    ctx.beginPath();
-    ctx.ellipse(column + 1, ROWS - 0.15, 1.4, 0.35, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    targetCtx.beginPath();
+    targetCtx.ellipse(column + 1, ROWS - 0.15, 1.4, 0.35, 0, 0, Math.PI * 2);
+    targetCtx.fill();
+    targetCtx.stroke();
   }
-  ctx.restore();
+  targetCtx.restore();
 }
 
-function drawFloors(){
+function drawFloors(targetCtx = ctx){
   for(const f of floors){
-    const grad = ctx.createLinearGradient(0, f - 0.12, 0, f + 0.12);
+    const grad = targetCtx.createLinearGradient(0, f - 0.12, 0, f + 0.12);
     grad.addColorStop(0, 'rgba(255, 182, 108, 0.9)');
     grad.addColorStop(1, 'rgba(200, 120, 60, 0.9)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(-1, f - 0.12, COLS + 2, 0.24);
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.fillRect(-1, f - 0.14, COLS + 2, 0.02);
+    targetCtx.fillStyle = grad;
+    targetCtx.fillRect(-1, f - 0.12, COLS + 2, 0.24);
+    targetCtx.fillStyle = 'rgba(255,255,255,0.15)';
+    targetCtx.fillRect(-1, f - 0.14, COLS + 2, 0.02);
   }
 }
 
-function drawLadders(){
-  ctx.save();
-  ctx.lineWidth = 0.05;
+function drawLadders(targetCtx = ctx){
+  targetCtx.save();
+  targetCtx.lineWidth = 0.05;
   for(const l of ladders){
     const top = l.top - 0.6;
     const bottom = l.bottom + 0.2;
-    const grad = ctx.createLinearGradient(l.x, top, l.x, bottom);
+    const grad = targetCtx.createLinearGradient(l.x, top, l.x, bottom);
     grad.addColorStop(0, '#fffd9a');
     grad.addColorStop(1, '#ffb347');
-    ctx.strokeStyle = grad;
-    ctx.beginPath();
-    ctx.moveTo(l.x + 0.25, top);
-    ctx.lineTo(l.x + 0.25, bottom);
-    ctx.moveTo(l.x + 0.75, top);
-    ctx.lineTo(l.x + 0.75, bottom);
+    targetCtx.strokeStyle = grad;
+    targetCtx.beginPath();
+    targetCtx.moveTo(l.x + 0.25, top);
+    targetCtx.lineTo(l.x + 0.25, bottom);
+    targetCtx.moveTo(l.x + 0.75, top);
+    targetCtx.lineTo(l.x + 0.75, bottom);
     for(let y = top + 0.5; y < bottom; y += 0.5){
-      ctx.moveTo(l.x + 0.25, y);
-      ctx.lineTo(l.x + 0.75, y);
+      targetCtx.moveTo(l.x + 0.25, y);
+      targetCtx.lineTo(l.x + 0.75, y);
     }
-    ctx.stroke();
+    targetCtx.stroke();
   }
-  ctx.restore();
+  targetCtx.restore();
+}
+
+function rebuildBackgroundCache(){
+  backgroundCache.width = canvas.width;
+  backgroundCache.height = canvas.height;
+  backgroundCtx.setTransform(1, 0, 0, 1, 0, 0);
+  backgroundCtx.clearRect(0, 0, backgroundCache.width, backgroundCache.height);
+  drawBackground(backgroundCtx);
+}
+
+function rebuildBoardCache(){
+  boardCache.width = canvas.width;
+  boardCache.height = canvas.height;
+  boardCacheCtx.setTransform(1, 0, 0, 1, 0, 0);
+  boardCacheCtx.clearRect(0, 0, boardCache.width, boardCache.height);
+  boardCacheCtx.save();
+  boardCacheCtx.scale(TILE, TILE);
+  drawPlates(boardCacheCtx);
+  drawFloors(boardCacheCtx);
+  drawLadders(boardCacheCtx);
+  boardCacheCtx.restore();
 }
 
 function drawCondiments(){
@@ -1051,12 +1196,16 @@ function drawFloatingText(){
 
 function draw(){
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  drawBackground();
+  if(backgroundCache.width !== canvas.width || backgroundCache.height !== canvas.height){
+    rebuildBackgroundCache();
+  }
+  ctx.drawImage(backgroundCache, 0, 0);
+  if(boardCache.width !== canvas.width || boardCache.height !== canvas.height){
+    rebuildBoardCache();
+  }
+  ctx.drawImage(boardCache, 0, 0);
   ctx.save();
   ctx.scale(TILE, TILE);
-  drawPlates();
-  drawFloors();
-  drawLadders();
   drawCondiments();
   drawCompletedStacks();
   drawPieces();
