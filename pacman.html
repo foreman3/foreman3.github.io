@@ -297,31 +297,15 @@ function move(entity, dir) {
 }
 
 function updatePacman() {
-  const wantsTurn = pacman.nextDir;
-  const reversing = pacman.dir.x === -wantsTurn.x && pacman.dir.y === -wantsTurn.y;
+  const wantsDir = pacman.nextDir;
+  const changingDirection = wantsDir.x !== pacman.dir.x || wantsDir.y !== pacman.dir.y;
 
-  if (reversing) {
-    pacman.dir = { ...wantsTurn };
-  }
-
-  const turning = wantsTurn.x !== pacman.dir.x || wantsTurn.y !== pacman.dir.y;
-  if (turning) {
-    const axis = wantsTurn.x !== 0 ? 'y' : 'x';
-    const distanceToCenter = Math.abs(pacman[axis] - Math.round(pacman[axis]));
-    if (reversing || distanceToCenter <= TURN_BUFFER) {
-      const alignedX = wantsTurn.y !== 0 ? Math.round(pacman.x) : pacman.x;
-      const alignedY = wantsTurn.x !== 0 ? Math.round(pacman.y) : pacman.y;
-      if (!isWall(alignedX + wantsTurn.x * 0.6, alignedY + wantsTurn.y * 0.6)) {
-        if (wantsTurn.y !== 0) pacman.x = alignedX;
-        if (wantsTurn.x !== 0) pacman.y = alignedY;
-        pacman.dir = { ...wantsTurn };
-      }
-    }
+  if (changingDirection && !isWall(pacman.x + wantsDir.x * 0.6, pacman.y + wantsDir.y * 0.6)) {
+    pacman.dir = { ...wantsDir };
   }
 
   if (!move(pacman, pacman.dir)) {
     pacman.dir = { x: 0, y: 0 };
-    snapToGrid(pacman);
   }
 
   snapToGrid(pacman);
