@@ -330,6 +330,7 @@ const BASE_FPS = 60;
 const FRAME_TIME = 1000 / BASE_FPS;
 const FIXED_DT = FRAME_TIME / 1000;
 const MAX_CATCHUP_STEPS = 5;
+const LADDER_EXIT_BAND = 0.44;
 let accumulator = 0;
 let lastTimestamp = null;
 
@@ -543,7 +544,21 @@ function finalizePiece(piece){
 
 function updatePieces(step){
   for(const p of pieces){
-    if(!p.falling) continue;
+    if(!p.falling){
+      if(!p.complete){
+        if(p.support){
+          p.y = p.support.y - 1;
+        } else {
+          const floorY = floors[p.floorIndex];
+          if(floorY !== undefined){
+            p.y = floorY;
+          } else if(p.y > ROWS){
+            p.y = ROWS;
+          }
+        }
+      }
+      continue;
+    }
     let safety = 0;
     while(p.falling && safety < floors.length + 2){
       safety++;
@@ -564,7 +579,7 @@ function updatePieces(step){
 
       p.y += 0.22 * step;
 
-      const belowPiece = pieces.find(o => o !== p && !o.complete && Math.abs(p.y - (o.y - 1)) < 0.05 && p.x + 2 > o.x && p.x < o.x + 2);
+      const belowPiece = pieces.find(o => o !== p && !o.complete && Math.abs(p.y - (o.y - 1)) < 0.12 && p.x + 2 > o.x && p.x < o.x + 2);
       if(belowPiece){
         p.y = belowPiece.y - 1;
         p.floorIndex = belowPiece.floorIndex;
@@ -685,7 +700,7 @@ function handlePlayer(step){
   if(player.invulnerable > 0) player.invulnerable = Math.max(0, player.invulnerable - step);
 
   const horizontalIntent = keys.left || keys.right;
-  const nearFloorMatch = floors.find(f => Math.abs(player.y - f) < 0.22);
+  const nearFloorMatch = floors.find(f => Math.abs(player.y - f) < LADDER_EXIT_BAND);
   const nearFloor = nearFloorMatch !== undefined;
   const alignedLadder = ladderAt(player.x, player.y);
   if(isOnFloor(player) || isOnPiece(player) || (alignedLadder && nearFloor)){
@@ -724,7 +739,7 @@ function handlePlayer(step){
     }
 
     if(!wantsToClimb){
-      const snapFloor = floors.find(f => Math.abs(player.y - f) < 0.22);
+      const snapFloor = floors.find(f => Math.abs(player.y - f) < LADDER_EXIT_BAND);
       if(snapFloor !== undefined){
         player.y = snapFloor;
       }
