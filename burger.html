@@ -279,12 +279,33 @@ const player = {
   invulnerable: 0
 };
 
-const enemyTypes = {
+const baseEnemyTypes = {
   fries: { speed: 0.06, climbSpeed: 0.07, stunTime: 140 },
   hotdog: { speed: 0.08, climbSpeed: 0.06, dashSpeed: 0.17, dashCooldown: 210, stunTime: 170 },
   soda: { speed: 0.05, climbSpeed: 0.09, floatSpeed: 0.12, stunTime: 150 }
 };
 
+let enemyTypes = {};
+
+function enemySpeedMultiplierForLevel(index){
+  return 0.5 + index * 0.1;
+}
+
+function applyEnemySpeedScaling(index){
+  const multiplier = enemySpeedMultiplierForLevel(index);
+  const scaleKeys = ['speed', 'climbSpeed', 'dashSpeed', 'floatSpeed'];
+  enemyTypes = Object.fromEntries(Object.entries(baseEnemyTypes).map(([key, def]) => {
+    const scaled = {...def};
+    for(const prop of scaleKeys){
+      if(prop in scaled){
+        scaled[prop] = scaled[prop] * multiplier;
+      }
+    }
+    return [key, scaled];
+  }));
+}
+
+let levelNumber = 0;
 let levelIndex = 0;
 let floors = [];
 let ladders = [];
@@ -326,7 +347,7 @@ const hudPepper = document.getElementById('hud-pepper');
 function updateHud(){
   hudLevel.innerHTML = `
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.6 5.6 6.2.5-4.7 4.2 1.4 6-5.5-3.1-5.5 3.1 1.4-6-4.7-4.2 6.2-.5z"></path></svg>
-    Level ${levelIndex + 1}`;
+    Level ${levelNumber + 1}`;
   hudScore.innerHTML = `
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v4H4zm2 6h12v4H6zm-2 6h16v4H4z"></path></svg>
     Score ${score.toLocaleString()}`;
@@ -368,8 +389,10 @@ function spawnParticles(x, y, color, count = 12){
 }
 
 function loadLevel(index){
-  levelIndex = index % levels.length;
+  levelNumber = index;
+  levelIndex = levelNumber % levels.length;
   const level = levels[levelIndex];
+  applyEnemySpeedScaling(levelNumber);
   floors = level.floors.slice();
   ladders = level.ladders.map(l => ({...l}));
   burgerColumns = level.burgerX.slice();
@@ -820,7 +843,7 @@ function stepGame(dt){
       document.getElementById('message').textContent = 'Level Complete!';
       setTimeout(() => {
         document.getElementById('message').textContent = '';
-        loadLevel(levelIndex + 1);
+        loadLevel(levelNumber + 1);
       }, 2400);
     }
   }
@@ -1045,7 +1068,7 @@ document.addEventListener('keydown', e => {
       lives = 3;
       score = 0;
     }
-    loadLevel(levelIndex);
+    loadLevel(levelNumber);
   }
 });
 
