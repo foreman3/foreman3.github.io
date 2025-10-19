@@ -327,6 +327,8 @@ let pendingSpawns = [];
 const completedStacks = new Map();
 const pieceColumnIndex = new Map();
 let columnSpans = [];
+let levelIntroTimer = 0;
+let messageClearTimeout = null;
 
 let score = 0;
 let lives = 3;
@@ -355,6 +357,23 @@ const hudLevel = document.getElementById('hud-level');
 const hudScore = document.getElementById('hud-score');
 const hudLives = document.getElementById('hud-lives');
 const hudPepper = document.getElementById('hud-pepper');
+const messageEl = document.getElementById('message');
+
+function setLevelMessage(text, duration = 0){
+  if(messageClearTimeout){
+    clearTimeout(messageClearTimeout);
+    messageClearTimeout = null;
+  }
+  messageEl.textContent = text ?? '';
+  if(duration > 0){
+    messageClearTimeout = setTimeout(() => {
+      if(messageEl.textContent === (text ?? '')){
+        messageEl.textContent = '';
+      }
+      messageClearTimeout = null;
+    }, duration);
+  }
+}
 
 function updateHud(){
   hudLevel.innerHTML = `
@@ -443,25 +462,13 @@ function forEachPieceAtX(x, callback){
 }
 
 function findSupportingPiece(piece){
-  let closest = null;
-  let bestDelta = Infinity;
-  const start = piece.x;
-  const end = piece.x + 2;
-  const columns = getColumnsForSpan(start, end);
-  for(const key of columns){
-    const columnSet = pieceColumnIndex.get(key);
-    if(!columnSet) continue;
-    for(const candidate of columnSet){
-      if(candidate === piece || candidate.complete) continue;
-      if(candidate.x + 2 <= start || candidate.x >= end) continue;
-      const delta = Math.abs(piece.y - (candidate.y - 1));
-      if(delta < 0.12 && delta < bestDelta){
-        bestDelta = delta;
-        closest = candidate;
-      }
-    }
+  const below = piece.below;
+  if(!below || below.complete) return null;
+  const gap = (below.y - 1) - piece.y;
+  if(gap <= 0.12){
+    return below;
   }
-  return closest;
+  return null;
 }
 
 function spawnParticles(x, y, color, count = 12){
@@ -493,7 +500,7 @@ function recycleParticleAt(index){
   particlePool.push(removed);
 }
 
-function loadLevel(index){
+function loadLevel(index, options = {}){
   levelNumber = index;
   levelIndex = levelNumber % levels.length;
   const level = levels[levelIndex];
@@ -518,8 +525,9 @@ function loadLevel(index){
   enemies = [];
   player.pepper = 4;
   for(const column of burgerColumns){
+    const columnPieces = [];
     for(let i = 0; i < burgerLayers.length; i++){
-      pieces.push({
+      const piece = {
         x: column,
         y: floors[i],
         type: burgerLayers[i],
@@ -528,8 +536,19 @@ function loadLevel(index){
         remaining: 0,
         support: null,
         complete: false,
-        scored: false
-      });
+        scored: false,
+        column,
+        order: i,
+        above: null,
+        below: null
+      };
+      pieces.push(piece);
+      columnPieces.push(piece);
+    }
+    for(let i = 0; i < columnPieces.length; i++){
+      const piece = columnPieces[i];
+      piece.above = i > 0 ? columnPieces[i - 1] : null;
+      piece.below = i < columnPieces.length - 1 ? columnPieces[i + 1] : null;
     }
     completedStacks.set(column, []);
   }
@@ -539,10 +558,13 @@ function loadLevel(index){
   resetCombo();
   gameOver = false;
   win = false;
-  document.getElementById('message').textContent = `${level.name}`;
-  setTimeout(() => {
-    if(!win && !gameOver) document.getElementById('message').textContent = '';
-  }, 1800);
+  const label = options.label ?? `${level.name}`;
+  const labelDuration = options.labelDuration ?? 1800;
+  const pauseDuration = Math.max(0, options.pauseDuration ?? 0);
+  levelIntroTimer = Math.ceil(pauseDuration * BASE_FPS);
+  if(label !== undefined && label !== null){
+    setLevelMessage(label, labelDuration);
+  }
   updateHud();
 }
 
@@ -663,6 +685,9 @@ function finalizePiece(piece){
   const bonus = 400 + stackHeight * 120 + combo * 50;
   addScore(bonus, piece.x + 1, ROWS - stackHeight * 0.6, '#ffd65e');
   spawnParticles(piece.x + 1, ROWS - stackHeight * 0.6, '#ff9d2f', 18);
+  if(piece.above && piece.above.support === piece){
+    piece.above.support = null;
+  }
 }
 
 function updatePieces(step){
@@ -704,7 +729,10 @@ function updatePieces(step){
 
       const belowPiece = findSupportingPiece(p);
       if(belowPiece){
-        p.y = belowPiece.y - 1;
+        const targetY = belowPiece.y - 1;
+        if(p.y > targetY){
+          p.y = targetY;
+        }
         p.floorIndex = belowPiece.floorIndex;
         if(p.remaining > 0) p.remaining = Math.max(0, p.remaining - step);
         p.support = belowPiece;
@@ -736,12 +764,12 @@ function playerHit(){
   if(player.invulnerable > 0 || gameOver || win) return;
   lives--;
   spawnParticles(player.x + 0.5, player.y - 0.5, '#ff5f6d', 24);
-  document.getElementById('message').textContent = lives > 0 ? 'Ouch! Stay saucy!' : 'Game Over';
+  messageEl.textContent = lives > 0 ? 'Ouch! Stay saucy!' : 'Game Over';
   if(lives > 0){
     resetActors();
     enemies.forEach(e => e.stunned = enemyTypes[e.type].stunTime / 2);
     setTimeout(() => {
-      if(!win) document.getElementById('message').textContent = '';
+      if(!win) messageEl.textContent = '';
     }, 1500);
   } else {
     gameOver = true;
@@ -964,6 +992,18 @@ function stepGame(dt){
 
   if(gameOver || win) return;
 
+  if(levelIntroTimer > 0){
+    levelIntroTimer = Math.max(0, levelIntroTimer - step);
+    if(levelIntroTimer === 0 && messageEl.textContent && messageEl.textContent.startsWith('Level ')){
+      messageEl.textContent = '';
+      if(messageClearTimeout){
+        clearTimeout(messageClearTimeout);
+        messageClearTimeout = null;
+      }
+    }
+    return;
+  }
+
   if(comboTimer > 0){
     comboTimer = Math.max(0, comboTimer - step);
     if(comboTimer <= 0) resetCombo();
@@ -975,16 +1015,24 @@ function stepGame(dt){
   handleEnemies(step);
 
   if(pieces.every(p => p.complete)){
-    if(!win){
-      win = true;
-      addScore(1500, player.x + 0.5, player.y - 1, '#ffe27a');
-      document.getElementById('message').textContent = 'Level Complete!';
-      setTimeout(() => {
-        document.getElementById('message').textContent = '';
-        loadLevel(levelNumber + 1);
-      }, 2400);
-    }
+    handleLevelComplete();
   }
+}
+
+function handleLevelComplete(){
+  if(win) return;
+  win = true;
+  addScore(1500, player.x + 0.5, player.y - 1, '#ffe27a');
+  setLevelMessage('Level Complete!', 600);
+  const nextLevelNumber = levelNumber + 1;
+  setTimeout(() => {
+    const upcomingLabel = `Level ${nextLevelNumber + 1}`;
+    loadLevel(nextLevelNumber, {
+      label: upcomingLabel,
+      labelDuration: 1000,
+      pauseDuration: 1
+    });
+  }, 600);
 }
 
 function drawBackground(targetCtx = ctx){
