@@ -19,10 +19,53 @@
       background: radial-gradient(circle at top, #1a093f, #060114 65%);
       color: #f2f6ff;
     }
-    #sidebar-placeholder {
+    #sidebar-placeholder,
+    #sidebar {
+      width: 240px;
       min-width: 240px;
-      background: rgba(8, 5, 20, 0.85);
+      flex-shrink: 0;
+      background: rgba(6, 9, 20, 0.85);
+      padding: 24px 20px;
+      box-shadow: 0 0 25px rgba(12, 20, 56, 0.7);
       backdrop-filter: blur(6px);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #sidebar img {
+      display: block;
+      width: 160px;
+      margin: 0 auto 24px;
+    }
+
+    #sidebar h3 {
+      margin: 0 0 14px;
+      font-size: 0.85rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: rgba(216, 226, 255, 0.75);
+    }
+
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 28px;
+    }
+
+    #sidebar li {
+      margin: 15px 0;
+    }
+
+    #sidebar a {
+      color: #dce3ff;
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      transition: color 0.3s, text-shadow 0.3s;
+    }
+
+    #sidebar a:hover {
+      color: #fffb96;
+      text-shadow: 0 0 8px rgba(255, 251, 150, 0.9);
     }
     main {
       flex: 1;
@@ -410,9 +453,13 @@
       body {
         flex-direction: column;
       }
+      #sidebar,
       #sidebar-placeholder {
         width: 100%;
+        min-width: 0;
         min-height: 60px;
+        border-right: none;
+        box-shadow: none;
       }
       main {
         padding: 1.25rem;

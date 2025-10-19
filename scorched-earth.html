@@ -15,8 +15,52 @@
       min-height: 100vh;
       display: flex;
     }
-    #sidebar-placeholder {
-      width: 220px;
+    #sidebar-placeholder,
+    #sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: rgba(6, 9, 20, 0.85);
+      padding: 24px 20px;
+      box-shadow: 0 0 25px rgba(12, 20, 56, 0.7);
+      backdrop-filter: blur(6px);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #sidebar img {
+      display: block;
+      width: 160px;
+      margin: 0 auto 24px;
+    }
+
+    #sidebar h3 {
+      margin: 0 0 14px;
+      font-size: 0.85rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: rgba(216, 226, 255, 0.75);
+    }
+
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 28px;
+    }
+
+    #sidebar li {
+      margin: 15px 0;
+    }
+
+    #sidebar a {
+      color: #dce3ff;
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      transition: color 0.3s, text-shadow 0.3s;
+    }
+
+    #sidebar a:hover {
+      color: #fffb96;
+      text-shadow: 0 0 8px rgba(255, 251, 150, 0.9);
     }
     #game-shell {
       flex: 1;
@@ -296,7 +340,8 @@
     }
     @media (max-width: 1024px) {
       body { flex-direction: column; }
-      #sidebar-placeholder { width: 100%; }
+      #sidebar-placeholder,
+      #sidebar { width: 100%; border-right: none; box-shadow: none; }
     }
   </style>
 </head>
