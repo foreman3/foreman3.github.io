@@ -148,8 +148,9 @@ const MODE_SEQUENCE = [
   { mode: 'chase', duration: Infinity }
 ];
 
-const TURN_THRESHOLD = 0.12;
-const SNAP_THRESHOLD = 0.12;
+const TURN_THRESHOLD = 0.2;
+const SNAP_THRESHOLD = 0.24;
+const TURN_BUFFER = 0.28;
 
 const pacman = {
   x: 9,
@@ -266,16 +267,31 @@ function move(entity, dir) {
 }
 
 function updatePacman() {
-  if (isIntersection(pacman)) {
-    const targetTile = tileAt(pacman.x + pacman.nextDir.x * 0.51, pacman.y + pacman.nextDir.y * 0.51);
-    if (!isWallTile(targetTile)) {
-      pacman.dir = { ...pacman.nextDir };
+  const wantsTurn = pacman.nextDir;
+  const reversing = pacman.dir.x === -wantsTurn.x && pacman.dir.y === -wantsTurn.y;
+
+  if (reversing) {
+    pacman.dir = { ...wantsTurn };
+  }
+
+  const turning = wantsTurn.x !== pacman.dir.x || wantsTurn.y !== pacman.dir.y;
+  if (turning) {
+    const axis = wantsTurn.x !== 0 ? 'y' : 'x';
+    const distanceToCenter = Math.abs(pacman[axis] - Math.round(pacman[axis]));
+    if (reversing || distanceToCenter <= TURN_BUFFER) {
+      const alignedX = wantsTurn.y !== 0 ? Math.round(pacman.x) : pacman.x;
+      const alignedY = wantsTurn.x !== 0 ? Math.round(pacman.y) : pacman.y;
+      if (!isWall(alignedX + wantsTurn.x * 0.6, alignedY + wantsTurn.y * 0.6)) {
+        if (wantsTurn.y !== 0) pacman.x = alignedX;
+        if (wantsTurn.x !== 0) pacman.y = alignedY;
+        pacman.dir = { ...wantsTurn };
+      }
     }
   }
 
-  const blocked = isWall(pacman.x + pacman.dir.x * 0.51, pacman.y + pacman.dir.y * 0.51);
-  if (!blocked) {
-    move(pacman, pacman.dir);
+  if (!move(pacman, pacman.dir)) {
+    pacman.dir = { x: 0, y: 0 };
+    snapToGrid(pacman);
   }
 
   snapToGrid(pacman);
