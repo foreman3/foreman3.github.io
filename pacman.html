@@ -250,28 +250,41 @@ function isIntersection(entity) {
 
 function snapToGrid(entity) {
   const dir = entity.dir || { x: 0, y: 0 };
-  if (dir.x === 0 && Math.abs(entity.x - Math.round(entity.x)) < SNAP_THRESHOLD) {
-    entity.x = Math.round(entity.x);
+
+  if (dir.x === 0) {
+    const targetX = Math.round(entity.x);
+    if (Math.abs(entity.x - targetX) < SNAP_THRESHOLD && !isWall(targetX, entity.y)) {
+      entity.x = targetX;
+    }
   }
-  if (dir.y === 0 && Math.abs(entity.y - Math.round(entity.y)) < SNAP_THRESHOLD) {
-    entity.y = Math.round(entity.y);
+
+  if (dir.y === 0) {
+    const targetY = Math.round(entity.y);
+    if (Math.abs(entity.y - targetY) < SNAP_THRESHOLD && !isWall(entity.x, targetY)) {
+      entity.y = targetY;
+    }
   }
 }
 
 function move(entity, dir) {
   const speed = entity.speed;
-  const nx = entity.x + dir.x * speed;
-  const ny = entity.y + dir.y * speed;
-  const futureTile = tileAt(nx, ny);
-  if (isWallTile(futureTile)) {
-    if (dir.x > 0) entity.x = Math.floor(entity.x);
-    else if (dir.x < 0) entity.x = Math.ceil(entity.x);
-    if (dir.y > 0) entity.y = Math.floor(entity.y);
-    else if (dir.y < 0) entity.y = Math.ceil(entity.y);
-    return false;
+
+  if (dir.x !== 0) {
+    const aheadX = entity.x + dir.x;
+    if (isWall(aheadX, entity.y)) {
+      return false;
+    }
   }
-  entity.x = nx;
-  entity.y = ny;
+
+  if (dir.y !== 0) {
+    const aheadY = entity.y + dir.y;
+    if (isWall(entity.x, aheadY)) {
+      return false;
+    }
+  }
+
+  entity.x += dir.x * speed;
+  entity.y += dir.y * speed;
   return true;
 }
 
