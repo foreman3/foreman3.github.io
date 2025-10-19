@@ -268,23 +268,31 @@ function snapToGrid(entity) {
 
 function move(entity, dir) {
   const speed = entity.speed;
+  if (dir.x === 0 && dir.y === 0) return true;
+
+  const nextX = entity.x + dir.x * speed;
+  const nextY = entity.y + dir.y * speed;
 
   if (dir.x !== 0) {
-    const aheadX = entity.x + dir.x;
-    if (isWall(aheadX, entity.y)) {
+    const frontX = nextX + dir.x * 0.5;
+    const upperY = nextY - 0.45;
+    const lowerY = nextY + 0.45;
+    if (isWall(frontX, upperY) || isWall(frontX, lowerY)) {
       return false;
     }
   }
 
   if (dir.y !== 0) {
-    const aheadY = entity.y + dir.y;
-    if (isWall(entity.x, aheadY)) {
+    const frontY = nextY + dir.y * 0.5;
+    const leftX = nextX - 0.45;
+    const rightX = nextX + 0.45;
+    if (isWall(leftX, frontY) || isWall(rightX, frontY)) {
       return false;
     }
   }
 
-  entity.x += dir.x * speed;
-  entity.y += dir.y * speed;
+  entity.x = nextX;
+  entity.y = nextY;
   return true;
 }
 
