@@ -139,6 +139,7 @@
     const PLANE_HALF_WIDTH = 22;
     const PLANE_HALF_HEIGHT = 12;
     const PLANE_HALF_DEPTH = 55;
+    const COLLISION_FRONT_THRESHOLD = -10; // require buildings to overlap the plane before collisions register
     const RING_SPAWN_DISTANCE = 1600;
     const RING_DESPAWN_BUFFER = 200;
     const palettes = [
@@ -533,7 +534,7 @@
         continue;
       }
 
-      if(!crashed && building.frontZ <= PLANE_HALF_DEPTH && building.backZ >= -PLANE_HALF_DEPTH){
+      if(!crashed && building.frontZ <= COLLISION_FRONT_THRESHOLD && building.backZ >= -PLANE_HALF_DEPTH){
         if(building.type === 'bridge'){
           if(checkBridgeCollision(building, planeBox)){
             crashed = true;
