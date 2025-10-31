@@ -444,28 +444,20 @@
       'Shield Pulse': {
         description: 'Deploy a deflector shield that absorbs 40% damage for the next few hits.',
         action: (tank) => {
-          if (tank.inventory['Shield Pulse'] <= 0) {
-            setStatus(`${tank.name} is out of shield charges.`);
-            return false;
-          }
-          tank.inventory['Shield Pulse']--;
           tank.activeShield = Math.min(0.6, tank.activeShield + 0.4);
-          setStatus(`${tank.name} reinforces defenses.`);
-          return true;
+          return `${tank.name} reinforces defenses.`;
         }
       },
       'Repair Kit': {
         description: 'Restore 35 armor points mid-battle.',
         action: (tank) => {
-          if (tank.inventory['Repair Kit'] <= 0) {
-            setStatus(`${tank.name} is out of repair kits.`);
-            return false;
-          }
-          tank.inventory['Repair Kit']--;
+          const before = tank.health;
           tank.health = Math.min(tank.maxHealth, tank.health + 35);
+          const restored = Math.max(0, Math.round(tank.health - before));
           createParticles(tank.x, tank.y - tankHeight / 2, '#8cf7ff', 16);
-          setStatus(`${tank.name} patches up for ${35} armor.`);
-          return true;
+          return restored > 0
+            ? `${tank.name} patches up for ${restored} armor.`
+            : `${tank.name}'s armor is already pristine.`;
         }
       }
     };
@@ -603,7 +595,8 @@
         solutionMemory: {},
         lastTargetId: null,
         isPlayer: !options.ai,
-        selectedWeapon: 'Baby Missile'
+        selectedWeapon: 'Baby Missile',
+        lastArmedWeapon: 'Baby Missile'
       };
     }
 
@@ -802,6 +795,7 @@
       tank.solutionMemory = {};
       tank.lastTargetId = null;
       tank.selectedWeapon = 'Baby Missile';
+      tank.lastArmedWeapon = 'Baby Missile';
       tank.angle = 60;
       tank.power = 65;
     }
@@ -1208,7 +1202,7 @@
       if (!targetSelection || !human.inventory[targetSelection]) {
         targetSelection = options.length > 0 ? options[0].value : '';
       }
-      if (previous && human.inventory[previous] > 0) {
+      if (previous && human.inventory[previous] > 0 && (!targetSelection || !human.inventory[targetSelection])) {
         targetSelection = previous;
       }
       if (targetSelection) {
@@ -1256,15 +1250,41 @@
     function useUtility(tank, name) {
       const util = utilities[name];
       if (!util) return false;
-      if (!tank.inventory[name] || tank.inventory[name] <= 0) {
+      const count = tank.inventory[name];
+      if (!count || count <= 0) {
         setStatus(`${tank.name} has no ${name}s remaining.`);
         return false;
       }
-      const success = util.action(tank);
-      if (success) {
-        updateInventoryUI();
+      if (count !== Infinity) {
+        tank.inventory[name]--;
       }
-      return success;
+      const message = util.action(tank);
+      if (tank.isPlayer && tank === activeHuman) {
+        const prompt = message ? `${message} Select a weapon and fire.` : 'Bonus action available. Select a weapon and fire.';
+        setStatus(prompt);
+      } else if (message) {
+        setStatus(message);
+      }
+      if (tank === activeHuman) {
+        updateInventoryUI();
+        updateHUD();
+      }
+      return true;
+    }
+
+    function getFallbackWeapon(tank) {
+      if (!tank || !tank.inventory) return '';
+      const preferred = tank.lastArmedWeapon;
+      if (preferred && tank.inventory[preferred] > 0) {
+        return preferred;
+      }
+      for (const name of Object.keys(weaponCatalog)) {
+        const count = tank.inventory[name];
+        if (count && count > 0) {
+          return name;
+        }
+      }
+      return '';
     }
 
     function fireSelectedWeapon() {
@@ -1283,7 +1303,18 @@
       if (utilities[weapon]) {
         const used = useUtility(tank, weapon);
         if (used) {
-          endTurn();
+          const fallback = getFallbackWeapon(tank);
+          if (fallback) {
+            tank.selectedWeapon = fallback;
+            if (!utilities[fallback]) {
+              tank.lastArmedWeapon = fallback;
+            }
+          } else {
+            tank.selectedWeapon = '';
+          }
+          if (tank === activeHuman) {
+            updateWeaponSelect();
+          }
         }
         return;
       }
@@ -1295,6 +1326,7 @@
         tank.inventory[weapon]--;
       }
       tank.selectedWeapon = weapon;
+      tank.lastArmedWeapon = weapon;
       launchProjectile(tank, weapon);
       updateInventoryUI();
       updateWeaponSelect();
@@ -1305,6 +1337,9 @@
       const weapon = document.getElementById('weaponSelect').value;
       if (activeHuman && weapon) {
         activeHuman.selectedWeapon = weapon;
+        if (!utilities[weapon]) {
+          activeHuman.lastArmedWeapon = weapon;
+        }
       }
       setStatus(weapon ? `Selected ${weapon}.` : 'No weapon selected.');
     });
@@ -1781,6 +1816,15 @@
       settleAllTanks();
       const alive = tanks.filter(tank => tank.alive);
       if (alive.length <= 1) {
+        if (alive.length === 1 && weaponsTestMode && alive[0].isPlayer) {
+          const tester = alive[0];
+          setActiveHuman(tester);
+          enablePlayerControls();
+          updateHUD();
+          updateInventoryUI();
+          setStatus('Weapons test range ready. Adjust angle and power, then fire.');
+          updateFastForwardState();
+        }
         return;
       }
       endTurn();
