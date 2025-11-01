@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="felt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#051f1c" />
+      <stop offset="100%" stop-color="#093a34" />
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67f7ff" />
+      <stop offset="100%" stop-color="#ff6bcb" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="42" fill="url(#felt)" />
+  <g opacity="0.25">
+    <circle cx="140" cy="120" r="36" fill="#67f7ff" />
+    <circle cx="380" cy="96" r="28" fill="#ff6bcb" />
+    <circle cx="420" cy="360" r="46" fill="#67f7ff" />
+  </g>
+  <g transform="translate(0,20)">
+    <rect x="124" y="132" width="128" height="184" rx="18" fill="#f5f7fb" stroke="#d5d8e5" stroke-width="6" />
+    <rect x="196" y="164" width="128" height="184" rx="18" fill="#f5f7fb" stroke="#d5d8e5" stroke-width="6" />
+    <rect x="268" y="196" width="128" height="184" rx="18" fill="#f5f7fb" stroke="#d5d8e5" stroke-width="6" />
+    <path d="M176 212l28-36 28 36h-20v32h-16v-32z" fill="#ff4f64" />
+    <path d="M248 244l28-36 28 36h-20v32h-16v-32z" fill="#3bcad6" />
+    <path d="M320 276l28-36 28 36h-20v32h-16v-32z" fill="#f7b731" />
+  </g>
+  <g transform="translate(0,28)">
+    <ellipse cx="256" cy="356" rx="150" ry="46" fill="#111" opacity="0.55" />
+    <circle cx="206" cy="340" r="30" fill="#fefefe" stroke="#ff6bcb" stroke-width="8" />
+    <circle cx="306" cy="348" r="30" fill="#fefefe" stroke="#67f7ff" stroke-width="8" />
+    <circle cx="256" cy="332" r="24" fill="#fefefe" stroke="#f5b142" stroke-width="8" />
+  </g>
+  <rect x="80" y="64" width="352" height="384" rx="42" stroke="url(#glow)" stroke-width="10" fill="none" opacity="0.45" />
+</svg>
