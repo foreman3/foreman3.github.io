@@ -243,6 +243,13 @@ function isWall(x, y) {
   return isWallTile(tileAt(x, y));
 }
 
+function wrapHorizontal(x) {
+  const width = map[0].length;
+  while (x < 0) x += width;
+  while (x >= width) x -= width;
+  return x;
+}
+
 function isIntersection(entity) {
   return Math.abs(entity.x - Math.round(entity.x)) < TURN_THRESHOLD &&
          Math.abs(entity.y - Math.round(entity.y)) < TURN_THRESHOLD;
@@ -274,7 +281,7 @@ function move(entity, dir) {
   const nextY = entity.y + dir.y * speed;
 
   if (dir.x !== 0) {
-    const frontX = nextX + dir.x * 0.5;
+    const frontX = wrapHorizontal(nextX + dir.x * 0.5);
     const upperY = nextY - 0.45;
     const lowerY = nextY + 0.45;
     if (isWall(frontX, upperY) || isWall(frontX, lowerY)) {
@@ -284,8 +291,8 @@ function move(entity, dir) {
 
   if (dir.y !== 0) {
     const frontY = nextY + dir.y * 0.5;
-    const leftX = nextX - 0.45;
-    const rightX = nextX + 0.45;
+    const leftX = wrapHorizontal(nextX - 0.45);
+    const rightX = wrapHorizontal(nextX + 0.45);
     if (isWall(leftX, frontY) || isWall(rightX, frontY)) {
       return false;
     }
@@ -293,15 +300,36 @@ function move(entity, dir) {
 
   entity.x = nextX;
   entity.y = nextY;
+  entity.x = wrapHorizontal(entity.x);
   return true;
+}
+
+function canMoveDirection(entity, dir) {
+  if (!dir || (dir.x === 0 && dir.y === 0)) return true;
+  const width = map[0].length;
+  const height = map.length;
+  let tx = Math.round(entity.x) + dir.x;
+  let ty = Math.round(entity.y) + dir.y;
+  if (ty < 0 || ty >= height) return false;
+  tx = ((tx % width) + width) % width;
+  return !isWallTile(map[ty][tx]);
 }
 
 function updatePacman() {
   const wantsDir = pacman.nextDir;
-  const changingDirection = wantsDir.x !== pacman.dir.x || wantsDir.y !== pacman.dir.y;
+  const atCenter = isIntersection(pacman) || (pacman.dir.x === 0 && pacman.dir.y === 0);
 
-  if (changingDirection && !isWall(pacman.x + wantsDir.x * 0.6, pacman.y + wantsDir.y * 0.6)) {
-    pacman.dir = { ...wantsDir };
+  if (atCenter) {
+    pacman.x = Math.round(pacman.x);
+    pacman.y = Math.round(pacman.y);
+
+    if (canMoveDirection(pacman, wantsDir)) {
+      pacman.dir = { ...wantsDir };
+    }
+
+    if (!canMoveDirection(pacman, pacman.dir)) {
+      pacman.dir = { x: 0, y: 0 };
+    }
   }
 
   if (!move(pacman, pacman.dir)) {
