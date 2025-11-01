@@ -128,6 +128,73 @@
         box-shadow: 0 8px 22px rgba(103, 247, 255, 0.25);
       }
 
+      .modal-backdrop[hidden] {
+        display: none;
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: rgba(6, 1, 21, 0.75);
+        backdrop-filter: blur(6px);
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+
+      .modal-backdrop.is-visible {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .modal-dialog {
+        max-width: min(520px, 100%);
+        background: linear-gradient(170deg, rgba(10, 6, 40, 0.92), rgba(19, 4, 52, 0.94));
+        border: 1px solid rgba(103, 247, 255, 0.3);
+        border-radius: 22px;
+        padding: clamp(1.8rem, 3vw, 2.4rem);
+        color: #f0f4ff;
+        box-shadow: 0 30px 60px rgba(8, 0, 30, 0.55);
+        position: relative;
+      }
+
+      .modal-dialog h2 {
+        margin: 0 0 1rem;
+        font-family: "Press Start 2P", cursive;
+        font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .modal-dialog p {
+        margin: 0;
+        line-height: 1.6;
+        color: rgba(235, 241, 255, 0.85);
+        font-size: 1rem;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 0.9rem;
+        right: 0.9rem;
+        background: transparent;
+        border: none;
+        color: #e8faff;
+        font-size: 1.5rem;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .modal-close:hover,
+      .modal-close:focus-visible {
+        color: var(--accent);
+      }
+
       .game-grid {
         display: grid;
         grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -339,11 +406,8 @@
         </p>
       </header>
 
-      <div class="filters" aria-hidden="true">
-        <button type="button">Classics</button>
-        <button type="button">High Score Hunt</button>
-        <button type="button">Cozy Mode</button>
-        <button type="button">Chaos Mode</button>
+      <div class="filters">
+        <button type="button" id="aboutButton">About</button>
       </div>
 
       <section class="game-grid" aria-label="Game selection grid">
@@ -535,8 +599,88 @@
       </section>
     </main>
 
+    <div
+      class="modal-backdrop"
+      id="aboutModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="aboutModalTitle"
+      hidden
+    >
+      <div class="modal-dialog">
+        <button type="button" class="modal-close" aria-label="Close about dialog">&times;</button>
+        <h2 id="aboutModalTitle">About the Vibecade</h2>
+        <p>
+          The Vibecade is demonstration of the art-of-the possible with Vibe Coding. Everything is completely coded by AI
+          Agents. We're playing lose and fast, so things may work or break at any time. Check back for new updates regularly.
+        </p>
+      </div>
+    </div>
+
     <footer>
       Insert coin to continue · Built for friends of the Foreman Research Arcade
     </footer>
+
+    <script>
+      (function () {
+        const aboutButton = document.getElementById("aboutButton");
+        const aboutModal = document.getElementById("aboutModal");
+        if (!aboutButton || !aboutModal) return;
+
+        const closeButton = aboutModal.querySelector(".modal-close");
+        let lastFocusedElement = null;
+
+        function openModal() {
+          lastFocusedElement = document.activeElement;
+          aboutModal.removeAttribute("hidden");
+          requestAnimationFrame(() => {
+            aboutModal.classList.add("is-visible");
+          });
+          closeButton?.focus();
+          document.addEventListener("keydown", handleKeydown);
+        }
+
+        function closeModal() {
+          aboutModal.classList.remove("is-visible");
+          const fallbackTimeout = setTimeout(() => {
+            if (!aboutModal.classList.contains("is-visible")) {
+              aboutModal.setAttribute("hidden", "");
+            }
+          }, 350);
+          const handleTransitionEnd = () => {
+            if (!aboutModal.classList.contains("is-visible")) {
+              aboutModal.setAttribute("hidden", "");
+            }
+            aboutModal.removeEventListener("transitionend", handleTransitionEnd);
+            clearTimeout(fallbackTimeout);
+          };
+          aboutModal.addEventListener("transitionend", handleTransitionEnd);
+          document.removeEventListener("keydown", handleKeydown);
+          if (lastFocusedElement) {
+            lastFocusedElement.focus();
+          }
+        }
+
+        function handleKeydown(event) {
+          if (event.key === "Escape") {
+            closeModal();
+          }
+        }
+
+        aboutButton.addEventListener("click", () => {
+          openModal();
+        });
+
+        closeButton?.addEventListener("click", () => {
+          closeModal();
+        });
+
+        aboutModal.addEventListener("click", (event) => {
+          if (event.target === aboutModal) {
+            closeModal();
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
