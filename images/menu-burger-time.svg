@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="burger-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16072d" />
+      <stop offset="100%" stop-color="#2b0c3f" />
+    </linearGradient>
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffb347" />
+      <stop offset="100%" stop-color="#ff8c00" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="42" fill="url(#burger-bg)" />
+  <ellipse cx="256" cy="386" rx="156" ry="42" fill="#0f0420" opacity="0.45" />
+  <g transform="translate(0,-16)">
+    <path d="M136 260c0-54 54-98 120-98s120 44 120 98" fill="#fef1b5" />
+    <path d="M136 272h240c22 0 40 16 40 36s-18 36-40 36H136c-22 0-40-16-40-36s18-36 40-36z" fill="#7f431b" />
+    <path d="M168 252h176c18 0 32 12 32 28s-14 28-32 28H168c-18 0-32-12-32-28s14-28 32-28z" fill="#f0cf61" />
+    <path d="M148 244h216c18 0 38-10 38-26s-20-42-38-42H148c-18 0-38 26-38 42s20 26 38 26z" fill="#6bcf63" />
+    <path d="M132 196h248c18 0 32-16 32-32s-14-36-32-36H132c-18 0-32 20-32 36s14 32 32 32z" fill="#ff4f64" />
+    <path d="M132 152h248c14 0 26-10 26-22s-12-30-26-30H132c-14 0-26 18-26 30s12 22 26 22z" fill="url(#highlight)" />
+    <path d="M132 120h248c12 0 20-8 20-18s-8-24-20-24H132c-12 0-20 14-20 24s8 18 20 18z" fill="#ffe5a2" />
+  </g>
+  <g opacity="0.35" transform="translate(0,-12)">
+    <circle cx="192" cy="120" r="10" fill="#fff" />
+    <circle cx="256" cy="112" r="8" fill="#fff" />
+    <circle cx="320" cy="124" r="10" fill="#fff" />
+  </g>
+</svg>
