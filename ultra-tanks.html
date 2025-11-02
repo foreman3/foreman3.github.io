@@ -30,6 +30,7 @@
       align-items:center;
       justify-content:flex-start;
       padding:20px;
+      position:relative;
     }
     canvas {
       background:#222;
@@ -42,12 +43,98 @@
     }
     #info { margin-top:10px; font-size:20px; }
     #specialWeapon { margin-top:10px; font-size:20px; color:#ffeb3b; }
-    #message { margin-top:10px; font-size:24px; color:#ffeb3b; }
+    #message { margin-top:10px; font-size:24px; color:#ffeb3b; text-align:center; }
+    #message .subtext { display:block; font-size:18px; color:#fff; opacity:0.85; margin-top:6px; }
+
+    .overlay {
+      position:absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.85);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      box-sizing:border-box;
+      z-index:5;
+    }
+
+    .overlay.hidden { display:none; }
+
+    .overlay-content {
+      max-width:720px;
+      background:rgba(20,20,20,0.9);
+      border:2px solid #4ecdc4;
+      border-radius:12px;
+      padding:24px 32px;
+      box-shadow:0 0 18px rgba(0,0,0,0.4);
+      text-align:left;
+    }
+
+    .overlay-content h2 {
+      margin-top:0;
+      font-size:32px;
+      text-align:center;
+    }
+
+    .overlay-content ul {
+      padding-left:20px;
+      margin-top:10px;
+    }
+
+    .overlay-content li {
+      margin-bottom:6px;
+      line-height:1.4;
+    }
+
+    #startGameBtn {
+      margin-top:20px;
+      display:block;
+      width:100%;
+      padding:12px 16px;
+      background:#4ecdc4;
+      color:#102a43;
+      font-weight:bold;
+      font-size:18px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      transition:transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #startGameBtn:hover {
+      transform:translateY(-2px);
+      box-shadow:0 8px 16px rgba(78,205,196,0.4);
+    }
   </style>
 </head>
 <body>
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
+    <div id="tutorialOverlay" class="overlay hidden">
+      <div class="overlay-content">
+        <h2>Welcome to Ultra Tanks</h2>
+        <p>Roll out with your tank and defeat every enemy. Here's what you need to know before the battle begins:</p>
+        <h3>Controls</h3>
+        <ul>
+          <li><strong>Move:</strong> Arrow Keys or WASD</li>
+          <li><strong>Shoot:</strong> Space Bar</li>
+          <li><strong>Switch Special Weapon:</strong> Mouse Wheel</li>
+          <li><strong>Use Special Weapon:</strong> Left Click</li>
+          <li><strong>Guide Missiles:</strong> Move the mouse to steer them</li>
+        </ul>
+        <h3>Special Weapons</h3>
+        <ul>
+          <li><strong>Guided Missile:</strong> Launch with a click, then guide it with your cursor. You only get a few each level.</li>
+          <li><strong>Mine:</strong> Drop one behind you to ambush nearby tanks or block choke points.</li>
+          <li><strong>Air Raid:</strong> Call in a massive strike. After the countdown, everything within the blast circle is obliterated.</li>
+        </ul>
+        <p>Stay mobile, watch your ammo, and use your specials wisely!</p>
+        <button id="startGameBtn">Start the Battle</button>
+      </div>
+    </div>
     <h1>Ultra Tanks</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div id="info"></div>
@@ -58,6 +145,20 @@
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const infoEl = document.getElementById('info');
+    const specialWeaponEl = document.getElementById('specialWeapon');
+    const messageEl = document.getElementById('message');
+    const restartBtn = document.getElementById('restartBtn');
+    const tutorialOverlay = document.getElementById('tutorialOverlay');
+    const startGameBtn = document.getElementById('startGameBtn');
+
+    function setMessage(content, asHTML = false) {
+      if (asHTML) {
+        messageEl.innerHTML = content;
+      } else {
+        messageEl.textContent = content;
+      }
+    }
 
     function shadeColor(color, percent) {
       if (!color || color[0] !== '#') return color;
@@ -87,6 +188,7 @@
     let pointerY = 0;
 
     const specialWeapons = ['Guided Missile', 'Mine', 'Air Raid'];
+    const TUTORIAL_KEY = 'ultraTanksTutorialSeen';
     let specialWeaponIndex = 0;
 
     const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0,invuln:0};
@@ -96,6 +198,8 @@
     let level = 1;
     let lives = 3;
     let running = false;
+    let gameOver = false;
+    let nextLevelTimeout = null;
 
     function obstacleCollision(x, y) {
       for (const o of obstacles) {
@@ -128,6 +232,10 @@
     }
 
   function startLevel() {
+    if (nextLevelTimeout) {
+      clearTimeout(nextLevelTimeout);
+      nextLevelTimeout = null;
+    }
     bullets.length = 0;
     mine = null;
     airRaidAvailable = 1;
@@ -169,9 +277,17 @@
       smartCount = smartList.length;
       smartList.forEach((e, idx) => e.smartIndex = idx);
       respawnPlayer();
-      document.getElementById('message').textContent = '';
+      setMessage('');
       running = true;
+      gameOver = false;
       updateInfo();
+    }
+
+    function restartGame() {
+      totalSpawned = 0;
+      level = 1;
+      lives = 3;
+      startLevel();
     }
 
   function shoot(tank) {
@@ -185,11 +301,11 @@
 
    function updateInfo() {
      const remaining = enemies.filter(e => e.alive).length;
-      document.getElementById('info').textContent = `Level: ${level} | Lives: ${lives} | Enemies Left: ${remaining} | Air Raids: ${airRaidAvailable} | Guided Missiles: ${guidedMissilesRemaining}`;
+      infoEl.textContent = `Level: ${level} | Lives: ${lives} | Enemies Left: ${remaining} | Air Raids: ${airRaidAvailable} | Guided Missiles: ${guidedMissilesRemaining}`;
    }
 
    function updateSpecialWeaponDisplay() {
-     document.getElementById('specialWeapon').textContent = `Special Weapon: ${specialWeapons[specialWeaponIndex]}`;
+     specialWeaponEl.textContent = `Special Weapon: ${specialWeapons[specialWeaponIndex]}`;
    }
 
     function update() {
@@ -303,7 +419,8 @@
           player.alive = false; player.explosion = 30; lives--; updateInfo();
           if (lives <= 0) {
             running = false;
-            document.getElementById('message').textContent = 'Game Over';
+            gameOver = true;
+            setMessage('<strong>Game Over</strong><span class="subtext">Press the Space Bar to Restart</span>', true);
           }
           if (!bounce) { bullets.splice(i, 1); } else { b.angle = Math.atan2(b.y - player.y, b.x - player.x); }
           continue;
@@ -384,13 +501,13 @@
       if (airRaidCountdown > 0) {
         airRaidCountdown--;
         const sec = Math.ceil(airRaidCountdown / 60);
-        document.getElementById('message').textContent = sec > 0 ? sec.toString() : '';
+        setMessage(sec > 0 ? sec.toString() : '');
         if (airRaidCountdown === 0) {
           const r = Math.sqrt(0.2 * canvas.width * canvas.height / Math.PI);
           airRaidExplosion = { x: pointerX, y: pointerY, r, timer: 30 };
           airRaidAvailable--;
           canvas.style.cursor = guidedMissiles.length > 0 ? 'none' : 'default';
-          document.getElementById('message').textContent = '';
+          setMessage('');
           if (player.alive && player.invuln <= 0 && Math.hypot(player.x - pointerX, player.y - pointerY) < r) {
             player.alive = false; player.explosion = 30; lives--; updateInfo();
           }
@@ -409,8 +526,9 @@
 
       if (enemies.every(e => !e.alive && e.explosion === 0)) {
         running = false;
-        document.getElementById('message').textContent = 'Next Level';
-        setTimeout(() => {
+        setMessage('Next Level');
+        nextLevelTimeout = setTimeout(() => {
+          nextLevelTimeout = null;
           level++;
           if (level === 4) { lives++; }
           startLevel();
@@ -603,8 +721,16 @@
     setInterval(loop, FRAME_TIME);
 
     window.addEventListener('keydown', e => {
+      if (e.key === ' ' && gameOver) {
+        e.preventDefault();
+        restartGame();
+        return;
+      }
       keys[e.key] = true;
-      if (e.key === ' ' && running && player.alive) { shoot(player); }
+      if (e.key === ' ' && running && player.alive) {
+        e.preventDefault();
+        shoot(player);
+      }
     });
 
     canvas.addEventListener('click', () => {
@@ -626,7 +752,7 @@
       } else if (weapon === 'Air Raid' && airRaidAvailable > 0 && airRaidCountdown === 0) {
         airRaidCountdown = 180;
         canvas.style.cursor = 'crosshair';
-        document.getElementById('message').textContent = '3';
+        setMessage('3');
       }
     });
 
@@ -651,13 +777,40 @@
     window.addEventListener('keyup', e => { keys[e.key] = false; });
 
     window.addEventListener('load', () => {
-      startLevel();
+      let tutorialSeen = false;
+      try {
+        tutorialSeen = localStorage.getItem(TUTORIAL_KEY) === 'true';
+      } catch (err) {
+        tutorialSeen = false;
+      }
+
+      if (tutorialSeen) {
+        restartGame();
+      } else if (tutorialOverlay) {
+        tutorialOverlay.classList.remove('hidden');
+      }
+
+      if (startGameBtn) {
+        startGameBtn.addEventListener('click', () => {
+          try {
+            localStorage.setItem(TUTORIAL_KEY, 'true');
+          } catch (err) {
+            // ignore storage errors
+          }
+          if (tutorialOverlay) {
+            tutorialOverlay.classList.add('hidden');
+          }
+          restartGame();
+        });
+      }
+
+      if (restartBtn) {
+        restartBtn.addEventListener('click', () => {
+          restartGame();
+        });
+      }
+
       loop();
-      document.getElementById('restartBtn').addEventListener('click', () => {
-        level = 1;
-        lives = 3;
-        startLevel();
-      });
     });
   </script>
   <script>
