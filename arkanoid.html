@@ -146,19 +146,20 @@
 
     body.touch-device #hud {
       position: absolute;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 16px;
+      left: 18px;
+      transform: none;
       display: flex;
-      align-items: center;
-      gap: 18px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
       font-family: 'Press Start 2P', cursive;
       font-size: 0.75rem;
       letter-spacing: 2px;
       text-transform: uppercase;
       background: rgba(0, 0, 0, 0.55);
-      padding: 12px 18px;
-      border-radius: 999px;
+      padding: 14px 16px;
+      border-radius: 16px;
       box-shadow: 0 0 24px rgba(0, 0, 0, 0.5);
       text-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
     }
@@ -167,6 +168,7 @@
       background: none;
       box-shadow: none;
       padding: 0;
+      white-space: nowrap;
     }
 
     body.touch-device #level {
@@ -255,6 +257,67 @@
       document.documentElement.style.setProperty('--viewport-height', `${window.innerHeight}px`);
     }
 
+    let attemptedFullscreen = false;
+
+    function isFullscreenActive() {
+      return Boolean(
+        document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.msFullscreenElement
+      );
+    }
+
+    function requestFullscreen() {
+      if (attemptedFullscreen) return;
+      attemptedFullscreen = true;
+      if (isFullscreenActive()) return;
+
+      const target = document.documentElement;
+      const request =
+        target.requestFullscreen ||
+        target.webkitRequestFullscreen ||
+        target.msRequestFullscreen;
+
+      if (!request) {
+        attemptedFullscreen = false;
+        return;
+      }
+
+      try {
+        const result = request.call(target);
+        if (result && typeof result.then === 'function') {
+          result.catch(() => {
+            attemptedFullscreen = false;
+          });
+        }
+      } catch (err) {
+        attemptedFullscreen = false;
+      }
+    }
+
+    function bindFullscreenRequest() {
+      if (!isTouchDevice) return;
+      const target = document.documentElement;
+      const hasRequestMethod = Boolean(
+        target.requestFullscreen ||
+          target.webkitRequestFullscreen ||
+          target.msRequestFullscreen
+      );
+      if (!hasRequestMethod) return;
+
+      const tryRequest = () => {
+        if (isFullscreenActive()) {
+          canvas.removeEventListener('touchend', tryRequest);
+          canvas.removeEventListener('mouseup', tryRequest);
+          return;
+        }
+        requestFullscreen();
+      };
+
+      canvas.addEventListener('touchend', tryRequest);
+      canvas.addEventListener('mouseup', tryRequest);
+    }
+
     if (isTouchDevice) {
       document.body.classList.add('touch-device');
       setViewportHeight();
@@ -267,6 +330,7 @@
           setTimeout(setViewportHeight, 250);
         });
       });
+      bindFullscreenRequest();
     }
 
     function updateOrientationClass() {
