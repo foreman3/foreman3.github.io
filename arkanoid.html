@@ -63,6 +63,9 @@
       border-radius: 22px;
       border: 2px solid rgba(255, 255, 255, 0.12);
       box-shadow: 0 32px 60px rgba(10, 0, 45, 0.65), inset 0 0 38px rgba(20, 18, 38, 0.65);
+      touch-action: none;
+      width: min(100%, 900px);
+      aspect-ratio: 900 / 620;
     }
 
     #message {
@@ -100,6 +103,59 @@
         width: 100%;
       }
     }
+
+    body.touch-device {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    body.touch-device #sidebar-placeholder {
+      display: none;
+    }
+
+    body.touch-device #game-wrapper {
+      width: 100vw;
+      height: 100vh;
+      padding: 18px 16px 28px;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    body.touch-device #hud {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    body.touch-device canvas {
+      width: min(100vw - 24px, 900px);
+      max-height: calc(100vh - 220px);
+    }
+
+    #rotate-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 3, 15, 0.92);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+      font-size: 1.2rem;
+      letter-spacing: 1.2px;
+      z-index: 999;
+    }
+
+    #rotate-overlay strong {
+      display: block;
+      margin-bottom: 12px;
+      font-size: 1.4rem;
+      text-transform: uppercase;
+    }
+
+    body.touch-device.touch-portrait #rotate-overlay {
+      display: flex;
+    }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -107,6 +163,12 @@
 </head>
 <body>
   <div id="sidebar-placeholder"></div>
+  <div id="rotate-overlay">
+    <div>
+      <strong>Rotate Device</strong>
+      Please turn your phone horizontally for the best Arkanoid experience.
+    </div>
+  </div>
   <div id="game-wrapper">
     <h1>Arkanoid Redux</h1>
     <div id="hud">
@@ -123,10 +185,27 @@
     const ctx = canvas.getContext('2d');
     const messageElement = document.getElementById('message');
     const powerupWrap = document.getElementById('powerups');
-    const defaultMessage = 'Move with \u2190 \u2192 or A/D. Press Space to fire when equipped.';
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    const defaultMessage = isTouchDevice
+      ? 'Drag to move. Tap to fire when equipped.'
+      : 'Move with \u2190 \u2192 or A/D. Press Space to fire when equipped.';
     if (messageElement) {
       messageElement.textContent = defaultMessage;
     }
+
+    if (isTouchDevice) {
+      document.body.classList.add('touch-device');
+    }
+
+    function updateOrientationClass() {
+      if (!isTouchDevice) return;
+      const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+      document.body.classList.toggle('touch-portrait', isPortrait);
+    }
+
+    updateOrientationClass();
+    window.addEventListener('resize', updateOrientationClass);
+    window.addEventListener('orientationchange', updateOrientationClass);
 
     const paddle = {
       width: 140,
@@ -155,6 +234,9 @@
     let slowTimer = 0;
     let slowFactor = 1;
     let lastShot = 0;
+    let touchStartX = 0;
+    let touchMovedDistance = 0;
+    let touchStartTime = 0;
 
     const levelMaps = [
       [
@@ -427,6 +509,52 @@
       checkLevelComplete();
     }
 
+    function attemptShoot(now = performance.now()) {
+      if (paddle.gunsTimer > 0 && now - lastShot > 220) {
+        bullets.push({ x: paddle.x + paddle.width / 2 - 4, y: paddle.y - 10, vy: -11 });
+        bullets.push({ x: paddle.x + paddle.width / 2 + 4, y: paddle.y - 10, vy: -11 });
+        lastShot = now;
+      }
+    }
+
+    function updatePaddleFromTouch(touch) {
+      const rect = canvas.getBoundingClientRect();
+      const relativeX = ((touch.clientX - rect.left) / rect.width) * canvas.width;
+      const clamped = Math.max(0, Math.min(canvas.width - paddle.width, relativeX - paddle.width / 2));
+      paddle.x = clamped;
+    }
+
+    function handleTouchStart(event) {
+      if (!isTouchDevice) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+      event.preventDefault();
+      touchStartX = touch.clientX;
+      touchMovedDistance = 0;
+      touchStartTime = performance.now();
+      updatePaddleFromTouch(touch);
+    }
+
+    function handleTouchMove(event) {
+      if (!isTouchDevice) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+      event.preventDefault();
+      touchMovedDistance = Math.max(touchMovedDistance, Math.abs(touch.clientX - touchStartX));
+      updatePaddleFromTouch(touch);
+    }
+
+    function handleTouchEnd(event) {
+      if (!isTouchDevice) return;
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+      event.preventDefault();
+      const duration = performance.now() - touchStartTime;
+      if (touchMovedDistance < 18 && duration < 300) {
+        attemptShoot();
+      }
+    }
+
     function handleInput(dt) {
       const move = paddle.speed * dt * 1.2;
       if (keys['ArrowLeft'] || keys['KeyA']) {
@@ -435,13 +563,8 @@
       if (keys['ArrowRight'] || keys['KeyD']) {
         paddle.x = Math.min(canvas.width - paddle.width, paddle.x + move);
       }
-      if (paddle.gunsTimer > 0 && (keys['Space'] || keys['ArrowUp'] || keys['KeyW'])) {
-        const now = performance.now();
-        if (now - lastShot > 220) {
-          bullets.push({ x: paddle.x + paddle.width / 2 - 4, y: paddle.y - 10, vy: -11 });
-          bullets.push({ x: paddle.x + paddle.width / 2 + 4, y: paddle.y - 10, vy: -11 });
-          lastShot = now;
-        }
+      if (keys['Space'] || keys['ArrowUp'] || keys['KeyW']) {
+        attemptShoot();
       }
     }
 
@@ -623,7 +746,7 @@
       if (announce) {
         let baseMessage = `Level ${levelIndex + 1}: ${describeLevel()}`;
         if (levelIndex === 0 && resetScore) {
-          baseMessage += ' — Move with ← → or A/D. Space fires when equipped.';
+          baseMessage += ` — ${defaultMessage}`;
         }
         const duration = levelIndex === 0 && resetScore ? 5200 : 2600;
         showMessage(baseMessage, duration);
@@ -698,6 +821,14 @@
       requestAnimationFrame(loop);
     }
 
+    if (isTouchDevice) {
+      const listenerOptions = { passive: false };
+      canvas.addEventListener('touchstart', handleTouchStart, listenerOptions);
+      canvas.addEventListener('touchmove', handleTouchMove, listenerOptions);
+      canvas.addEventListener('touchend', handleTouchEnd, listenerOptions);
+      canvas.addEventListener('touchcancel', handleTouchEnd, listenerOptions);
+    }
+
     document.addEventListener('keydown', (event) => {
       keys[event.code] = true;
       if (event.code === 'KeyR') {
@@ -710,14 +841,21 @@
       keys[event.code] = false;
     });
 
-    fetch('sidebar.html')
-      .then(response => response.text())
-      .then(html => {
-        const placeholder = document.getElementById('sidebar-placeholder');
-        if (placeholder) {
-          placeholder.outerHTML = html;
-        }
-      });
+    if (!isTouchDevice) {
+      fetch('sidebar.html')
+        .then(response => response.text())
+        .then(html => {
+          const placeholder = document.getElementById('sidebar-placeholder');
+          if (placeholder) {
+            placeholder.outerHTML = html;
+          }
+        });
+    } else {
+      const placeholder = document.getElementById('sidebar-placeholder');
+      if (placeholder) {
+        placeholder.remove();
+      }
+    }
 
     resetLevel(true);
     requestAnimationFrame(loop);
