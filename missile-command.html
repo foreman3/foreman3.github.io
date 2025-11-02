@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
   <title>Missile Command - Neon Redux</title>
   <style>
     :root {
@@ -18,9 +22,40 @@
       color: #fff;
       overflow: hidden;
     }
+    #sidebar-placeholder {
+      width: 240px;
+      flex-shrink: 0;
+    }
     body.mobile {
       flex-direction: column;
       align-items: stretch;
+    }
+    @media (max-width: 1100px) {
+      body {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #sidebar-placeholder {
+        width: 100%;
+      }
+    }
+    body.touch-device {
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+      min-height: var(--viewport-height, 100vh);
+    }
+    body.touch-device #sidebar-placeholder {
+      display: none;
     }
     #sidebar {
       width: 240px;
@@ -57,6 +92,16 @@
       padding: 26px 20px 40px;
       position: relative;
     }
+    body.touch-device #game-container {
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      padding: 0;
+      justify-content: center;
+      gap: 0;
+    }
     body.mobile #game-container {
       width: 100%;
       height: 100vh;
@@ -76,6 +121,9 @@
       font-size: 32px;
       text-align: center;
     }
+    body.touch-device h1 {
+      display: none;
+    }
     #gameCanvas {
       background: linear-gradient(180deg, rgba(3, 7, 29, 0.7) 0%, rgba(5, 10, 45, 0.9) 60%, #040813 100%);
       border: 3px solid rgba(94, 242, 255, 0.8);
@@ -86,6 +134,12 @@
     body.mobile #gameCanvas {
       margin-top: 0;
       max-width: 100vw;
+    }
+    body.touch-device #gameCanvas {
+      margin-top: 0;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
     }
     #hud {
       margin-top: 18px;
@@ -115,11 +169,46 @@
       justify-content: center;
       margin-top: 8px;
     }
+    body.touch-device #message {
+      top: auto;
+      right: auto;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 48px);
+      max-width: none;
+      text-align: center;
+      font-size: 0.85rem;
+      letter-spacing: 1.6px;
+      background: rgba(4, 7, 32, 0.68);
+      padding: 10px 14px;
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    }
+    body.touch-device #hud {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      margin: 0;
+      justify-content: center;
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: rgba(4, 7, 32, 0.68);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+      pointer-events: none;
+    }
     canvas.crosshair-layer {
       pointer-events: none;
       position: absolute;
       top: 0;
       left: 0;
+      width: 100%;
+      height: 100%;
     }
     .canvas-wrapper {
       position: relative;
@@ -132,9 +221,28 @@
       justify-content: center;
       height: 100%;
     }
+    body.touch-device .canvas-wrapper {
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     body.mobile .canvas-wrapper canvas {
       width: 100%;
       height: auto;
+    }
+    body.touch-device .canvas-wrapper canvas {
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      max-width: none;
     }
     canvas {
       touch-action: none;
@@ -157,6 +265,13 @@
     #orientation-warning.visible {
       display: flex;
     }
+    body.touch-device #orientation-warning {
+      padding: 32px;
+      font-size: 1rem;
+    }
+    body.touch-device.touch-portrait #orientation-warning {
+      display: flex;
+    }
   </style>
 </head>
 <body>
@@ -176,10 +291,86 @@
     const overlay = document.getElementById('overlayCanvas');
     const ctx = canvas.getContext('2d');
     const octx = overlay.getContext('2d');
-    const isMobile = window.matchMedia('(pointer: coarse)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    const isTouchDevice = hasCoarsePointer;
+    const isMobile = hasCoarsePointer || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     window.isMobileDevice = isMobile;
     if (isMobile) {
       document.body.classList.add('mobile');
+    }
+    if (isTouchDevice) {
+      document.body.classList.add('touch-device');
+    }
+
+    function setViewportHeight() {
+      document.documentElement.style.setProperty('--viewport-height', `${window.innerHeight}px`);
+    }
+
+    function getViewportHeight() {
+      const rawValue = getComputedStyle(document.documentElement).getPropertyValue('--viewport-height');
+      const numeric = parseFloat(rawValue);
+      return Number.isFinite(numeric) && numeric > 0 ? numeric : window.innerHeight;
+    }
+
+    let attemptedFullscreen = false;
+
+    function isFullscreenActive() {
+      return Boolean(
+        document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.msFullscreenElement
+      );
+    }
+
+    function requestFullscreen() {
+      if (attemptedFullscreen) return;
+      attemptedFullscreen = true;
+      if (isFullscreenActive()) return;
+
+      const target = document.documentElement;
+      const request =
+        target.requestFullscreen ||
+        target.webkitRequestFullscreen ||
+        target.msRequestFullscreen;
+
+      if (!request) {
+        attemptedFullscreen = false;
+        return;
+      }
+
+      try {
+        const result = request.call(target);
+        if (result && typeof result.then === 'function') {
+          result.catch(() => {
+            attemptedFullscreen = false;
+          });
+        }
+      } catch (err) {
+        attemptedFullscreen = false;
+      }
+    }
+
+    function bindFullscreenRequest() {
+      if (!isTouchDevice) return;
+      const target = document.documentElement;
+      const hasRequestMethod = Boolean(
+        target.requestFullscreen ||
+          target.webkitRequestFullscreen ||
+          target.msRequestFullscreen
+      );
+      if (!hasRequestMethod) return;
+
+      const tryRequest = () => {
+        if (isFullscreenActive()) {
+          canvas.removeEventListener('touchend', tryRequest);
+          canvas.removeEventListener('mouseup', tryRequest);
+          return;
+        }
+        requestFullscreen();
+      };
+
+      canvas.addEventListener('touchend', tryRequest);
+      canvas.addEventListener('mouseup', tryRequest);
     }
 
     const hudElement = document.getElementById('hud');
@@ -431,14 +622,25 @@
     function resizeForMobile() {
       if (!isMobile) return;
       const width = window.innerWidth;
-      const reservedHeight = (titleElement ? titleElement.offsetHeight : 0) + (hudElement ? hudElement.offsetHeight : 0) + 48;
-      const maxHeight = Math.max(window.innerHeight * 0.9, window.innerHeight - 24);
-      let availableHeight = window.innerHeight - reservedHeight;
-      const minimumHeight = Math.min(maxHeight, Math.max(window.innerHeight * 0.7, 320));
-      if (availableHeight < minimumHeight) {
-        availableHeight = minimumHeight;
+      const viewportHeight = getViewportHeight();
+      let availableHeight;
+
+      if (isTouchDevice) {
+        availableHeight = viewportHeight;
+      } else {
+        const reservedHeight =
+          (titleElement ? titleElement.offsetHeight : 0) +
+          (hudElement ? hudElement.offsetHeight : 0) +
+          48;
+        const maxHeight = Math.max(viewportHeight * 0.9, viewportHeight - 24);
+        const minimumHeight = Math.min(maxHeight, Math.max(viewportHeight * 0.7, 320));
+        let computedHeight = viewportHeight - reservedHeight;
+        if (computedHeight < minimumHeight) {
+          computedHeight = minimumHeight;
+        }
+        availableHeight = Math.min(computedHeight, maxHeight);
       }
-      availableHeight = Math.min(availableHeight, maxHeight);
+
       canvas.width = width;
       canvas.height = availableHeight;
       overlay.width = width;
@@ -465,13 +667,54 @@
 
     function updateOrientationWarning() {
       if (!isMobile || !orientationWarning) return;
-      const isLandscape = window.innerWidth >= window.innerHeight;
+      const viewportHeight = getViewportHeight();
+      const isLandscape = window.innerWidth >= viewportHeight;
       orientationWarning.classList.toggle('visible', !isLandscape);
+      if (isTouchDevice) {
+        document.body.classList.toggle('touch-portrait', !isLandscape);
+      }
+    }
+
+    if (isTouchDevice) {
+      setViewportHeight();
     }
 
     if (isMobile) {
       resizeForMobile();
       updateOrientationWarning();
+    }
+
+    if (isTouchDevice) {
+      bindFullscreenRequest();
+
+      const scheduleLayoutUpdate = () => {
+        window.requestAnimationFrame(() => {
+          setViewportHeight();
+          if (isMobile) {
+            resizeForMobile();
+            updateOrientationWarning();
+          }
+        });
+      };
+
+      window.addEventListener('resize', scheduleLayoutUpdate);
+      window.addEventListener('orientationchange', () => {
+        window.requestAnimationFrame(() => {
+          setViewportHeight();
+          if (isMobile) {
+            resizeForMobile();
+            updateOrientationWarning();
+          }
+          setTimeout(() => {
+            setViewportHeight();
+            if (isMobile) {
+              resizeForMobile();
+              updateOrientationWarning();
+            }
+          }, 250);
+        });
+      });
+    } else if (isMobile) {
       window.addEventListener('resize', () => {
         resizeForMobile();
         updateOrientationWarning();
