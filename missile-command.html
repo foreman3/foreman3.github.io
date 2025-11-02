@@ -18,6 +18,10 @@
       color: #fff;
       overflow: hidden;
     }
+    body.mobile {
+      flex-direction: column;
+      align-items: stretch;
+    }
     #sidebar {
       width: 240px;
       background: rgba(4, 7, 32, 0.85);
@@ -53,6 +57,14 @@
       padding: 26px 20px 40px;
       position: relative;
     }
+    body.mobile #game-container {
+      width: 100%;
+      height: 100vh;
+      padding: 18px 16px 24px;
+      box-sizing: border-box;
+      justify-content: center;
+      gap: 16px;
+    }
     h1 {
       margin: 0;
       font-size: 46px;
@@ -60,12 +72,20 @@
       text-transform: uppercase;
       text-shadow: 0 0 18px rgba(94, 242, 255, 0.6);
     }
+    body.mobile h1 {
+      font-size: 32px;
+      text-align: center;
+    }
     #gameCanvas {
       background: linear-gradient(180deg, rgba(3, 7, 29, 0.7) 0%, rgba(5, 10, 45, 0.9) 60%, #040813 100%);
       border: 3px solid rgba(94, 242, 255, 0.8);
       margin-top: 24px;
       border-radius: 16px;
       box-shadow: 0 16px 40px rgba(6, 15, 40, 0.8);
+    }
+    body.mobile #gameCanvas {
+      margin-top: 0;
+      max-width: 100vw;
     }
     #hud {
       margin-top: 18px;
@@ -89,11 +109,53 @@
       opacity: 0;
       transition: opacity 0.5s ease;
     }
+    body.mobile #hud {
+      font-size: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 8px;
+    }
     canvas.crosshair-layer {
       pointer-events: none;
       position: absolute;
       top: 0;
       left: 0;
+    }
+    .canvas-wrapper {
+      position: relative;
+    }
+    body.mobile .canvas-wrapper {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+    body.mobile .canvas-wrapper canvas {
+      width: 100%;
+      height: auto;
+    }
+    canvas {
+      touch-action: none;
+    }
+    #orientation-warning {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.94);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 1000;
+      font-size: 22px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #5ef2ff;
+    }
+    #orientation-warning.visible {
+      display: flex;
     }
   </style>
 </head>
@@ -101,18 +163,28 @@
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
     <h1>Missile Command</h1>
-    <div style="position:relative;">
+    <div class="canvas-wrapper">
       <canvas id="gameCanvas" width="900" height="650"></canvas>
       <canvas id="overlayCanvas" class="crosshair-layer" width="900" height="650"></canvas>
     </div>
     <div id="hud">Score: 0 | Cities: 8 | Wave: 1 | EMPs: 3</div>
     <div id="message"></div>
   </div>
+  <div id="orientation-warning">Rotate your device to landscape to play.</div>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const overlay = document.getElementById('overlayCanvas');
     const ctx = canvas.getContext('2d');
     const octx = overlay.getContext('2d');
+    const isMobile = window.matchMedia('(pointer: coarse)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    window.isMobileDevice = isMobile;
+    if (isMobile) {
+      document.body.classList.add('mobile');
+    }
+
+    const hudElement = document.getElementById('hud');
+    const titleElement = document.querySelector('#game-container h1');
+    const orientationWarning = document.getElementById('orientation-warning');
 
     const base = { x: canvas.width / 2, y: canvas.height - 40, radius: 28 };
 
@@ -150,6 +222,17 @@
     let burstTimer = 0;
     let messageTimer = 0;
 
+    function layoutCities(targetCities = cities) {
+      if (!targetCities) return;
+      const margin = Math.min(70, canvas.width * 0.12);
+      const availableWidth = Math.max(canvas.width - margin * 2, 0);
+      const spacing = CONFIG.cityCount > 1 ? availableWidth / (CONFIG.cityCount - 1) : 0;
+      targetCities.forEach((city, index) => {
+        city.x = margin + spacing * index;
+        city.y = canvas.height - 30;
+      });
+    }
+
     const cities = createCities();
 
     function drawRoundedRectPath(context, x, y, width, height, radius) {
@@ -169,12 +252,9 @@
 
     function createCities() {
       const result = [];
-      const margin = 70;
-      const spacing = (canvas.width - margin * 2) / (CONFIG.cityCount - 1);
       for (let i = 0; i < CONFIG.cityCount; i++) {
-        const x = margin + spacing * i;
         result.push({
-          x,
+          x: 0,
           y: canvas.height - 30,
           width: CONFIG.cityWidth,
           height: CONFIG.cityHeight,
@@ -182,6 +262,7 @@
           flicker: Math.random() * 10
         });
       }
+      layoutCities(result);
       return result;
     }
 
@@ -266,23 +347,27 @@
     let fireInterval = null;
     let lastTarget = { x: base.x, y: base.y };
 
-    function startFiring(e) {
+    function beginFiringAt(x, y) {
       if (gameOver) {
         resetGame();
         return;
       }
-      const rect = canvas.getBoundingClientRect();
-      lastTarget.x = e.clientX - rect.left;
-      lastTarget.y = e.clientY - rect.top;
-      pointer.x = lastTarget.x;
-      pointer.y = lastTarget.y;
-      fireMissile(lastTarget.x, lastTarget.y);
+      lastTarget.x = x;
+      lastTarget.y = y;
+      pointer.x = x;
+      pointer.y = y;
+      fireMissile(x, y);
       firing = true;
       if (!fireInterval) {
         fireInterval = setInterval(() => {
           if (firing && !gameOver) fireMissile(lastTarget.x, lastTarget.y);
         }, 110);
       }
+    }
+
+    function startFiring(e) {
+      const rect = canvas.getBoundingClientRect();
+      beginFiringAt(e.clientX - rect.left, e.clientY - rect.top);
     }
 
     function stopFiring() {
@@ -303,6 +388,99 @@
     });
     document.addEventListener('mouseup', stopFiring);
     canvas.addEventListener('mouseleave', stopFiring);
+
+    if (isMobile) {
+      const getTouchPosition = touch => {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: touch.clientX - rect.left,
+          y: touch.clientY - rect.top
+        };
+      };
+
+      function handleTouchStart(e) {
+        if (!e.touches || e.touches.length === 0) return;
+        const touch = e.touches[0];
+        const { x, y } = getTouchPosition(touch);
+        e.preventDefault();
+        beginFiringAt(x, y);
+      }
+
+      function handleTouchMove(e) {
+        if (!e.touches || e.touches.length === 0) return;
+        const touch = e.touches[0];
+        const { x, y } = getTouchPosition(touch);
+        e.preventDefault();
+        pointer.x = x;
+        pointer.y = y;
+        lastTarget.x = x;
+        lastTarget.y = y;
+      }
+
+      function handleTouchEnd(e) {
+        if (e.touches && e.touches.length > 0) return;
+        stopFiring();
+      }
+
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+      document.addEventListener('touchcancel', handleTouchEnd);
+    }
+
+    function resizeForMobile() {
+      if (!isMobile) return;
+      const width = window.innerWidth;
+      const reservedHeight = (titleElement ? titleElement.offsetHeight : 0) + (hudElement ? hudElement.offsetHeight : 0) + 48;
+      const maxHeight = Math.max(window.innerHeight * 0.9, window.innerHeight - 24);
+      let availableHeight = window.innerHeight - reservedHeight;
+      const minimumHeight = Math.min(maxHeight, Math.max(window.innerHeight * 0.7, 320));
+      if (availableHeight < minimumHeight) {
+        availableHeight = minimumHeight;
+      }
+      availableHeight = Math.min(availableHeight, maxHeight);
+      canvas.width = width;
+      canvas.height = availableHeight;
+      overlay.width = width;
+      overlay.height = availableHeight;
+      base.x = width / 2;
+      base.y = availableHeight - 40;
+      layoutCities();
+      if (!firing) {
+        pointer.x = canvas.width / 2;
+        pointer.y = canvas.height / 2;
+        lastTarget.x = pointer.x;
+        lastTarget.y = pointer.y;
+      } else {
+        pointer.x = Math.min(Math.max(pointer.x, 0), canvas.width);
+        pointer.y = Math.min(Math.max(pointer.y, 0), canvas.height);
+        lastTarget.x = pointer.x;
+        lastTarget.y = pointer.y;
+      }
+      stars.forEach(star => {
+        star.x = Math.random() * width;
+        star.y = Math.random() * availableHeight;
+      });
+    }
+
+    function updateOrientationWarning() {
+      if (!isMobile || !orientationWarning) return;
+      const isLandscape = window.innerWidth >= window.innerHeight;
+      orientationWarning.classList.toggle('visible', !isLandscape);
+    }
+
+    if (isMobile) {
+      resizeForMobile();
+      updateOrientationWarning();
+      window.addEventListener('resize', () => {
+        resizeForMobile();
+        updateOrientationWarning();
+      });
+      window.addEventListener('orientationchange', () => {
+        resizeForMobile();
+        updateOrientationWarning();
+      });
+    }
 
     function useEMP() {
       if (gameOver) {
@@ -790,12 +968,16 @@
     loop();
   </script>
   <script>
-    fetch('sidebar.html')
-      .then(r => r.text())
-      .then(html => {
-        const placeholder = document.getElementById('sidebar-placeholder');
-        if (placeholder) placeholder.outerHTML = html;
-      });
+    const sidebarPlaceholder = document.getElementById('sidebar-placeholder');
+    if (window.isMobileDevice) {
+      if (sidebarPlaceholder) sidebarPlaceholder.remove();
+    } else {
+      fetch('sidebar.html')
+        .then(r => r.text())
+        .then(html => {
+          if (sidebarPlaceholder) sidebarPlaceholder.outerHTML = html;
+        });
+    }
   </script>
 </body>
 </html>
