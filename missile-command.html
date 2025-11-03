@@ -594,6 +594,11 @@
         const touch = e.touches[0];
         const { x, y } = getTouchPosition(touch);
         e.preventDefault();
+        const distanceToBase = Math.hypot(x - base.x, y - base.y);
+        if (distanceToBase <= base.radius + 28) {
+          useEMP();
+          return;
+        }
         beginFiringAt(x, y);
       }
 
