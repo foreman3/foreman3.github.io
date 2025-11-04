@@ -318,6 +318,19 @@
       canvas.addEventListener('mouseup', tryRequest);
     }
 
+    function handleFullscreenChange() {
+      if (isFullscreenActive()) {
+        levelIndex = 0;
+        resetLevel(true);
+      } else {
+        attemptedFullscreen = false;
+      }
+    }
+
+    ['fullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange'].forEach(eventName => {
+      document.addEventListener(eventName, handleFullscreenChange);
+    });
+
     if (isTouchDevice) {
       document.body.classList.add('touch-device');
       setViewportHeight();
