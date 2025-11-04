@@ -184,6 +184,19 @@
       transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
 
+    #left-controls .control-button {
+      width: clamp(56px, 16vw, 84px);
+      height: clamp(56px, 16vw, 84px);
+    }
+
+    .control-button[data-action='left'],
+    .control-button[data-action='right'],
+    .control-button[data-action='thrust'] {
+      color: rgba(255, 255, 255, 0.96);
+      font-weight: 700;
+      text-shadow: 0 0 12px rgba(120, 190, 255, 0.75);
+    }
+
     #right-controls .control-button {
       width: clamp(78px, 20vw, 110px);
       height: clamp(78px, 20vw, 110px);
@@ -365,6 +378,9 @@
 
     const KEY = { left: false, right: false, up: false, space: false };
 
+    let isGameActive = false;
+    let startTimerId = null;
+
     function setMessage(text, type = 'info') {
       if (!messageElement) return;
       messageElement.textContent = text;
@@ -441,6 +457,8 @@
       document.addEventListener(evt, () => {
         if (!isFullscreenActive()) {
           attemptedFullscreen = false;
+        } else {
+          restartGame();
         }
       });
     });
@@ -654,6 +672,52 @@
       }
     }
 
+    function resetGameState() {
+      score = 0;
+      lives = 3;
+      time = 0;
+      bullets.length = 0;
+      asteroids.length = 0;
+      explosions.length = 0;
+      thruster.length = 0;
+      ship.x = canvas.width / 2;
+      ship.y = canvas.height / 2;
+      ship.vx = 0;
+      ship.vy = 0;
+      ship.angle = 0;
+      ship.invincible = 3;
+      ship.deadTime = 0;
+      spawnWave();
+      updateInfo();
+    }
+
+    function startGame() {
+      isGameActive = false;
+      resetGameState();
+      isGameActive = true;
+    }
+
+    function restartGame() {
+      if (startTimerId) {
+        clearTimeout(startTimerId);
+        startTimerId = null;
+      }
+      setMessage('');
+      startGame();
+    }
+
+    function scheduleInitialStart() {
+      isGameActive = false;
+      if (startTimerId) {
+        clearTimeout(startTimerId);
+      }
+      startTimerId = window.setTimeout(() => {
+        startTimerId = null;
+        setMessage('');
+        startGame();
+      }, 3000);
+    }
+
     function updateInfo() {
       if (infoElement) {
         infoElement.textContent = `Score: ${score} | Lives: ${lives}`;
@@ -672,6 +736,7 @@
       updateExplosions(dt);
       updateStars(dt);
       updateThruster(dt);
+      if (!isGameActive) return;
       if (lives <= 0) return;
 
       if (ship.deadTime > 0) {
@@ -912,8 +977,7 @@
       requestAnimationFrame(loop);
     }
 
-    spawnWave();
-    updateInfo();
+    scheduleInitialStart();
     loop();
   </script>
   <script>
