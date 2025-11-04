@@ -2,252 +2,581 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
   <title>Flappy</title>
   <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
     body {
       margin: 0;
-      display: flex;
       min-height: 100vh;
+      display: flex;
       background: linear-gradient(135deg, #81d4fa 0%, #0288d1 100%);
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       color: #fff;
       overflow: hidden;
     }
-    #sidebar {
-      width: 220px;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 20px;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+
+    #sidebar-placeholder {
+      width: 240px;
+      flex-shrink: 0;
     }
-    #sidebar ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    #sidebar li {
-      margin: 15px 0;
-    }
-    #sidebar a {
-      color: #fff;
-      text-decoration: none;
-      transition: color 0.3s;
-    }
-    #sidebar a:hover {
-      color: #ffea00;
-    }
+
     #game-container {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      overflow: hidden;
-      padding: 20px;
+      gap: 18px;
+      padding: 32px 24px 48px;
+      text-align: center;
     }
+
     h1 {
-      margin-top: 0;
-      font-size: 3em;
-      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+      margin: 0;
+      font-size: clamp(2rem, 3.6vw, 3.2rem);
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.45);
     }
+
     canvas {
       background: #4fc3f7;
-      border: 2px solid #fff;
-      border-radius: 8px;
-      width: 100%;
-      height: auto;
-      max-height: 70vh;
+      border: 3px solid rgba(255, 255, 255, 0.85);
+      border-radius: 18px;
+      box-shadow: 0 28px 50px rgba(0, 0, 0, 0.25);
+      width: min(100%, 880px);
+      aspect-ratio: 4 / 3;
+      max-height: none;
+      touch-action: none;
     }
+
+    #hud {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
     #score {
-      margin-top: 10px;
-      font-size: 20px;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-      border-radius: 5px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.45);
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.35);
     }
+
     #message {
-      margin-top: 10px;
-      font-size: 24px;
+      min-height: 32px;
+      font-size: 1.1rem;
       color: #ffeb3b;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.5);
+      letter-spacing: 0.75px;
+    }
+
+    #rotate-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 24, 48, 0.92);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 36px;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      z-index: 999;
+    }
+
+    #rotate-overlay strong {
+      display: block;
+      margin-bottom: 12px;
+      font-size: 1.4rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    @media (max-width: 1100px) {
+      body {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #sidebar-placeholder {
+        width: 100%;
+      }
+    }
+
+    body.touch-device {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+      min-height: var(--viewport-height, 100vh);
+    }
+
+    body.touch-device #sidebar-placeholder {
+      display: none;
+    }
+
+    body.touch-device #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      padding: 0;
+      gap: 0;
+      justify-content: center;
+    }
+
+    body.touch-device h1 {
+      display: none;
+    }
+
+    body.touch-device canvas {
+      width: 100vw;
+      max-width: none;
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+    }
+
+    body.touch-device #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      justify-content: flex-start;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 12px 18px;
+      border-radius: 16px;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.45);
+      font-size: 1rem;
+      pointer-events: none;
+    }
+
+    body.touch-device #score {
+      background: none;
+      box-shadow: none;
+      padding: 0;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+    }
+
+    body.touch-device #message {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.5);
+      padding: 12px 28px;
+      border-radius: 999px;
+      max-width: calc(100vw - 48px);
+      pointer-events: none;
+      font-size: 1rem;
+    }
+
+    body.touch-device.touch-portrait #rotate-overlay {
+      display: flex;
     }
   </style>
 </head>
 <body>
   <div id="sidebar-placeholder"></div>
+  <div id="rotate-overlay">
+    <div>
+      <strong>Rotate Device</strong>
+      Please turn your phone horizontally for the best Flappy experience.
+    </div>
+  </div>
   <div id="game-container">
     <h1>Flappy</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="score">Score: 0</div>
+    <div id="hud">
+      <span id="score">Score: 0</span>
+    </div>
     <div id="message"></div>
   </div>
   <script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-
-  const gravity = 0.4;
-  const flapPower = -8;
-  const pipeGapMin = 150;
-  let currentPipeGap = 200; // start with larger gaps
-  const pipeWidth = 80;
-  const pipeSpeed = 2.5;
-  const coinRadius = 12;
-  const birdImg = new Image();
-  birdImg.src = 'images/flappy.svg';
-  const coinImg = new Image();
-  coinImg.src = 'images/coin.svg';
-
-  function resizeGame(){
-    const sidebar = document.getElementById('sidebar');
-    const sidebarWidth = sidebar ? sidebar.offsetWidth : 0;
-    const header = document.querySelector('#game-container h1');
-    const scoreDiv = document.getElementById('score');
-    const message = document.getElementById('message');
-    const aspect = 4/3;
-    const availableWidth = window.innerWidth - sidebarWidth - 40;
-    const availableHeight = window.innerHeight -
-          header.offsetHeight - scoreDiv.offsetHeight - message.offsetHeight - 40;
-    let width = availableWidth;
-    let height = width / aspect;
-    if(height > availableHeight){
-      height = availableHeight;
-      width = height * aspect;
-    }
-    canvas.width = width;
-    canvas.height = height;
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-  }
-
-  let bird;
-  let pipes;
-  let coins;
-  let score;
-  let running;
-
-  function resetGame() {
-    bird = { x: 120, y: canvas.height/2, vy: 0, r: 16 };
-    currentPipeGap = 200;
-    pipes = [];
-    coins = [];
-    score = 0;
-    running = true;
-    document.getElementById('message').textContent = '';
-    document.getElementById('score').textContent = `Score: ${score}`;
-    spawnPipe();
-    // give the player a moment by starting with an initial flap
-    bird.vy = flapPower;
-  }
-
-  let spawnTimer = 0;
-  function spawnPipe() {
-    const gap = currentPipeGap;
-    const gapY = 80 + Math.random()*(canvas.height - gap - 160);
-    pipes.push({ x: canvas.width, gapY, gap, passed:false });
-    if(Math.random() < 0.8) {
-      coins.push({ x: canvas.width + pipeWidth/2, y: gapY + gap/2, collected:false });
-    }
-    if(currentPipeGap > pipeGapMin) {
-      currentPipeGap -= 2;
-      if(currentPipeGap < pipeGapMin) currentPipeGap = pipeGapMin;
-    }
-  }
-
-  function flap() {
-    if(!running) { resetGame(); return; }
-    bird.vy = flapPower;
-  }
-
-  document.addEventListener('keydown', e => {
-    if(e.code === 'Space' || e.code === 'ArrowUp') {
-      e.preventDefault();
-      flap();
-    }
-  });
-  canvas.addEventListener('mousedown', flap);
-
-  function update() {
-    if(!running) return;
-    bird.vy += gravity;
-    bird.y += bird.vy;
-    if(bird.y + bird.r > canvas.height || bird.y - bird.r < 0) {
-      running = false;
-      document.getElementById('message').textContent = 'Game Over - Press Space';
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const messageElement = document.getElementById('message');
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    const startMessage = isTouchDevice
+      ? 'Tap anywhere to flap!'
+      : 'Press Space or Click to flap!';
+    const gameOverMessage = isTouchDevice
+      ? 'Game Over - Tap to restart'
+      : 'Game Over - Press Space or Click to restart';
+    if (messageElement) {
+      messageElement.textContent = startMessage;
     }
 
-    spawnTimer++;
-    if(spawnTimer > 120) {
-      spawnPipe();
+    const gravity = 0.4;
+    const flapPower = -8;
+    const pipeGapMin = 150;
+    const pipeWidth = 80;
+    const pipeSpeed = 2.5;
+    const coinRadius = 12;
+    const DEFAULT_PIPE_GAP = 200;
+
+    const birdImg = new Image();
+    birdImg.src = 'images/flappy.svg';
+    const coinImg = new Image();
+    coinImg.src = 'images/coin.svg';
+
+    function setViewportHeight() {
+      document.documentElement.style.setProperty(
+        '--viewport-height',
+        `${window.innerHeight}px`
+      );
+    }
+
+    let attemptedFullscreen = false;
+
+    function isFullscreenActive() {
+      return Boolean(
+        document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.msFullscreenElement
+      );
+    }
+
+    function requestFullscreen() {
+      if (attemptedFullscreen) return;
+      attemptedFullscreen = true;
+      if (isFullscreenActive()) return;
+
+      const target = document.documentElement;
+      const request =
+        target.requestFullscreen ||
+        target.webkitRequestFullscreen ||
+        target.msRequestFullscreen;
+
+      if (!request) {
+        attemptedFullscreen = false;
+        return;
+      }
+
+      try {
+        const result = request.call(target);
+        if (result && typeof result.then === 'function') {
+          result.catch(() => {
+            attemptedFullscreen = false;
+          });
+        }
+      } catch (err) {
+        attemptedFullscreen = false;
+      }
+    }
+
+    function bindFullscreenRequest() {
+      if (!isTouchDevice) return;
+
+      const target = document.documentElement;
+      const hasMethod = Boolean(
+        target.requestFullscreen ||
+          target.webkitRequestFullscreen ||
+          target.msRequestFullscreen
+      );
+
+      if (!hasMethod) return;
+
+      const tryRequest = event => {
+        if (event && event.type === 'mouseup') {
+          return;
+        }
+        if (isFullscreenActive()) {
+          canvas.removeEventListener('touchend', tryRequest);
+          canvas.removeEventListener('mouseup', tryRequest);
+          return;
+        }
+        requestFullscreen();
+      };
+
+      canvas.addEventListener('touchend', tryRequest);
+      canvas.addEventListener('mouseup', tryRequest);
+    }
+
+    function handleFullscreenChange() {
+      if (isFullscreenActive()) {
+        resizeGame();
+        resetGame();
+      } else {
+        attemptedFullscreen = false;
+      }
+    }
+
+    ['fullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange'].forEach(
+      eventName => {
+        document.addEventListener(eventName, handleFullscreenChange);
+      }
+    );
+
+    if (isTouchDevice) {
+      document.body.classList.add('touch-device');
+      setViewportHeight();
+      window.addEventListener('resize', () => {
+        window.requestAnimationFrame(setViewportHeight);
+      });
+      window.addEventListener('orientationchange', () => {
+        window.requestAnimationFrame(() => {
+          setViewportHeight();
+          setTimeout(setViewportHeight, 250);
+        });
+      });
+      bindFullscreenRequest();
+    }
+
+    function updateOrientationClass() {
+      if (!isTouchDevice) return;
+      const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+      document.body.classList.toggle('touch-portrait', isPortrait);
+    }
+
+    updateOrientationClass();
+    window.addEventListener('resize', updateOrientationClass);
+    window.addEventListener('orientationchange', () => {
+      updateOrientationClass();
+      setTimeout(updateOrientationClass, 250);
+    });
+
+    function resizeGame() {
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width || canvas.width;
+      const height = rect.height || canvas.height;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    let bird;
+    let pipes;
+    let coins;
+    let score;
+    let running;
+    let currentPipeGap = DEFAULT_PIPE_GAP;
+    let spawnTimer = 0;
+
+    function resetGame() {
+      currentPipeGap = DEFAULT_PIPE_GAP;
+      pipes = [];
+      coins = [];
+      score = 0;
+      running = true;
       spawnTimer = 0;
+      const startX = Math.max(80, canvas.width * 0.18);
+      const radius = Math.max(14, canvas.height * 0.027);
+      bird = { x: startX, y: canvas.height / 2, vy: flapPower, r: radius };
+      if (messageElement) {
+        messageElement.textContent = startMessage;
+      }
+      if (scoreElement) {
+        scoreElement.textContent = `Score: ${score}`;
+      }
+      spawnPipe();
     }
 
-    for(const p of pipes) {
-      p.x -= pipeSpeed;
-      if(!p.passed && p.x + pipeWidth < bird.x - bird.r) {
-        p.passed = true;
-        score += 5;
-        document.getElementById('score').textContent = `Score: ${score}`;
+    function spawnPipe() {
+      const gap = currentPipeGap;
+      const padding = Math.max(80, canvas.height * 0.12);
+      const gapY = padding + Math.random() * (canvas.height - gap - padding * 2);
+      pipes.push({ x: canvas.width, gapY, gap, passed: false });
+      if (Math.random() < 0.8) {
+        coins.push({
+          x: canvas.width + pipeWidth / 2,
+          y: gapY + gap / 2,
+          collected: false
+        });
+      }
+      if (currentPipeGap > pipeGapMin) {
+        currentPipeGap -= 2;
+        if (currentPipeGap < pipeGapMin) currentPipeGap = pipeGapMin;
       }
     }
-    while(pipes.length && pipes[0].x + pipeWidth < -50) pipes.shift();
 
-    for(const c of coins) {
-      c.x -= pipeSpeed;
-    }
-    while(coins.length && coins[0].x + coinRadius < -50) coins.shift();
-
-    for(const c of coins) {
-      if(!c.collected && Math.hypot(bird.x - c.x, bird.y - c.y) < bird.r + coinRadius) {
-        c.collected = true;
-        score += 25;
-        document.getElementById('score').textContent = `Score: ${score}`;
+    function setGameOver() {
+      running = false;
+      if (messageElement) {
+        messageElement.textContent = gameOverMessage;
       }
     }
 
-    for(const p of pipes) {
-      if(bird.x + bird.r > p.x && bird.x - bird.r < p.x + pipeWidth) {
-        if(bird.y - bird.r < p.gapY || bird.y + bird.r > p.gapY + p.gap) {
-          running = false;
-          document.getElementById('message').textContent = 'Game Over - Press Space';
+    function flap() {
+      if (!running) {
+        resetGame();
+        return;
+      }
+      bird.vy = flapPower;
+    }
+
+    document.addEventListener('keydown', event => {
+      if (event.code === 'Space' || event.code === 'ArrowUp') {
+        event.preventDefault();
+        flap();
+      }
+    });
+
+    function isBlockedTarget(target) {
+      return Boolean(target && target.closest('#rotate-overlay'));
+    }
+
+    function isWithinGameArea(target) {
+      return Boolean(target && target.closest('#game-container'));
+    }
+
+    document.addEventListener('mousedown', event => {
+      if (event.button !== 0) return;
+      if (isBlockedTarget(event.target)) return;
+      if (!isWithinGameArea(event.target)) return;
+      flap();
+    });
+
+    document.addEventListener(
+      'touchstart',
+      event => {
+        if (isBlockedTarget(event.target)) return;
+        if (!isWithinGameArea(event.target)) return;
+        event.preventDefault();
+        flap();
+      },
+      { passive: false }
+    );
+
+    function update() {
+      if (!running) return;
+
+      bird.vy += gravity;
+      bird.y += bird.vy;
+
+      if (bird.y + bird.r > canvas.height || bird.y - bird.r < 0) {
+        setGameOver();
+      }
+
+      spawnTimer++;
+      if (spawnTimer > 120) {
+        spawnPipe();
+        spawnTimer = 0;
+      }
+
+      for (const pipe of pipes) {
+        pipe.x -= pipeSpeed;
+        if (!pipe.passed && pipe.x + pipeWidth < bird.x - bird.r) {
+          pipe.passed = true;
+          score += 5;
+          if (scoreElement) {
+            scoreElement.textContent = `Score: ${score}`;
+          }
+        }
+      }
+
+      while (pipes.length && pipes[0].x + pipeWidth < -50) {
+        pipes.shift();
+      }
+
+      for (const coin of coins) {
+        coin.x -= pipeSpeed;
+      }
+
+      while (coins.length && coins[0].x + coinRadius < -50) {
+        coins.shift();
+      }
+
+      for (const coin of coins) {
+        if (!coin.collected && Math.hypot(bird.x - coin.x, bird.y - coin.y) < bird.r + coinRadius) {
+          coin.collected = true;
+          score += 25;
+          if (scoreElement) {
+            scoreElement.textContent = `Score: ${score}`;
+          }
+        }
+      }
+
+      for (const pipe of pipes) {
+        if (bird.x + bird.r > pipe.x && bird.x - bird.r < pipe.x + pipeWidth) {
+          if (bird.y - bird.r < pipe.gapY || bird.y + bird.r > pipe.gapY + pipe.gap) {
+            setGameOver();
+          }
         }
       }
     }
-  }
 
-  function draw() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    // draw bird
-    ctx.drawImage(birdImg, bird.x - bird.r, bird.y - bird.r, bird.r*2, bird.r*2);
-    // draw pipes
-    ctx.fillStyle = '#4caf50';
-    for(const p of pipes) {
-      ctx.fillRect(p.x, 0, pipeWidth, p.gapY);
-      ctx.fillRect(p.x, p.gapY + p.gap, pipeWidth, canvas.height - p.gapY - p.gap);
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(birdImg, bird.x - bird.r, bird.y - bird.r, bird.r * 2, bird.r * 2);
+      ctx.fillStyle = '#4caf50';
+      for (const pipe of pipes) {
+        ctx.fillRect(pipe.x, 0, pipeWidth, pipe.gapY);
+        ctx.fillRect(pipe.x, pipe.gapY + pipe.gap, pipeWidth, canvas.height - pipe.gapY - pipe.gap);
+      }
+      for (const coin of coins) {
+        if (!coin.collected) {
+          ctx.drawImage(
+            coinImg,
+            coin.x - coinRadius,
+            coin.y - coinRadius,
+            coinRadius * 2,
+            coinRadius * 2
+          );
+        }
+      }
     }
-    // draw coins
-    for(const c of coins) {
-      if(!c.collected) ctx.drawImage(coinImg, c.x-coinRadius, c.y-coinRadius, coinRadius*2, coinRadius*2);
+
+    const FRAME_TIME = 1000 / 60;
+
+    function loop() {
+      update();
+      draw();
     }
-  }
 
-  const FRAME_TIME = 1000/60;
-  function loop() {
-    update();
-    draw();
-  }
+    window.addEventListener('load', () => {
+      resizeGame();
+      resetGame();
+      setInterval(loop, FRAME_TIME);
+    });
 
-  window.addEventListener('load', () => {
-    resizeGame();
-    resetGame();
-    setInterval(loop, FRAME_TIME);
-  });
-  window.addEventListener('resize', resizeGame);
+    window.addEventListener('resize', () => {
+      resizeGame();
+    });
+
+    if (isTouchDevice) {
+      window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+          resizeGame();
+          if (!document.body.classList.contains('touch-portrait')) {
+            resetGame();
+          }
+        }, 300);
+      });
+    }
   </script>
   <script>
     fetch('sidebar.html')
       .then(r => r.text())
       .then(html => {
         const placeholder = document.getElementById('sidebar-placeholder');
-        if (placeholder) placeholder.outerHTML = html;
+        if (placeholder) {
+          placeholder.outerHTML = html;
+          if (typeof resizeGame === 'function') {
+            requestAnimationFrame(resizeGame);
+          }
+        }
       });
   </script>
 </body>
