@@ -373,6 +373,18 @@
       canvas.addEventListener('mouseup', tryRequest);
     }
 
+    function handleFullscreenChange() {
+      if (isFullscreenActive()) {
+        resetGame();
+      } else {
+        attemptedFullscreen = false;
+      }
+    }
+
+    ['fullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange'].forEach(eventName => {
+      document.addEventListener(eventName, handleFullscreenChange);
+    });
+
     const hudElement = document.getElementById('hud');
     const titleElement = document.querySelector('#game-container h1');
     const orientationWarning = document.getElementById('orientation-warning');
