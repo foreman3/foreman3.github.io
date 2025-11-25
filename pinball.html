@@ -5,10 +5,9 @@
   <title>Treasure Hunt Pinball</title>
   <style>
     :root {
-      --bg: radial-gradient(circle at 15% 20%, #0a1223, #03050e 65%);
+      --bg: radial-gradient(circle at 20% 25%, #111831, #040611 68%);
       --glass: rgba(255, 255, 255, 0.06);
-      --frame: linear-gradient(180deg, rgba(120, 180, 255, 0.6), rgba(0, 140, 200, 0.28));
-      --rail: linear-gradient(135deg, #3a2315 0%, #8a5a32 18%, #5c371e 42%, #2d1a12 100%);
+      --frame: linear-gradient(180deg, rgba(80, 140, 255, 0.4), rgba(0, 180, 220, 0.25));
       --gold: #ffdc73;
       --teal: #5ee2f8;
       --ink: #0b142d;
@@ -71,18 +70,14 @@
     }
 
     canvas {
-      position: relative;
       border-radius: 18px;
       width: 100%;
       height: 780px;
       border: 3px solid var(--frame);
-      background: radial-gradient(circle at 55% 15%, rgba(255, 255, 255, 0.14), transparent 45%),
-                  radial-gradient(circle at 55% 85%, rgba(65, 120, 255, 0.12), transparent 50%),
-                  linear-gradient(135deg, #091024, #0c172e 35%, #0a1627 55%, #040913 100%);
-      box-shadow:
-        inset 0 0 40px rgba(0,0,0,0.6),
-        inset 0 0 120px rgba(14, 24, 48, 0.85),
-        0 0 34px rgba(0, 160, 255, 0.28);
+      background: radial-gradient(circle at 45% 18%, rgba(100, 170, 255, 0.16), transparent 60%),
+                  radial-gradient(circle at 45% 82%, rgba(255, 255, 255, 0.05), transparent 70%),
+                  #0a0f23;
+      box-shadow: inset 0 0 38px rgba(0,0,0,0.6), 0 0 26px rgba(0, 160, 255, 0.25);
     }
 
     #mini-overlay {
@@ -318,22 +313,15 @@
       }
       draw(ctx) {
         if (!this.alive) return;
-        ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 12;
-        ctx.shadowOffsetY = 6;
-        const grad = ctx.createRadialGradient(this.x - 6, this.y - 8, 1, this.x + 2, this.y + 2, 18);
-        grad.addColorStop(0, '#ffffff');
-        grad.addColorStop(0.45, '#d9edff');
-        grad.addColorStop(1, '#9fb8d6');
+        const grad = ctx.createRadialGradient(this.x - 4, this.y - 6, 2, this.x, this.y, 18);
+        grad.addColorStop(0, '#fff');
+        grad.addColorStop(1, '#c5e8ff');
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
         ctx.stroke();
-        ctx.restore();
       }
     }
 
@@ -354,33 +342,15 @@
         }
       }
       draw(ctx) {
-        const base = ctx.createRadialGradient(this.x - 10, this.y - 12, 2, this.x, this.y, this.r + 18);
-        base.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
-        base.addColorStop(1, 'rgba(0,0,0,0.35)');
-        ctx.fillStyle = base;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r + 8, 0, Math.PI * 2);
-        ctx.fill();
-
-        const grad = ctx.createRadialGradient(this.x - 6, this.y - 8, 3, this.x, this.y, this.r + 6);
-        grad.addColorStop(0, '#fff7d7');
-        grad.addColorStop(0.6, '#ffc568');
-        grad.addColorStop(1, '#a85a14');
+        const grad = ctx.createRadialGradient(this.x - 8, this.y - 10, 4, this.x, this.y, this.r + 12);
+        grad.addColorStop(0, '#ffe6a7');
+        grad.addColorStop(1, '#ff8c3a');
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
         ctx.fill();
-
-        ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r - 5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
         ctx.stroke();
-
-        ctx.fillStyle = 'rgba(30, 40, 80, 0.8)';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
-        ctx.fill();
       }
     }
 
@@ -399,17 +369,10 @@
         }
       }
       draw(ctx) {
-        const grad = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.h);
-        grad.addColorStop(0, 'rgba(255,255,255,0.65)');
-        grad.addColorStop(0.28, this.color);
-        grad.addColorStop(1, 'rgba(0,0,0,0.35)');
-        ctx.fillStyle = grad;
-        ctx.globalAlpha = this.cool > 0 ? 0.6 : 1;
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.cool > 0 ? 0.5 : 0.9;
         ctx.fillRect(this.x, this.y, this.w, this.h);
         ctx.globalAlpha = 1;
-        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(this.x + 1, this.y + 1, this.w - 2, this.h - 2);
       }
     }
 
@@ -432,20 +395,12 @@
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
-        const hub = ctx.createRadialGradient(0, 0, 0, 0, 0, this.r + 8);
-        hub.addColorStop(0, 'rgba(255,255,255,0.9)');
-        hub.addColorStop(1, 'rgba(90, 150, 255, 0.5)');
-        ctx.strokeStyle = hub;
-        ctx.lineWidth = 4.5;
+        ctx.strokeStyle = '#8af';
+        ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(-this.r, 0); ctx.lineTo(this.r, 0);
         ctx.moveTo(0, -this.r); ctx.lineTo(0, this.r);
         ctx.stroke();
-
-        ctx.fillStyle = 'rgba(20, 32, 66, 0.85)';
-        ctx.beginPath();
-        ctx.arc(0, 0, 10, 0, Math.PI * 2);
-        ctx.fill();
         ctx.restore();
       }
     }
@@ -488,25 +443,12 @@
     class Ramp {
       constructor(path, onHit) { this.path = path; this.onHit = onHit; }
       draw(ctx) {
-        ctx.save();
-        ctx.lineWidth = 8;
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = 'rgba(12, 18, 30, 0.65)';
-        ctx.beginPath();
-        ctx.moveTo(this.path[0].x, this.path[0].y + 3);
-        for (let i = 1; i < this.path.length; i++) ctx.lineTo(this.path[i].x, this.path[i].y + 3);
-        ctx.stroke();
-
-        const rail = ctx.createLinearGradient(this.path[0].x, this.path[0].y, this.path[this.path.length-1].x, this.path[this.path.length-1].y);
-        rail.addColorStop(0, `rgba(255, 230, 180, ${0.42 + rampGlow})`);
-        rail.addColorStop(1, `rgba(120, 200, 255, ${0.5 + rampGlow})`);
+        ctx.strokeStyle = `rgba(255, 215, 150, ${0.3 + rampGlow})`;
         ctx.lineWidth = 6;
-        ctx.strokeStyle = rail;
         ctx.beginPath();
         ctx.moveTo(this.path[0].x, this.path[0].y);
         for (let i = 1; i < this.path.length; i++) ctx.lineTo(this.path[i].x, this.path[i].y);
         ctx.stroke();
-        ctx.restore();
       }
       collide(ball) {
         for (let i = 0; i < this.path.length - 1; i++) {
@@ -709,11 +651,20 @@
 
     function drawTable() {
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
-      drawPlayfieldBase();
-      drawRails();
-      drawApronAndPlunger();
-      drawLanes();
-      drawLightWells();
+      // apron
+      const grad = ctx.createLinearGradient(0, HEIGHT - 180, 0, HEIGHT);
+      grad.addColorStop(0, 'rgba(255, 195, 120, 0.04)');
+      grad.addColorStop(1, 'rgba(255, 195, 120, 0.25)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, HEIGHT - 160, WIDTH, 200);
+
+      // lanes
+      ctx.strokeStyle = 'rgba(120, 200, 255, 0.4)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(60, 40); ctx.lineTo(60, HEIGHT - 160);
+      ctx.moveTo(WIDTH - 60, 40); ctx.lineTo(WIDTH - 60, HEIGHT - 240);
+      ctx.stroke();
 
       bumpers.forEach(b => b.draw(ctx));
       spinner.draw(ctx);
@@ -727,97 +678,6 @@
       leftFlipper.draw(ctx, keys.left);
       rightFlipper.draw(ctx, keys.right);
       balls.forEach(b => b.draw(ctx));
-    }
-
-    function drawPlayfieldBase() {
-      const playfield = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-      playfield.addColorStop(0, 'rgba(34, 48, 76, 0.95)');
-      playfield.addColorStop(0.35, 'rgba(28, 40, 64, 0.94)');
-      playfield.addColorStop(1, 'rgba(24, 30, 52, 0.96)');
-      ctx.fillStyle = playfield;
-      ctx.fillRect(10, 10, WIDTH - 20, HEIGHT - 20);
-
-      const vignette = ctx.createRadialGradient(WIDTH/2, HEIGHT/2, 80, WIDTH/2, HEIGHT/2, 380);
-      vignette.addColorStop(0, 'rgba(255,255,255,0)');
-      vignette.addColorStop(1, 'rgba(0,0,0,0.35)');
-      ctx.fillStyle = vignette;
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-      const grain = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-      grain.addColorStop(0, 'rgba(255,255,255,0.05)');
-      grain.addColorStop(1, 'rgba(255,255,255,0.01)');
-      ctx.fillStyle = grain;
-      ctx.globalAlpha = 0.12;
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      ctx.globalAlpha = 1;
-    }
-
-    function drawRails() {
-      ctx.save();
-      ctx.lineWidth = 18;
-      const railGrad = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-      railGrad.addColorStop(0, '#4d301c');
-      railGrad.addColorStop(0.5, '#8a5d34');
-      railGrad.addColorStop(1, '#402513');
-      ctx.strokeStyle = railGrad;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(26, 26); ctx.lineTo(26, HEIGHT - 70); ctx.quadraticCurveTo(26, HEIGHT - 20, 70, HEIGHT - 20); ctx.lineTo(WIDTH - 70, HEIGHT - 20); ctx.quadraticCurveTo(WIDTH - 20, HEIGHT - 20, WIDTH - 20, HEIGHT - 70); ctx.lineTo(WIDTH - 20, 26); ctx.quadraticCurveTo(WIDTH - 20, 26, WIDTH - 40, 26); ctx.lineTo(40, 26);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(40, 60); ctx.lineTo(40, HEIGHT - 120);
-      ctx.moveTo(WIDTH - 40, 60); ctx.lineTo(WIDTH - 40, HEIGHT - 240);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function drawApronAndPlunger() {
-      const apron = ctx.createLinearGradient(0, HEIGHT - 200, 0, HEIGHT);
-      apron.addColorStop(0, 'rgba(18, 26, 40, 0.4)');
-      apron.addColorStop(1, 'rgba(16, 18, 28, 0.85)');
-      ctx.fillStyle = apron;
-      ctx.fillRect(10, HEIGHT - 170, WIDTH - 20, 180);
-
-      ctx.fillStyle = 'rgba(255, 219, 137, 0.08)';
-      ctx.fillRect(WIDTH - 90, HEIGHT - 200, 70, 180);
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(WIDTH - 94, HEIGHT - 205, 78, 190);
-    }
-
-    function drawLanes() {
-      ctx.save();
-      ctx.lineWidth = 4;
-      const laneGlow = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-      laneGlow.addColorStop(0, 'rgba(120, 200, 255, 0.4)');
-      laneGlow.addColorStop(1, 'rgba(255, 225, 180, 0.4)');
-      ctx.strokeStyle = laneGlow;
-      ctx.beginPath();
-      ctx.moveTo(70, 60); ctx.lineTo(70, HEIGHT - 190);
-      ctx.moveTo(WIDTH - 70, 60); ctx.lineTo(WIDTH - 70, HEIGHT - 260);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    function drawLightWells() {
-      const wells = [
-        { x: 120, y: HEIGHT - 260 },
-        { x: WIDTH - 120, y: HEIGHT - 260 },
-        { x: WIDTH/2, y: 120 }
-      ];
-      wells.forEach(w => {
-        const glow = ctx.createRadialGradient(w.x, w.y, 10, w.x, w.y, 90);
-        glow.addColorStop(0, 'rgba(255, 240, 170, 0.35)');
-        glow.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = glow;
-        ctx.fillRect(w.x - 90, w.y - 90, 180, 180);
-      });
     }
 
     function drawKickback() {
