@@ -24,7 +24,7 @@ export class Game {
         this.scene.background = new THREE.Color(0x1a1a1a);
 
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 3000);
-        this.camera.position.set(0, -400, 1200);
+        this.camera.position.set(0, -600, 1000);
         this.camera.lookAt(0, 0, 0);
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -36,7 +36,7 @@ export class Game {
         this.scene.add(ambientLight);
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-        directionalLight.position.set(-200, -200, 1000);
+        directionalLight.position.set(-200, -400, 1000);
         this.scene.add(directionalLight);
     }
 
@@ -82,7 +82,7 @@ export class Game {
     startMiniGame() {
         this.inMiniGame = true;
         this.pinballTable.destroy();
-        this.miniTable = new MiniTable(this.engine, this.scene);
+        this.miniTable = new MiniTable(this.engine, this.scene, this);
         this.scene.background = new THREE.Color(0x4a2a1a);
     }
     
@@ -106,9 +106,12 @@ export class Game {
 
                 if (other.label === 'drain') {
                     this.updateLives(-1);
-                    Matter.Body.setPosition(this.pinballTable.ballBody, {x: TABLE_WIDTH - 80, y: TABLE_HEIGHT - 200});
+                    Matter.Body.setPosition(this.pinballTable.ballBody, {x: TABLE_WIDTH - 70, y: TABLE_HEIGHT - 100});
                     Matter.Body.setVelocity(this.pinballTable.ballBody, {x: 0, y: 0});
-                } else if (other.label === 'bumper' || other.label === 'slingshot' || other.label === 'spinner') {
+                } else if (other.label === 'bumper') {
+                    this.updateScore(100);
+                    other.light.intensity = 1;
+                } else if (other.label === 'slingshot' || other.label === 'spinner') {
                     this.updateScore(100);
                 } else if (other.label === 'dropTarget') {
                     this.updateScore(250);
@@ -141,6 +144,16 @@ export class Game {
                     this.startMiniGame();
                 } else if (other.label === 'pyramid') {
                     this.endMiniGame(true);
+                } else if (other.label === 'saucer') {
+                    this.updateScore(500);
+                    Matter.Body.setVelocity(ball, { x: 0, y: 0 });
+                    Matter.Body.setPosition(ball, other.position);
+                    setTimeout(() => {
+                        Matter.Body.applyForce(ball, ball.position, { x: Math.random() > 0.5 ? 0.1 : -0.1, y: -0.2 });
+                    }, 500);
+                } else if (other.label === 'rollover') {
+                    this.updateScore(100);
+                    other.light.intensity = 1;
                 } else if (other.label === 'miniDrain') {
                     this.endMiniGame(false);
                 } else if (other.label === 'skillShot') {
@@ -164,7 +177,9 @@ export class Game {
         if(this.inMiniGame) {
             if(this.miniTable) this.miniTable.update();
         }
-        else this.pinballTable.update();
+        else {
+            if(this.pinballTable) this.pinballTable.update();
+        }
         this.renderer.render(this.scene, this.camera);
         requestAnimationFrame(() => this.animate());
     }
