@@ -9,6 +9,9 @@ export class PinballTable {
         this.elements = [];
         this.clues = 0;
         this.bookcaseOpen = false;
+        this.lockedBalls = 0;
+        this.balls = [];
+        this.ballMeshes = [];
 
         this.createTable();
         this.createFlippers();
@@ -23,13 +26,13 @@ export class PinballTable {
         this.createUpperPlayfield();
         this.createSaucer();
         this.createRolloverLanes();
-        
+
         this.addControls();
     }
 
     createTable() {
         const wallOptions = { isStatic: true, render: { fillStyle: '#1a2a3a' } };
-        
+
         const walls = [
             // Outer walls
             Matter.Bodies.rectangle(TABLE_WIDTH / 2, -10, TABLE_WIDTH, 20, wallOptions), // Top
@@ -40,8 +43,18 @@ export class PinballTable {
             Matter.Bodies.rectangle(TABLE_WIDTH - 40, TABLE_HEIGHT - 350, 20, 700, wallOptions),
         ];
 
-        this.drain = Matter.Bodies.rectangle(TABLE_WIDTH / 2, TABLE_HEIGHT - 20, TABLE_WIDTH / 2, 20, {isStatic: true, isSensor: true, label: 'drain'});
-        this.tunnel = Matter.Bodies.rectangle(150, 150, 100, 50, {isStatic: true, isSensor: true, label: 'tunnel'});
+        this.drain = Matter.Bodies.rectangle(TABLE_WIDTH / 2, TABLE_HEIGHT - 20, TABLE_WIDTH / 2, 20, { isStatic: true, isSensor: true, label: 'drain' });
+        this.tunnel = Matter.Bodies.rectangle(150, 150, 100, 50, { isStatic: true, isSensor: true, label: 'tunnel', render: { visible: false } }); // Initially hidden
+
+        // Tunnel Gate (Visual)
+        const gateOptions = { isStatic: true, label: 'gate' };
+        this.gate = Matter.Bodies.rectangle(150, 200, 80, 10, gateOptions);
+        Matter.World.add(this.engine.world, [this.gate]);
+
+        const gateMaterial = new THREE.MeshStandardMaterial({ color: 0x555555 });
+        this.gateMesh = new THREE.Mesh(new THREE.BoxGeometry(80, 10, 20), gateMaterial);
+        this.gateMesh.position.set(0, 0, 10); // Offset for visibility
+        this.scene.add(this.gateMesh);
 
         Matter.World.add(this.engine.world, [...walls, this.drain, this.tunnel]);
 
@@ -51,25 +64,25 @@ export class PinballTable {
             this.scene.add(mesh);
             return mesh;
         });
-        
+
         const backgroundGeometry = new THREE.PlaneGeometry(TABLE_WIDTH, TABLE_HEIGHT);
-        const backgroundMaterial = new THREE.MeshStandardMaterial({map: new THREE.TextureLoader().load('https://www.transparenttextures.com/patterns/old-map.png'), color: 0x9a7d5a});
+        const backgroundMaterial = new THREE.MeshStandardMaterial({ color: 0x9a7d5a, roughness: 0.8 });
         const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
         backgroundMesh.position.z = -50;
         this.scene.add(backgroundMesh);
     }
-    
+
     createFlippers() {
         const flipperOptions = { restitution: 0.5, friction: 1, density: 0.01 };
-        
-        this.leftFlipper = Matter.Bodies.rectangle(TABLE_WIDTH/2 - 100, TABLE_HEIGHT - 150, 120, 20, flipperOptions);
+
+        this.leftFlipper = Matter.Bodies.rectangle(TABLE_WIDTH / 2 - 100, TABLE_HEIGHT - 150, 120, 20, flipperOptions);
         const leftFlipperPivot = Matter.Bodies.circle(this.leftFlipper.position.x - 60, this.leftFlipper.position.y, 5, { isStatic: true });
         this.leftFlipperConstraint = Matter.Constraint.create({ bodyA: this.leftFlipper, bodyB: leftFlipperPivot, stiffness: 0.1, length: 0 });
-        
-        this.rightFlipper = Matter.Bodies.rectangle(TABLE_WIDTH/2 + 100, TABLE_HEIGHT - 150, 120, 20, flipperOptions);
+
+        this.rightFlipper = Matter.Bodies.rectangle(TABLE_WIDTH / 2 + 100, TABLE_HEIGHT - 150, 120, 20, flipperOptions);
         const rightFlipperPivot = Matter.Bodies.circle(this.rightFlipper.position.x + 60, this.rightFlipper.position.y, 5, { isStatic: true });
         this.rightFlipperConstraint = Matter.Constraint.create({ bodyA: this.rightFlipper, bodyB: rightFlipperPivot, stiffness: 0.1, length: 0 });
-        
+
         Matter.World.add(this.engine.world, [this.leftFlipper, leftFlipperPivot, this.leftFlipperConstraint, this.rightFlipper, rightFlipperPivot, this.rightFlipperConstraint]);
 
         const flipperMaterial = new THREE.MeshStandardMaterial({ color: 0xff4500, metalness: 0.8, roughness: 0.2 });
@@ -80,34 +93,36 @@ export class PinballTable {
     }
 
     createBall() {
-        this.ballBody = Matter.Bodies.circle(TABLE_WIDTH - 70, TABLE_HEIGHT - 100, 15, { restitution: 0.8, friction: 0.01, label: 'ball' });
-        Matter.World.add(this.engine.world, this.ballBody);
+        const ballBody = Matter.Bodies.circle(TABLE_WIDTH - 70, TABLE_HEIGHT - 100, 15, { restitution: 0.8, friction: 0.01, label: 'ball' });
+        this.balls.push(ballBody);
+        Matter.World.add(this.engine.world, ballBody);
 
         const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1, emissive: 0x999900 });
-        this.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(15, 32, 32), ballMaterial);
-        this.scene.add(this.ballMesh);
+        const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(15, 32, 32), ballMaterial);
+        this.ballMeshes.push(ballMesh);
+        this.scene.add(ballMesh);
     }
 
     createPlunger() {
         const plungerX = TABLE_WIDTH - 70;
         this.plungerBody = Matter.Bodies.rectangle(plungerX, TABLE_HEIGHT - 50, 20, 80, { isStatic: false, label: 'plunger' });
         const plungerConstraint = Matter.Constraint.create({ bodyA: this.plungerBody, pointB: { x: plungerX, y: TABLE_HEIGHT }, stiffness: 0.05 });
-        const plungerStopper = Matter.Bodies.rectangle(plungerX, TABLE_HEIGHT - 100, 40, 20, {isStatic: true});
-        
-        this.skillShotTarget = Matter.Bodies.rectangle(plungerX, TABLE_HEIGHT - 400, 40, 20, {isStatic: true, isSensor: true, label: 'skillShot'});
+        const plungerStopper = Matter.Bodies.rectangle(plungerX, TABLE_HEIGHT - 100, 40, 20, { isStatic: true });
+
+        this.skillShotTarget = Matter.Bodies.rectangle(plungerX, TABLE_HEIGHT - 400, 40, 20, { isStatic: true, isSensor: true, label: 'skillShot' });
         Matter.World.add(this.engine.world, [this.plungerBody, plungerConstraint, plungerStopper, this.skillShotTarget]);
-        
+
         const plungerMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
         this.plungerMesh = new THREE.Mesh(new THREE.BoxGeometry(20, 80, 10), plungerMaterial);
         this.scene.add(this.plungerMesh);
 
         const skillShotMaterial = new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 0.8 });
-        this.skillShotMesh = new THREE.Mesh(new THREE.TorusGeometry( 20, 5, 16, 100 ), skillShotMaterial);
+        this.skillShotMesh = new THREE.Mesh(new THREE.TorusGeometry(20, 5, 16, 100), skillShotMaterial);
         this.scene.add(this.skillShotMesh);
 
         this.plungerPullForce = 0;
     }
-    
+
     createBumpers() {
         const bumperOptions = { isStatic: true, restitution: 1.5, label: 'bumper' };
         this.bumpers = [
@@ -131,43 +146,49 @@ export class PinballTable {
 
     createSlingshots() {
         const slingshotOptions = { isStatic: true, restitution: 1.5, label: 'slingshot' };
-        
-        const leftSlingshotVertices = [ {x: 100, y: 800}, {x: 200, y: 750}, {x: 100, y: 700} ];
+        this.slingshots = [];
+        this.slingshotMeshes = [];
+
+        const leftSlingshotVertices = [{ x: 100, y: 800 }, { x: 200, y: 750 }, { x: 100, y: 700 }];
         this.leftSlingshot = Matter.Bodies.fromVertices(133, 750, [leftSlingshotVertices], slingshotOptions);
-        
-        const rightSlingshotVertices = [ {x: 700, y: 800}, {x: 600, y: 750}, {x: 700, y: 700} ];
+        this.slingshots.push(this.leftSlingshot);
+
+        const rightSlingshotVertices = [{ x: 700, y: 800 }, { x: 600, y: 750 }, { x: 700, y: 700 }];
         this.rightSlingshot = Matter.Bodies.fromVertices(666, 750, [rightSlingshotVertices], slingshotOptions);
+        this.slingshots.push(this.rightSlingshot);
 
         Matter.World.add(this.engine.world, [this.leftSlingshot, this.rightSlingshot]);
 
         const slingshotMaterial = new THREE.MeshStandardMaterial({ color: 0xff1493, emissive: 0xff1493, emissiveIntensity: 0.5 });
-        
+
         const leftSlingshotShape = new THREE.Shape();
         leftSlingshotShape.moveTo(leftSlingshotVertices[0].x - 133, -(leftSlingshotVertices[0].y - 750));
         leftSlingshotShape.lineTo(leftSlingshotVertices[1].x - 133, -(leftSlingshotVertices[1].y - 750));
         leftSlingshotShape.lineTo(leftSlingshotVertices[2].x - 133, -(leftSlingshotVertices[2].y - 750));
         this.leftSlingshotMesh = new THREE.Mesh(new THREE.ShapeGeometry(leftSlingshotShape), slingshotMaterial);
         this.leftSlingshotMesh.position.set(-267, -350, 0);
+        this.slingshotMeshes.push(this.leftSlingshotMesh);
         this.scene.add(this.leftSlingshotMesh);
 
         const rightSlingshotShape = new THREE.Shape();
-        rightSlingshotShape.moveTo(rightSlingshotVertices[0].x - 666, -(rightSlingshotVertices[0].y-750));
-        rightSlingshotShape.lineTo(rightSlingshotVertices[1].x - 666, -(rightSlingshotVertices[1].y-750));
-        rightSlingshotShape.lineTo(rightSlingshotVertices[2].x - 666, -(rightSlingshotVertices[2].y-750));
+        rightSlingshotShape.moveTo(rightSlingshotVertices[0].x - 666, -(rightSlingshotVertices[0].y - 750));
+        rightSlingshotShape.lineTo(rightSlingshotVertices[1].x - 666, -(rightSlingshotVertices[1].y - 750));
+        rightSlingshotShape.lineTo(rightSlingshotVertices[2].x - 666, -(rightSlingshotVertices[2].y - 750));
         this.rightSlingshotMesh = new THREE.Mesh(new THREE.ShapeGeometry(rightSlingshotShape), slingshotMaterial);
         this.rightSlingshotMesh.position.set(266, -350, 0);
+        this.slingshotMeshes.push(this.rightSlingshotMesh);
         this.scene.add(this.rightSlingshotMesh);
     }
 
     createRamps() {
-        const leftRampVertices = [ {x: 100, y: 500}, {x: 200, y: 400}, {x: 200, y: 300}, {x: 100, y: 200} ];
-        const leftRampPath = new THREE.CatmullRomCurve3([ new THREE.Vector3(-350, 100, 0), new THREE.Vector3(-250, 200, 30), new THREE.Vector3(-250, 300, 30), new THREE.Vector3(-350, 400, 0), ]);
-        this.leftRamp = new Ramp(this.engine, this.scene, leftRampVertices, {x: 150, y: 350}, leftRampPath);
+        const leftRampVertices = [{ x: 100, y: 500 }, { x: 200, y: 400 }, { x: 200, y: 300 }, { x: 100, y: 200 }];
+        const leftRampPath = new THREE.CatmullRomCurve3([new THREE.Vector3(-350, 100, 0), new THREE.Vector3(-250, 200, 30), new THREE.Vector3(-250, 300, 30), new THREE.Vector3(-350, 400, 0),]);
+        this.leftRamp = new Ramp(this.engine, this.scene, leftRampVertices, { x: 150, y: 350 }, leftRampPath);
 
-        const rightRampVertices = [ {x: 600, y: 500}, {x: 700, y: 400}, {x: 700, y: 300}, {x: 600, y: 200} ];
-        const rightRampPath = new THREE.CatmullRomCurve3([ new THREE.Vector3(250, 100, 0), new THREE.Vector3(150, 200, 30), new THREE.Vector3(150, 300, 30), new THREE.Vector3(250, 400, 0), ]);
-        this.rightRamp = new Ramp(this.engine, this.scene, rightRampVertices, {x: 650, y: 350}, rightRampPath);
-        this.rightRamp.onDetach = (ball) => { Matter.Body.setPosition(ball, {x: 650, y: 200}); };
+        const rightRampVertices = [{ x: 600, y: 500 }, { x: 700, y: 400 }, { x: 700, y: 300 }, { x: 600, y: 200 }];
+        const rightRampPath = new THREE.CatmullRomCurve3([new THREE.Vector3(250, 100, 0), new THREE.Vector3(150, 200, 30), new THREE.Vector3(150, 300, 30), new THREE.Vector3(250, 400, 0),]);
+        this.rightRamp = new Ramp(this.engine, this.scene, rightRampVertices, { x: 650, y: 350 }, rightRampPath);
+        this.rightRamp.onDetach = (ball) => { Matter.Body.setPosition(ball, { x: 650, y: 200 }); };
     }
 
     createDropTargets() {
@@ -188,21 +209,24 @@ export class PinballTable {
             this.scene.add(targetMesh);
         }
     }
-    
+
     createSpinner() {
-        this.spinner = Matter.Bodies.rectangle(TABLE_WIDTH - 150, 500, 20, 120, {label: 'spinner', frictionAir: 0.1});
+        this.spinner = Matter.Bodies.rectangle(TABLE_WIDTH - 150, 500, 20, 120, { label: 'spinner', frictionAir: 0.1 });
         Matter.World.add(this.engine.world, this.spinner);
         const spinnerMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00, metalness: 0.8, roughness: 0.2 });
         this.spinnerMesh = new THREE.Mesh(new THREE.BoxGeometry(20, 120, 10), spinnerMaterial);
         this.scene.add(this.spinnerMesh);
     }
-    
+
     createBookcase() {
         this.books = [];
         this.bookMeshes = [];
         const bookOptions = { isStatic: true, label: 'book' };
         const bookcaseX = 150;
         const bookcaseY = 800;
+        // Create a container body for the bookcase to rotate
+        this.bookcasePivot = { x: 100, y: 800 }; // Pivot point for rotation
+
         for (let i = 0; i < 5; i++) {
             const book = Matter.Bodies.rectangle(bookcaseX + i * 30, bookcaseY, 25, 80, bookOptions);
             this.books.push(book);
@@ -214,40 +238,40 @@ export class PinballTable {
         Matter.World.add(this.engine.world, this.bookcase);
         this.bookMeshes.forEach(mesh => this.scene.add(mesh));
     }
-    
+
     createUpperPlayfield() {
         const floor = Matter.Bodies.rectangle(650, 250, 200, 100, { isStatic: true });
         Matter.World.add(this.engine.world, floor);
 
-        const floorMesh = new THREE.Mesh(new THREE.BoxGeometry(200, 100, 10), new THREE.MeshStandardMaterial({color: 0x333333}));
+        const floorMesh = new THREE.Mesh(new THREE.BoxGeometry(200, 100, 10), new THREE.MeshStandardMaterial({ color: 0x333333 }));
         floorMesh.position.set(250, -350, 30);
         this.scene.add(floorMesh);
 
-        this.upperFlipper = Matter.Bodies.rectangle(700, 300, 100, 15, {restitution: 0.5, friction: 1, density: 0.01});
-        const upperFlipperPivot = Matter.Bodies.circle(650, 300, 5, {isStatic: true});
-        const upperFlipperConstraint = Matter.Constraint.create({bodyA: this.upperFlipper, bodyB: upperFlipperPivot, stiffness: 0.1, length: 0});
+        this.upperFlipper = Matter.Bodies.rectangle(700, 300, 100, 15, { restitution: 0.5, friction: 1, density: 0.01 });
+        const upperFlipperPivot = Matter.Bodies.circle(650, 300, 5, { isStatic: true });
+        const upperFlipperConstraint = Matter.Constraint.create({ bodyA: this.upperFlipper, bodyB: upperFlipperPivot, stiffness: 0.1, length: 0 });
         Matter.World.add(this.engine.world, [this.upperFlipper, upperFlipperPivot, upperFlipperConstraint]);
-        
-        this.upperFlipperMesh = new THREE.Mesh(new THREE.BoxGeometry(100, 15, 10), new THREE.MeshStandardMaterial({color: 0xff4500}));
+
+        this.upperFlipperMesh = new THREE.Mesh(new THREE.BoxGeometry(100, 15, 10), new THREE.MeshStandardMaterial({ color: 0xff4500 }));
         this.scene.add(this.upperFlipperMesh);
 
         this.upperTargets = [];
         this.upperTargetMeshes = [];
         for (let i = 0; i < 3; i++) {
-            const target = Matter.Bodies.rectangle(600 + i * 50, 200, 40, 20, {isStatic: true, label: 'upperTarget'});
+            const target = Matter.Bodies.rectangle(600 + i * 50, 200, 40, 20, { isStatic: true, label: 'upperTarget' });
             this.upperTargets.push(target);
             Matter.World.add(this.engine.world, target);
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(40, 20, 10), new THREE.MeshStandardMaterial({color: 0x00ff00}));
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(40, 20, 10), new THREE.MeshStandardMaterial({ color: 0x00ff00 }));
             this.upperTargetMeshes.push(mesh);
             this.scene.add(mesh);
         }
     }
-    
+
     createSaucer() {
-        this.saucer = Matter.Bodies.circle(150, 300, 30, {isStatic: true, isSensor: true, label: 'saucer'});
+        this.saucer = Matter.Bodies.circle(150, 300, 30, { isStatic: true, isSensor: true, label: 'saucer' });
         Matter.World.add(this.engine.world, this.saucer);
 
-        const saucerMaterial = new THREE.MeshStandardMaterial({color: 0x9932CC, emissive: 0x9932CC, emissiveIntensity: 0.6});
+        const saucerMaterial = new THREE.MeshStandardMaterial({ color: 0x9932CC, emissive: 0x9932CC, emissiveIntensity: 0.6 });
         this.saucerMesh = new THREE.Mesh(new THREE.TorusGeometry(30, 8, 16, 100), saucerMaterial);
         this.saucerMesh.rotation.x = Math.PI / 2;
         this.scene.add(this.saucerMesh);
@@ -257,10 +281,10 @@ export class PinballTable {
         this.rolloverLanes = [];
         this.rolloverLaneMeshes = [];
         for (let i = 0; i < 4; i++) {
-            const lane = Matter.Bodies.rectangle(300 + i * 50, 150, 10, 80, {isStatic: true, isSensor: true, label: 'rollover'});
+            const lane = Matter.Bodies.rectangle(300 + i * 50, 150, 10, 80, { isStatic: true, isSensor: true, label: 'rollover' });
             this.rolloverLanes.push(lane);
             Matter.World.add(this.engine.world, lane);
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(10, 80, 5), new THREE.MeshStandardMaterial({color: 0xffa500, transparent: true, opacity: 0.5}));
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(10, 80, 5), new THREE.MeshStandardMaterial({ color: 0xffa500, transparent: true, opacity: 0.5 }));
             const light = new THREE.PointLight(0xffa500, 0, 50);
             mesh.add(light);
             lane.light = light;
@@ -289,34 +313,60 @@ export class PinballTable {
                 Matter.Body.setAngularVelocity(this.upperFlipper, 0.2); // Apply a force to return to initial position
             }
         });
-        
+
         const plungerElement = this.game.renderer.domElement;
         plungerElement.addEventListener('mousedown', () => { this.plungerPulling = true; });
         plungerElement.addEventListener('mouseup', () => {
-             this.plungerPulling = false;
-             Matter.Body.applyForce(this.plungerBody, this.plungerBody.position, {x: 0, y: -this.plungerPullForce / 50});
-             this.plungerPullForce = 0;
+            this.plungerPulling = false;
+            Matter.Body.applyForce(this.plungerBody, this.plungerBody.position, { x: 0, y: -this.plungerPullForce / 50 });
+            this.plungerPullForce = 0;
         });
     }
-    
+
     openBookcase() {
-        if(this.bookcaseOpen) return;
+        if (this.bookcaseOpen) return;
         this.bookcaseOpen = true;
-        Matter.Composite.rotate(this.bookcase, Math.PI / 2, {x: 150, y: 800});
+        // Rotate books and move gate
+        // Simple rotation for now, maybe animate over time in update
+        Matter.Composite.rotate(this.bookcase, Math.PI / 2, this.bookcasePivot);
+
+        // Open the gate to the tunnel
+        Matter.Body.setPosition(this.gate, { x: -1000, y: -1000 }); // Move out of way
+        this.gateMesh.visible = false;
+    }
+
+    lockBall(ball) {
+        this.lockedBalls++;
+        Matter.Body.setPosition(ball, { x: -1000, y: -1000 }); // Hide ball
+        Matter.Body.setVelocity(ball, { x: 0, y: 0 });
+        // Visual indicator for locked balls?
+    }
+
+    releaseLockedBalls() {
+        this.balls.forEach(ball => {
+            Matter.Body.setPosition(ball, this.saucer.position);
+            Matter.Body.setVelocity(ball, { x: (Math.random() - 0.5) * 10, y: 10 });
+        });
+        this.lockedBalls = 0;
     }
 
     update() {
-        if(this.plungerPulling) this.plungerPullForce += 1;
+        if (this.plungerPulling) this.plungerPullForce += 1;
         this.leftRamp.update();
         this.rightRamp.update();
-        matterToThree(this.ballBody, this.ballMesh);
+
+        this.balls.forEach((ball, i) => {
+            if (this.ballMeshes[i]) matterToThree(ball, this.ballMeshes[i]);
+        });
+
         matterToThree(this.leftFlipper, this.leftFlipperMesh);
         matterToThree(this.rightFlipper, this.rightFlipperMesh);
         matterToThree(this.upperFlipper, this.upperFlipperMesh);
         matterToThree(this.plungerBody, this.plungerMesh);
         this.bumpers.forEach((bumper, i) => {
             matterToThree(bumper, this.bumperMeshes[i]);
-            bumper.light.intensity *= 0.95; // fade out light
+            matterToThree(bumper, this.bumperMeshes[i]);
+            if (bumper.light) bumper.light.intensity *= 0.95; // fade out light
         });
         this.slingshots.forEach((slingshot, i) => matterToThree(slingshot, this.slingshotMeshes[i]));
         this.dropTargets.forEach((target, i) => {
@@ -332,15 +382,16 @@ export class PinballTable {
                 matterToThree(book, this.bookMeshes[i]);
             }
         });
+        matterToThree(this.gate, this.gateMesh);
         matterToThree(this.saucer, this.saucerMesh);
         this.rolloverLanes.forEach((lane, i) => {
             matterToThree(lane, this.rolloverLaneMeshes[i]);
             if (lane.light) lane.light.intensity *= 0.95;
         });
     }
-    
+
     destroy() {
-         Matter.World.clear(this.engine.world, false);
-         this.scene.clear();
+        Matter.World.clear(this.engine.world, false);
+        this.scene.clear();
     }
 }
