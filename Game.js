@@ -17,13 +17,14 @@ export class Game {
             { id: 'space', name: "Alien Base", item: 'Artifact', unlockClues: 6 }
         ];
         this.availableMissions = [...this.missions];
-        this.startNextMission();
+        this.availableMissions = [...this.missions];
 
         this.inMiniGame = false;
 
         this.initThree();
         this.initMatter();
         this.initUI();
+        this.startNextMission();
         this.initParticles();
 
         this.pinballTable = new PinballTable(this.engine, this.scene, this);
@@ -120,7 +121,6 @@ export class Game {
     startMiniGame() {
         this.inMiniGame = true;
         this.pinballTable.destroy();
-        this.pinballTable.destroy();
         this.miniTable = new MiniTable(this.engine, this.scene, this, this.activeMission.id);
         this.scene.background = new THREE.Color(0x000000);
     }
@@ -182,7 +182,6 @@ export class Game {
                     if (index > -1) {
                         Matter.World.remove(this.engine.world, other);
                         this.scene.remove(this.pinballTable.bookMeshes[index]);
-                        this.pinballTable.bookMeshes[index] = null;
                         this.pinballTable.bookMeshes[index] = null;
                         this.clues++;
                         this.updateMissionUI();
