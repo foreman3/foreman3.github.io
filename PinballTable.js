@@ -39,9 +39,24 @@ export class PinballTable {
             Matter.Bodies.rectangle(TABLE_WIDTH / 2, TABLE_HEIGHT + 10, TABLE_WIDTH, 20, wallOptions), // Bottom
             Matter.Bodies.rectangle(-10, TABLE_HEIGHT / 2, 20, TABLE_HEIGHT, wallOptions), // Left
             Matter.Bodies.rectangle(TABLE_WIDTH + 10, TABLE_HEIGHT / 2, 20, TABLE_HEIGHT, wallOptions), // Right
-            // Plunger lane
-            Matter.Bodies.rectangle(TABLE_WIDTH - 40, TABLE_HEIGHT - 350, 20, 700, wallOptions),
+            // Plunger lane divider
+            Matter.Bodies.rectangle(TABLE_WIDTH - 40, TABLE_HEIGHT - 300, 20, 600, wallOptions),
         ];
+
+        // Top Curve (Plunger Guide)
+        const curveVertices = [];
+        for (let i = 0; i <= 20; i++) {
+            const angle = (i / 20) * Math.PI / 2;
+            curveVertices.push({ x: TABLE_WIDTH - 40 + 40 * Math.cos(angle), y: 100 + 40 * Math.sin(angle) });
+        }
+        // Simplified curve as a series of rectangles or a polygon? 
+        // Let's just use a few static bodies for the curve
+        const topCurve = Matter.Bodies.fromVertices(TABLE_WIDTH - 20, 50, [
+            { x: TABLE_WIDTH, y: 0 }, { x: TABLE_WIDTH, y: 100 }, { x: TABLE_WIDTH - 100, y: 0 }
+        ], wallOptions);
+
+        // Actually, let's just use a diagonal wall for the top right corner
+        walls.push(Matter.Bodies.rectangle(TABLE_WIDTH - 20, 20, 100, 20, { isStatic: true, angle: Math.PI / 4, render: { fillStyle: '#1a2a3a' } }));
 
         this.drain = Matter.Bodies.rectangle(TABLE_WIDTH / 2, TABLE_HEIGHT - 20, TABLE_WIDTH / 2, 20, { isStatic: true, isSensor: true, label: 'drain' });
         this.tunnel = Matter.Bodies.rectangle(150, 150, 100, 50, { isStatic: true, isSensor: true, label: 'tunnel', render: { visible: false } }); // Initially hidden
@@ -75,19 +90,21 @@ export class PinballTable {
     createFlippers() {
         const flipperOptions = { restitution: 0.5, friction: 1, density: 0.01 };
 
-        this.leftFlipper = Matter.Bodies.rectangle(TABLE_WIDTH / 2 - 100, TABLE_HEIGHT - 150, 120, 20, flipperOptions);
-        const leftFlipperPivot = Matter.Bodies.circle(this.leftFlipper.position.x - 60, this.leftFlipper.position.y, 5, { isStatic: true });
+        // Left Flipper
+        this.leftFlipper = Matter.Bodies.rectangle(TABLE_WIDTH / 2 - 120, TABLE_HEIGHT - 120, 150, 25, { ...flipperOptions, angle: Math.PI / 6 });
+        const leftFlipperPivot = Matter.Bodies.circle(this.leftFlipper.position.x - 65, this.leftFlipper.position.y - 20, 5, { isStatic: true });
         this.leftFlipperConstraint = Matter.Constraint.create({ bodyA: this.leftFlipper, bodyB: leftFlipperPivot, stiffness: 0.1, length: 0 });
 
-        this.rightFlipper = Matter.Bodies.rectangle(TABLE_WIDTH / 2 + 100, TABLE_HEIGHT - 150, 120, 20, flipperOptions);
-        const rightFlipperPivot = Matter.Bodies.circle(this.rightFlipper.position.x + 60, this.rightFlipper.position.y, 5, { isStatic: true });
+        // Right Flipper
+        this.rightFlipper = Matter.Bodies.rectangle(TABLE_WIDTH / 2 + 120, TABLE_HEIGHT - 120, 150, 25, { ...flipperOptions, angle: -Math.PI / 6 });
+        const rightFlipperPivot = Matter.Bodies.circle(this.rightFlipper.position.x + 65, this.rightFlipper.position.y - 20, 5, { isStatic: true });
         this.rightFlipperConstraint = Matter.Constraint.create({ bodyA: this.rightFlipper, bodyB: rightFlipperPivot, stiffness: 0.1, length: 0 });
 
         Matter.World.add(this.engine.world, [this.leftFlipper, leftFlipperPivot, this.leftFlipperConstraint, this.rightFlipper, rightFlipperPivot, this.rightFlipperConstraint]);
 
         const flipperMaterial = new THREE.MeshStandardMaterial({ color: 0xff4500, metalness: 0.8, roughness: 0.2 });
-        this.leftFlipperMesh = new THREE.Mesh(new THREE.BoxGeometry(120, 20, 15), flipperMaterial);
-        this.rightFlipperMesh = new THREE.Mesh(new THREE.BoxGeometry(120, 20, 15), flipperMaterial);
+        this.leftFlipperMesh = new THREE.Mesh(new THREE.BoxGeometry(150, 25, 15), flipperMaterial);
+        this.rightFlipperMesh = new THREE.Mesh(new THREE.BoxGeometry(150, 25, 15), flipperMaterial);
         this.scene.add(this.leftFlipperMesh);
         this.scene.add(this.rightFlipperMesh);
     }
@@ -149,12 +166,15 @@ export class PinballTable {
         this.slingshots = [];
         this.slingshotMeshes = [];
 
-        const leftSlingshotVertices = [{ x: 100, y: 800 }, { x: 200, y: 750 }, { x: 100, y: 700 }];
-        this.leftSlingshot = Matter.Bodies.fromVertices(133, 750, [leftSlingshotVertices], slingshotOptions);
+        // Moved down to align with flippers
+        const yPos = TABLE_HEIGHT - 250;
+
+        const leftSlingshotVertices = [{ x: 150, y: yPos + 50 }, { x: 220, y: yPos }, { x: 150, y: yPos - 50 }];
+        this.leftSlingshot = Matter.Bodies.fromVertices(173, yPos, [leftSlingshotVertices], slingshotOptions);
         this.slingshots.push(this.leftSlingshot);
 
-        const rightSlingshotVertices = [{ x: 700, y: 800 }, { x: 600, y: 750 }, { x: 700, y: 700 }];
-        this.rightSlingshot = Matter.Bodies.fromVertices(666, 750, [rightSlingshotVertices], slingshotOptions);
+        const rightSlingshotVertices = [{ x: 650, y: yPos + 50 }, { x: 580, y: yPos }, { x: 650, y: yPos - 50 }];
+        this.rightSlingshot = Matter.Bodies.fromVertices(626, yPos, [rightSlingshotVertices], slingshotOptions);
         this.slingshots.push(this.rightSlingshot);
 
         Matter.World.add(this.engine.world, [this.leftSlingshot, this.rightSlingshot]);
@@ -162,20 +182,20 @@ export class PinballTable {
         const slingshotMaterial = new THREE.MeshStandardMaterial({ color: 0xff1493, emissive: 0xff1493, emissiveIntensity: 0.5 });
 
         const leftSlingshotShape = new THREE.Shape();
-        leftSlingshotShape.moveTo(leftSlingshotVertices[0].x - 133, -(leftSlingshotVertices[0].y - 750));
-        leftSlingshotShape.lineTo(leftSlingshotVertices[1].x - 133, -(leftSlingshotVertices[1].y - 750));
-        leftSlingshotShape.lineTo(leftSlingshotVertices[2].x - 133, -(leftSlingshotVertices[2].y - 750));
+        leftSlingshotShape.moveTo(leftSlingshotVertices[0].x - 173, -(leftSlingshotVertices[0].y - yPos));
+        leftSlingshotShape.lineTo(leftSlingshotVertices[1].x - 173, -(leftSlingshotVertices[1].y - yPos));
+        leftSlingshotShape.lineTo(leftSlingshotVertices[2].x - 173, -(leftSlingshotVertices[2].y - yPos));
         this.leftSlingshotMesh = new THREE.Mesh(new THREE.ShapeGeometry(leftSlingshotShape), slingshotMaterial);
-        this.leftSlingshotMesh.position.set(-267, -350, 0);
+        this.leftSlingshotMesh.position.set(-227, -(yPos - TABLE_HEIGHT / 2), 0);
         this.slingshotMeshes.push(this.leftSlingshotMesh);
         this.scene.add(this.leftSlingshotMesh);
 
         const rightSlingshotShape = new THREE.Shape();
-        rightSlingshotShape.moveTo(rightSlingshotVertices[0].x - 666, -(rightSlingshotVertices[0].y - 750));
-        rightSlingshotShape.lineTo(rightSlingshotVertices[1].x - 666, -(rightSlingshotVertices[1].y - 750));
-        rightSlingshotShape.lineTo(rightSlingshotVertices[2].x - 666, -(rightSlingshotVertices[2].y - 750));
+        rightSlingshotShape.moveTo(rightSlingshotVertices[0].x - 626, -(rightSlingshotVertices[0].y - yPos));
+        rightSlingshotShape.lineTo(rightSlingshotVertices[1].x - 626, -(rightSlingshotVertices[1].y - yPos));
+        rightSlingshotShape.lineTo(rightSlingshotVertices[2].x - 626, -(rightSlingshotVertices[2].y - yPos));
         this.rightSlingshotMesh = new THREE.Mesh(new THREE.ShapeGeometry(rightSlingshotShape), slingshotMaterial);
-        this.rightSlingshotMesh.position.set(266, -350, 0);
+        this.rightSlingshotMesh.position.set(226, -(yPos - TABLE_HEIGHT / 2), 0);
         this.slingshotMeshes.push(this.rightSlingshotMesh);
         this.scene.add(this.rightSlingshotMesh);
     }
@@ -306,11 +326,11 @@ export class PinballTable {
 
         document.addEventListener('keyup', (event) => {
             if (event.key === 'ArrowLeft') {
-                Matter.Body.setAngularVelocity(this.leftFlipper, 0.2); // Apply a force to return to initial position
+                Matter.Body.setAngularVelocity(this.leftFlipper, 0.2);
             } else if (event.key === 'ArrowRight') {
-                Matter.Body.setAngularVelocity(this.rightFlipper, -0.2); // Apply a force to return to initial position
+                Matter.Body.setAngularVelocity(this.rightFlipper, -0.2);
             } else if (event.key === 'Shift') {
-                Matter.Body.setAngularVelocity(this.upperFlipper, 0.2); // Apply a force to return to initial position
+                Matter.Body.setAngularVelocity(this.upperFlipper, 0.2);
             }
         });
 
