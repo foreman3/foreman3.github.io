@@ -26,15 +26,61 @@ export class PinballTable {
     }
 
     createTable() {
-        // ... (same as before)
+        const wallOptions = { isStatic: true, render: { fillStyle: '#1a2a3a' } };
+        
+        const vertices = [
+            { x: 0, y: 0 }, { x: TABLE_WIDTH, y: 0 }, { x: TABLE_WIDTH, y: TABLE_HEIGHT }, { x: 0, y: TABLE_HEIGHT },
+        ];
+
+        const wall = Matter.Bodies.fromVertices(TABLE_WIDTH/2, TABLE_HEIGHT/2, [vertices], wallOptions);
+
+        this.drain = Matter.Bodies.rectangle(TABLE_WIDTH / 2, TABLE_HEIGHT - 20, TABLE_WIDTH / 2, 20, {isStatic: true, isSensor: true, label: 'drain'});
+        this.tunnel = Matter.Bodies.rectangle(150, 150, 100, 50, {isStatic: true, isSensor: true, label: 'tunnel'});
+
+        Matter.World.add(this.engine.world, [wall, this.drain, this.tunnel]);
+
+        const shape = new THREE.Shape();
+        shape.moveTo(vertices[0].x - TABLE_WIDTH/2, -(vertices[0].y-TABLE_HEIGHT/2));
+        shape.lineTo(vertices[1].x - TABLE_WIDTH/2, -(vertices[1].y-TABLE_HEIGHT/2));
+        shape.lineTo(vertices[2].x - TABLE_WIDTH/2, -(vertices[2].y-TABLE_HEIGHT/2));
+        shape.lineTo(vertices[3].x - TABLE_WIDTH/2, -(vertices[3].y-TABLE_HEIGHT/2));
+        shape.lineTo(vertices[0].x - TABLE_WIDTH/2, -(vertices[0].y-TABLE_HEIGHT/2));
+        
+        const extrudeSettings = { depth: 20, bevelEnabled: false };
+        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        const material = new THREE.MeshStandardMaterial({ color: 0x1a2a3a });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.z = -10;
+        this.scene.add(mesh);
     }
     
     createFlippers() {
-        // ... (same as before)
+        const flipperOptions = { restitution: 0.5, friction: 1, density: 0.01 };
+        
+        this.leftFlipper = Matter.Bodies.rectangle(TABLE_WIDTH/2 - 120, TABLE_HEIGHT - 120, 150, 20, flipperOptions);
+        const leftFlipperPivot = Matter.Bodies.circle(this.leftFlipper.position.x - 70, this.leftFlipper.position.y, 5, { isStatic: true });
+        this.leftFlipperConstraint = Matter.Constraint.create({ bodyA: this.leftFlipper, bodyB: leftFlipperPivot, stiffness: 0.1, length: 0 });
+        
+        this.rightFlipper = Matter.Bodies.rectangle(TABLE_WIDTH/2 + 120, TABLE_HEIGHT - 120, 150, 20, flipperOptions);
+        const rightFlipperPivot = Matter.Bodies.circle(this.rightFlipper.position.x + 70, this.rightFlipper.position.y, 5, { isStatic: true });
+        this.rightFlipperConstraint = Matter.Constraint.create({ bodyA: this.rightFlipper, bodyB: rightFlipperPivot, stiffness: 0.1, length: 0 });
+        
+        Matter.World.add(this.engine.world, [this.leftFlipper, leftFlipperPivot, this.leftFlipperConstraint, this.rightFlipper, rightFlipperPivot, this.rightFlipperConstraint]);
+
+        const flipperMaterial = new THREE.MeshStandardMaterial({ color: 0xff4500, metalness: 0.6, roughness: 0.3 });
+        this.leftFlipperMesh = new THREE.Mesh(new THREE.BoxGeometry(150, 20, 10), flipperMaterial);
+        this.rightFlipperMesh = new THREE.Mesh(new THREE.BoxGeometry(150, 20, 10), flipperMaterial);
+        this.scene.add(this.leftFlipperMesh);
+        this.scene.add(this.rightFlipperMesh);
     }
 
     createBall() {
-        // ... (same as before)
+        this.ballBody = Matter.Bodies.circle(TABLE_WIDTH - 80, TABLE_HEIGHT - 200, 20, { restitution: 0.9, friction: 0.01, label: 'ball' });
+        Matter.World.add(this.engine.world, this.ballBody);
+
+        const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
+        this.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(20, 32, 32), ballMaterial);
+        this.scene.add(this.ballMesh);
     }
 
     createPlunger() {
@@ -58,11 +104,37 @@ export class PinballTable {
     }
     
     createBumpers() {
-        // ... (same as before)
+        const bumperOptions = { isStatic: true, restitution: 2, label: 'bumper' };
+        this.bumpers = [
+            Matter.Bodies.circle(TABLE_WIDTH / 2, 350, 40, bumperOptions),
+            Matter.Bodies.circle(TABLE_WIDTH / 2 - 150, 450, 30, bumperOptions),
+            Matter.Bodies.circle(TABLE_WIDTH / 2 + 150, 450, 30, bumperOptions)
+        ];
+        Matter.World.add(this.engine.world, this.bumpers);
+
+        const bumperMaterial = new THREE.MeshStandardMaterial({ color: 0x00ffff, metalness: 0.7, roughness: 0.2, emissive: 0x00ffff, emissiveIntensity: 0.5 });
+        this.bumperMeshes = this.bumpers.map((bumper, i) => {
+            const radius = bumper.circleRadius;
+            const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 30, 32), bumperMaterial);
+            this.scene.add(mesh);
+            return mesh;
+        });
     }
 
     createSlingshots() {
-        // ... (same as before)
+        const slingshotOptions = { isStatic: true, restitution: 1.5, label: 'slingshot' };
+        this.slingshots = [
+            Matter.Bodies.rectangle(TABLE_WIDTH/2 - 250, TABLE_HEIGHT - 350, 20, 150, slingshotOptions),
+            Matter.Bodies.rectangle(TABLE_WIDTH/2 + 250, TABLE_HEIGHT - 350, 20, 150, slingshotOptions)
+        ];
+        Matter.World.add(this.engine.world, this.slingshots);
+
+        const slingshotMaterial = new THREE.MeshStandardMaterial({ color: 0xff1493 });
+        this.slingshotMeshes = this.slingshots.map(slingshot => {
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(20, 150, 20), slingshotMaterial);
+            this.scene.add(mesh);
+            return mesh;
+        });
     }
 
     createRamps() {
@@ -93,15 +165,45 @@ export class PinballTable {
     }
 
     createDropTargets() {
-        // ... (same as before)
+        this.dropTargets = [];
+        this.dropTargetMeshes = [];
+        const targetOptions = { isStatic: true, label: 'dropTarget' };
+        for (let i = 0; i < 3; i++) {
+            const target = Matter.Bodies.rectangle(TABLE_WIDTH / 2 - 50 + i * 50, 600, 40, 20, targetOptions);
+            this.dropTargets.push(target);
+            Matter.World.add(this.engine.world, target);
+
+            const targetMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+            const targetMesh = new THREE.Mesh(new THREE.BoxGeometry(40, 20, 10), targetMaterial);
+            this.dropTargetMeshes.push(targetMesh);
+            this.scene.add(targetMesh);
+        }
     }
     
     createSpinner() {
-        // ... (same as before)
+        this.spinner = Matter.Bodies.rectangle(TABLE_WIDTH - 150, 400, 20, 100, {label: 'spinner'});
+        Matter.World.add(this.engine.world, this.spinner);
+        const spinnerMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+        this.spinnerMesh = new THREE.Mesh(new THREE.BoxGeometry(20, 100, 10), spinnerMaterial);
+        this.scene.add(this.spinnerMesh);
     }
     
     createBookcase() {
-        // ... (same as before)
+        this.books = [];
+        this.bookMeshes = [];
+        const bookOptions = { isStatic: true, label: 'book' };
+        const bookcaseX = 150;
+        const bookcaseY = 800;
+        for (let i = 0; i < 5; i++) {
+            const book = Matter.Bodies.rectangle(bookcaseX + i * 30, bookcaseY, 25, 80, bookOptions);
+            this.books.push(book);
+            const bookMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const bookMesh = new THREE.Mesh(new THREE.BoxGeometry(25, 80, 30), bookMaterial);
+            this.bookMeshes.push(bookMesh);
+        }
+        this.bookcase = Matter.Composite.create({ bodies: this.books });
+        Matter.World.add(this.engine.world, this.bookcase);
+        this.bookMeshes.forEach(mesh => this.scene.add(mesh));
     }
     
     createUpperPlayfield() {
