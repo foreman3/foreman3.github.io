@@ -24,9 +24,14 @@ export class MainTable extends Phaser.Scene {
         g.generateTexture('book', 15, 40);
         g.clear();
 
-        g.fillStyle(0x10151b, 1);
-        g.fillRect(0, 0, this.tableWidth, this.tableHeight);
-        g.generateTexture('playfield', this.tableWidth, this.tableHeight);
+        // Simple vertical gradient playfield
+        const bg = this.make.graphics({ x: 0, y: 0, add: false });
+        const grd = bg.createLinearGradient(0, 0, 0, this.tableHeight);
+        grd.addColorStop(0, '#1e2a38');
+        grd.addColorStop(1, '#0a0d14');
+        bg.fillStyle(grd);
+        bg.fillRect(0, 0, this.tableWidth, this.tableHeight);
+        bg.generateTexture('playfield', this.tableWidth, this.tableHeight);
     }
 
     create() {
@@ -36,7 +41,7 @@ export class MainTable extends Phaser.Scene {
         if (!this.scene.isActive('UI')) this.scene.launch('UI');
 
         this.matter.world.setBounds(0, 0, this.tableWidth, this.tableHeight);
-        this.matter.world.setGravity(0, 1.05);
+        this.matter.world.setGravity(0, 0.8);
 
         this.defineMissions();
         this.initState();
@@ -57,6 +62,8 @@ export class MainTable extends Phaser.Scene {
         this.setupInput();
 
         this.spawnBall();
+        // Ensure lives start at a playable value each load
+        this.registry.set('lives', 3);
     }
 
     defineMissions() {
@@ -102,6 +109,10 @@ export class MainTable extends Phaser.Scene {
         this.drain = this.matter.add.rectangle(this.tableWidth / 2, this.tableHeight + 10, this.tableWidth - 100, 20, { isStatic: true, isSensor: true, label: 'drain' });
         this.leftOutlane = this.matter.add.rectangle(80, this.tableHeight - 10, 60, 20, { isStatic: true, isSensor: true, label: 'leftOutlane' });
         this.kickback = this.matter.add.rectangle(80, this.tableHeight - 60, 20, 80, { isStatic: true, label: 'kickback' });
+
+        // Side art for readability
+        this.add.rectangle(520, 400, 20, 800, 0x0c1622, 0.7).setDepth(0);
+        this.add.rectangle(300, 10, 600, 20, 0x22354d, 0.9).setDepth(0);
     }
 
     createFlippers() {
@@ -126,6 +137,9 @@ export class MainTable extends Phaser.Scene {
         body.restAngle = side === 'left' ? Phaser.Math.DegToRad(-25) : Phaser.Math.DegToRad(25);
         body.activeAngle = side === 'left' ? Phaser.Math.DegToRad(35) : Phaser.Math.DegToRad(-35);
         MatterBody.setAngle(body, body.restAngle);
+        const color = side === 'left' ? 0xff7f50 : 0x4fa8ff;
+        body.sprite = this.add.rectangle(x, y, width, height, color, 0.9).setOrigin(0.5).setDepth(3);
+        body.sprite.setStrokeStyle(2, 0xffffff, 0.6);
         return body;
     }
 
@@ -143,7 +157,10 @@ export class MainTable extends Phaser.Scene {
             this.matter.add.circle(220, 320, 22, opts),
             this.matter.add.circle(380, 320, 22, opts)
         ];
-        this.bumpers.forEach((b, i) => this.add.image(b.position.x, b.position.y, 'bumper').setScale(0.9 + i * 0.05));
+        this.bumpers.forEach((b, i) => {
+            const sprite = this.add.image(b.position.x, b.position.y, 'bumper').setScale(0.9 + i * 0.05);
+            sprite.setTint(0xff5959);
+        });
     }
 
     createSlingshots() {
@@ -151,6 +168,8 @@ export class MainTable extends Phaser.Scene {
         this.slings = [];
         this.slings.push(this.matter.add.trapezoid(170, 620, 90, 40, 0.35, opts));
         this.slings.push(this.matter.add.trapezoid(430, 620, 90, 40, 0.35, opts));
+        this.add.triangle(170, 620, 0, 30, 30, -30, -30, -30, 0xff69b4, 0.7).setStrokeStyle(2, 0xffffff, 0.5);
+        this.add.triangle(430, 620, 0, 30, 30, -30, -30, -30, 0xff69b4, 0.7).setStrokeStyle(2, 0xffffff, 0.5);
     }
 
     createClueObjects() {
@@ -194,6 +213,7 @@ export class MainTable extends Phaser.Scene {
         this.tunnel = this.matter.add.rectangle(160, 440, 80, 40, { isStatic: true, isSensor: true, label: 'tunnel' });
         this.tunnelGate = this.matter.add.rectangle(160, 480, 120, 12, { isStatic: true, label: 'tunnelGate' });
         this.tunnelIndicator = this.add.rectangle(160, 440, 70, 40, 0x1c1f2b, 0.35).setStrokeStyle(2, 0xffd700, 0);
+        this.add.text(120, 415, 'Secret Tunnel', { fontSize: '12px', fill: '#ffd700' });
     }
 
     addTriangle(x, y, color) {
@@ -485,7 +505,7 @@ export class MainTable extends Phaser.Scene {
         } else if (Phaser.Input.Keyboard.JustUp(this.spaceKey)) {
             const launchBall = this.balls.find(b => b.body && b.body.position.x > 520 && b.body.position.y > 620);
             if (launchBall) {
-                MatterBody.setVelocity(launchBall.body, { x: 0, y: -18 - this.plungerPull * 0.25 });
+                MatterBody.setVelocity(launchBall.body, { x: 0, y: -20 - this.plungerPull * 0.5 });
             }
             this.plungerPull = 0;
             MatterBody.setPosition(this.plunger, { x: this.plunger.position.x, y: this.plungerRestY });
@@ -506,5 +526,9 @@ export class MainTable extends Phaser.Scene {
         const newAngle = Phaser.Math.Angle.RotateTo(flipper.angle, target, step);
         MatterBody.setAngle(flipper, newAngle);
         MatterBody.setAngularVelocity(flipper, 0);
+        if (flipper.sprite) {
+            flipper.sprite.setPosition(flipper.position.x, flipper.position.y);
+            flipper.sprite.setRotation(newAngle);
+        }
     }
 }
