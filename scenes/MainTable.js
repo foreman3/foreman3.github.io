@@ -24,12 +24,9 @@ export class MainTable extends Phaser.Scene {
         g.generateTexture('book', 15, 40);
         g.clear();
 
-        // Simple vertical gradient playfield
+        // Simple vertical gradient playfield (using Phaser fillGradientStyle)
         const bg = this.make.graphics({ x: 0, y: 0, add: false });
-        const grd = bg.createLinearGradient(0, 0, 0, this.tableHeight);
-        grd.addColorStop(0, '#1e2a38');
-        grd.addColorStop(1, '#0a0d14');
-        bg.fillStyle(grd);
+        bg.fillGradientStyle(0x1e2a38, 0x1e2a38, 0x0a0d14, 0x0a0d14, 1);
         bg.fillRect(0, 0, this.tableWidth, this.tableHeight);
         bg.generateTexture('playfield', this.tableWidth, this.tableHeight);
     }
