@@ -6,9 +6,17 @@ export class MainTable extends Phaser.Scene {
     preload() {
         // Load assets here (images, sounds)
         const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+
+        // Red texture for particles
         graphics.fillStyle(0xff0000, 1);
         graphics.fillCircle(5, 5, 5);
         graphics.generateTexture('red', 10, 10);
+        graphics.clear();
+
+        // Yellow texture for ball
+        graphics.fillStyle(0xffd700, 1);
+        graphics.fillCircle(10, 10, 10);
+        graphics.generateTexture('ball', 20, 20);
     }
 
     create() {
@@ -68,25 +76,6 @@ export class MainTable extends Phaser.Scene {
         this.matter.add.fromVertices(560, 50, [
             { x: 0, y: 0 }, { x: 40, y: 40 }, { x: 0, y: 80 }
         ], { isStatic: true, render: { fillColor: 0x2c3e50 } });
-
-        // Drain (Sensor)
-        this.drain = this.matter.add.rectangle(300, 810, 600, 20, { isStatic: true, isSensor: true, label: 'drain' });
-    }
-
-    createBall() {
-        this.ball = this.matter.add.circle(570, 750, 10, {
-            restitution: 0.8,
-            friction: 0.005,
-            label: 'ball',
-            render: { fillColor: 0xffd700 }
-        });
-
-        this.emitter = this.add.particles(0, 0, 'red', {
-            speed: 100,
-            scale: { start: 0.5, end: 0 },
-            blendMode: 'ADD',
-            follow: this.ball
-        });
     }
 
     createPlunger() {
@@ -188,15 +177,15 @@ export class MainTable extends Phaser.Scene {
     update() {
         // Flipper Controls
         if (this.leftKey.isDown) {
-            this.matter.body.setAngularVelocity(this.leftFlipper.body, -0.2);
+            this.matter.body.setAngularVelocity(this.leftFlipper, -0.2);
         } else {
-            this.matter.body.setAngularVelocity(this.leftFlipper.body, 0.1); // Return force
+            this.matter.body.setAngularVelocity(this.leftFlipper, 0.1); // Return force
         }
 
         if (this.rightKey.isDown) {
-            this.matter.body.setAngularVelocity(this.rightFlipper.body, 0.2);
+            this.matter.body.setAngularVelocity(this.rightFlipper, 0.2);
         } else {
-            this.matter.body.setAngularVelocity(this.rightFlipper.body, -0.1); // Return force
+            this.matter.body.setAngularVelocity(this.rightFlipper, -0.1); // Return force
         }
 
         // Plunger Logic
@@ -204,15 +193,15 @@ export class MainTable extends Phaser.Scene {
             // Charge plunger (visual only for now, or move body down)
         } else if (Phaser.Input.Keyboard.JustUp(this.spaceKey)) {
             // Launch ball if in lane
-            if (this.ball.position.x > 550 && this.ball.position.y > 600) {
-                this.matter.body.setVelocity(this.ball, { x: 0, y: -25 });
+            if (this.ball.x > 550 && this.ball.y > 600) {
+                this.ball.setVelocity(0, -25);
             }
         }
 
         // Respawn if drained
-        if (this.ball.position.y > 820) {
-            this.matter.body.setPosition(this.ball, { x: 570, y: 750 });
-            this.matter.body.setVelocity(this.ball, { x: 0, y: 0 });
+        if (this.ball.y > 820) {
+            this.ball.setPosition(570, 750);
+            this.ball.setVelocity(0, 0);
         }
     }
 }
