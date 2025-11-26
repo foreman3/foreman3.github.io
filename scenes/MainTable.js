@@ -76,6 +76,27 @@ export class MainTable extends Phaser.Scene {
         this.drain = this.matter.add.rectangle(300, 810, 600, 20, { isStatic: true, isSensor: true, label: 'drain' });
     }
 
+    createBall() {
+        this.ball = this.matter.add.circle(570, 750, 10, {
+            restitution: 0.8,
+            friction: 0.005,
+            label: 'ball',
+            render: { fillColor: 0xffd700 }
+        });
+
+        this.emitter = this.particles.createEmitter({
+            speed: 100,
+            scale: { start: 0.5, end: 0 },
+            blendMode: 'ADD',
+            follow: this.ball
+        });
+        this.emitter.startFollow(this.ball);
+    }
+
+    createPlunger() {
+        this.plunger = this.matter.add.rectangle(570, 780, 20, 40, { isStatic: true, label: 'plunger' });
+    }
+
     createFlippers() {
         const flipperOptions = {
             isStatic: false,
