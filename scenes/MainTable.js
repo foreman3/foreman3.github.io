@@ -50,6 +50,9 @@ export class MainTable extends Phaser.Scene {
         this.createRampsAndSpinners();
         this.createLocksAndTunnel();
 
+        // After core geometry is ready, select mission
+        this.startNextMission();
+
         this.setupCollisions();
         this.setupInput();
 
@@ -84,8 +87,6 @@ export class MainTable extends Phaser.Scene {
         this.spinnerHits = 0;
         this.lockedBalls = [];
         this.miniTableActive = false;
-
-        this.startNextMission();
     }
 
     createTable() {
@@ -352,6 +353,7 @@ export class MainTable extends Phaser.Scene {
     }
 
     closeTunnel() {
+        if (!this.tunnelGate) return;
         this.tunnelOpen = false;
         this.tunnelGate.isSensor = false;
         this.tunnelIndicator.setStrokeStyle(2, 0xffd700, 0);
