@@ -296,6 +296,7 @@ export class MainTable extends Phaser.Scene {
         this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
         this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     }
 
     setupCollisions() {
@@ -462,7 +463,7 @@ export class MainTable extends Phaser.Scene {
         } else {
             // keep player going with a new ball if none remain
             if (this.balls.filter(b => b.active !== false && b.body.position.y < 1200).length === 0) {
-                this.spawnBall(560, 700);
+                this.spawnBall();
             }
         }
     }
@@ -542,7 +543,7 @@ export class MainTable extends Phaser.Scene {
             this.resetGame();
             return;
         }
-        this.time.delayedCall(600, () => this.spawnBall(560, 700));
+        this.time.delayedCall(600, () => this.spawnBall());
     }
 
     resetGame() {
@@ -556,7 +557,7 @@ export class MainTable extends Phaser.Scene {
         this.startNextMission();
         this.clueCount = 0;
         this.registry.set('clues', 0);
-        this.spawnBall(560, 700);
+        this.spawnBall();
     }
 
     addScore(amount) {
@@ -594,7 +595,7 @@ export class MainTable extends Phaser.Scene {
         // Keep any stragglers alive
         this.balls = this.balls.filter(b => b.body);
         if (!this.miniTableActive && this.balls.length === 0) {
-            this.time.delayedCall(400, () => this.spawnBall(560, 700));
+            this.time.delayedCall(400, () => this.spawnBall());
         }
     }
 
