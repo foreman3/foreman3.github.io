@@ -12,7 +12,7 @@ const config = {
         default: 'matter',
         matter: {
             gravity: { y: 1.0 },
-            debug: true // Enable debug to see physics bodies initially
+            debug: false // Turn off debug for smoother rendering
         }
     },
     scene: [MainTable, MiniTable, UI]
