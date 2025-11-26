@@ -4,8 +4,8 @@ import { UI } from './scenes/UI.js';
 
 const config = {
     type: Phaser.AUTO,
-    width: 600, // Standard arcade ratio
-    height: 800,
+    width: 720,
+    height: Math.floor(window.innerHeight * 0.8),
     backgroundColor: '#1a1a1a',
     parent: document.body,
     physics: {

@@ -32,13 +32,16 @@ export class MainTable extends Phaser.Scene {
     }
 
     create() {
+        // Sync table to current game size (allows taller view)
+        this.tableWidth = this.scale.gameSize.width;
+        this.tableHeight = this.scale.gameSize.height;
         this.add.image(this.tableWidth / 2, this.tableHeight / 2, 'playfield').setTint(0x0f1115);
 
         // Launch UI scene in parallel
         if (!this.scene.isActive('UI')) this.scene.launch('UI');
 
         this.matter.world.setBounds(0, 0, this.tableWidth, this.tableHeight);
-        this.matter.world.setGravity(0, 0.8);
+        this.matter.world.setGravity(0, 0.65);
 
         this.defineMissions();
         this.initState();
@@ -97,7 +100,10 @@ export class MainTable extends Phaser.Scene {
         const wallOptions = { isStatic: true, restitution: 0.8, label: 'wall' };
         this.matter.add.rectangle(10, this.tableHeight / 2, 20, this.tableHeight, wallOptions);
         this.matter.add.rectangle(this.tableWidth - 10, this.tableHeight / 2, 20, this.tableHeight, wallOptions);
-        this.matter.add.rectangle(this.tableWidth / 2, 10, this.tableWidth, 20, wallOptions);
+        // Top wall split to leave an opening for the plunger lane to feed the playfield
+        this.matter.add.rectangle((this.tableWidth - 160) / 2, 10, this.tableWidth - 160, 20, wallOptions); // left/top
+        // Angled guide to push the skill shot onto the field
+        this.matter.add.rectangle(this.tableWidth - 90, 70, 140, 16, { ...wallOptions, angle: -Math.PI / 5 });
 
         // Plunger lane divider
         this.matter.add.rectangle(520, 500, 12, 600, { ...wallOptions, label: 'divider' });
@@ -120,8 +126,8 @@ export class MainTable extends Phaser.Scene {
     }
 
     createFlipper(x, y, side) {
-        const width = 120;
-        const height = 20;
+        const width = 130;
+        const height = 22;
         const body = this.matter.add.rectangle(x, y, width, height, {
             chamfer: 6,
             friction: 0,
@@ -131,8 +137,9 @@ export class MainTable extends Phaser.Scene {
         const pivot = this.matter.add.circle(side === 'left' ? x - width * 0.45 : x + width * 0.45, y, 4, { isStatic: true, label: `${side}Pivot` });
         this.matter.add.constraint(body, pivot, 0, 1, { pointA: { x: side === 'left' ? -width * 0.45 : width * 0.45, y: 0 } });
 
-        body.restAngle = side === 'left' ? Phaser.Math.DegToRad(-25) : Phaser.Math.DegToRad(25);
-        body.activeAngle = side === 'left' ? Phaser.Math.DegToRad(35) : Phaser.Math.DegToRad(-35);
+        // Down by default, flip up on press
+        body.restAngle = side === 'left' ? Phaser.Math.DegToRad(20) : Phaser.Math.DegToRad(-20);
+        body.activeAngle = side === 'left' ? Phaser.Math.DegToRad(-28) : Phaser.Math.DegToRad(28);
         MatterBody.setAngle(body, body.restAngle);
         const color = side === 'left' ? 0xff7f50 : 0x4fa8ff;
         body.sprite = this.add.rectangle(x, y, width, height, color, 0.9).setOrigin(0.5).setDepth(3);
@@ -156,17 +163,29 @@ export class MainTable extends Phaser.Scene {
         ];
         this.bumpers.forEach((b, i) => {
             const sprite = this.add.image(b.position.x, b.position.y, 'bumper').setScale(0.9 + i * 0.05);
-            sprite.setTint(0xff5959);
+            sprite.setTint([0xffb347, 0xff5959, 0xffd26f][i % 3]);
+            sprite.setStrokeStyle?.(2, 0xffffff, 0.6);
         });
     }
 
     createSlingshots() {
         const opts = { isStatic: true, restitution: 1.3, label: 'slingshot' };
         this.slings = [];
+        // Upper mid slings
         this.slings.push(this.matter.add.trapezoid(170, 620, 90, 40, 0.35, opts));
         this.slings.push(this.matter.add.trapezoid(430, 620, 90, 40, 0.35, opts));
-        this.add.triangle(170, 620, 0, 30, 30, -30, -30, -30, 0xff69b4, 0.7).setStrokeStyle(2, 0xffffff, 0.5);
-        this.add.triangle(430, 620, 0, 30, 30, -30, -30, -30, 0xff69b4, 0.7).setStrokeStyle(2, 0xffffff, 0.5);
+        // Lower near-flipper slings
+        this.slings.push(this.matter.add.trapezoid(180, 660, 70, 32, 0.3, opts));
+        this.slings.push(this.matter.add.trapezoid(410, 660, 70, 32, 0.3, opts));
+
+        const slingDecor = [
+            { x: 170, y: 620 }, { x: 430, y: 620 },
+            { x: 180, y: 660 }, { x: 410, y: 660 }
+        ];
+        slingDecor.forEach(pos => {
+            this.add.triangle(pos.x, pos.y, 0, 26, 28, -26, -28, -26, 0xff69b4, 0.7)
+                .setStrokeStyle(2, 0xffffff, 0.5);
+        });
     }
 
     createClueObjects() {
@@ -188,6 +207,7 @@ export class MainTable extends Phaser.Scene {
             this.matter.add.rectangle(300, 100, 40, 10, { isStatic: true, isSensor: true, label: 'lane1' }),
             this.matter.add.rectangle(400, 120, 40, 10, { isStatic: true, isSensor: true, label: 'lane2' })
         ];
+        this.add.text(180, 75, 'Ancient Runes', { fontSize: '12px', fill: '#8ee1ff' });
 
         // Spinner lane sensor
         this.spinner = this.matter.add.rectangle(480, 200, 16, 90, { isStatic: true, isSensor: true, label: 'spinner' });
@@ -199,10 +219,15 @@ export class MainTable extends Phaser.Scene {
         this.rightRamp = this.matter.add.rectangle(470, 520, 60, 30, { isStatic: true, isSensor: true, label: 'rightRamp' });
         this.itemRamp = this.matter.add.rectangle(330, 460, 60, 30, { isStatic: true, isSensor: true, label: 'itemRamp' });
 
-        // Decorative ramp arrows
-        this.addTriangle(120, 610, 0xb8860b);
-        this.addTriangle(470, 510, 0x00b7ff);
-        this.addTriangle(330, 450, 0xfff07a);
+        // Decorative ramp arrows with themed colors
+        this.addTriangle(120, 610, 0xc9863a);
+        this.addTriangle(470, 510, 0x2aa9ff);
+        this.addTriangle(330, 450, 0xd1ff5c);
+
+        // Themed markers
+        this.add.text(90, 590, 'Clue Ramp', { fontSize: '12px', fill: '#ffdca8' });
+        this.add.text(440, 490, 'Clue Ramp', { fontSize: '12px', fill: '#a8e2ff' });
+        this.add.text(300, 430, 'Item Cache', { fontSize: '12px', fill: '#e5ff9e' });
     }
 
     createLocksAndTunnel() {
@@ -246,6 +271,8 @@ export class MainTable extends Phaser.Scene {
         ball.setDepth(2);
         if (!this.balls) this.balls = [];
         this.balls.push(ball);
+        // Nudge slightly toward playfield if sitting in lane
+        MatterBody.setVelocity(ball.body, { x: -0.5, y: -1 });
         return ball;
     }
 
