@@ -3,11 +3,15 @@ const MatterBody = Phaser.Physics.Matter.Matter.Body;
 export class MainTable extends Phaser.Scene {
     constructor() {
         super({ key: 'MainTable' });
-        this.tableWidth = 600;
-        this.tableHeight = 800;
+        this.tableWidth = Math.min(window.innerWidth * 0.7, 900);
+        this.tableHeight = Math.min(window.innerHeight * 0.85, 1000);
     }
 
     preload() {
+        // Update to current intended size before drawing textures
+        this.tableWidth = Math.min(window.innerWidth * 0.7, 900);
+        this.tableHeight = Math.min(window.innerHeight * 0.85, 1000);
+
         const g = this.make.graphics({ x: 0, y: 0, add: false });
         g.fillStyle(0xffd700, 1);
         g.fillCircle(10, 10, 10);
@@ -26,16 +30,43 @@ export class MainTable extends Phaser.Scene {
 
         // Simple vertical gradient playfield (using Phaser fillGradientStyle)
         const bg = this.make.graphics({ x: 0, y: 0, add: false });
-        bg.fillGradientStyle(0x1e2a38, 0x1e2a38, 0x0a0d14, 0x0a0d14, 1);
+        bg.fillGradientStyle(0x16222f, 0x1c2d3e, 0x0c1118, 0x0b0f14, 1);
         bg.fillRect(0, 0, this.tableWidth, this.tableHeight);
         bg.generateTexture('playfield', this.tableWidth, this.tableHeight);
+
+        // Flipper textures (tapered with round tips)
+        const flipperG = this.make.graphics({ x: 0, y: 0, add: false });
+        const drawFlipper = (key, color, flip = 1) => {
+            flipperG.clear();
+            flipperG.fillStyle(color, 1);
+            flipperG.lineStyle(2, 0xffffff, 0.6);
+            const length = 130;
+            const back = 30;
+            const tipRadius = 14;
+            const verts = [
+                { x: -length / 2, y: -10 },
+                { x: -length / 2 + back, y: -12 },
+                { x: length / 2 - tipRadius, y: -6 },
+                { x: length / 2, y: 0 },
+                { x: length / 2 - tipRadius, y: 6 },
+                { x: -length / 2 + back, y: 12 },
+                { x: -length / 2, y: 10 }
+            ].map(v => ({ x: v.x * flip, y: v.y }));
+            flipperG.fillPoints(verts, true);
+            flipperG.strokePoints(verts, true);
+            flipperG.fillCircle((length / 2) * flip, 0, tipRadius);
+            flipperG.strokeCircle((length / 2) * flip, 0, tipRadius);
+            flipperG.generateTexture(key, length + 30, 40);
+        };
+        drawFlipper('flipperL', 0xff7f50, 1);
+        drawFlipper('flipperR', 0x4fa8ff, -1);
     }
 
     create() {
         // Sync table to current game size (allows taller view)
         this.tableWidth = this.scale.gameSize.width;
         this.tableHeight = this.scale.gameSize.height;
-        this.add.image(this.tableWidth / 2, this.tableHeight / 2, 'playfield').setTint(0x0f1115);
+        this.add.image(this.tableWidth / 2, this.tableHeight / 2, 'playfield');
 
         // Launch UI scene in parallel
         if (!this.scene.isActive('UI')) this.scene.launch('UI');
@@ -104,6 +135,15 @@ export class MainTable extends Phaser.Scene {
         this.matter.add.rectangle((this.tableWidth - 160) / 2, 10, this.tableWidth - 160, 20, wallOptions); // left/top
         // Angled guide to push the skill shot onto the field
         this.matter.add.rectangle(this.tableWidth - 90, 70, 140, 16, { ...wallOptions, angle: -Math.PI / 5 });
+        // Curved guide around plunger (stacked small walls)
+        const guideStartX = this.tableWidth - 40;
+        const guideStartY = this.tableHeight - 220;
+        for (let i = 0; i < 5; i++) {
+            const angle = -Math.PI / 3 + i * (Math.PI / 15);
+            const x = guideStartX - i * 24;
+            const y = guideStartY - i * 18;
+            this.matter.add.rectangle(x, y, 70, 12, { ...wallOptions, angle });
+        }
 
         // Plunger lane divider
         this.matter.add.rectangle(520, 500, 12, 600, { ...wallOptions, label: 'divider' });
@@ -119,9 +159,10 @@ export class MainTable extends Phaser.Scene {
     }
 
     createFlippers() {
+        const fY = this.tableHeight - 140;
         this.flippers = {
-            left: this.createFlipper(200, 700, 'left'),
-            right: this.createFlipper(360, 700, 'right')
+            left: this.createFlipper(this.tableWidth * 0.33, fY, 'left'),
+            right: this.createFlipper(this.tableWidth * 0.57, fY, 'right')
         };
     }
 
@@ -141,9 +182,8 @@ export class MainTable extends Phaser.Scene {
         body.restAngle = side === 'left' ? Phaser.Math.DegToRad(20) : Phaser.Math.DegToRad(-20);
         body.activeAngle = side === 'left' ? Phaser.Math.DegToRad(-28) : Phaser.Math.DegToRad(28);
         MatterBody.setAngle(body, body.restAngle);
-        const color = side === 'left' ? 0xff7f50 : 0x4fa8ff;
-        body.sprite = this.add.rectangle(x, y, width, height, color, 0.9).setOrigin(0.5).setDepth(3);
-        body.sprite.setStrokeStyle(2, 0xffffff, 0.6);
+        const tex = side === 'left' ? 'flipperL' : 'flipperR';
+        body.sprite = this.add.image(x, y, tex).setOrigin(0.5).setDepth(3).setScale(0.95);
         return body;
     }
 
@@ -157,9 +197,9 @@ export class MainTable extends Phaser.Scene {
     createBumpers() {
         const opts = { isStatic: true, restitution: 1.6, label: 'bumper' };
         this.bumpers = [
-            this.matter.add.circle(300, 250, 24, opts),
-            this.matter.add.circle(220, 320, 22, opts),
-            this.matter.add.circle(380, 320, 22, opts)
+            this.matter.add.circle(this.tableWidth * 0.48, 200, 22, opts),
+            this.matter.add.circle(this.tableWidth * 0.38, 260, 20, opts),
+            this.matter.add.circle(this.tableWidth * 0.58, 260, 20, opts)
         ];
         this.bumpers.forEach((b, i) => {
             const sprite = this.add.image(b.position.x, b.position.y, 'bumper').setScale(0.9 + i * 0.05);
@@ -172,15 +212,17 @@ export class MainTable extends Phaser.Scene {
         const opts = { isStatic: true, restitution: 1.3, label: 'slingshot' };
         this.slings = [];
         // Upper mid slings
-        this.slings.push(this.matter.add.trapezoid(170, 620, 90, 40, 0.35, opts));
-        this.slings.push(this.matter.add.trapezoid(430, 620, 90, 40, 0.35, opts));
+        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.3, this.tableHeight - 220, 90, 40, 0.35, opts));
+        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.7, this.tableHeight - 220, 90, 40, 0.35, opts));
         // Lower near-flipper slings
-        this.slings.push(this.matter.add.trapezoid(180, 660, 70, 32, 0.3, opts));
-        this.slings.push(this.matter.add.trapezoid(410, 660, 70, 32, 0.3, opts));
+        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.34, this.tableHeight - 120, 70, 32, 0.3, opts));
+        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.63, this.tableHeight - 120, 70, 32, 0.3, opts));
 
         const slingDecor = [
-            { x: 170, y: 620 }, { x: 430, y: 620 },
-            { x: 180, y: 660 }, { x: 410, y: 660 }
+            { x: this.tableWidth * 0.3, y: this.tableHeight - 220 },
+            { x: this.tableWidth * 0.7, y: this.tableHeight - 220 },
+            { x: this.tableWidth * 0.34, y: this.tableHeight - 120 },
+            { x: this.tableWidth * 0.63, y: this.tableHeight - 120 }
         ];
         slingDecor.forEach(pos => {
             this.add.triangle(pos.x, pos.y, 0, 26, 28, -26, -28, -26, 0xff69b4, 0.7)
@@ -193,21 +235,21 @@ export class MainTable extends Phaser.Scene {
         this.books = [];
         this.bookGroup = this.add.group();
         for (let i = 0; i < 5; i++) {
-            const bookX = 140 + i * 22;
-            const book = this.matter.add.rectangle(bookX, 520, 15, 40, { isStatic: true, label: 'book', chamfer: 2 });
+            const bookX = this.tableWidth * 0.26 + i * 18;
+            const book = this.matter.add.rectangle(bookX, this.tableHeight * 0.48, 12, 36, { isStatic: true, label: 'book', chamfer: 2 });
             book.alive = true;
             this.books.push(book);
-            const sprite = this.add.image(bookX, 520, 'book').setOrigin(0.5, 0.5);
+            const sprite = this.add.image(bookX, this.tableHeight * 0.48, 'book').setOrigin(0.5, 0.5);
             this.bookGroup.add(sprite);
         }
 
         // Upper lanes for clue set
         this.lanes = [
-            this.matter.add.rectangle(200, 120, 40, 10, { isStatic: true, isSensor: true, label: 'lane0' }),
-            this.matter.add.rectangle(300, 100, 40, 10, { isStatic: true, isSensor: true, label: 'lane1' }),
-            this.matter.add.rectangle(400, 120, 40, 10, { isStatic: true, isSensor: true, label: 'lane2' })
+            this.matter.add.rectangle(this.tableWidth * 0.35, 110, 40, 10, { isStatic: true, isSensor: true, label: 'lane0' }),
+            this.matter.add.rectangle(this.tableWidth * 0.5, 90, 40, 10, { isStatic: true, isSensor: true, label: 'lane1' }),
+            this.matter.add.rectangle(this.tableWidth * 0.65, 110, 40, 10, { isStatic: true, isSensor: true, label: 'lane2' })
         ];
-        this.add.text(180, 75, 'Ancient Runes', { fontSize: '12px', fill: '#8ee1ff' });
+        this.add.text(this.tableWidth * 0.35, 60, 'Ancient Runes', { fontSize: '12px', fill: '#8ee1ff' });
 
         // Spinner lane sensor
         this.spinner = this.matter.add.rectangle(480, 200, 16, 90, { isStatic: true, isSensor: true, label: 'spinner' });
@@ -215,27 +257,27 @@ export class MainTable extends Phaser.Scene {
 
     createRampsAndSpinners() {
         // Ramps as sensors to award clues/items
-        this.leftRamp = this.matter.add.rectangle(120, 620, 60, 30, { isStatic: true, isSensor: true, label: 'leftRamp' });
-        this.rightRamp = this.matter.add.rectangle(470, 520, 60, 30, { isStatic: true, isSensor: true, label: 'rightRamp' });
-        this.itemRamp = this.matter.add.rectangle(330, 460, 60, 30, { isStatic: true, isSensor: true, label: 'itemRamp' });
+        this.leftRamp = this.matter.add.rectangle(this.tableWidth * 0.25, this.tableHeight * 0.65, 60, 30, { isStatic: true, isSensor: true, label: 'leftRamp' });
+        this.rightRamp = this.matter.add.rectangle(this.tableWidth * 0.7, this.tableHeight * 0.56, 60, 30, { isStatic: true, isSensor: true, label: 'rightRamp' });
+        this.itemRamp = this.matter.add.rectangle(this.tableWidth * 0.48, this.tableHeight * 0.5, 60, 30, { isStatic: true, isSensor: true, label: 'itemRamp' });
 
         // Decorative ramp arrows with themed colors
-        this.addTriangle(120, 610, 0xc9863a);
-        this.addTriangle(470, 510, 0x2aa9ff);
-        this.addTriangle(330, 450, 0xd1ff5c);
+        this.addTriangle(this.tableWidth * 0.25, this.tableHeight * 0.64, 0xc9863a);
+        this.addTriangle(this.tableWidth * 0.7, this.tableHeight * 0.55, 0x2aa9ff);
+        this.addTriangle(this.tableWidth * 0.48, this.tableHeight * 0.49, 0xd1ff5c);
 
         // Themed markers
-        this.add.text(90, 590, 'Clue Ramp', { fontSize: '12px', fill: '#ffdca8' });
-        this.add.text(440, 490, 'Clue Ramp', { fontSize: '12px', fill: '#a8e2ff' });
-        this.add.text(300, 430, 'Item Cache', { fontSize: '12px', fill: '#e5ff9e' });
+        this.add.text(this.tableWidth * 0.2, this.tableHeight * 0.61, 'Clue Ramp', { fontSize: '12px', fill: '#ffdca8' });
+        this.add.text(this.tableWidth * 0.65, this.tableHeight * 0.53, 'Clue Ramp', { fontSize: '12px', fill: '#a8e2ff' });
+        this.add.text(this.tableWidth * 0.42, this.tableHeight * 0.47, 'Item Cache', { fontSize: '12px', fill: '#e5ff9e' });
     }
 
     createLocksAndTunnel() {
         this.lockSaucer = this.matter.add.circle(70, 430, 18, { isStatic: true, isSensor: true, label: 'lock' });
-        this.tunnel = this.matter.add.rectangle(160, 440, 80, 40, { isStatic: true, isSensor: true, label: 'tunnel' });
-        this.tunnelGate = this.matter.add.rectangle(160, 480, 120, 12, { isStatic: true, label: 'tunnelGate' });
-        this.tunnelIndicator = this.add.rectangle(160, 440, 70, 40, 0x1c1f2b, 0.35).setStrokeStyle(2, 0xffd700, 0);
-        this.add.text(120, 415, 'Secret Tunnel', { fontSize: '12px', fill: '#ffd700' });
+        this.tunnel = this.matter.add.rectangle(this.tableWidth * 0.28, this.tableHeight * 0.44, 80, 40, { isStatic: true, isSensor: true, label: 'tunnel' });
+        this.tunnelGate = this.matter.add.rectangle(this.tableWidth * 0.28, this.tableHeight * 0.48, 120, 12, { isStatic: true, label: 'tunnelGate' });
+        this.tunnelIndicator = this.add.rectangle(this.tableWidth * 0.28, this.tableHeight * 0.44, 70, 40, 0x1c1f2b, 0.35).setStrokeStyle(2, 0xffd700, 0);
+        this.add.text(this.tableWidth * 0.24, this.tableHeight * 0.40, 'Secret Tunnel', { fontSize: '12px', fill: '#ffd700' });
     }
 
     addTriangle(x, y, color) {
