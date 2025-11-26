@@ -39,6 +39,18 @@ export class MainTable extends Phaser.Scene {
         this.startNextMission();
 
         // Basic setup
+        this.createTable();
+        this.createFlippers();
+        this.createBall();
+        this.createPlunger();
+        this.createGameElements();
+        this.createMissionElements();
+
+        // Input
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
+        this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+        this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     }
 
     createTable() {
