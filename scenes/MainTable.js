@@ -5,6 +5,10 @@ export class MainTable extends Phaser.Scene {
 
     preload() {
         // Load assets here (images, sounds)
+        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+        graphics.fillStyle(0xff0000, 1);
+        graphics.fillCircle(5, 5, 5);
+        graphics.generateTexture('red', 10, 10);
     }
 
     create() {
@@ -13,13 +17,6 @@ export class MainTable extends Phaser.Scene {
 
         // Launch UI scene in parallel
         this.scene.launch('UI');
-
-        // Particles
-        this.particles = this.add.particles(0, 0, 'red', {
-            speed: 100,
-            scale: { start: 0.5, end: 0 },
-            blendMode: 'ADD'
-        });
 
         // Initialize Game State
         this.registry.set('score', 0);
@@ -84,13 +81,12 @@ export class MainTable extends Phaser.Scene {
             render: { fillColor: 0xffd700 }
         });
 
-        this.emitter = this.particles.createEmitter({
+        this.emitter = this.add.particles(0, 0, 'red', {
             speed: 100,
             scale: { start: 0.5, end: 0 },
             blendMode: 'ADD',
             follow: this.ball
         });
-        this.emitter.startFollow(this.ball);
     }
 
     createPlunger() {
