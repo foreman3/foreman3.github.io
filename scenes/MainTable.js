@@ -146,7 +146,11 @@ export class MainTable extends Phaser.Scene {
         }
 
         // Plunger lane divider
-        this.matter.add.rectangle(520, 500, 12, 600, { ...wallOptions, label: 'divider' });
+        const dividerX = this.tableWidth - 90;
+        this.matter.add.rectangle(dividerX, this.tableHeight / 2, 12, this.tableHeight, { ...wallOptions, label: 'divider' });
+        this.add.rectangle(dividerX + 20, this.tableHeight / 2, 40, this.tableHeight, 0x0c1622, 0.25).setDepth(0);
+        // Top lane stop to keep ball in lane until launched
+        this.matter.add.rectangle(this.tableWidth - 70, 140, 40, 14, { ...wallOptions, label: 'laneStop' });
 
         // Drain sensors
         this.drain = this.matter.add.rectangle(this.tableWidth / 2, this.tableHeight + 10, this.tableWidth - 100, 20, { isStatic: true, isSensor: true, label: 'drain' });
@@ -188,10 +192,13 @@ export class MainTable extends Phaser.Scene {
     }
 
     createPlunger() {
-        this.plunger = this.matter.add.rectangle(560, 740, 18, 70, { isStatic: true, label: 'plunger' });
+        const laneX = this.tableWidth - 60;
+        const laneBottom = this.tableHeight - 60;
+        this.plunger = this.matter.add.rectangle(laneX, laneBottom, 18, 70, { isStatic: true, label: 'plunger' });
         this.plungerPull = 0;
-        this.plungerRestY = 740;
-        this.matter.add.rectangle(560, 650, 30, 20, { isStatic: true, label: 'plungerStop' });
+        this.plungerRestY = laneBottom;
+        this.matter.add.rectangle(laneX, laneBottom - 90, 30, 20, { isStatic: true, label: 'plungerStop' });
+        this.plungerSprite = this.add.rectangle(laneX, laneBottom, 24, 80, 0xcccccc).setDepth(3);
     }
 
     createBumpers() {
@@ -303,8 +310,10 @@ export class MainTable extends Phaser.Scene {
         });
     }
 
-    spawnBall(spawnX = 560, spawnY = 700) {
-        const ball = this.matter.add.image(spawnX, spawnY, 'ball');
+    spawnBall(spawnX = null, spawnY = null) {
+        const laneX = this.tableWidth - 60;
+        const laneY = this.tableHeight - 140;
+        const ball = this.matter.add.image(spawnX ?? laneX, spawnY ?? laneY, 'ball');
         ball.setCircle(10);
         ball.setBounce(0.88);
         ball.setFriction(0.005);
@@ -313,8 +322,6 @@ export class MainTable extends Phaser.Scene {
         ball.setDepth(2);
         if (!this.balls) this.balls = [];
         this.balls.push(ball);
-        // Nudge slightly toward playfield if sitting in lane
-        MatterBody.setVelocity(ball.body, { x: -0.5, y: -1 });
         return ball;
     }
 
@@ -565,19 +572,23 @@ export class MainTable extends Phaser.Scene {
         this.rotateFlipper(this.flippers.right, rightTarget);
 
         // Plunger charge/launch
-        if (this.spaceKey.isDown) {
+        const plungerKeyDown = this.spaceKey.isDown || this.enterKey.isDown;
+        if (plungerKeyDown) {
             this.plungerPull = Phaser.Math.Clamp(this.plungerPull + 0.7, 0, 35);
             MatterBody.setPosition(this.plunger, { x: this.plunger.position.x, y: this.plungerRestY + this.plungerPull });
-        } else if (Phaser.Input.Keyboard.JustUp(this.spaceKey)) {
-            const launchBall = this.balls.find(b => b.body && b.body.position.x > 520 && b.body.position.y > 620);
+            if (this.plungerSprite) this.plungerSprite.setPosition(this.plunger.position.x, this.plungerRestY + this.plungerPull);
+        } else if (Phaser.Input.Keyboard.JustUp(this.spaceKey) || Phaser.Input.Keyboard.JustUp(this.enterKey)) {
+            const launchBall = this.balls.find(b => b.body && b.body.position.x > this.tableWidth - 120 && b.body.position.y > this.tableHeight - 220);
             if (launchBall) {
                 MatterBody.setVelocity(launchBall.body, { x: 0, y: -20 - this.plungerPull * 0.5 });
             }
             this.plungerPull = 0;
             MatterBody.setPosition(this.plunger, { x: this.plunger.position.x, y: this.plungerRestY });
+            if (this.plungerSprite) this.plungerSprite.setPosition(this.plunger.position.x, this.plungerRestY);
         } else {
             this.plungerPull = Phaser.Math.Clamp(this.plungerPull - 1, 0, 35);
             MatterBody.setPosition(this.plunger, { x: this.plunger.position.x, y: this.plungerRestY + this.plungerPull });
+            if (this.plungerSprite) this.plungerSprite.setPosition(this.plunger.position.x, this.plungerRestY + this.plungerPull);
         }
 
         // Keep any stragglers alive
