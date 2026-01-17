@@ -1,0 +1,36 @@
+#sidebar,
+#sidebar-placeholder {
+  width: 220px;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#sidebar {
+  background: rgba(7, 10, 28, 0.82);
+  backdrop-filter: blur(6px);
+  padding: 20px;
+  box-shadow: 2px 0 18px rgba(0, 0, 0, 0.55);
+  border-right: 1px solid rgba(120, 150, 255, 0.2);
+}
+
+#sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#sidebar li {
+  margin: 15px 0;
+}
+
+#sidebar a {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+#sidebar a:hover {
+  color: #ffea00;
+}

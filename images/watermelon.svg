@@ -1,6 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="30" fill="#43a047" />
-  <path d="M20 4 C22 20 22 44 20 60" stroke="#2e7d32" stroke-width="4" fill="none"/>
-  <path d="M32 2 C34 20 34 44 32 62" stroke="#2e7d32" stroke-width="4" fill="none"/>
-  <path d="M44 4 C42 20 42 44 44 60" stroke="#2e7d32" stroke-width="4" fill="none"/>
+  <defs>
+    <radialGradient id="rind" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#7be46f"/>
+      <stop offset="60%" stop-color="#3ea84b"/>
+      <stop offset="100%" stop-color="#2a6f36"/>
+    </radialGradient>
+    <radialGradient id="shine" cx="30%" cy="25%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#rind)"/>
+  <path d="M18 6 C20 22 20 42 18 58" stroke="#275f30" stroke-width="4" fill="none" opacity="0.7"/>
+  <path d="M32 4 C34 22 34 42 32 60" stroke="#275f30" stroke-width="4" fill="none" opacity="0.7"/>
+  <path d="M46 6 C44 22 44 42 46 58" stroke="#275f30" stroke-width="4" fill="none" opacity="0.7"/>
+  <circle cx="28" cy="22" r="10" fill="url(#shine)"/>
 </svg>

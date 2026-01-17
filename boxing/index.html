@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon Showdown Boxing</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      background: radial-gradient(circle at top, #151928 0%, #050608 45%, #010103 100%);
+      font-family: "Segoe UI", "Bahnschrift", sans-serif;
+      color: #f2f7ff;
+      overflow: hidden;
+    }
+    #sidebar-placeholder,
+    #sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: rgba(6, 9, 20, 0.85);
+      padding: 24px 20px;
+      box-shadow: 0 0 25px rgba(12, 20, 56, 0.7);
+      backdrop-filter: blur(6px);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #sidebar img {
+      display: block;
+      width: 160px;
+      margin: 0 auto 24px;
+    }
+
+    #sidebar h3 {
+      margin: 0 0 14px;
+      font-size: 0.85rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: rgba(216, 226, 255, 0.75);
+    }
+
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 28px;
+    }
+
+    #sidebar li {
+      margin: 15px 0;
+    }
+
+    #sidebar a {
+      color: #dce3ff;
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      transition: color 0.3s, text-shadow 0.3s;
+    }
+
+    #sidebar a:hover {
+      color: #fffb96;
+      text-shadow: 0 0 8px rgba(255, 251, 150, 0.9);
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px;
+      gap: 12px;
+    }
+    h1 {
+      margin: 0;
+      letter-spacing: 4px;
+      font-size: 40px;
+      font-weight: 600;
+      text-transform: uppercase;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.65), 0 0 18px rgba(255,64,129,0.45);
+    }
+    canvas {
+      width: min(960px, 100%);
+      height: auto;
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.65);
+      border: 3px solid rgba(255,255,255,0.12);
+      background: #05060b;
+    }
+    #info {
+      text-align: center;
+      font-size: 15px;
+      max-width: 960px;
+      line-height: 1.5;
+      color: #dde8ff;
+      background: linear-gradient(135deg, rgba(30,46,90,0.4), rgba(12,19,38,0.55));
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 16px;
+      border-radius: 12px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+    }
+    strong {
+      color: #8fe3ff;
+    }
+  </style>
+  <link rel="stylesheet" href="../sidebar.css" />
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Neon Showdown Boxing</h1>
+    <canvas id="gameCanvas" width="960" height="640"></canvas>
+    <div id="info">
+      <strong>Controls:</strong> F - Lightning Jab, J - Heavy Cross, K - Haymaker (needs full Hype). Hold Space to Guard (press W/↑ for high, S/↓ for low). Tap W/↑ to aim at the head, S/↓ for body shots. A/D or ←/→ - Dash, R - Restart. Chain punches to build <strong>Hype</strong> and stun rivals!
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const ring = {
+      fl: { x: canvas.width * 0.12, y: canvas.height - 60 },
+      fr: { x: canvas.width * 0.88, y: canvas.height - 60 },
+      bl: { x: canvas.width * 0.36, y: canvas.height - 430 },
+      br: { x: canvas.width * 0.64, y: canvas.height - 430 }
+    };
+
+    const crowd = Array.from({ length: 120 }, (_, i) => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * 220,
+      size: Math.random() * 16 + 6,
+      base: Math.random() * 0.6 + 0.15,
+      pulse: Math.random() * Math.PI * 2 + i * 0.05,
+      color: `hsl(${180 + Math.random() * 40}, 60%, ${35 + Math.random() * 30}%)`
+    }));
+
+    const spotlights = Array.from({ length: 6 }, (_, i) => ({
+      angle: Math.random() * Math.PI * 2,
+      speed: 0.0008 + Math.random() * 0.0008,
+      radius: 260 + Math.random() * 120,
+      color: i % 2 === 0 ? 'rgba(0,255,200,0.08)' : 'rgba(255,80,180,0.08)'
+    }));
+
+    const attackDefs = {
+      jab: {
+        name: 'Lightning Jab',
+        duration: 360,
+        window: [0.38, 0.63],
+        reach: 120,
+        lateral: -0.45,
+        damage: 12,
+        staminaCost: 10,
+        hypeGain: 8,
+        shake: 2.2
+      },
+      cross: {
+        name: 'Heavy Cross',
+        duration: 520,
+        window: [0.45, 0.7],
+        reach: 150,
+        lateral: 0.55,
+        damage: 18,
+        staminaCost: 16,
+        hypeGain: 14,
+        shake: 3.2
+      },
+      haymaker: {
+        name: 'Haymaker',
+        duration: 920,
+        window: [0.52, 0.78],
+        reach: 170,
+        lateral: 0.9,
+        damage: 36,
+        staminaCost: 26,
+        hypeCost: 100,
+        hypeGain: 22,
+        shake: 5.6,
+        arc: { x: 55, y: -30 }
+      }
+    };
+
+    const fighters = [
+      {
+        name: 'Flash Calderon',
+        nickname: 'The Comet',
+        color: '#33d9ff',
+        secondary: '#0f5bff',
+        maxHealth: 90,
+        maxStamina: 110,
+        aggression: 0.65,
+        defense: { block: 0.45, dodge: 0.35 },
+        power: 14,
+        speed: 1.05,
+        intro: 'A rookie prodigy whose flurries light up the night.',
+        tell: {
+          lead: 1.35,
+          flash: 1.05,
+          sway: 18,
+          color: '#33d9ff',
+          hint: "Flash vents a bright shoulder flare before launching high strikes."
+        }
+      },
+      {
+        name: 'Mira Voss',
+        nickname: 'The Counterqueen',
+        color: '#ff8ed0',
+        secondary: '#ff417c',
+        maxHealth: 120,
+        maxStamina: 120,
+        aggression: 0.72,
+        defense: { block: 0.58, dodge: 0.42 },
+        power: 18,
+        speed: 1.08,
+        intro: 'Master of parries and punishing overextensions.',
+        tell: {
+          lead: 1.15,
+          flash: 0.85,
+          sway: 14,
+          color: '#ff8ed0',
+          hint: "Mira dips her visor and shifts weight low before body counters."
+        }
+      },
+      {
+        name: 'Harland “Brick” Kane',
+        nickname: 'Iron Harbour',
+        color: '#ffa53d',
+        secondary: '#ff6200',
+        maxHealth: 150,
+        maxStamina: 130,
+        aggression: 0.82,
+        defense: { block: 0.5, dodge: 0.28 },
+        power: 23,
+        speed: 0.96,
+        intro: 'A walking fortress whose hooks shake the ropes.',
+        tell: {
+          lead: 1.0,
+          flash: 0.65,
+          sway: 12,
+          color: '#ffa53d',
+          hint: "Brick rumbles his chassis and draws back wide before hooking."
+        }
+      },
+      {
+        name: 'Vega Null',
+        nickname: 'The Phantom',
+        color: '#c281ff',
+        secondary: '#5d30ff',
+        maxHealth: 165,
+        maxStamina: 140,
+        aggression: 0.9,
+        defense: { block: 0.52, dodge: 0.62 },
+        power: 25,
+        speed: 1.12,
+        intro: 'Slippery, sharp, and eager to vanish between punches.',
+        tell: {
+          lead: 0.85,
+          flash: 0.5,
+          sway: 9,
+          color: '#c281ff',
+          hint: "Vega flickers a faint shoulder shimmer just before they disappear into a strike."
+        }
+      },
+      {
+        name: 'Aurora Draegon',
+        nickname: 'Worldbreaker',
+        color: '#ffe066',
+        secondary: '#ff3366',
+        maxHealth: 190,
+        maxStamina: 150,
+        aggression: 1.0,
+        defense: { block: 0.6, dodge: 0.55 },
+        power: 31,
+        speed: 1.18,
+        intro: 'Undisputed champ of the circuit. Expect meteor storms.',
+        tell: {
+          lead: 0.75,
+          flash: 0.35,
+          sway: 7,
+          color: '#ffe066',
+          hint: "Aurora's core glow tightens subtly—watch carefully or be caught sleeping."
+        }
+      }
+    ];
+
+    const player = {
+      maxHealth: 130,
+      health: 130,
+      maxStamina: 110,
+      stamina: 110,
+      hype: 0,
+      x: 0,
+      velocity: 0,
+      guardHold: false,
+      blocking: false,
+      guard: 0,
+      aim: 'high',
+      guardLevel: 'high',
+      combo: 0,
+      comboTimer: 0,
+      attacks: {
+        left: { active: false, progress: 0, def: null, hit: false, target: 'high' },
+        right: { active: false, progress: 0, def: null, hit: false, target: 'high' }
+      },
+      dodge: { active: false, dir: 0, progress: 0, cooldown: 0 }
+    };
+
+    const game = {
+      opponentIndex: 0,
+      opponent: null,
+      state: 'intro',
+      roundTime: 90000,
+      message: '',
+      messageTimer: 0,
+      overlay: 0,
+      bellTimer: 1800,
+      shakePower: 0,
+      floatingTexts: [],
+      sparks: [],
+      celebrateTimer: 0,
+      hint: '',
+      hintTimer: 0,
+      hintShown: false
+    };
+
+    const keys = new Set();
+    const controlMap = {
+      left: ['ArrowLeft', 'KeyA'],
+      right: ['ArrowRight', 'KeyD'],
+      guard: ['Space'],
+      jab: ['KeyF'],
+      cross: ['KeyJ'],
+      haymaker: ['KeyK'],
+      aimHigh: ['ArrowUp', 'KeyW'],
+      aimLow: ['ArrowDown', 'KeyS'],
+      restart: ['KeyR']
+    };
+
+    const opponentAttacks = [
+      { key: 'jab', telegraph: 420, duration: 500, window: [0.46, 0.68], baseDamage: 12, reach: 150, lateral: -0.4, target: 'high' },
+      { key: 'cross', telegraph: 520, duration: 560, window: [0.5, 0.74], baseDamage: 20, reach: 170, lateral: 0.55, target: 'high' },
+      { key: 'hook', telegraph: 620, duration: 640, window: [0.52, 0.78], baseDamage: 24, reach: 160, lateral: 0.9, target: 'low' }
+    ];
+
+    const roundDuration = 90000;
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+    function easeInCubic(t) {
+      return t * t * t;
+    }
+    function clamp(v, min, max) {
+      return v < min ? min : v > max ? max : v;
+    }
+
+    function addFloatingText(text, x, y, color = '#fff', life = 1200) {
+      game.floatingTexts.push({ text, x, y, life, maxLife: life, color });
+    }
+
+    function addSparks(x, y, color = '#ffef8a', count = 8) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 80 + Math.random() * 160;
+        game.sparks.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 280 + Math.random() * 180,
+          color
+        });
+      }
+    }
+
+    function setMessage(text, duration = 1600) {
+      game.message = text;
+      game.messageTimer = duration;
+    }
+
+    function bell() {
+      setMessage('Ding! Ding! Fight!', 1200);
+      if (game.hint && !game.hintShown) {
+        game.hintTimer = 1600;
+      }
+    }
+
+    function resetPlayer() {
+      player.health = player.maxHealth;
+      player.stamina = player.maxStamina;
+      player.hype = 0;
+      player.x = 0;
+      player.velocity = 0;
+      player.combo = 0;
+      player.comboTimer = 0;
+      player.aim = 'high';
+      player.guardLevel = 'high';
+      player.attacks.left = { active: false, progress: 0, def: null, hit: false, target: 'high' };
+      player.attacks.right = { active: false, progress: 0, def: null, hit: false, target: 'high' };
+      player.guard = 0;
+      player.dodge = { active: false, dir: 0, progress: 0, cooldown: 0 };
+    }
+
+    function loadOpponent(index) {
+      const data = fighters[index];
+      const tell = data.tell || { lead: 1, flash: 0.6, sway: 10, color: '#ffffff', hint: '' };
+      game.opponent = {
+        ...data,
+        health: data.maxHealth,
+        stamina: data.maxStamina,
+        state: 'walk',
+        timer: 1500,
+        x: 0,
+        blockTimer: 0,
+        blockLevel: 'high',
+        dodge: { active: false, dir: 0, progress: 0 },
+        attack: null,
+        specialMeter: 0,
+        tell
+      };
+      game.roundTime = roundDuration;
+      game.state = 'intro';
+      game.overlay = 1;
+      game.bellTimer = 2200;
+      setMessage(`${data.name} – ${data.nickname}`, 2200);
+      game.hint = tell.hint || '';
+      game.hintTimer = 0;
+      game.hintShown = false;
+    }
+
+    function nextOpponent() {
+      game.opponentIndex++;
+      if (game.opponentIndex >= fighters.length) {
+        game.state = 'champion';
+        setMessage('You are the new Champion!', 4000);
+      } else {
+        const previousHealth = player.health;
+        loadOpponent(game.opponentIndex);
+        player.health = clamp(previousHealth + 35, 0, player.maxHealth);
+        player.stamina = player.maxStamina;
+        player.hype = clamp(player.hype + 20, 0, 120);
+        player.combo = 0;
+        player.comboTimer = 0;
+      }
+    }
+
+    function restartGame() {
+      resetPlayer();
+      game.opponentIndex = 0;
+      loadOpponent(0);
+      game.state = 'intro';
+      game.celebrateTimer = 0;
+    }
+
+    function tryPunch(hand, type) {
+      if (game.state !== 'fight') return;
+      const attack = player.attacks[hand];
+      if (attack.active) return;
+      const def = attackDefs[type];
+      if (!def) return;
+      if (type === 'haymaker' && player.hype < def.hypeCost) {
+        setMessage('Build more Hype for Haymaker!');
+        return;
+      }
+      if (player.stamina < def.staminaCost) {
+        setMessage('Too tired! Recover stamina.');
+        return;
+      }
+      player.stamina -= def.staminaCost;
+      if (type === 'haymaker') {
+        player.hype = Math.max(0, player.hype - def.hypeCost);
+      }
+      attack.active = true;
+      attack.progress = 0;
+      attack.def = def;
+      attack.hit = false;
+      attack.target = player.aim;
+      if (type !== 'haymaker') {
+        setMessage(def.name + '!');
+      } else {
+        setMessage('Haymaker! Bring the thunder!');
+        addSparks(canvas.width / 2 - 40 + Math.random() * 80, canvas.height / 2, '#ffd966', 16);
+      }
+    }
+
+    function startOpponentAttack(type) {
+      const opp = game.opponent;
+      if (!opp) return;
+      const tell = opp.tell || { lead: 1, flash: 0.6, sway: 10, color: '#ffffff' };
+      const scaledTelegraph = (type.telegraph || 420) * tell.lead;
+      const target = type.target || 'high';
+      game.opponent.attack = {
+        ...type,
+        telegraph: scaledTelegraph,
+        window: [...type.window],
+        progress: 0,
+        phase: 'telegraph',
+        hit: false,
+        hand: type.hand === 'both' ? 'both' : (Math.random() > 0.5 ? 'left' : 'right'),
+        target,
+        tellFlash: tell.flash,
+        tellColor: tell.color,
+        tellSway: tell.sway
+      };
+      game.opponent.state = 'attack';
+      const laneText = target === 'low' ? 'to the body' : 'up top';
+      setMessage(`${game.opponent.nickname} winding up ${laneText}!`);
+    }
+
+    function updatePlayer(dt) {
+      const accel = 0.0032 * dt;
+      if (isKeyDown(controlMap.left)) player.velocity -= accel;
+      if (isKeyDown(controlMap.right)) player.velocity += accel;
+      player.velocity *= 0.92;
+      player.x += player.velocity * dt * 0.1;
+      player.x = clamp(player.x, -1.2, 1.2);
+      if (!isKeyDown(controlMap.left) && !isKeyDown(controlMap.right) && Math.abs(player.x) < 0.01) {
+        player.x *= 0.92;
+      }
+
+      if (player.comboTimer > 0) {
+        player.comboTimer -= dt;
+        if (player.comboTimer <= 0) player.combo = 0;
+      }
+
+      if (player.dodge.cooldown > 0) {
+        player.dodge.cooldown -= dt;
+        if (player.dodge.cooldown < 0) player.dodge.cooldown = 0;
+      }
+
+      if (player.dodge.active) {
+        player.dodge.progress += dt / 360;
+        if (player.dodge.progress >= 1) {
+          player.dodge.active = false;
+          player.dodge.progress = 0;
+        }
+      }
+
+      player.blocking = player.guardHold && player.stamina > 5 && game.state !== 'player-down';
+      if (player.blocking) {
+        player.guard = clamp(player.guard + dt / 320, 0, 1);
+        player.stamina -= dt / 90;
+        if (player.stamina < 0) {
+          player.stamina = 0;
+          player.blocking = false;
+          player.guardHold = false;
+        }
+      } else {
+        player.guard = clamp(player.guard - dt / 800, 0, 1);
+      }
+
+      if (!player.blocking && !player.attacks.left.active && !player.attacks.right.active) {
+        player.stamina = clamp(player.stamina + dt / 60, 0, player.maxStamina);
+      } else {
+        player.stamina = clamp(player.stamina + dt / 140, 0, player.maxStamina);
+      }
+
+      player.hype = clamp(player.hype - dt / 160, 0, 120);
+
+      for (const hand of ['left', 'right']) {
+        const attack = player.attacks[hand];
+        if (!attack.active) continue;
+        attack.progress += dt / attack.def.duration;
+        if (attack.progress >= attack.def.window[0] && attack.progress <= attack.def.window[1] && !attack.hit) {
+          const glove = getPlayerHandPosition(hand);
+          resolvePlayerHit(glove, attack);
+          attack.hit = true;
+        }
+        if (attack.progress >= 1) {
+          attack.active = false;
+          attack.hit = false;
+        }
+      }
+    }
+
+    function resolvePlayerHit(glove, attack) {
+      const opp = game.opponent;
+      if (!opp || opp.health <= 0 || !attack || !attack.def) return;
+      const def = attack.def;
+      if (opp.dodge.active && opp.dodge.progress > 0.18 && opp.dodge.progress < 0.82) {
+        addFloatingText('Slip!', glove.x, glove.y - 20, '#66f9ff');
+        setMessage(`${opp.nickname} slipped the shot!`);
+        return;
+      }
+      const lane = attack.target === 'low' ? 'low' : 'high';
+      const target = lane === 'low' ? getOpponentBody() : getOpponentHead();
+      const radiusX = lane === 'low' ? 110 : 88;
+      const radiusY = lane === 'low' ? 90 : 78;
+      const dx = glove.x - target.x;
+      const dy = glove.y - target.y;
+      const inside = Math.abs(dx) <= radiusX && Math.abs(dy) <= radiusY;
+      if (!inside) {
+        const stationary = Math.abs(player.x) < 0.35 && (!opp.dodge.active || opp.dodge.progress <= 0.18 || opp.dodge.progress >= 0.82);
+        if (!(stationary && Math.abs(dx) <= radiusX * 1.35 && Math.abs(dy) <= radiusY * 1.35)) {
+          addFloatingText('Whiff', glove.x, glove.y - 20, '#8895ff', 700);
+          return;
+        }
+      }
+      let damage = def.damage;
+      let text = lane === 'low' ? 'Gut Shot!' : 'Crack!';
+      let color = lane === 'low' ? '#ffcf66' : '#ffe666';
+      if (def === attackDefs.cross) {
+        text = lane === 'low' ? 'Rib Breaker!' : 'Smash!';
+        color = '#ffb347';
+      } else if (def === attackDefs.haymaker) {
+        text = lane === 'low' ? 'Crusher!' : 'Devastating!';
+        color = '#ff4f6d';
+      }
+      let mitigated = false;
+      if (opp.blockTimer > 0) {
+        const blockMatch = (opp.blockLevel || 'high') === lane;
+        const guardYOffset = lane === 'low' ? 10 : 40;
+        if (blockMatch) {
+          damage *= 0.35;
+          mitigated = true;
+          addFloatingText(lane === 'low' ? 'Body Guard' : 'High Guard', target.x + (Math.random() - 0.5) * 20, target.y - guardYOffset, '#7ab5ff');
+          setMessage(`${opp.nickname}'s guard held!`);
+          opp.blockTimer = Math.max(0, opp.blockTimer - 180);
+        } else {
+          damage *= 0.65;
+          mitigated = true;
+          addFloatingText('Split Guard', target.x + (Math.random() - 0.5) * 20, target.y - guardYOffset, '#ffdf8a');
+          setMessage(`${def.name} split the guard!`);
+          opp.blockTimer = Math.max(0, opp.blockTimer - 320);
+        }
+      }
+      damage *= 1 + Math.min(0.6, player.combo * 0.1);
+      opp.health -= damage;
+      opp.stamina = clamp(opp.stamina - damage * 1.1, 0, opp.maxStamina);
+      player.combo++;
+      player.comboTimer = 2200;
+      player.hype = clamp(player.hype + def.hypeGain + player.combo * 2, 0, 120);
+      game.shakePower = Math.min(18, game.shakePower + def.shake);
+      addSparks(target.x, target.y, mitigated ? '#9bb8ff' : color, mitigated ? 6 : 10);
+      const textYOffset = lane === 'low' ? 30 : 50;
+      addFloatingText(text, target.x + (Math.random() - 0.5) * 40, target.y - textYOffset, color, 900);
+      if (!mitigated) {
+        const laneText = lane === 'low' ? 'Body shot landed!' : `${def.name} landed!`;
+        setMessage(laneText);
+      }
+      if (opp.health <= 0) {
+        opp.health = 0;
+        game.state = 'opponent-down';
+        game.celebrateTimer = 2600;
+        opp.state = 'stunned';
+        opp.timer = 2600;
+        opp.attack = null;
+        opp.blockTimer = 0;
+        addFloatingText('KNOCKDOWN!', target.x - 40, target.y - 120, '#ffef7a', 2400);
+        setMessage(`${opp.nickname} is down!`, 2400);
+      }
+    }
+
+    function updateOpponent(dt) {
+      const opp = game.opponent;
+      if (!opp) return;
+      if (game.state === 'champion') return;
+      if (opp.blockTimer > 0) opp.blockTimer -= dt;
+      if (opp.blockTimer < 0) opp.blockTimer = 0;
+      if (opp.dodge.active) {
+        opp.dodge.progress += dt / 380;
+        if (opp.dodge.progress >= 1) {
+          opp.dodge.active = false;
+          opp.dodge.progress = 0;
+        }
+      }
+      if (game.state === 'player-down') {
+        opp.state = 'pose';
+      }
+      opp.stamina = clamp(opp.stamina + dt / 70, 0, opp.maxStamina);
+      if (game.state === 'fight') {
+        opp.specialMeter = clamp(opp.specialMeter + dt / 90, 0, 100);
+      }
+
+      switch (opp.state) {
+        case 'walk':
+          opp.timer -= dt;
+          opp.x = Math.sin(performance.now() * 0.002) * 40;
+          if (opp.timer <= 0) {
+            opp.state = 'pose';
+            opp.timer = 1000;
+            setMessage(opp.intro);
+          }
+          break;
+        case 'pose':
+          opp.timer -= dt;
+          if (opp.timer <= 0) {
+            opp.state = 'ready';
+            opp.timer = 600;
+          }
+          break;
+        case 'ready':
+          opp.timer -= dt;
+          if (opp.timer <= 0 && game.state === 'fight') {
+            opp.state = 'idle';
+            opp.timer = 500;
+          }
+          break;
+        case 'idle':
+          opp.timer -= dt;
+          if (opp.timer <= 0 && game.state === 'fight') {
+            selectOpponentAction();
+          }
+          maybeReactToPlayer();
+          break;
+        case 'attack':
+          maybeReactToPlayer();
+          if (opp.attack) {
+            updateOpponentAttack(dt);
+          }
+          break;
+        case 'recover':
+          opp.timer -= dt;
+          if (opp.timer <= 0) {
+            opp.state = 'idle';
+            opp.timer = 400 + Math.random() * 300;
+          }
+          break;
+        case 'stunned':
+          opp.timer -= dt;
+          if (opp.timer <= 0 && game.state === 'fight') {
+            opp.state = 'idle';
+            opp.timer = 800;
+          }
+          break;
+      }
+    }
+
+    function maybeReactToPlayer() {
+      const opp = game.opponent;
+      if (!opp || game.state !== 'fight') return;
+      if (opp.blockTimer > 0 || opp.dodge.active) return;
+      const threats = Object.values(player.attacks).filter(a => a.active && a.progress < 0.65);
+      if (!threats.length) return;
+      const urgent = threats.reduce((max, curr) => (curr.progress > max.progress ? curr : max));
+      const urgency = urgent.progress;
+      const dodgeChance = clamp(opp.defense.dodge + urgency * 0.6, 0, 0.9);
+      const blockChance = clamp(opp.defense.block + urgency * 0.5, 0, 0.95);
+      const roll = Math.random();
+      if (roll < dodgeChance) {
+        startOpponentDodge();
+      } else if (roll < blockChance) {
+        opp.blockTimer = 360 + Math.random() * 240;
+        opp.blockLevel = urgent.target || 'high';
+        const guardText = opp.blockLevel === 'low' ? 'drops to guard the body!' : 'guards the head!';
+        setMessage(`${opp.nickname} ${guardText}`);
+      }
+    }
+
+    function startOpponentDodge() {
+      const opp = game.opponent;
+      opp.dodge.active = true;
+      opp.dodge.progress = 0;
+      opp.dodge.dir = Math.random() > 0.5 ? 1 : -1;
+      setMessage(`${opp.nickname} dashed aside!`);
+    }
+
+    function updateOpponentAttack(dt) {
+      const opp = game.opponent;
+      const attack = opp.attack;
+      if (!attack) return;
+      if (attack.phase === 'telegraph') {
+        attack.progress += dt / (attack.telegraph / opp.speed);
+        if (attack.progress >= 1) {
+          attack.phase = 'swing';
+          attack.progress = 0;
+          setMessage(`${opp.nickname} strikes!`);
+        }
+      } else if (attack.phase === 'swing') {
+        attack.progress += dt / (attack.duration / opp.speed);
+        if (!attack.hit && attack.progress >= attack.window[0] && attack.progress <= attack.window[1]) {
+          resolveOpponentHit(attack);
+          attack.hit = true;
+        }
+        if (attack.progress >= 1) {
+          attack.phase = 'recover';
+          attack.progress = 0;
+          opp.state = 'recover';
+          opp.timer = 420 + Math.random() * 260;
+          opp.attack = null;
+        }
+      }
+    }
+
+    function selectOpponentAction() {
+      const opp = game.opponent;
+      if (!opp || game.state !== 'fight') return;
+      const staminaFactor = opp.stamina / opp.maxStamina;
+      const aggression = opp.aggression * (0.7 + Math.random() * 0.6);
+      const shouldSpecial = opp.specialMeter >= 100 && Math.random() < 0.35;
+      if (shouldSpecial) {
+        opp.specialMeter = 0;
+        const flurryTarget = Math.random() < 0.55 ? 'high' : 'low';
+        const type = {
+          key: 'flurry',
+          telegraph: 520,
+          duration: 700,
+          window: [0.4, 0.9],
+          baseDamage: opp.power * 0.55,
+          reach: 170,
+          lateral: 0,
+          target: flurryTarget,
+          flurry: true,
+          hand: 'both'
+        };
+        startOpponentAttack(type);
+        if (opp.attack) {
+          opp.attack.flurry = true;
+          setMessage(`${opp.nickname} unleashes a Blitz!`);
+        }
+        return;
+      }
+      if (Math.random() < aggression * staminaFactor) {
+        const type = opponentAttacks[Math.floor(Math.random() * opponentAttacks.length)];
+        startOpponentAttack(type);
+      } else {
+        opp.timer = 320 + Math.random() * 420;
+      }
+    }
+
+    function resolveOpponentHit(attack) {
+      if (player.dodge.active && player.dodge.progress > 0.18 && player.dodge.progress < 0.82) {
+        addFloatingText('Slip!', canvas.width / 2 - 90 + player.x * 100, canvas.height - 220, '#8cfffb');
+        setMessage('You slipped past it!');
+        return;
+      }
+      const lane = attack.target === 'low' ? 'low' : 'high';
+      const blocked = player.blocking;
+      const guardMatch = blocked && player.guardLevel === lane;
+      let damage = attack.baseDamage + game.opponent.power * 0.35;
+      if (attack.flurry) {
+        damage *= 1.35;
+        addSparks(canvas.width / 2 + Math.random() * 120 - 60, canvas.height - 220, '#ff7ba3', 12);
+      }
+      const guardFloatY = lane === 'low' ? canvas.height - 120 : canvas.height - 150;
+      const wrongGuardY = lane === 'low' ? canvas.height - 130 : canvas.height - 170;
+      if (blocked) {
+        if (guardMatch) {
+          damage *= 0.28 + (1 - player.guard) * 0.22;
+          const text = lane === 'low' ? 'Body Block!' : 'High Block!';
+          addFloatingText(text, canvas.width / 2 - 40 + player.x * 80, guardFloatY, '#99f9ff');
+          setMessage(lane === 'low' ? 'Body saved!' : 'Head protected!');
+        } else {
+          damage *= 0.6;
+          addFloatingText('Wrong Guard!', canvas.width / 2 - 40 + player.x * 80, wrongGuardY, '#ffb347');
+          setMessage(lane === 'low' ? 'Guard downstairs!' : 'Guard the head!');
+        }
+      } else {
+        addFloatingText('Hit!', canvas.width / 2 - 40 + player.x * 80, canvas.height - 180, '#ff6b6b');
+        setMessage('You took a shot!');
+        player.combo = 0;
+        player.comboTimer = 0;
+        game.shakePower = Math.min(20, game.shakePower + 4.5);
+      }
+      player.health -= damage;
+      player.stamina = clamp(player.stamina - damage * 0.7, 0, player.maxStamina);
+      if (player.health <= 0) {
+        player.health = 0;
+        game.state = 'player-down';
+        game.celebrateTimer = 0;
+        setMessage('You are down! Press R to try again.', 4000);
+        addFloatingText('DEFEATED', canvas.width / 2 - 90, canvas.height / 2 - 30, '#ff4d6d', 2400);
+      }
+    }
+
+    function isKeyDown(list) {
+      return list.some(code => keys.has(code));
+    }
+
+    function triggerDodge(dir) {
+      if (player.dodge.active || player.dodge.cooldown > 0 || game.state !== 'fight') return;
+      player.dodge.active = true;
+      player.dodge.dir = dir;
+      player.dodge.progress = 0;
+      player.dodge.cooldown = 520;
+      setMessage(dir === -1 ? 'Slip left!' : 'Slip right!');
+    }
+
+    function getPlayerHandPosition(hand) {
+      const dodgeOffset = player.dodge.active ? Math.sin(player.dodge.progress * Math.PI) * 110 * player.dodge.dir : 0;
+      const baseX = canvas.width / 2 + player.x * 110 + dodgeOffset;
+      const attack = player.attacks[hand];
+      let x = baseX + (hand === 'left' ? -130 : 130);
+      let y = canvas.height - 200;
+      let size = 22;
+      if (attack && attack.active) {
+        const def = attack.def;
+        const t = clamp(attack.progress, 0, 1);
+        const extendPhase = t < 0.5 ? easeOutCubic(t / 0.5) : easeInCubic(1 - (t - 0.5) / 0.5);
+        const reach = def.reach * extendPhase;
+        const lane = attack.target === 'low' ? 'low' : 'high';
+        const verticalFactor = lane === 'low' ? 0.75 : 1.1;
+        const targetLift = lane === 'low' ? 70 : 0;
+        x += def.lateral * reach * 0.7;
+        y += targetLift;
+        y -= reach * verticalFactor;
+        if (def.arc) {
+          x += def.arc.x * 0.8 * Math.sin(Math.PI * t);
+          y += def.arc.y * 0.6 * Math.sin(Math.PI * t);
+        }
+        size += 6 * Math.sin(t * Math.PI);
+      }
+      if (player.blocking && (!attack || !attack.active)) {
+        const guardYTarget = player.guardLevel === 'low' ? canvas.height - 140 : canvas.height - 260;
+        const guardXTarget = baseX + (hand === 'left' ? -80 : 80);
+        x += (guardXTarget - x) * player.guard;
+        y += (guardYTarget - y) * player.guard;
+      }
+      return { x, y, size };
+    }
+
+    function getOpponentHead() {
+      const opp = game.opponent;
+      if (!opp) {
+        return { x: canvas.width / 2, y: canvas.height / 2 - 70 };
+      }
+      const dodgeOffset = opp.dodge.active ? Math.sin(opp.dodge.progress * Math.PI) * 90 * opp.dodge.dir : 0;
+      const slump = opp.state === 'stunned' ? Math.sin((1 - Math.max(0, opp.timer) / 2600) * Math.PI) * 20 : 0;
+      return {
+        x: canvas.width / 2 + dodgeOffset,
+        y: canvas.height / 2 - 26 + slump
+      };
+    }
+    function getOpponentBody() {
+      const opp = game.opponent;
+      if (!opp) {
+        return { x: canvas.width / 2, y: canvas.height / 2 + 90 };
+      }
+      const dodgeOffset = opp.dodge.active ? Math.sin(opp.dodge.progress * Math.PI) * 70 * opp.dodge.dir : 0;
+      const slump = opp.state === 'stunned' ? Math.sin((1 - Math.max(0, opp.timer) / 2600) * Math.PI) * 20 : 0;
+      return {
+        x: canvas.width / 2 + dodgeOffset,
+        y: canvas.height / 2 + 88 + slump
+      };
+    }
+    function hexToRgba(hex, alpha) {
+      const value = parseInt(hex.slice(1), 16);
+      const r = (value >> 16) & 255;
+      const g = (value >> 8) & 255;
+      const b = value & 255;
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function drawStylizedGlove(x, y, size, baseColor, accentColor, energyColor, rotation = 0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+
+      const radius = size;
+      const glowRadius = radius * 1.55;
+
+      const bodyGradient = ctx.createRadialGradient(-radius * 0.35, -radius * 0.5, radius * 0.3, 0, 0, radius * 1.1);
+      bodyGradient.addColorStop(0, hexToRgba(accentColor, 0.95));
+      bodyGradient.addColorStop(0.45, hexToRgba(baseColor, 0.95));
+      bodyGradient.addColorStop(1, hexToRgba(baseColor, 0.6));
+
+      ctx.fillStyle = bodyGradient;
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.95, -radius * 0.1);
+      ctx.quadraticCurveTo(-radius * 0.88, -radius * 1.1, radius * 0.1, -radius * 1.2);
+      ctx.quadraticCurveTo(radius * 1.25, -radius * 0.95, radius * 1.25, -radius * 0.2);
+      ctx.quadraticCurveTo(radius * 1.22, radius * 0.85, radius * 0.15, radius * 1.05);
+      ctx.quadraticCurveTo(-radius * 0.95, radius * 0.85, -radius * 0.95, -radius * 0.1);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = hexToRgba(accentColor, 0.75);
+      ctx.lineWidth = radius * 0.22;
+      ctx.stroke();
+
+      ctx.strokeStyle = hexToRgba(energyColor, 0.35);
+      ctx.lineWidth = radius * 0.14;
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.5, -radius * 0.65);
+      ctx.quadraticCurveTo(radius * 0.05, -radius * 0.95, radius * 0.8, -radius * 0.4);
+      ctx.stroke();
+
+      ctx.strokeStyle = hexToRgba(accentColor, 0.8);
+      ctx.lineWidth = radius * 0.12;
+      const knuckles = 3;
+      for (let i = 0; i < knuckles; i++) {
+        const t = (i + 1) / (knuckles + 1);
+        const nx = -radius * 0.65 + radius * 1.3 * t;
+        ctx.beginPath();
+        ctx.moveTo(nx, -radius * 0.2);
+        ctx.quadraticCurveTo(nx + radius * 0.12, -radius * 0.38, nx + radius * 0.24, -radius * 0.18);
+        ctx.stroke();
+      }
+
+      const highlight = ctx.createRadialGradient(-radius * 0.4, -radius * 0.55, 0, -radius * 0.4, -radius * 0.55, radius * 0.9);
+      highlight.addColorStop(0, hexToRgba('#ffffff', 0.85));
+      highlight.addColorStop(0.45, hexToRgba('#ffffff', 0.2));
+      highlight.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = highlight;
+      ctx.beginPath();
+      ctx.ellipse(-radius * 0.3, -radius * 0.55, radius * 0.65, radius * 0.58, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = hexToRgba(energyColor, 0.25);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, glowRadius, glowRadius * 0.9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = hexToRgba(energyColor, 0.6);
+      ctx.lineWidth = radius * 0.08;
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.4, radius * 0.5);
+      ctx.quadraticCurveTo(0, radius * 0.95, radius * 0.5, radius * 0.45);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function update(dt) {
+      game.overlay = Math.max(0, game.overlay - dt / 3200);
+      if (game.messageTimer > 0) {
+        game.messageTimer -= dt;
+        if (game.messageTimer <= 0) {
+          game.message = '';
+        }
+      }
+      if (game.hintTimer > 0) {
+        game.hintTimer -= dt;
+        if (game.hintTimer <= 0 && !game.hintShown && game.hint) {
+          setMessage(`Tell: ${game.hint}`, 2600);
+          game.hintShown = true;
+        }
+      }
+      game.shakePower *= 0.92;
+
+      game.floatingTexts = game.floatingTexts.filter(text => {
+        text.life -= dt;
+        text.y -= dt * 0.05;
+        return text.life > 0;
+      });
+
+      game.sparks = game.sparks.filter(spark => {
+        spark.life -= dt;
+        spark.x += spark.vx * (dt / 1000);
+        spark.y += spark.vy * (dt / 1000);
+        spark.vx *= 0.96;
+        spark.vy *= 0.96;
+        return spark.life > 0;
+      });
+
+      spotlights.forEach(light => {
+        light.angle += light.speed * dt;
+      });
+
+      switch (game.state) {
+        case 'intro':
+          updatePlayer(dt);
+          updateOpponent(dt);
+          if (game.bellTimer > 0) {
+            game.bellTimer -= dt;
+            if (game.bellTimer <= 0) {
+              game.state = 'fight';
+              bell();
+            }
+          }
+          break;
+        case 'fight':
+          game.roundTime -= dt;
+          if (game.roundTime <= 0) {
+            game.roundTime = 0;
+            if (player.health > game.opponent.health) {
+              game.state = 'opponent-down';
+              game.celebrateTimer = 2600;
+              setMessage('Judge Decision! You win the round!', 3200);
+            } else {
+              game.state = 'player-down';
+              setMessage('Decision loss. Press R to try again.', 3200);
+            }
+          }
+          updatePlayer(dt);
+          updateOpponent(dt);
+          break;
+        case 'opponent-down':
+          updatePlayer(dt);
+          updateOpponent(dt);
+          if (game.celebrateTimer > 0) {
+            game.celebrateTimer -= dt;
+            if (game.celebrateTimer <= 0) {
+              nextOpponent();
+            }
+          }
+          break;
+        case 'player-down':
+          updateOpponent(dt);
+          break;
+        case 'champion':
+          updatePlayer(dt * 0.5);
+          break;
+      }
+    }
+    function drawBackground() {
+      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      grad.addColorStop(0, '#020409');
+      grad.addColorStop(0.45, '#081437');
+      grad.addColorStop(1, '#010104');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      spotlights.forEach(light => {
+        const x = canvas.width / 2 + Math.cos(light.angle) * 240;
+        const y = canvas.height * 0.15 + Math.sin(light.angle) * 60;
+        const radial = ctx.createRadialGradient(x, y, 0, x, y, light.radius);
+        radial.addColorStop(0, light.color);
+        radial.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = radial;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      });
+      ctx.restore();
+
+      const now = performance.now();
+      crowd.forEach(person => {
+        const flicker = person.base + Math.sin(now * 0.003 + person.pulse) * 0.25;
+        ctx.globalAlpha = clamp(flicker, 0.12, 0.85);
+        ctx.fillStyle = person.color;
+        ctx.beginPath();
+        ctx.arc(person.x, person.y, person.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function drawRing() {
+      const { fl, fr, bl, br } = ring;
+      const mat = ctx.createLinearGradient(bl.x, bl.y, bl.x, fl.y);
+      mat.addColorStop(0, '#121a30');
+      mat.addColorStop(0.35, '#15223f');
+      mat.addColorStop(1, '#070b16');
+      ctx.fillStyle = mat;
+      ctx.beginPath();
+      ctx.moveTo(fl.x, fl.y);
+      ctx.lineTo(bl.x, bl.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.lineTo(fr.x, fr.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(fl.x, fl.y);
+      ctx.lineTo(bl.x, bl.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.lineTo(fr.x, fr.y);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.strokeStyle = 'rgba(120,170,255,0.18)';
+      ctx.lineWidth = 2;
+      const depthSteps = 6;
+      for (let i = 1; i < depthSteps; i++) {
+        const t = i / depthSteps;
+        const startX = fl.x + (fr.x - fl.x) * t;
+        const startY = fl.y + (fr.y - fl.y) * t;
+        const endX = bl.x + (br.x - bl.x) * t;
+        const endY = bl.y + (br.y - bl.y) * t;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = 'rgba(120,170,255,0.12)';
+      const widthSteps = 5;
+      for (let i = 1; i < widthSteps; i++) {
+        const t = i / widthSteps;
+        const startX = fl.x + (bl.x - fl.x) * t;
+        const startY = fl.y + (bl.y - fl.y) * t;
+        const endX = fr.x + (br.x - fr.x) * t;
+        const endY = fr.y + (br.y - fr.y) * t;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.beginPath();
+      ctx.ellipse(canvas.width / 2, canvas.height - 36, 280, 76, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const ropeColors = ['#ff3760', '#ffffff', '#11b9ff'];
+      for (let i = 1; i <= 3; i++) {
+        const h = i * 14;
+        ctx.strokeStyle = ropeColors[i - 1];
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(bl.x, bl.y - h);
+        ctx.lineTo(br.x, br.y - h);
+        ctx.lineTo(fr.x, fr.y - h);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(bl.x, bl.y - h);
+        ctx.lineTo(fl.x, fl.y - h);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#2d3b60';
+      [fl, fr, bl, br].forEach(corner => {
+        ctx.fillRect(corner.x - 7, corner.y - 54, 14, 54);
+      });
+    }
+
+    function drawOpponent() {
+      const opp = game.opponent;
+      if (!opp) return;
+      const head = getOpponentHead();
+      const telegraph = opp.attack && opp.attack.phase === 'telegraph' ? opp.attack : null;
+      const swingLean = opp.attack && opp.attack.phase === 'swing' ? Math.sin(clamp(opp.attack.progress, 0, 1) * Math.PI) * 18 : 0;
+      const telegraphTilt = telegraph ? Math.sin(clamp(telegraph.progress, 0, 1) * Math.PI) * (telegraph.tellSway || 0) : 0;
+      const forwardLean = swingLean + (telegraph ? telegraphTilt * (telegraph.target === 'low' ? 0.4 : -0.3) : 0);
+      const baseX = head.x + forwardLean * 0.35;
+      const baseY = head.y + 120 + (telegraph ? telegraphTilt * (telegraph.target === 'low' ? 0.4 : -0.25) : 0);
+      const slump = opp.state === 'stunned' ? 36 : 0;
+
+      if (telegraph) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const strength = clamp(Math.pow(clamp(telegraph.progress, 0, 1), 0.7) * (telegraph.tellFlash || 0.6), 0, 1.35);
+        const cueColor = telegraph.tellColor || opp.secondary;
+        if (telegraph.target === 'low') {
+          const body = getOpponentBody();
+          const width = 120 + strength * 70;
+          const height = 70 + strength * 36;
+          ctx.lineWidth = 8 + strength * 6;
+          ctx.strokeStyle = hexToRgba(cueColor, 0.42 * strength);
+          ctx.fillStyle = hexToRgba(cueColor, 0.18 * strength);
+          ctx.beginPath();
+          ctx.ellipse(body.x, body.y + 6, width, height, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          const radius = 70 + strength * 46;
+          ctx.lineWidth = 10 + strength * 5;
+          ctx.strokeStyle = hexToRgba(cueColor, 0.4 * strength);
+          ctx.beginPath();
+          ctx.arc(head.x, head.y, radius, -Math.PI * 0.9, Math.PI * 0.9, false);
+          ctx.stroke();
+          ctx.fillStyle = hexToRgba(cueColor, 0.16 * strength);
+          ctx.beginPath();
+          ctx.arc(head.x, head.y - 12, radius * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.shadowColor = hexToRgba(opp.secondary, 0.25);
+      ctx.shadowBlur = 40;
+      const torsoGrad = ctx.createLinearGradient(baseX, head.y - 40, baseX, baseY + 220);
+      torsoGrad.addColorStop(0, hexToRgba(opp.color, 0.95));
+      torsoGrad.addColorStop(0.55, hexToRgba(opp.secondary, 0.92));
+      torsoGrad.addColorStop(1, 'rgba(8,12,22,0.98)');
+      ctx.fillStyle = torsoGrad;
+      ctx.beginPath();
+      ctx.ellipse(baseX, baseY + 80 + slump * 0.4, 110, 190 + slump * 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.fillStyle = hexToRgba(opp.secondary, 0.4);
+      ctx.beginPath();
+      ctx.ellipse(baseX, head.y + 60, 160, 90, 0, 0, Math.PI);
+      ctx.fill();
+
+      const headGradient = ctx.createLinearGradient(head.x, head.y - 56, head.x, head.y + 62);
+      headGradient.addColorStop(0, hexToRgba('#ffffff', 0.18));
+      headGradient.addColorStop(0.35, hexToRgba(opp.color, 0.95));
+      headGradient.addColorStop(1, hexToRgba(opp.secondary, 0.88));
+      ctx.fillStyle = headGradient;
+      ctx.beginPath();
+      ctx.ellipse(head.x, head.y, 48, 54, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = hexToRgba(opp.secondary, 0.65);
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      const visorGradient = ctx.createLinearGradient(head.x, head.y - 10, head.x, head.y + 24);
+      visorGradient.addColorStop(0, hexToRgba('#0b0f18', 0.85));
+      visorGradient.addColorStop(1, hexToRgba(opp.secondary, 0.85));
+      ctx.fillStyle = visorGradient;
+      ctx.beginPath();
+      ctx.moveTo(head.x - 36, head.y - 6);
+      ctx.quadraticCurveTo(head.x, head.y - 28, head.x + 36, head.y - 6);
+      ctx.quadraticCurveTo(head.x + 30, head.y + 24, head.x, head.y + 26);
+      ctx.quadraticCurveTo(head.x - 30, head.y + 24, head.x - 36, head.y - 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = hexToRgba(opp.color, 0.8);
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = hexToRgba(opp.secondary, 0.45);
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(head.x - 22, head.y + 12);
+      ctx.quadraticCurveTo(head.x, head.y + 26, head.x + 22, head.y + 12);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.strokeStyle = hexToRgba('#ffffff', 0.25);
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(head.x, head.y - 44);
+      ctx.quadraticCurveTo(head.x + 10, head.y - 62, head.x + 4, head.y - 78);
+      ctx.stroke();
+
+      const collarGradient = ctx.createLinearGradient(baseX, head.y + 10, baseX, head.y + 140);
+      collarGradient.addColorStop(0, hexToRgba(opp.secondary, 0.85));
+      collarGradient.addColorStop(1, hexToRgba(opp.color, 0.4));
+      ctx.fillStyle = collarGradient;
+      ctx.beginPath();
+      ctx.ellipse(baseX, head.y + 68, 150, 72, 0, 0, Math.PI);
+      ctx.fill();
+
+      ctx.fillStyle = hexToRgba(opp.secondary, 0.82);
+      ctx.beginPath();
+      ctx.moveTo(baseX - 118, baseY + 44 + slump * 0.6);
+      ctx.lineTo(baseX + 118, baseY + 44 + slump * 0.6);
+      ctx.lineTo(baseX + 96, baseY + 86 + slump * 0.6);
+      ctx.lineTo(baseX - 96, baseY + 86 + slump * 0.6);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = hexToRgba(opp.color, 0.78);
+      ctx.beginPath();
+      ctx.moveTo(baseX - 96, baseY + 40 + slump * 0.6);
+      ctx.lineTo(baseX + 96, baseY + 40 + slump * 0.6);
+      ctx.quadraticCurveTo(baseX + 60, baseY + 96 + slump * 0.5, baseX, baseY + 108 + slump * 0.6);
+      ctx.quadraticCurveTo(baseX - 60, baseY + 96 + slump * 0.5, baseX - 96, baseY + 40 + slump * 0.6);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = hexToRgba(opp.secondary, 0.55);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(baseX - 84, baseY + 54 + slump * 0.6);
+      ctx.lineTo(baseX - 32, baseY + 96 + slump * 0.4);
+      ctx.lineTo(baseX, baseY + 60 + slump * 0.4);
+      ctx.lineTo(baseX + 32, baseY + 96 + slump * 0.4);
+      ctx.lineTo(baseX + 84, baseY + 54 + slump * 0.6);
+      ctx.stroke();
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const coreGlow = ctx.createRadialGradient(baseX, baseY + 74 + slump * 0.5, 0, baseX, baseY + 74 + slump * 0.5, 110);
+      coreGlow.addColorStop(0, hexToRgba('#ffffff', 0.55));
+      coreGlow.addColorStop(0.35, hexToRgba(opp.color, 0.45));
+      coreGlow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = coreGlow;
+      ctx.beginPath();
+      ctx.ellipse(baseX, baseY + 74 + slump * 0.4, 110, 86, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      drawOpponentArm('left', head, baseX, baseY, slump);
+      drawOpponentArm('right', head, baseX, baseY, slump);
+
+      ctx.strokeStyle = hexToRgba(opp.color, 0.72);
+      ctx.lineWidth = 12;
+      ctx.beginPath();
+      ctx.moveTo(baseX - 36, baseY + 160 + slump * 0.4);
+      ctx.lineTo(baseX - 30, baseY + 260 + slump * 0.3);
+      ctx.moveTo(baseX + 36, baseY + 160 + slump * 0.4);
+      ctx.lineTo(baseX + 30, baseY + 260 + slump * 0.3);
+      ctx.stroke();
+    }
+
+    function drawOpponentArm(hand, head, baseX, baseY, slump) {
+      const opp = game.opponent;
+      const dir = hand === 'left' ? -1 : 1;
+      const shoulderX = baseX + dir * 72;
+      const shoulderY = baseY + 10 + slump * 0.35;
+      let gloveX = baseX + dir * 140;
+      let gloveY = baseY + 100;
+      let size = 24;
+      const attack = opp.attack;
+      const attacking = attack && opp.state === 'attack' && (attack.hand === hand || attack.hand === 'both');
+
+      if (opp.blockTimer > 0) {
+        if ((opp.blockLevel || 'high') === 'low') {
+          gloveX = baseX + dir * 92;
+          gloveY = baseY + 72;
+        } else {
+          gloveX = head.x + dir * 44;
+          gloveY = head.y + 42;
+        }
+        size = 28;
+      } else if (attacking && attack.phase === 'swing') {
+        const t = clamp(attack.progress, 0, 1);
+        const extendPhase = t < 0.5 ? easeOutCubic(t / 0.5) : easeInCubic(1 - (t - 0.5) / 0.5);
+        const reach = attack.reach * extendPhase;
+        gloveX = baseX + dir * (90 + reach * 0.25);
+        gloveY = baseY + 80 + reach * 0.85;
+        if (attack.key === 'hook') {
+          gloveX += dir * 80 * Math.sin(t * Math.PI);
+          gloveY += reach * 0.35;
+        } else if (attack.key === 'cross') {
+          gloveX += dir * 34 * Math.sin(t * Math.PI * 0.5);
+        } else if (attack.flurry) {
+          gloveX += dir * 46 * Math.sin(t * Math.PI * 3);
+          gloveY += reach * 0.55;
+        }
+        size = 26 + 6 * Math.sin(t * Math.PI);
+      } else if (attacking && attack.phase === 'telegraph') {
+        const t = clamp(attack.progress, 0, 1);
+        const coil = Math.sin(t * Math.PI) * (attack.target === 'low' ? 40 : -30);
+        gloveX = baseX + dir * (110 + coil * 0.6);
+        gloveY = baseY + (attack.target === 'low' ? 70 : 10) + coil;
+        size = 26;
+      } else if (opp.state === 'stunned') {
+        gloveY += 46;
+      }
+
+      const elbowX = (shoulderX + gloveX) / 2 + dir * 26;
+      const elbowY = (shoulderY + gloveY) / 2 - 28;
+      const limbGrad = ctx.createLinearGradient(shoulderX, shoulderY, gloveX, gloveY);
+      limbGrad.addColorStop(0, hexToRgba(opp.secondary, 0.92));
+      limbGrad.addColorStop(1, hexToRgba(opp.color, 0.7));
+
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = limbGrad;
+      ctx.lineWidth = 22;
+      ctx.beginPath();
+      ctx.moveTo(shoulderX, shoulderY);
+      ctx.quadraticCurveTo(elbowX, elbowY, gloveX, gloveY);
+      ctx.stroke();
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = hexToRgba(opp.secondary, attacking ? 0.7 : 0.45);
+      ctx.lineWidth = 9;
+      ctx.beginPath();
+      ctx.moveTo(shoulderX, shoulderY);
+      ctx.quadraticCurveTo(elbowX, elbowY, gloveX, gloveY);
+      ctx.stroke();
+      ctx.restore();
+
+      const orientation = Math.atan2(gloveY - elbowY, gloveX - elbowX);
+      drawStylizedGlove(gloveX, gloveY, size * 1.15, opp.color, opp.secondary, opp.attack && opp.attack.phase === 'swing' ? '#ffdba6' : '#ffffff', orientation);
+    }
+    function drawPlayer() {
+      const dodgeOffset = player.dodge.active ? Math.sin(player.dodge.progress * Math.PI) * 110 * player.dodge.dir : 0;
+      const baseX = canvas.width / 2 + player.x * 110 + dodgeOffset;
+      const torsoTop = canvas.height - 360;
+      const shoulderY = canvas.height - 240;
+      const waistY = canvas.height - 110;
+      const span = 260;
+
+      const buildSilhouettePath = () => {
+        ctx.beginPath();
+        ctx.moveTo(baseX - span, canvas.height + 12);
+        ctx.lineTo(baseX - span * 0.78, waistY + 32);
+        ctx.quadraticCurveTo(baseX - span * 0.55, shoulderY + 16, baseX - span * 0.32, torsoTop + 86);
+        ctx.quadraticCurveTo(baseX, torsoTop, baseX + span * 0.32, torsoTop + 86);
+        ctx.quadraticCurveTo(baseX + span * 0.55, shoulderY + 16, baseX + span * 0.78, waistY + 32);
+        ctx.lineTo(baseX + span, canvas.height + 12);
+        ctx.closePath();
+      };
+
+      buildSilhouettePath();
+      ctx.save();
+      ctx.clip();
+      const gradient = ctx.createLinearGradient(baseX, torsoTop, baseX, canvas.height + 40);
+      gradient.addColorStop(0, 'rgba(60,140,255,0.32)');
+      gradient.addColorStop(0.55, 'rgba(28,80,160,0.18)');
+      gradient.addColorStop(1, 'rgba(6,18,36,0.06)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(baseX - span, torsoTop, span * 2, canvas.height - torsoTop + 48);
+
+      const gridRows = 6;
+      ctx.strokeStyle = 'rgba(130,210,255,0.24)';
+      ctx.lineWidth = 1.6;
+      for (let i = 1; i < gridRows; i++) {
+        const t = i / gridRows;
+        const y = torsoTop + (canvas.height - torsoTop) * t;
+        ctx.beginPath();
+        ctx.moveTo(baseX - span + span * 0.28 * t, y);
+        ctx.lineTo(baseX + span - span * 0.28 * t, y);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = 'rgba(130,210,255,0.18)';
+      const gridCols = 7;
+      for (let i = 1; i < gridCols; i++) {
+        const t = i / gridCols;
+        const bottomX = baseX - span + span * 2 * t;
+        const topX = baseX - span * 0.35 + span * 0.7 * t;
+        ctx.beginPath();
+        ctx.moveTo(bottomX, canvas.height + 16);
+        ctx.lineTo(topX, torsoTop + 24);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.save();
+      buildSilhouettePath();
+      ctx.clip();
+
+      const chestGradient = ctx.createRadialGradient(baseX, waistY - 90, 0, baseX, waistY - 90, 240);
+      chestGradient.addColorStop(0, 'rgba(150,230,255,0.42)');
+      chestGradient.addColorStop(0.45, 'rgba(60,150,255,0.24)');
+      chestGradient.addColorStop(1, 'rgba(10,20,30,0.02)');
+      ctx.fillStyle = chestGradient;
+      ctx.beginPath();
+      ctx.ellipse(baseX, waistY - 80, span * 0.65, 200, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const harnessColor = 'rgba(160,220,255,0.25)';
+      ctx.fillStyle = harnessColor;
+      ctx.beginPath();
+      ctx.moveTo(baseX - span * 0.35, torsoTop + 40);
+      ctx.lineTo(baseX - span * 0.12, torsoTop + 140);
+      ctx.quadraticCurveTo(baseX, torsoTop + 120, baseX + span * 0.12, torsoTop + 140);
+      ctx.lineTo(baseX + span * 0.35, torsoTop + 40);
+      ctx.lineTo(baseX + span * 0.2, torsoTop + 20);
+      ctx.lineTo(baseX - span * 0.2, torsoTop + 20);
+      ctx.closePath();
+      ctx.fill();
+
+      const coreGradient = ctx.createRadialGradient(baseX, waistY - 40, 0, baseX, waistY - 40, 120);
+      coreGradient.addColorStop(0, 'rgba(255,220,140,0.55)');
+      coreGradient.addColorStop(0.45, 'rgba(130,220,255,0.35)');
+      coreGradient.addColorStop(1, 'rgba(20,40,70,0)');
+      ctx.fillStyle = coreGradient;
+      ctx.beginPath();
+      ctx.ellipse(baseX, waistY - 40, span * 0.28, 120, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(255,240,210,0.28)';
+      ctx.beginPath();
+      ctx.ellipse(baseX, waistY - 40, span * 0.18, 80, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(210,245,255,0.28)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(baseX, torsoTop + 18);
+      ctx.lineTo(baseX, waistY + 40);
+      ctx.stroke();
+
+      const headGlow = ctx.createRadialGradient(baseX, torsoTop - 70, 0, baseX, torsoTop - 70, 140);
+      headGlow.addColorStop(0, 'rgba(120,220,255,0.4)');
+      headGlow.addColorStop(0.35, 'rgba(60,120,240,0.18)');
+      headGlow.addColorStop(1, 'rgba(4,6,12,0.05)');
+      ctx.fillStyle = headGlow;
+      ctx.beginPath();
+      ctx.ellipse(baseX, torsoTop - 60, span * 0.4, 120, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(100,190,255,0.22)';
+      ctx.beginPath();
+      ctx.moveTo(baseX - span * 0.24, torsoTop - 36);
+      ctx.quadraticCurveTo(baseX, torsoTop - 126, baseX + span * 0.24, torsoTop - 36);
+      ctx.quadraticCurveTo(baseX + span * 0.18, torsoTop - 6, baseX, torsoTop + 6);
+      ctx.quadraticCurveTo(baseX - span * 0.18, torsoTop - 6, baseX - span * 0.24, torsoTop - 36);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(210,245,255,0.32)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(baseX - span * 0.16, torsoTop - 24);
+      ctx.quadraticCurveTo(baseX, torsoTop - 64, baseX + span * 0.16, torsoTop - 24);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(200,245,255,0.28)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(baseX - span * 0.48, waistY + 10);
+      ctx.quadraticCurveTo(baseX, waistY - 70, baseX + span * 0.48, waistY + 10);
+      ctx.stroke();
+      ctx.restore();
+
+      buildSilhouettePath();
+      ctx.strokeStyle = 'rgba(150,230,255,0.55)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(190,245,255,0.38)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(baseX - span * 0.4, torsoTop + 70);
+      ctx.quadraticCurveTo(baseX, torsoTop + 26, baseX + span * 0.4, torsoTop + 70);
+      ctx.stroke();
+
+      const gloves = {
+        left: getPlayerHandPosition('left'),
+        right: getPlayerHandPosition('right')
+      };
+
+      ['left', 'right'].forEach(hand => {
+        const glove = gloves[hand];
+        const anchorX = baseX + (hand === 'left' ? -150 : 150);
+        const anchorY = canvas.height - 200;
+        const elbowX = (anchorX + glove.x) / 2 + (hand === 'left' ? -50 : 50);
+        const elbowY = (anchorY + glove.y) / 2 - 80;
+        const armGradient = ctx.createLinearGradient(anchorX, anchorY, glove.x, glove.y);
+        if (hand === 'left') {
+          armGradient.addColorStop(0, 'rgba(90,210,255,0.85)');
+          armGradient.addColorStop(1, 'rgba(26,110,255,0.6)');
+        } else {
+          armGradient.addColorStop(0, 'rgba(255,170,240,0.85)');
+          armGradient.addColorStop(1, 'rgba(255,90,190,0.6)');
+        }
+
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = armGradient;
+        ctx.lineWidth = 28;
+        ctx.beginPath();
+        ctx.moveTo(anchorX, anchorY);
+        ctx.quadraticCurveTo(elbowX, elbowY, glove.x, glove.y);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = hand === 'left' ? 'rgba(170,245,255,0.7)' : 'rgba(255,190,245,0.7)';
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.moveTo(anchorX, anchorY);
+        ctx.quadraticCurveTo(elbowX, elbowY, glove.x, glove.y);
+        ctx.stroke();
+        ctx.restore();
+
+        const orientation = Math.atan2(glove.y - elbowY, glove.x - elbowX);
+        const baseColor = hand === 'left' ? '#4cf5ff' : '#ff8be8';
+        const accentColor = hand === 'left' ? '#3285ff' : '#ff4fbc';
+        const energyColor = hand === 'left' ? '#c5fbff' : '#ffd8ff';
+        drawStylizedGlove(glove.x, glove.y, glove.size + 10, baseColor, accentColor, energyColor, orientation);
+      });
+
+      if (player.blocking) {
+        const shieldAlpha = 0.25 + player.guard * 0.4;
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.strokeStyle = `rgba(140,220,255,${shieldAlpha})`;
+        ctx.lineWidth = 12;
+        ctx.beginPath();
+        ctx.arc(baseX, canvas.height - 260, 210, Math.PI * 0.12, Math.PI - Math.PI * 0.12, false);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(220,255,255,${shieldAlpha * 0.6})`;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(baseX, canvas.height - 250, 150, Math.PI * 0.18, Math.PI - Math.PI * 0.18, false);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      if (player.hype >= 100) {
+        const pulse = 0.22 + Math.sin(performance.now() * 0.006) * 0.08;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = `rgba(255,218,102,${pulse})`;
+        ctx.lineWidth = 9;
+        ctx.beginPath();
+        ctx.arc(baseX, canvas.height - 220, 240, Math.PI * 0.08, Math.PI - Math.PI * 0.08, false);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawEffects() {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      game.sparks.forEach(spark => {
+        const alpha = clamp(spark.life / 320, 0, 1);
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = spark.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(spark.x, spark.y);
+        ctx.lineTo(spark.x - spark.vx * 0.04, spark.y - spark.vy * 0.04);
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      game.floatingTexts.forEach(text => {
+        const alpha = clamp(text.life / text.maxLife, 0, 1);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = text.color;
+        ctx.font = '18px "Bahnschrift", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(text.text, text.x, text.y);
+      });
+      ctx.globalAlpha = 1;
+      ctx.textAlign = 'left';
+    }
+
+    function drawBar(x, y, width, height, value, max, color, background, label) {
+      ctx.fillStyle = background;
+      ctx.fillRect(x, y, width, height);
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, width * clamp(value / max, 0, 1), height);
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x, y, width, height);
+      if (label) {
+        ctx.fillStyle = '#a3b8ff';
+        ctx.font = '12px "Segoe UI", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(label, x, y - 4);
+        ctx.textBaseline = 'alphabetic';
+      }
+    }
+
+    function drawUI() {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+      if (game.overlay > 0) {
+        ctx.fillStyle = `rgba(2,4,12,${game.overlay * 0.65})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.fillStyle = 'rgba(8,12,24,0.75)';
+      ctx.fillRect(20, 20, 300, 96);
+      ctx.fillRect(canvas.width - 320, 20, 300, 96);
+
+      drawBar(40, 54, 240, 16, player.health, player.maxHealth, '#4cffd2', 'rgba(44,72,98,0.6)', 'Health');
+      drawBar(40, 82, 240, 12, player.stamina, player.maxStamina, '#7aaeff', 'rgba(44,72,98,0.5)', 'Stamina');
+      drawBar(40, 104, 240, 10, player.hype, 120, '#ffda6b', 'rgba(72,52,0,0.35)', 'Hype');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '18px "Bahnschrift", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('You', 40, 24);
+      const aimText = player.aim === 'low' ? 'Body' : 'Head';
+      const guardText = player.guardLevel === 'low' ? 'Low' : 'High';
+      ctx.fillStyle = '#a3b8ff';
+      ctx.font = '13px "Segoe UI", sans-serif';
+      ctx.fillText(`Aim: ${aimText}`, 40, 126);
+      ctx.fillText(`Guard: ${guardText}`, 40, 142);
+
+      if (game.opponent) {
+        const opp = game.opponent;
+        ctx.textAlign = 'right';
+        ctx.fillText(`${opp.name}`, canvas.width - 40, 24);
+        ctx.textAlign = 'left';
+        drawBar(canvas.width - 280, 54, 240, 16, opp.health, opp.maxHealth, opp.color, 'rgba(36,28,58,0.6)', 'Opponent Health');
+        drawBar(canvas.width - 280, 82, 240, 12, opp.stamina, opp.maxStamina, opp.secondary, 'rgba(36,28,58,0.4)', 'Opponent Stamina');
+      }
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#eef3ff';
+      ctx.font = '22px "Bahnschrift", sans-serif';
+      const seconds = Math.max(0, Math.ceil(game.roundTime / 1000));
+      ctx.fillText(`Time ${seconds}s`, canvas.width / 2, 40);
+      ctx.font = '16px "Segoe UI", sans-serif';
+      ctx.fillText(`Bout ${game.opponentIndex + 1} / ${fighters.length}`, canvas.width / 2, 64);
+      if (player.combo > 1 && game.state !== 'player-down') {
+        ctx.fillStyle = '#ff88d6';
+        ctx.font = '20px "Bahnschrift", sans-serif';
+        ctx.fillText(`Combo x${player.combo}`, canvas.width / 2, 96);
+      }
+
+      ctx.fillStyle = '#c9d4ff';
+      ctx.font = '20px "Segoe UI", sans-serif';
+      if (game.message) {
+        ctx.fillText(game.message, canvas.width / 2, canvas.height - 36);
+      }
+
+      if (game.state === 'player-down') {
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ff5c74';
+        ctx.font = '42px "Bahnschrift", sans-serif';
+        ctx.fillText('You went down!', canvas.width / 2, canvas.height / 2 - 40);
+        ctx.font = '20px "Segoe UI", sans-serif';
+        ctx.fillStyle = '#f8d6e2';
+        ctx.fillText('Press R to restart the neon circuit.', canvas.width / 2, canvas.height / 2 + 20);
+      } else if (game.state === 'champion') {
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffe27d';
+        ctx.font = '48px "Bahnschrift", sans-serif';
+        ctx.fillText('NEON SHOWDOWN CHAMPION!', canvas.width / 2, canvas.height / 2 - 24);
+        ctx.font = '20px "Segoe UI", sans-serif';
+        ctx.fillStyle = '#fdf8ff';
+        ctx.fillText('Press R to run it back.', canvas.width / 2, canvas.height / 2 + 24);
+      }
+
+      ctx.restore();
+    }
+
+    function render() {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      if (game.shakePower > 0.2) {
+        ctx.translate((Math.random() - 0.5) * game.shakePower, (Math.random() - 0.5) * game.shakePower);
+      }
+      drawBackground();
+      drawRing();
+      drawOpponent();
+      drawPlayer();
+      drawEffects();
+      ctx.restore();
+      drawUI();
+    }
+    document.addEventListener('keydown', event => {
+      keys.add(event.code);
+      if (event.repeat) return;
+      if (controlMap.restart.includes(event.code)) {
+        restartGame();
+        return;
+      }
+      if (controlMap.guard.includes(event.code)) {
+        player.guardHold = true;
+      }
+      if (controlMap.aimHigh.includes(event.code)) {
+        let message = '';
+        if (player.guardHold) {
+          if (player.guardLevel !== 'high') {
+            player.guardLevel = 'high';
+            message = 'Guard high!';
+          }
+        } else if (player.aim !== 'high') {
+          player.aim = 'high';
+          message = 'Target head!';
+        }
+        if (message && game.state === 'fight') {
+          setMessage(message);
+        }
+      } else if (controlMap.aimLow.includes(event.code)) {
+        let message = '';
+        if (player.guardHold) {
+          if (player.guardLevel !== 'low') {
+            player.guardLevel = 'low';
+            message = 'Guard low!';
+          }
+        } else if (player.aim !== 'low') {
+          player.aim = 'low';
+          message = 'Target body!';
+        }
+        if (message && game.state === 'fight') {
+          setMessage(message);
+        }
+      }
+      if (controlMap.jab.includes(event.code)) {
+        tryPunch('left', 'jab');
+      } else if (controlMap.cross.includes(event.code)) {
+        tryPunch('right', 'cross');
+      } else if (controlMap.haymaker.includes(event.code)) {
+        tryPunch('right', 'haymaker');
+      }
+      if (controlMap.left.includes(event.code)) {
+        triggerDodge(-1);
+      }
+      if (controlMap.right.includes(event.code)) {
+        triggerDodge(1);
+      }
+    });
+
+    document.addEventListener('keyup', event => {
+      keys.delete(event.code);
+      if (controlMap.guard.includes(event.code)) {
+        player.guardHold = false;
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      keys.clear();
+      player.guardHold = false;
+    });
+
+    resetPlayer();
+    loadOpponent(0);
+
+    let lastTime = performance.now();
+    function frame(now) {
+      const dt = Math.min(now - lastTime, 80);
+      lastTime = now;
+      update(dt);
+      render();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  </script>
+  <script>
+    fetch('../sidebar.html')
+      .then(res => res.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) {
+          placeholder.outerHTML = html;
+        }
+      });
+  </script>
+</body>
+</html>
+

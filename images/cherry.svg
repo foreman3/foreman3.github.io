@@ -1,7 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="24" cy="40" r="10" fill="#d32f2f" />
-  <circle cx="40" cy="40" r="10" fill="#d32f2f" />
-  <path d="M24 32 C24 28 26 26 28 26" stroke="#6d4c41" stroke-width="3" fill="none"/>
-  <path d="M40 32 C40 28 38 26 36 26" stroke="#6d4c41" stroke-width="3" fill="none"/>
-  <path d="M32 26 L32 14" stroke="#6d4c41" stroke-width="3"/>
+  <defs>
+    <radialGradient id="cherry" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ff9a9a"/>
+      <stop offset="55%" stop-color="#e33b3b"/>
+      <stop offset="100%" stop-color="#8f1818"/>
+    </radialGradient>
+    <linearGradient id="leaf" x1="0" x2="1" y1="1" y2="0">
+      <stop offset="0%" stop-color="#4b8f3a"/>
+      <stop offset="100%" stop-color="#9fe070"/>
+    </linearGradient>
+  </defs>
+  <circle cx="24" cy="40" r="10" fill="url(#cherry)"/>
+  <circle cx="40" cy="40" r="10" fill="url(#cherry)"/>
+  <path d="M24 32 C24 28 26 26 28 26" stroke="#6d4c41" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M40 32 C40 28 38 26 36 26" stroke="#6d4c41" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M32 26 L32 14" stroke="#6d4c41" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 14c3 0 6 1 7 3 1 2 0 4-2 5-2 1-5 1-7 0" fill="url(#leaf)"/>
+  <circle cx="20" cy="36" r="2" fill="#ffffff" opacity="0.5"/>
+  <circle cx="36" cy="36" r="2" fill="#ffffff" opacity="0.45"/>
 </svg>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Space Invaders Command</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #000428 0%, #004e92 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul { list-style: none; padding: 0; margin: 0; }
+    #sidebar li { margin: 15px 0; }
+    #sidebar a { color: #fff; text-decoration: none; transition: color 0.3s; }
+    #sidebar a:hover { color: #ffea00; }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      margin-top: 0;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    }
+    canvas {
+      background: #000;
+      border: 2px solid #fff;
+      margin-top: 20px;
+    }
+    #info {
+      margin-top: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ffeb3b;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+  </style>
+  <link rel="stylesheet" href="../sidebar.css" />
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Space Invaders Command</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info">Score: 0 | Wave: 1</div>
+    <div id="message"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const player = { x: canvas.width / 2, y: canvas.height - 36, w: 54, h: 32, speed: 5 };
+    const playerImg = new Image();
+    playerImg.src = '../images/player_ship.svg';
+    const keys = {};
+
+    let missiles = [];
+    let explosions = [];
+    let aliens = [];
+    let alienDir = 1;
+    let alienSpeed = 1;
+    let wave = 1;
+    let score = 0;
+    let gameOver = false;
+
+    const alienSpriteSources = [
+      '../images/invader_scout.svg',
+      '../images/invader_barrage.svg',
+      '../images/invader_mystic.svg',
+      '../images/invader_vanguard.svg',
+      '../images/invader_overlord.svg'
+    ];
+    const alienSprites = alienSpriteSources.map(src => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    });
+
+    function createAliens() {
+      aliens = [];
+      const rows = 5;
+      const cols = 10;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          aliens.push({
+            x: 80 + c * 60,
+            y: 60 + r * 40,
+            w: 42,
+            h: 32,
+            alive: true,
+            sprite: alienSprites[r % alienSprites.length]
+          });
+        }
+      }
+    }
+
+    function startWave() {
+      createAliens();
+      alienSpeed = 1 + (wave - 1) * 0.5;
+      alienDir = 1;
+    }
+
+    function updateInfo() {
+      document.getElementById('info').textContent = `Score: ${score} | Wave: ${wave}`;
+    }
+
+    function fireMissile(x, y) {
+      missiles.push({ x: player.x, y: player.y, tx: x, ty: y });
+    }
+
+    let firing = false;
+    let fireInterval = null;
+    let lastTarget = { x: canvas.width / 2, y: 0 };
+
+    function startFiring(e) {
+      if (gameOver) { resetGame(); return; }
+      const rect = canvas.getBoundingClientRect();
+      lastTarget.x = e.clientX - rect.left;
+      lastTarget.y = e.clientY - rect.top;
+      fireMissile(lastTarget.x, lastTarget.y);
+      firing = true;
+      if (!fireInterval) {
+        fireInterval = setInterval(() => {
+          if (firing && !gameOver) fireMissile(lastTarget.x, lastTarget.y);
+        }, 100);
+      }
+    }
+
+    function stopFiring() {
+      firing = false;
+      if (fireInterval) {
+        clearInterval(fireInterval);
+        fireInterval = null;
+      }
+    }
+
+    canvas.addEventListener('mousedown', startFiring);
+    canvas.addEventListener('mouseup', stopFiring);
+    canvas.addEventListener('mouseleave', stopFiring);
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      lastTarget.x = e.clientX - rect.left;
+      lastTarget.y = e.clientY - rect.top;
+    });
+
+    window.addEventListener('keydown', e => { keys[e.key] = true; });
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    function updatePlayer() {
+      if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+      if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+      if (player.x < player.w / 2) player.x = player.w / 2;
+      if (player.x > canvas.width - player.w / 2) player.x = canvas.width - player.w / 2;
+    }
+
+    function updateMissiles() {
+      const speed = 6;
+      for (let i = missiles.length - 1; i >= 0; i--) {
+        const m = missiles[i];
+        const dx = m.tx - m.x;
+        const dy = m.ty - m.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < speed) {
+          explosions.push({ x: m.tx, y: m.ty, r: 0, max: 40 });
+          missiles.splice(i, 1);
+        } else {
+          m.x += dx / dist * speed;
+          m.y += dy / dist * speed;
+        }
+      }
+    }
+
+    function updateExplosions() {
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        const ex = explosions[i];
+        ex.r += 3;
+        if (ex.r > ex.max) explosions.splice(i, 1);
+      }
+    }
+
+    function updateAliens() {
+      let shiftDown = false;
+      for (const a of aliens) {
+        if (!a.alive) continue;
+        a.x += alienDir * alienSpeed;
+        if (a.x < 20 || a.x > canvas.width - 20) shiftDown = true;
+      }
+      if (shiftDown) {
+        alienDir *= -1;
+        for (const a of aliens) {
+          a.y += 20;
+        }
+      }
+    }
+
+    function checkCollisions() {
+      for (const ex of explosions) {
+        for (const a of aliens) {
+          if (a.alive && Math.hypot(a.x - ex.x, a.y - ex.y) < ex.r) {
+            a.alive = false;
+            score += 10;
+          }
+        }
+      }
+      if (aliens.every(a => !a.alive)) {
+        wave++;
+        startWave();
+      }
+      for (const a of aliens) {
+        if (a.alive && a.y + a.h / 2 >= player.y - player.h / 2) {
+          gameOver = true;
+          document.getElementById('message').textContent = 'Game Over - click to restart';
+          break;
+        }
+      }
+    }
+
+    function resetGame() {
+      score = 0;
+      wave = 1;
+      gameOver = false;
+      document.getElementById('message').textContent = '';
+      startWave();
+      updateInfo();
+    }
+
+    function update() {
+      if (gameOver) return;
+      updatePlayer();
+      updateMissiles();
+      updateExplosions();
+      updateAliens();
+      checkCollisions();
+      updateInfo();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // player
+      if (playerImg.complete) {
+        ctx.drawImage(playerImg, player.x - player.w / 2, player.y - player.h / 2, player.w, player.h);
+      } else {
+        ctx.fillStyle = '#0f0';
+        ctx.fillRect(player.x - player.w / 2, player.y - player.h / 2, player.w, player.h);
+      }
+      // missiles
+      ctx.strokeStyle = '#0ff';
+      missiles.forEach(m => {
+        ctx.beginPath();
+        ctx.moveTo(player.x, player.y);
+        ctx.lineTo(m.x, m.y);
+        ctx.stroke();
+      });
+      // aliens
+      for (const a of aliens) {
+        if (!a.alive) continue;
+        const sprite = a.sprite;
+        if (sprite && sprite.complete) {
+          ctx.drawImage(sprite, a.x - a.w / 2, a.y - a.h / 2, a.w, a.h);
+        } else {
+          ctx.fillStyle = '#0f0';
+          ctx.fillRect(a.x - a.w / 2, a.y - a.h / 2, a.w, a.h);
+        }
+      }
+      // explosions
+      ctx.strokeStyle = '#ff0';
+      explosions.forEach(ex => {
+        ctx.beginPath();
+        ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    startWave();
+    loop();
+  </script>
+  <script>
+    fetch('../sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
+
+
+

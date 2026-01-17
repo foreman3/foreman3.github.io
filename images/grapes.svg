@@ -1,9 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="18" r="8" fill="#8e24aa" />
-  <circle cx="24" cy="26" r="8" fill="#8e24aa" />
-  <circle cx="40" cy="26" r="8" fill="#8e24aa" />
-  <circle cx="28" cy="36" r="8" fill="#8e24aa" />
-  <circle cx="36" cy="36" r="8" fill="#8e24aa" />
-  <path d="M32 12v-6" stroke="#6d4c41" stroke-width="3"/>
-  <path d="M32 8c3 0 6 1 6 3s-3 3-6 3" fill="#8bc34a"/>
+  <defs>
+    <radialGradient id="grape" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#d39bff"/>
+      <stop offset="55%" stop-color="#8e3ad6"/>
+      <stop offset="100%" stop-color="#5a1b8a"/>
+    </radialGradient>
+    <linearGradient id="leaf" x1="0" x2="1" y1="1" y2="0">
+      <stop offset="0%" stop-color="#4b8f3a"/>
+      <stop offset="100%" stop-color="#9fe070"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 12c3 0 6 1 8 3 2 2 2 4 0 6-2 2-6 2-8 1" fill="url(#leaf)"/>
+  <path d="M32 12v-6" stroke="#6d4c41" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="18" r="8" fill="url(#grape)"/>
+  <circle cx="24" cy="26" r="8" fill="url(#grape)"/>
+  <circle cx="40" cy="26" r="8" fill="url(#grape)"/>
+  <circle cx="28" cy="36" r="8" fill="url(#grape)"/>
+  <circle cx="36" cy="36" r="8" fill="url(#grape)"/>
+  <circle cx="28" cy="14" r="2" fill="#ffffff" opacity="0.5"/>
+  <circle cx="20" cy="24" r="2" fill="#ffffff" opacity="0.45"/>
+  <circle cx="36" cy="24" r="2" fill="#ffffff" opacity="0.45"/>
 </svg>

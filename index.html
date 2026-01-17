@@ -1,14 +1,292 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Treasure Hunt Pinball</title>
-    <style>
-        body { margin: 0; background-color: #000; overflow: hidden; }
-        canvas { display: block; margin: 0 auto; }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VibeCade Arcade</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-1: #0b1020;
+      --bg-2: #1c2541;
+      --bg-3: #0f172a;
+      --card: rgba(9, 19, 34, 0.82);
+      --card-border: rgba(112, 166, 255, 0.35);
+      --accent: #fca311;
+      --accent-2: #66f2d6;
+      --text: #f8fafc;
+      --muted: #b9c2d0;
+      --shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(102, 242, 214, 0.12), transparent 45%),
+        radial-gradient(circle at 80% 10%, rgba(252, 163, 17, 0.14), transparent 50%),
+        linear-gradient(140deg, var(--bg-1), var(--bg-2) 55%, var(--bg-3));
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .wrapper {
+      position: relative;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+
+    .logo {
+      font-family: 'Press Start 2P', cursive;
+      font-size: clamp(1.6rem, 2.4vw, 2.6rem);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px rgba(102, 242, 214, 0.5);
+    }
+
+    .tagline {
+      max-width: 640px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .section {
+      margin-top: 32px;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2rem;
+      color: var(--accent-2);
+      margin-bottom: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      position: relative;
+      padding: 18px 18px 20px;
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 120px;
+      animation: rise 0.6s ease forwards;
+      animation-delay: var(--delay, 0s);
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    .card:hover {
+      border-color: rgba(252, 163, 17, 0.6);
+      box-shadow: 0 18px 45px rgba(252, 163, 17, 0.15);
+      transform: translateY(0) scale(1.01);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .card-meta {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    footer {
+      margin-top: 48px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    @keyframes rise {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .wrapper {
+        padding: 36px 18px 48px;
+      }
+
+      .section-title {
+        letter-spacing: 0.12rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <script type="module" src="game.js"></script>
+  <div class="wrapper">
+    <header>
+      <div class="logo">VibeCade</div>
+      <div class="tagline">
+        A pocket arcade of one-page classics. Pick a cabinet, chase a high score, and dive right back out.
+      </div>
+    </header>
+
+    <section class="section">
+      <div class="section-title">Ready to Play</div>
+      <div class="grid">
+        <a class="card" style="--delay: 0.05s" href="arkanoid/">
+          <div class="card-title">Arkanoid Redux</div>
+          <div class="card-meta">Brick-busting with extra polish.</div>
+        </a>
+        <a class="card" style="--delay: 0.1s" href="asteroids/">
+          <div class="card-title">Asteroids</div>
+          <div class="card-meta">Drift, blast, and survive the belt.</div>
+        </a>
+        <a class="card" style="--delay: 0.15s" href="drop-game/">
+          <div class="card-title">Drop Game</div>
+          <div class="card-meta">Catch fruit before it hits the ground.</div>
+        </a>
+        <a class="card" style="--delay: 0.2s" href="burger/">
+          <div class="card-title">Burger Time</div>
+          <div class="card-meta">Stack towering burgers under pressure.</div>
+        </a>
+        <a class="card" style="--delay: 0.25s" href="flappy/">
+          <div class="card-title">Flappy</div>
+          <div class="card-meta">Threads the gaps, grab coins.</div>
+        </a>
+        <a class="card" style="--delay: 0.3s" href="missile-command/">
+          <div class="card-title">Missile Command</div>
+          <div class="card-meta">Defend the skyline with precise detonations.</div>
+        </a>
+        <a class="card" style="--delay: 0.35s" href="space-invaders-command/">
+          <div class="card-title">Space Invaders Command</div>
+          <div class="card-meta">Invaders meet cascading explosions.</div>
+        </a>
+        <a class="card" style="--delay: 0.4s" href="neon-flight/">
+          <div class="card-title">Neon Flight</div>
+          <div class="card-meta">Weave through a glowing skyline.</div>
+        </a>
+        <a class="card" style="--delay: 0.45s" href="qbert/">
+          <div class="card-title">Qbert Clone</div>
+          <div class="card-meta">Hop the pyramid and dodge foes.</div>
+        </a>
+        <a class="card" style="--delay: 0.5s" href="space-invaders/">
+          <div class="card-title">Space Invaders</div>
+          <div class="card-meta">Classic wave shooter, tuned up.</div>
+        </a>
+        <a class="card" style="--delay: 0.55s" href="tanks/">
+          <div class="card-title">Tanks</div>
+          <div class="card-meta">Top-down armor duels.</div>
+        </a>
+        <a class="card" style="--delay: 0.6s" href="tetris/">
+          <div class="card-title">Tetris</div>
+          <div class="card-meta">Stack, rotate, clear.</div>
+        </a>
+        <a class="card" style="--delay: 0.65s" href="trap-the-mouse/">
+          <div class="card-title">Trap the Mouse</div>
+          <div class="card-meta">Outsmart the escape route.</div>
+        </a>
+        <a class="card" style="--delay: 0.7s" href="video-poker/">
+          <div class="card-title">Video Poker Lounge</div>
+          <div class="card-meta">Deal, hold, and chase jackpots.</div>
+        </a>
+        <a class="card" style="--delay: 0.75s" href="ultra-tanks/">
+          <div class="card-title">Ultra Tanks</div>
+          <div class="card-meta">Bouncing bullets and big raids.</div>
+        </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">In Work</div>
+      <div class="grid">
+        <a class="card" style="--delay: 0.05s" href="boxing/">
+          <div class="card-title">Boxing</div>
+          <div class="card-meta">Dodge, weave, land combos.</div>
+        </a>
+        <a class="card" style="--delay: 0.1s" href="balance/">
+          <div class="card-title">Block Balance</div>
+          <div class="card-meta">Keep the tower steady.</div>
+        </a>
+        <a class="card" style="--delay: 0.15s" href="excitebike/">
+          <div class="card-title">Excitebike</div>
+          <div class="card-meta">Race the ramps and clear hazards.</div>
+        </a>
+        <a class="card" style="--delay: 0.2s" href="joust/">
+          <div class="card-title">Joust</div>
+          <div class="card-meta">Air duels with lances drawn.</div>
+        </a>
+        <a class="card" style="--delay: 0.25s" href="pacman/">
+          <div class="card-title">Pac-Man</div>
+          <div class="card-meta">Nom pellets, dodge ghosts.</div>
+        </a>
+        <a class="card" style="--delay: 0.3s" href="pinball/">
+          <div class="card-title">Pinball</div>
+          <div class="card-meta">Treasure hunt on a full table.</div>
+        </a>
+        <a class="card" style="--delay: 0.35s" href="pitfall/">
+          <div class="card-title">Pitfall</div>
+          <div class="card-meta">Run, jump, and dodge pits.</div>
+        </a>
+        <a class="card" style="--delay: 0.4s" href="pole/">
+          <div class="card-title">Pole Position</div>
+          <div class="card-meta">Thread the track and rival racers.</div>
+        </a>
+        <a class="card" style="--delay: 0.45s" href="scorched-earth/">
+          <div class="card-title">Scorched Skies</div>
+          <div class="card-meta">Artillery duels in the clouds.</div>
+        </a>
+        <a class="card" style="--delay: 0.5s" href="number-munchers/">
+          <div class="card-title">Number Munchers</div>
+          <div class="card-meta">Snack on the right answers.</div>
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      <div>Quick access to the full list in <a href="Games.md">Games.md</a>.</div>
+      <div>Use each game sidebar to jump around the arcade.</div>
+    </footer>
+  </div>
 </body>
 </html>

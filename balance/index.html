@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Block Balance</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #4a2e16 0%, #1b0f06 65%, #120802 100%);
+      color: #fbe4c3;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(34, 19, 10, 0.85);
+      padding: 20px;
+      box-shadow: 2px 0 18px rgba(0, 0, 0, 0.5);
+    }
+    #sidebar ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    #sidebar li {
+      margin: 15px 0;
+    }
+    #sidebar a {
+      color: #fbe4c3;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    #sidebar a:hover {
+      color: #ffd27f;
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(160deg, rgba(94, 60, 31, 0.35), rgba(34, 19, 9, 0.2));
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 3em;
+      color: #fce7c9;
+      text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.6);
+    }
+    canvas {
+      background: #1c0f05;
+      border: 4px solid #7a4c21;
+      border-radius: 12px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.65);
+    }
+    #score {
+      margin-top: 10px;
+      font-size: 20px;
+      background: rgba(57, 35, 18, 0.75);
+      padding: 6px 14px;
+      border-radius: 6px;
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
+      color: #fde9c9;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ffc06a;
+      text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.6);
+    }
+  </style>
+  <link rel="stylesheet" href="../sidebar.css" />
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Block Balance</h1>
+    <canvas id="world" width="800" height="600"></canvas>
+    <div id="score">Blocks: 0</div>
+    <div id="message"></div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script>
+    const { Engine, Render, Runner, Bodies, World, Body, Events } = Matter;
+    const engine = Engine.create();
+    const world = engine.world;
+    world.gravity.y = 0.125;
+    const canvas = document.getElementById('world');
+    const render = Render.create({
+      canvas: canvas,
+      engine: engine,
+      options: {
+        width: 800,
+        height: 600,
+        wireframes: false,
+        background: 'transparent'
+      }
+    });
+    Render.run(render);
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+    const woodBodies = [];
+    const blocks = [];
+    const blockColors = ['#c89b63', '#b3834c', '#d2a771', '#9f6d3c', '#e0b986', '#a97a47'];
+    const ambientParticles = [];
+    const emberCount = 45;
+
+    function createAmbientParticle() {
+      return {
+        x: Math.random() * render.options.width,
+        y: Math.random() * render.options.height,
+        radius: Math.random() * 2.2 + 0.8,
+        driftX: (Math.random() * 0.4 + 0.05) * (Math.random() < 0.5 ? -1 : 1),
+        driftY: Math.random() * 0.35 + 0.05,
+        alpha: Math.random() * 0.4 + 0.2,
+        pulseOffset: Math.random() * Math.PI * 2
+      };
+    }
+
+    for (let i = 0; i < emberCount; i++) {
+      ambientParticles.push(createAmbientParticle());
+    }
+
+    function adjustColor(hex, amount) {
+      const num = parseInt(hex.slice(1), 16);
+      const clamp = value => Math.max(0, Math.min(255, value));
+      const r = clamp((num >> 16) + amount);
+      const g = clamp(((num >> 8) & 0xff) + amount);
+      const b = clamp((num & 0xff) + amount);
+      return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+    }
+
+    function drawShape(context, vertices) {
+      context.beginPath();
+      vertices.forEach((vertex, index) => {
+        if (index === 0) {
+          context.moveTo(vertex.x, vertex.y);
+        } else {
+          context.lineTo(vertex.x, vertex.y);
+        }
+      });
+      context.closePath();
+    }
+
+    function drawWoodBody(context, body, baseColor, outlineWidth) {
+      const { min, max } = body.bounds;
+      const highlight = adjustColor(baseColor, 70);
+      const midTone = baseColor;
+      const shadow = adjustColor(baseColor, -70);
+
+      const gradient = context.createLinearGradient(min.x, min.y, max.x, max.y);
+      gradient.addColorStop(0, highlight);
+      gradient.addColorStop(0.45, midTone);
+      gradient.addColorStop(1, shadow);
+
+      drawShape(context, body.vertices);
+      context.fillStyle = gradient;
+      context.fill();
+
+      context.lineJoin = 'round';
+      context.lineWidth = outlineWidth;
+      const strokeColor = body.render.strokeStyle && body.render.strokeStyle !== 'transparent'
+        ? body.render.strokeStyle
+        : adjustColor(baseColor, -80);
+      context.strokeStyle = strokeColor;
+      context.stroke();
+
+      const topHighlight = context.createLinearGradient(
+        min.x,
+        min.y,
+        min.x + (max.x - min.x) * 0.6,
+        min.y + (max.y - min.y) * 0.6
+      );
+      topHighlight.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+      topHighlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      drawShape(context, body.vertices);
+      context.fillStyle = topHighlight;
+      context.fill();
+
+      const dropShadow = context.createLinearGradient(
+        max.x,
+        max.y,
+        min.x + (max.x - min.x) * 0.4,
+        min.y + (max.y - min.y) * 0.4
+      );
+      dropShadow.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
+      dropShadow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      drawShape(context, body.vertices);
+      context.fillStyle = dropShadow;
+      context.fill();
+
+      context.save();
+      drawShape(context, body.vertices);
+      context.clip();
+      context.translate(body.position.x, body.position.y);
+      context.rotate(body.angle);
+
+      const spanX = max.x - min.x;
+      const spanY = max.y - min.y;
+      const maxSpan = Math.max(spanX, spanY);
+      const grainSpacing = maxSpan / 5;
+
+      context.globalAlpha = 0.18;
+      context.strokeStyle = adjustColor(baseColor, -35);
+      context.lineWidth = 1.6;
+      for (let i = -2; i <= 2; i++) {
+        const y = i * grainSpacing * 0.45;
+        context.beginPath();
+        context.moveTo(-maxSpan, y);
+        context.bezierCurveTo(-maxSpan * 0.6, y + grainSpacing * 0.25, maxSpan * 0.6, y - grainSpacing * 0.25, maxSpan, y + grainSpacing * 0.05);
+        context.stroke();
+      }
+
+      context.globalAlpha = 0.1;
+      context.strokeStyle = adjustColor(baseColor, 55);
+      context.lineWidth = 1;
+      for (let i = -1; i <= 1; i++) {
+        const y = i * grainSpacing * 0.45 + grainSpacing * 0.3;
+        context.beginPath();
+        context.moveTo(-maxSpan, y);
+        context.bezierCurveTo(-maxSpan * 0.4, y - grainSpacing * 0.2, maxSpan * 0.4, y + grainSpacing * 0.2, maxSpan, y - grainSpacing * 0.05);
+        context.stroke();
+      }
+      context.restore();
+    }
+
+    function registerWoodBody(body, baseColor, outlineWidth = 3) {
+      body.render.fillStyle = baseColor;
+      body.render.strokeStyle = 'transparent';
+      body.render.lineWidth = 0;
+      woodBodies.push({ body, baseColor, outlineWidth });
+    }
+
+    Events.on(render, 'beforeRender', () => {
+      const context = render.context;
+      const { width, height } = render.options;
+      context.save();
+      context.setTransform(1, 0, 0, 1, 0, 0);
+
+      const skyGradient = context.createLinearGradient(0, 0, 0, height);
+      skyGradient.addColorStop(0, '#2c0f03');
+      skyGradient.addColorStop(0.25, '#3f1907');
+      skyGradient.addColorStop(0.6, '#261105');
+      skyGradient.addColorStop(1, '#120702');
+      context.fillStyle = skyGradient;
+      context.fillRect(0, 0, width, height);
+
+      const ridgeGradient = context.createLinearGradient(0, height * 0.45, 0, height);
+      ridgeGradient.addColorStop(0, 'rgba(77, 40, 18, 0.65)');
+      ridgeGradient.addColorStop(1, 'rgba(21, 9, 3, 0.9)');
+      context.fillStyle = ridgeGradient;
+
+      context.beginPath();
+      context.moveTo(0, height * 0.55);
+      for (let i = 0; i <= 10; i++) {
+        const x = (width / 10) * i;
+        const y = height * 0.55 + Math.sin(i * 0.6) * 18;
+        context.lineTo(x, y);
+      }
+      context.lineTo(width, height);
+      context.lineTo(0, height);
+      context.closePath();
+      context.fill();
+
+      context.fillStyle = 'rgba(255, 207, 120, 0.04)';
+      context.beginPath();
+      context.moveTo(0, height * 0.66);
+      context.quadraticCurveTo(width * 0.5, height * 0.6, width, height * 0.68);
+      context.lineTo(width, height);
+      context.lineTo(0, height);
+      context.closePath();
+      context.fill();
+
+      ambientParticles.forEach(p => {
+        p.x += p.driftX;
+        p.y -= p.driftY;
+        if (p.x < -10) p.x = width + 10;
+        if (p.x > width + 10) p.x = -10;
+        if (p.y < -10) {
+          p.x = Math.random() * width;
+          p.y = height + Math.random() * 20;
+        }
+        const pulse = (Math.sin(performance.now() / 600 + p.pulseOffset) + 1) / 2;
+        const alpha = p.alpha * (0.7 + pulse * 0.3);
+        const glow = context.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius * 4);
+        glow.addColorStop(0, `rgba(255, 194, 120, ${alpha})`);
+        glow.addColorStop(1, 'rgba(255, 194, 120, 0)');
+        context.fillStyle = glow;
+        context.beginPath();
+        context.arc(p.x, p.y, p.radius * 4, 0, Math.PI * 2);
+        context.fill();
+      });
+
+      context.restore();
+    });
+
+    Events.on(render, 'afterRender', () => {
+      const context = render.context;
+      context.save();
+      woodBodies.forEach(({ body, baseColor, outlineWidth }) => {
+        if (body.render.visible === false) return;
+        drawWoodBody(context, body, baseColor, outlineWidth);
+      });
+
+      blocks.forEach(block => {
+        if (block.render.visible === false) return;
+        const { min, max } = block.bounds;
+        const centerX = (min.x + max.x) / 2;
+        const centerY = (min.y + max.y) / 2;
+        const radius = Math.max(max.x - min.x, max.y - min.y) * 0.85;
+        const glow = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 1.6);
+        glow.addColorStop(0, 'rgba(255, 200, 135, 0.22)');
+        glow.addColorStop(1, 'rgba(255, 200, 135, 0)');
+        context.fillStyle = glow;
+        context.beginPath();
+        context.arc(centerX, centerY, radius * 1.6, 0, Math.PI * 2);
+        context.fill();
+      });
+
+      const { min: pMin, max: pMax } = platform.bounds;
+      const platformGlow = context.createLinearGradient(pMin.x, pMin.y, pMax.x, pMax.y + 30);
+      platformGlow.addColorStop(0, 'rgba(255, 216, 145, 0.4)');
+      platformGlow.addColorStop(0.5, 'rgba(255, 205, 120, 0.12)');
+      platformGlow.addColorStop(1, 'rgba(255, 180, 80, 0)');
+      context.fillStyle = platformGlow;
+      context.beginPath();
+      context.moveTo(pMin.x - 20, pMin.y);
+      context.lineTo(pMax.x + 20, pMin.y);
+      context.lineTo(pMax.x + 40, pMax.y + 60);
+      context.lineTo(pMin.x - 40, pMax.y + 60);
+      context.closePath();
+      context.fill();
+
+      context.restore();
+    });
+
+    const platformWidth = 270;
+    const platformHeight = 20;
+    const platform = Bodies.rectangle(400, 560, platformWidth, platformHeight, {
+      isStatic: true,
+      friction: 0.8,
+      render: {
+        fillStyle: '#b8874d',
+        strokeStyle: '#4e2d15',
+        lineWidth: 4
+      }
+    });
+    registerWoodBody(platform, '#b8874d', 4);
+    World.add(world, platform);
+
+    // Track platform movement for friction
+    let lastPlatformX = platform.position.x;
+    let lastDx = 0;
+    let followFactor = 1;
+    const blocksOnPlatform = new Set();
+    const blockContacts = new Map();
+
+    function addBlockContact(a, b) {
+      if (!blockContacts.has(a)) blockContacts.set(a, new Set());
+      blockContacts.get(a).add(b);
+    }
+    function removeBlockContact(a, b) {
+      if (!blockContacts.has(a)) return;
+      const set = blockContacts.get(a);
+      set.delete(b);
+      if (set.size === 0) blockContacts.delete(a);
+    }
+
+    let moveLeft = false;
+    let moveRight = false;
+    const moveSpeed = 7;
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft = true;
+      if (e.key === 'ArrowRight' || e.key === 'd') moveRight = true;
+    });
+    document.addEventListener('keyup', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft = false;
+      if (e.key === 'ArrowRight' || e.key === 'd') moveRight = false;
+    });
+
+    Events.on(engine, 'collisionStart', event => {
+      for (const pair of event.pairs) {
+        if (pair.bodyA === platform && pair.bodyB.label === 'block') {
+          blocksOnPlatform.add(pair.bodyB);
+        } else if (pair.bodyB === platform && pair.bodyA.label === 'block') {
+          blocksOnPlatform.add(pair.bodyA);
+        } else if (pair.bodyA.label === 'block' && pair.bodyB.label === 'block') {
+          addBlockContact(pair.bodyA, pair.bodyB);
+          addBlockContact(pair.bodyB, pair.bodyA);
+        }
+      }
+    });
+
+    Events.on(engine, 'collisionEnd', event => {
+      for (const pair of event.pairs) {
+        if (pair.bodyA === platform && pair.bodyB.label === 'block') {
+          blocksOnPlatform.delete(pair.bodyB);
+        } else if (pair.bodyB === platform && pair.bodyA.label === 'block') {
+          blocksOnPlatform.delete(pair.bodyA);
+        } else if (pair.bodyA.label === 'block' && pair.bodyB.label === 'block') {
+          removeBlockContact(pair.bodyA, pair.bodyB);
+          removeBlockContact(pair.bodyB, pair.bodyA);
+        }
+      }
+    });
+
+    Events.on(engine, 'beforeUpdate', () => {
+      if (moveLeft && platform.position.x - platformWidth / 2 > 0) {
+        Body.translate(platform, { x: -moveSpeed, y: 0 });
+      }
+      if (moveRight && platform.position.x + platformWidth / 2 < 800) {
+        Body.translate(platform, { x: moveSpeed, y: 0 });
+      }
+
+      // Apply friction so blocks initially slide then catch up to the platform
+      const dx = platform.position.x - lastPlatformX;
+      if (dx !== 0) {
+        if (lastDx === 0 || Math.sign(dx) !== Math.sign(lastDx)) {
+          followFactor = 0.9;
+        } else {
+          followFactor += (1 - followFactor) * 0.2;
+        }
+      } else {
+        followFactor = 1;
+      }
+      const carry = dx * followFactor;
+
+      const visited = new Set();
+      const queue = Array.from(blocksOnPlatform);
+      while (queue.length) {
+        const block = queue.shift();
+        if (visited.has(block)) continue;
+        visited.add(block);
+        Body.translate(block, { x: carry, y: 0 });
+        const neighbors = blockContacts.get(block);
+        if (neighbors) {
+          neighbors.forEach(n => {
+            if (!visited.has(n)) queue.push(n);
+          });
+        }
+      }
+      lastPlatformX = platform.position.x;
+      lastDx = dx;
+    });
+
+    
+    let score = 0;
+    function spawnBlock() {
+      const size = 40;
+      const x = Math.random() * (800 - size) + size / 2;
+      const color = blockColors[Math.floor(Math.random() * blockColors.length)];
+      const options = {
+        label: 'block',
+        friction: 0.6,
+        restitution: 0.1,
+        render: { fillStyle: color }
+      };
+      let block;
+      const shape = Math.random();
+      if (shape < 0.25) {
+        block = Bodies.rectangle(x, -size, size, size, options);
+      } else if (shape < 0.5) {
+        block = Bodies.polygon(x, -size, 3, size / 2, options);
+      } else if (shape < 0.75) {
+        block = Bodies.polygon(x, -size, 6, size / 2, options);
+      } else {
+        const vertices = [];
+        const sides = Math.floor(Math.random() * 3) + 5;
+        for (let i = 0; i < sides; i++) {
+          const angle = (Math.PI * 2 / sides) * i;
+          const radius = size / 2 + Math.random() * size / 3;
+          vertices.push({ x: radius * Math.cos(angle), y: radius * Math.sin(angle) });
+        }
+        block = Bodies.fromVertices(x, -size, vertices, options, true);
+        if (Array.isArray(block)) block = block[0];
+      }
+      registerWoodBody(block, color);
+      blocks.push(block);
+      World.add(world, block);
+      score++;
+      document.getElementById('score').textContent = 'Blocks: ' + score;
+    }
+
+    const spawnInterval = setInterval(() => {
+      if (!gameOver) spawnBlock();
+    }, 4000);
+
+    let gameOver = false;
+    Events.on(engine, 'afterUpdate', () => {
+      if (gameOver) return;
+      for (const block of blocks) {
+        const { x, y } = block.position;
+        if (y > 650 || x < -60 || x > 860) {
+          gameOver = true;
+          document.getElementById('message').textContent = 'Game Over!';
+          clearInterval(spawnInterval);
+          Runner.stop(runner);
+          break;
+        }
+      }
+    });
+  </script>
+  <script>
+    fetch('../sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
+

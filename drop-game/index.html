@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Drop Game</title>
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #2f60ff 0%, #101631 45%, #05060f 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px 40px;
+      gap: 15px;
+      width: min(1000px, 100%);
+      position: relative;
+      max-width: calc(100vw - 32px);
+      height: 100vh;
+    }
+
+    #game-stage {
+      position: relative;
+      width: 100%;
+      max-width: min(1000px, calc(100vw - 48px));
+      max-height: calc(100vh - 160px);
+      aspect-ratio: 600 / 630;
+    }
+
+    canvas {
+      background: #04050d;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-radius: 18px;
+      box-shadow: 0 25px 60px rgba(4, 7, 28, 0.8), inset 0 0 40px rgba(17, 48, 120, 0.55);
+      width: 100%;
+      height: 100%;
+    }
+
+    #hud-overlay {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 18px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(12, 18, 46, 0.65);
+      box-shadow: 0 0 18px rgba(120, 190, 255, 0.35);
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 26px;
+      color: #ff618c;
+      text-shadow: 0 0 18px rgba(255, 129, 164, 0.9);
+    }
+
+    #touch-controls {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 22px 20px;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .control-cluster {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 16px;
+      pointer-events: none;
+    }
+
+    .control-button {
+      width: clamp(62px, 18vw, 88px);
+      height: clamp(62px, 18vw, 88px);
+      border-radius: 999px;
+      border: 2px solid rgba(164, 209, 255, 0.6);
+      background: rgba(12, 20, 45, 0.3);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(1.6rem, 5vw, 2.1rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      touch-action: none;
+      backdrop-filter: blur(6px);
+      transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .control-button.pressed,
+    .control-button:active {
+      background: rgba(120, 170, 255, 0.3);
+      border-color: rgba(190, 230, 255, 0.85);
+      box-shadow: 0 0 24px rgba(120, 190, 255, 0.45);
+    }
+
+    body.touch-device {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+      min-height: var(--viewport-height, 100vh);
+    }
+
+    body.touch-device #game-container {
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      padding: 0;
+      gap: 0;
+      justify-content: center;
+    }
+
+    body.touch-device h1,
+    body.touch-device #message {
+      display: none;
+    }
+
+    body.touch-device #game-stage {
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      max-height: none;
+    }
+
+    body.touch-device canvas {
+      width: 100vw;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      height: var(--viewport-height, 100vh);
+      border-radius: 0;
+      border: none;
+      margin: 0;
+      box-shadow: none;
+    }
+
+    body.touch-device #hud-overlay {
+      top: 16px;
+      left: 16px;
+      font-size: 0.95rem;
+      background: rgba(0, 0, 0, 0.45);
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.35);
+    }
+
+    body.touch-device #touch-controls {
+      display: flex;
+    }
+
+    #help-button {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(164, 209, 255, 0.6);
+      background: rgba(12, 20, 45, 0.35);
+      color: rgba(255, 255, 255, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1001;
+      backdrop-filter: blur(6px);
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    #help-button:hover,
+    #help-button:focus-visible {
+      border-color: rgba(190, 230, 255, 0.85);
+      background: rgba(120, 170, 255, 0.3);
+    }
+
+    #instruction-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(4, 6, 16, 0.72);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1000;
+      padding: 24px;
+      text-align: left;
+    }
+
+    #instruction-modal.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #instruction-card {
+      max-width: 520px;
+      width: 100%;
+      background: rgba(10, 16, 34, 0.95);
+      border: 1px solid rgba(164, 209, 255, 0.35);
+      border-radius: 18px;
+      padding: 20px 22px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    #instruction-card h2 {
+      margin: 0 0 12px;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    #instruction-card p {
+      margin: 8px 0;
+      color: #d7e6ff;
+      line-height: 1.5;
+    }
+
+    #instruction-close {
+      margin-top: 14px;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(255, 231, 109, 0.9);
+      color: #1a1424;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+
+    @media (pointer: fine) {
+      #help-button {
+        display: flex;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="../sidebar.css" />
+  <link rel="stylesheet" href="../flyout.css" />
+  <script src="../flyout.js" defer></script>
+</head>
+<body>
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+  <button id="help-button" type="button" aria-label="How to play">?</button>
+  <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
+    <div id="instruction-card">
+      <h2>How to Play</h2>
+      <p>Move left and right to catch fruit. Shoot to pop hazards.</p>
+      <p>Missing fruit costs lives. Watch for bonus waves.</p>
+      <button id="instruction-close" type="button">Start</button>
+    </div>
+  </div>
+  <div id="game-container">
+    <div id="game-stage">
+      <canvas id="gameCanvas" width="600" height="630"></canvas>
+      <div id="hud-overlay">
+        <div>Score: <span id="score-value">0</span></div>
+        <div>Lives: <span id="lives-value">3</span></div>
+      </div>
+    </div>
+    <div id="touch-controls" aria-hidden="true">
+      <div class="control-cluster">
+        <div class="control-row">
+          <button type="button" class="control-button" data-action="left" aria-label="Move Left">L</button>
+          <button type="button" class="control-button" data-action="right" aria-label="Move Right">R</button>
+        </div>
+      </div>
+      <div class="control-cluster">
+        <button type="button" class="control-button" data-action="fire" aria-label="Shoot">F</button>
+      </div>
+    </div>
+    <div id="message"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+
+    function setViewportHeight() {
+      document.documentElement.style.setProperty('--viewport-height', `${window.innerHeight}px`);
+    }
+
+    if (isTouchDevice) {
+      document.body.classList.add('touch-device');
+      setViewportHeight();
+      window.addEventListener('resize', () => {
+        window.requestAnimationFrame(setViewportHeight);
+      });
+      window.addEventListener('orientationchange', () => {
+        window.requestAnimationFrame(() => {
+          setViewportHeight();
+          setTimeout(setViewportHeight, 250);
+        });
+      });
+    }
+
+    const basketWidth = 160;
+    const basketHeight = 70;
+    let basketX = (canvas.width - basketWidth) / 2;
+    let basketY = canvas.height - basketHeight - 18;
+
+      let rightPressed = false;
+      let leftPressed = false;
+      document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight' || e.key === 'd') rightPressed = true;
+        if (e.key === 'ArrowLeft' || e.key === 'a') leftPressed = true;
+        if (e.key === 'ArrowUp' || e.key === 'w') shoot();
+      });
+      document.addEventListener('keyup', e => {
+        if (e.key === 'ArrowRight' || e.key === 'd') rightPressed = false;
+        if (e.key === 'ArrowLeft' || e.key === 'a') leftPressed = false;
+      });
+
+      const controlButtons = document.querySelectorAll('.control-button');
+      if (controlButtons.length && isTouchDevice) {
+        controlButtons.forEach((button) => {
+          const action = button.dataset.action;
+          const press = () => {
+            button.classList.add('pressed');
+            if (action === 'left') leftPressed = true;
+            if (action === 'right') rightPressed = true;
+            if (action === 'fire') shoot();
+          };
+          const release = () => {
+            button.classList.remove('pressed');
+            if (action === 'left') leftPressed = false;
+            if (action === 'right') rightPressed = false;
+          };
+
+          button.addEventListener('touchstart', (event) => {
+            event.preventDefault();
+            press();
+          }, { passive: false });
+          button.addEventListener('touchend', (event) => {
+            event.preventDefault();
+            release();
+          }, { passive: false });
+          button.addEventListener('touchcancel', release);
+          button.addEventListener('mousedown', press);
+          button.addEventListener('mouseup', release);
+          button.addEventListener('mouseleave', release);
+        });
+      }
+
+    const items = [];
+    const bullets = [];
+    const bulletRadius = 9;
+    let score = 0;
+    let lives = 3;
+    let gameOver = false;
+    const scoreValue = document.getElementById('score-value');
+    const livesValue = document.getElementById('lives-value');
+    if (scoreValue) scoreValue.textContent = score;
+    if (livesValue) livesValue.textContent = lives;
+    let speedMultiplier = 2; // global speed multiplier
+    let cherryWaveTriggered = false;
+    let grapeWaveTriggered = false;
+
+    const sparkles = Array.from({ length: 32 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height * 0.5,
+      radius: 1.4 + Math.random() * 1.4
+    }));
+
+    function resizeCanvas() {
+      const padding = 32;
+      const maxWidth = Math.max(320, window.innerWidth - padding * 2);
+      const maxHeight = Math.max(320, window.innerHeight - 140);
+      const aspect = 600 / 630;
+      let width = maxWidth;
+      let height = width / aspect;
+      if (height > maxHeight) {
+        height = maxHeight;
+        width = height * aspect;
+      }
+      width = Math.floor(width);
+      height = Math.floor(height);
+      canvas.width = width;
+      canvas.height = height;
+      basketX = Math.min(Math.max(basketX, 0), canvas.width - basketWidth);
+      basketY = canvas.height - basketHeight - 18;
+      sparkles.forEach((sparkle) => {
+        sparkle.x = Math.random() * canvas.width;
+        sparkle.y = Math.random() * canvas.height * 0.5;
+      });
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', () => {
+      window.requestAnimationFrame(resizeCanvas);
+    });
+
+    const sizeConfigs = {
+      small:  { radius: 24, speed: 3.2,   points: 3 },
+      medium: { radius: 34, speed: 2.6,   points: 2 },
+      large:  { radius: 46, speed: 2.1, points: 1 }
+    };
+
+    const images = {
+      small: new Image(),
+      medium: new Image(),
+      large: new Image(),
+      bomb: new Image(),
+      cherry: new Image()
+    };
+    images.small.src = '../images/grapes.svg';
+    images.medium.src = '../images/apple.svg';
+    images.large.src = '../images/watermelon.svg';
+    images.bomb.src = '../images/cherry-bomb.svg';
+    images.cherry.src = '../images/cherry.svg';
+
+
+    function spawnItem() {
+      const types = ['fruit', 'fruit', 'fruit', 'bomb']; // more fruits than bombs
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      const vx = (Math.random() * 2 - 1) * 2; // horizontal speed between -2 and 2
+
+      if (type === 'fruit') {
+        const sizes = ['small', 'medium', 'large'];
+        const size = sizes[Math.floor(Math.random() * sizes.length)];
+        const cfg = sizeConfigs[size];
+        const x = Math.random() * (canvas.width - cfg.radius * 2) + cfg.radius;
+        items.push({ x, y: -cfg.radius, radius: cfg.radius, type, speed: cfg.speed, points: cfg.points, vx, img: images[size] });
+      } else {
+        const radius = 15.75;
+        const x = Math.random() * (canvas.width - radius * 2) + radius;
+        items.push({ x, y: -radius, radius, type, speed: 2, points: 0, vx, img: images.bomb });
+      }
+    }
+
+    function spawnCherryWave() {
+      const cfg = sizeConfigs.small;
+      const spacing = cfg.radius * 2;
+      for (let x = cfg.radius; x < canvas.width; x += spacing) {
+        items.push({ x, y: -cfg.radius, radius: cfg.radius, type: 'fruit', speed: cfg.speed, points: cfg.points, vx: 0, img: images.cherry });
+      }
+    }
+
+    function spawnGrapeWave() {
+      const cfg = sizeConfigs.small;
+      const spacing = cfg.radius * 2;
+      const cols = Math.floor(canvas.width / spacing);
+      let count = 0;
+      for (let row = 0; count < 100; row++) {
+        const y = -cfg.radius - row * spacing;
+        for (let col = 0; col < cols && count < 100; col++) {
+          const x = cfg.radius + col * spacing;
+          items.push({ x, y, radius: cfg.radius, type: 'fruit', speed: cfg.speed, points: cfg.points, vx: 0, img: images.small });
+          count++;
+        }
+      }
+    }
+
+    function shoot() {
+      if (score <= 0) return;
+      bullets.push({ x: basketX + basketWidth / 2, y: basketY, radius: bulletRadius });
+      score--;
+      if (scoreValue) scoreValue.textContent = score;
+      if (livesValue) livesValue.textContent = lives;
+    }
+
+    function drawBullet(bullet) {
+      const gradient = ctx.createRadialGradient(
+        bullet.x,
+        bullet.y,
+        bullet.radius * 0.2,
+        bullet.x,
+        bullet.y,
+        bullet.radius
+      );
+      gradient.addColorStop(0, '#fff9d5');
+      gradient.addColorStop(0.6, '#ffd460');
+      gradient.addColorStop(1, 'rgba(255, 165, 0, 0.1)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function updateBullets() {
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.y -= 7;
+        if (b.y + b.radius < 0) {
+          bullets.splice(i, 1);
+          continue;
+        }
+        for (let j = items.length - 1; j >= 0; j--) {
+          const item = items[j];
+          const dx = b.x - item.x;
+          const dy = b.y - item.y;
+          if (Math.sqrt(dx * dx + dy * dy) < b.radius + item.radius) {
+            items.splice(j, 1);
+            bullets.splice(i, 1);
+            break;
+          }
+        }
+      }
+    }
+
+    function drawBasket() {
+      const basketGradient = ctx.createLinearGradient(basketX, basketY, basketX, basketY + basketHeight);
+      basketGradient.addColorStop(0, '#f6c27a');
+      basketGradient.addColorStop(0.5, '#d99355');
+      basketGradient.addColorStop(1, '#9a5a2a');
+
+      ctx.save();
+      ctx.fillStyle = basketGradient;
+      ctx.beginPath();
+      ctx.moveTo(basketX, basketY + basketHeight * 0.22);
+      ctx.quadraticCurveTo(basketX + basketWidth / 2, basketY + basketHeight * 1.25, basketX + basketWidth, basketY + basketHeight * 0.22);
+      ctx.lineTo(basketX + basketWidth, basketY + basketHeight);
+      ctx.lineTo(basketX, basketY + basketHeight);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(35, 21, 6, 0.6)';
+      ctx.stroke();
+
+      // Weave pattern
+      ctx.clip();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(120, 80, 30, 0.35)';
+      for (let i = 0; i < 6; i++) {
+        const y = basketY + basketHeight * 0.35 + i * (basketHeight * 0.1);
+        ctx.beginPath();
+        ctx.moveTo(basketX + basketWidth * 0.08, y);
+        ctx.lineTo(basketX + basketWidth * 0.92, y);
+        ctx.stroke();
+      }
+      for (let i = 0; i < 7; i++) {
+        const x = basketX + basketWidth * 0.12 + i * (basketWidth * 0.12);
+        ctx.beginPath();
+        ctx.moveTo(x, basketY + basketHeight * 0.25);
+        ctx.lineTo(x, basketY + basketHeight);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Rim
+      const rimGradient = ctx.createLinearGradient(basketX, basketY, basketX, basketY + basketHeight * 0.4);
+      rimGradient.addColorStop(0, '#ffe4b4');
+      rimGradient.addColorStop(1, '#d0894e');
+      ctx.fillStyle = rimGradient;
+      ctx.beginPath();
+      ctx.moveTo(basketX - 6, basketY + basketHeight * 0.18);
+      ctx.quadraticCurveTo(basketX + basketWidth / 2, basketY - basketHeight * 0.1, basketX + basketWidth + 6, basketY + basketHeight * 0.18);
+      ctx.quadraticCurveTo(basketX + basketWidth / 2, basketY + basketHeight * 0.42, basketX - 6, basketY + basketHeight * 0.18);
+      ctx.closePath();
+      ctx.fill();
+
+      // Handle
+      ctx.strokeStyle = 'rgba(112, 68, 21, 0.7)';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.ellipse(
+        basketX + basketWidth / 2,
+        basketY + basketHeight * 0.05,
+        basketWidth * 0.42,
+        basketHeight * 0.35,
+        0,
+        Math.PI,
+        0
+      );
+      ctx.stroke();
+    }
+
+    function drawItem(item) {
+      const img = item.img;
+      if (img && img.complete) {
+        ctx.drawImage(img, item.x - item.radius, item.y - item.radius, item.radius * 2, item.radius * 2);
+      } else {
+        ctx.beginPath();
+        if (item.type === 'bomb') {
+          const bombGradient = ctx.createRadialGradient(item.x, item.y, item.radius * 0.1, item.x, item.y, item.radius);
+          bombGradient.addColorStop(0, '#ff9ba7');
+          bombGradient.addColorStop(0.5, '#ff335c');
+          bombGradient.addColorStop(1, '#340015');
+          ctx.fillStyle = bombGradient;
+        } else {
+          const fruitGradient = ctx.createRadialGradient(item.x - item.radius * 0.3, item.y - item.radius * 0.3, item.radius * 0.2, item.x, item.y, item.radius);
+          fruitGradient.addColorStop(0, '#fff0a9');
+          fruitGradient.addColorStop(0.6, '#8ce26d');
+          fruitGradient.addColorStop(1, '#3a8d3b');
+          ctx.fillStyle = fruitGradient;
+        }
+        ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawBackground() {
+      const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      sky.addColorStop(0, '#0b1c3a');
+      sky.addColorStop(0.35, '#101d3c');
+      sky.addColorStop(1, '#04060f');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // ambient glow rings
+      for (let i = 0; i < 4; i++) {
+        const glowRadius = canvas.width * (0.2 + i * 0.18);
+        const glow = ctx.createRadialGradient(
+          canvas.width / 2,
+          canvas.height * 0.15,
+          glowRadius * 0.2,
+          canvas.width / 2,
+          canvas.height * 0.15,
+          glowRadius
+        );
+        glow.addColorStop(0, 'rgba(255, 233, 148, 0.08)');
+        glow.addColorStop(1, 'rgba(16, 23, 52, 0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height * 0.15, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // subtle sparkles
+      for (const sparklePoint of sparkles) {
+        const sparkle = ctx.createRadialGradient(
+          sparklePoint.x,
+          sparklePoint.y,
+          0,
+          sparklePoint.x,
+          sparklePoint.y,
+          sparklePoint.radius
+        );
+        sparkle.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        sparkle.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = sparkle;
+        ctx.fillRect(
+          sparklePoint.x - sparklePoint.radius,
+          sparklePoint.y - sparklePoint.radius,
+          sparklePoint.radius * 2,
+          sparklePoint.radius * 2
+        );
+      }
+    }
+
+    function updateItems() {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        item.x += item.vx * speedMultiplier;
+        if (item.x - item.radius < 0 || item.x + item.radius > canvas.width) {
+          item.vx = -item.vx;
+          item.x = Math.max(item.radius, Math.min(canvas.width - item.radius, item.x));
+        }
+        item.y += item.speed * speedMultiplier;
+        if (item.y - item.radius > canvas.height) {
+          items.splice(i, 1);
+          continue;
+        }
+        const inXRange = item.x > basketX && item.x < basketX + basketWidth;
+        const inYRange = item.y + item.radius > basketY && item.y - item.radius < basketY + basketHeight;
+        if (inXRange && inYRange) {
+          if (item.type === 'bomb') {
+            lives--;
+            if (livesValue) livesValue.textContent = lives;
+            if (lives <= 0) {
+              gameOver = true;
+              document.getElementById('message').textContent = 'Game Over!';
+            }
+          } else {
+            score += item.points;
+            speedMultiplier *= 1.02; // increase speed by 2% each score
+            if (scoreValue) scoreValue.textContent = score;
+            if (livesValue) livesValue.textContent = lives;
+          }
+          items.splice(i, 1);
+        }
+      }
+    }
+
+    function draw() {
+      drawBackground();
+      drawBasket();
+      items.forEach(drawItem);
+      bullets.forEach(drawBullet);
+    }
+
+    const FRAME_TIME = 1000/60;
+    let gamePaused = true;
+    let gameStarted = false;
+    let stepTimer = null;
+    function step() {
+      if (gamePaused) return;
+      if (gameOver) return;
+      if (rightPressed && basketX < canvas.width - basketWidth) basketX += 6;
+      if (leftPressed && basketX > 0) basketX -= 6;
+      if (Math.random() < 0.028) spawnItem();
+      updateBullets();
+      updateItems();
+      if (!cherryWaveTriggered && score >= 50) {
+        cherryWaveTriggered = true;
+        spawnCherryWave();
+        setTimeout(() => {
+          if (!grapeWaveTriggered) {
+            grapeWaveTriggered = true;
+            spawnGrapeWave();
+          }
+        }, 3000);
+      }
+      draw();
+    }
+    const instructionModal = document.getElementById('instruction-modal');
+    const instructionClose = document.getElementById('instruction-close');
+    const helpButton = document.getElementById('help-button');
+    const instructionKey = 'vibecade-instructions-drop-game';
+    const hasSeenInstructions = sessionStorage.getItem(instructionKey) === '1';
+
+    function startGame() {
+      if (gameStarted) return;
+      gameStarted = true;
+      gamePaused = false;
+      draw();
+      stepTimer = setInterval(step, FRAME_TIME);
+    }
+
+    function showInstructions() {
+      gamePaused = true;
+      if (instructionModal) instructionModal.classList.add('is-visible');
+    }
+
+    function hideInstructions() {
+      if (instructionModal) instructionModal.classList.remove('is-visible');
+      if (!gameStarted) {
+        startGame();
+      } else {
+        gamePaused = false;
+      }
+      sessionStorage.setItem(instructionKey, '1');
+    }
+
+    if (instructionClose) {
+      instructionClose.addEventListener('click', hideInstructions);
+    }
+    if (instructionModal) {
+      instructionModal.addEventListener('click', (event) => {
+        if (event.target === instructionModal) {
+          hideInstructions();
+        }
+      });
+    }
+    if (helpButton) {
+      helpButton.addEventListener('click', showInstructions);
+    }
+
+    if (hasSeenInstructions) {
+      if (instructionModal) instructionModal.classList.remove('is-visible');
+      startGame();
+    }
+  </script>
+  </body>
+</html>
+
+

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tetris</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #111 0%, #333 100%);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    #sidebar {
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+    }
+    #sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #sidebar li {
+      margin: 15px 0;
+    }
+    #sidebar a {
+      color: #fff;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    #sidebar a:hover {
+      color: #ffea00;
+    }
+    #game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas {
+      background: #000;
+      box-shadow: 0 0 10px #000;
+    }
+    #info {
+      margin-top: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #next {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #nextCanvas {
+      background: #000;
+      box-shadow: 0 0 5px #000;
+      margin-top: 5px;
+    }
+    #message {
+      margin-top: 10px;
+      font-size: 24px;
+      color: #ffeb3b;
+    }
+  </style>
+  <link rel="stylesheet" href="../sidebar.css" />
+</head>
+<body>
+  <div id="sidebar-placeholder"></div>
+  <div id="game-container">
+    <h1>Tetris</h1>
+    <canvas id="gameCanvas" width="300" height="600"></canvas>
+    <div id="info">Score: 0 | Lines: 0</div>
+    <div id="next">Next:<br><canvas id="nextCanvas" width="120" height="120"></canvas></div>
+    <div id="message"></div>
+  </div>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const nextCanvas = document.getElementById('nextCanvas');
+    const nextCtx = nextCanvas.getContext('2d');
+    const COLS = 10;
+    const ROWS = 20;
+    const BLOCK = 30;
+    const COLORS = ['cyan','blue','orange','yellow','green','purple','red'];
+    const SHAPES = [
+      [ // I
+        [[0,1],[1,1],[2,1],[3,1]],
+        [[2,0],[2,1],[2,2],[2,3]],
+        [[0,2],[1,2],[2,2],[3,2]],
+        [[1,0],[1,1],[1,2],[1,3]]
+      ],
+      [ // J
+        [[0,0],[0,1],[1,1],[2,1]],
+        [[1,0],[2,0],[1,1],[1,2]],
+        [[0,1],[1,1],[2,1],[2,2]],
+        [[1,0],[1,1],[0,2],[1,2]]
+      ],
+      [ // L
+        [[2,0],[0,1],[1,1],[2,1]],
+        [[1,0],[1,1],[1,2],[2,2]],
+        [[0,1],[1,1],[2,1],[0,2]],
+        [[0,0],[1,0],[1,1],[1,2]]
+      ],
+      [ // O
+        [[1,0],[2,0],[1,1],[2,1]],
+        [[1,0],[2,0],[1,1],[2,1]],
+        [[1,0],[2,0],[1,1],[2,1]],
+        [[1,0],[2,0],[1,1],[2,1]]
+      ],
+      [ // S
+        [[1,0],[2,0],[0,1],[1,1]],
+        [[1,0],[1,1],[2,1],[2,2]],
+        [[1,1],[2,1],[0,2],[1,2]],
+        [[0,0],[0,1],[1,1],[1,2]]
+      ],
+      [ // T
+        [[1,0],[0,1],[1,1],[2,1]],
+        [[1,0],[1,1],[2,1],[1,2]],
+        [[0,1],[1,1],[2,1],[1,2]],
+        [[1,0],[0,1],[1,1],[1,2]]
+      ],
+      [ // Z
+        [[0,0],[1,0],[1,1],[2,1]],
+        [[2,0],[1,1],[2,1],[1,2]],
+        [[0,1],[1,1],[1,2],[2,2]],
+        [[1,0],[0,1],[1,1],[0,2]]
+      ]
+    ];
+    let board;
+    let current;
+    let nextType;
+    let score = 0;
+    let lines = 0;
+    let dropInterval = 1000;
+    let lastTime = 0;
+    let gameOver = false;
+    let clearingRows = [];
+    let clearTimer = 0;
+
+    function resetBoard() {
+      board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+    }
+
+    function newPiece() {
+      if (nextType === undefined) {
+        nextType = Math.floor(Math.random()*SHAPES.length);
+      }
+      const type = nextType;
+      current = {type, rot:0, x:3, y:0};
+      nextType = Math.floor(Math.random()*SHAPES.length);
+      drawNextPiece();
+      if (collide(0,0,0)) {
+        gameOver = true;
+      }
+    }
+
+    function collide(offX, offY, rotOffset) {
+      const shape = SHAPES[current.type][(current.rot + rotOffset + 4)%4];
+      return shape.some(([x,y]) => {
+        const nx = current.x + x + offX;
+        const ny = current.y + y + offY;
+        return nx < 0 || nx >= COLS || ny >= ROWS || (ny >= 0 && board[ny][nx]);
+      });
+    }
+
+    function merge() {
+      SHAPES[current.type][current.rot].forEach(([x,y]) => {
+        const nx = current.x + x;
+        const ny = current.y + y;
+        if (ny >= 0) board[ny][nx] = current.type + 1;
+      });
+    }
+
+    function checkLines() {
+      clearingRows = [];
+      for (let y = ROWS - 1; y >= 0; y--) {
+        if (board[y].every(v => v)) {
+          clearingRows.push(y);
+        }
+      }
+      if (clearingRows.length) {
+        clearTimer = 0;
+      }
+    }
+
+    function animateLineClear(delta) {
+      clearTimer += delta;
+      if (clearTimer > 300) {
+        clearingRows.sort((a,b) => a-b).forEach(y => {
+          board.splice(y,1);
+          board.unshift(Array(COLS).fill(0));
+        });
+        score += 100 * clearingRows.length;
+        lines += clearingRows.length;
+        clearingRows = [];
+        newPiece();
+      }
+    }
+
+    function rotate() {
+      if (!collide(0,0,1)) {
+        current.rot = (current.rot + 1) % 4;
+      }
+    }
+
+    function move(dir) {
+      if (!collide(dir,0,0)) {
+        current.x += dir;
+      }
+    }
+
+    function drop() {
+      if (!collide(0,1,0)) {
+        current.y++;
+      } else {
+        merge();
+        checkLines();
+        if (!clearingRows.length) {
+          newPiece();
+        }
+      }
+    }
+
+    function hardDrop() {
+      while(!collide(0,1,0)) {
+        current.y++;
+      }
+      drop();
+    }
+
+    function drawCell(x,y,color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x*BLOCK, y*BLOCK, BLOCK-1, BLOCK-1);
+    }
+
+    function drawNextPiece() {
+      nextCtx.fillStyle = '#111';
+      nextCtx.fillRect(0,0,nextCanvas.width,nextCanvas.height);
+      SHAPES[nextType][0].forEach(([x,y]) => {
+        nextCtx.fillStyle = COLORS[nextType];
+        nextCtx.fillRect(x*BLOCK, y*BLOCK, BLOCK-1, BLOCK-1);
+      });
+    }
+
+    function draw() {
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      for (let y=0; y<ROWS; y++) {
+        for (let x=0; x<COLS; x++) {
+          if (board[y][x]) {
+            const color = clearingRows.includes(y) ? '#fff' : COLORS[board[y][x]-1];
+            drawCell(x,y,color);
+          }
+        }
+      }
+      const shape = SHAPES[current.type][current.rot];
+      shape.forEach(([x,y]) => {
+        const nx = current.x + x;
+        const ny = current.y + y;
+        if (ny >= 0) drawCell(nx,ny,COLORS[current.type]);
+      });
+      document.getElementById('info').textContent = `Score: ${score} | Lines: ${lines}`;
+      document.getElementById('message').textContent = gameOver ? 'Game Over! Press R to restart' : '';
+    }
+
+    function update(time=0) {
+      if (gameOver) return;
+      const delta = time - lastTime;
+      if (clearingRows.length) {
+        animateLineClear(delta);
+        lastTime = time;
+      } else {
+        if (delta > dropInterval) {
+          drop();
+          lastTime = time;
+        }
+      }
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') move(-1);
+      else if (e.key === 'ArrowRight') move(1);
+      else if (e.key === 'ArrowDown') drop();
+      else if (e.key === 'ArrowUp') rotate();
+      else if (e.key === ' ') hardDrop();
+      else if ((e.key === 'r' || e.key === 'R') && gameOver) resetGame();
+    });
+
+    function resetGame() {
+      score = 0;
+      lines = 0;
+      gameOver = false;
+      resetBoard();
+      nextType = Math.floor(Math.random()*SHAPES.length);
+      newPiece();
+      lastTime = 0;
+      update();
+    }
+
+    // --- Tetris theme music ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const tempo = 120;
+    const theme = [
+      ['E5', 1], ['B4', 0.5], ['C5', 0.5], ['D5', 1], ['C5', 0.5], ['B4', 0.5], ['A4', 1],
+      ['A4', 0.5], ['C5', 0.5], ['E5', 1], ['D5', 0.5], ['C5', 0.5], ['B4', 1],
+      ['C5', 0.5], ['D5', 0.5], ['E5', 1], ['C5', 0.5], ['A4', 0.5], ['A4', 1],
+      ['D5', 1], ['F5', 0.5], ['A5', 1], ['G5', 0.5], ['F5', 0.5], ['E5', 1],
+      ['C5', 0.5], ['E5', 1], ['D5', 0.5], ['C5', 0.5], ['B4', 1], ['B4', 0.5], ['C5', 0.5],
+      ['D5', 1], ['E5', 1], ['C5', 0.5], ['A4', 0.5], ['A4', 1]
+    ];
+
+    const noteFreq = {
+      'A4': 440.0,
+      'B4': 493.88,
+      'C5': 523.25,
+      'D5': 587.33,
+      'E5': 659.25,
+      'F5': 698.46,
+      'G5': 783.99,
+      'A5': 880.0
+    };
+
+    function playTheme() {
+      let time = audioCtx.currentTime;
+      theme.forEach(([note, beat]) => {
+        const duration = (60 / tempo) * beat;
+        if (note) {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'square';
+          osc.frequency.value = noteFreq[note];
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          gain.gain.setValueAtTime(0.1, time);
+          gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+          osc.start(time);
+          osc.stop(time + duration);
+        }
+        time += duration;
+      });
+      setTimeout(playTheme, (time - audioCtx.currentTime) * 1000);
+    }
+
+    function startMusic() {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      playTheme();
+    }
+
+    function initMusic() {
+      document.addEventListener('keydown', startMusic, { once: true });
+      document.addEventListener('click', startMusic, { once: true });
+    }
+
+    initMusic();
+    resetGame();
+  </script>
+  <script>
+    fetch('../sidebar.html')
+      .then(r => r.text())
+      .then(html => {
+        const placeholder = document.getElementById('sidebar-placeholder');
+        if (placeholder) placeholder.outerHTML = html;
+      });
+  </script>
+</body>
+</html>
+
+
