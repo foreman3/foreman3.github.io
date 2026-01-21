@@ -335,7 +335,6 @@
     <div id="flyout-panel" class="flyout-panel"></div>
   </div>
   <button id="help-button" type="button" aria-label="How to play">?</button>
-  <button id="debug-portal" type="button" aria-label="Teleport to level 90">LVL 90</button>
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
@@ -343,6 +342,7 @@
       <p>Use ladders to enter underground tunnels. Each tunnel screen jumps you 3-4 screens ahead.</p>
       <p>Watch for rolling rocks, snapping crocodiles, pulsing ponds/quicksand, and scorpions below.</p>
       <p>Score for every screen crossed. Every 7 screens holds treasure. Find 4 special treasures to win.</p>
+      <p>97, 24, 78, 47</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
   </div>
@@ -1992,7 +1992,6 @@
     const instructionModal = document.getElementById('instruction-modal');
     const instructionClose = document.getElementById('instruction-close');
     const helpButton = document.getElementById('help-button');
-    const debugPortal = document.getElementById('debug-portal');
     const instructionKey = 'vibecade-instructions-pitfall';
     const hasSeenInstructions = sessionStorage.getItem(instructionKey) === '1';
     const controlButtons = document.querySelectorAll('.control-button');
@@ -2043,20 +2042,6 @@
     if (helpButton) {
       helpButton.addEventListener('click', showInstructions);
     }
-    if (debugPortal) {
-      debugPortal.addEventListener('click', () => {
-        state.screenIndex = 89;
-        state.specials = 4;
-        state.idolLight = true;
-        state.idolLife = true;
-        state.idolMonkey = true;
-        state.idolScorpion = true;
-        state.game = 'play';
-        state.respawnUnderground = false;
-        player.underground = false;
-        resetPlayer();
-      });
-    }
 
     function dispatchKeyEvent(key, code, type) {
       const event = new KeyboardEvent(type, { key, code, bubbles: true });
@@ -2068,6 +2053,10 @@
         const key = button.dataset.key;
         const code = button.dataset.code || button.dataset.key;
         const press = () => {
+          if (code === 'Space' && (state.game === 'start' || state.game === 'gameover' || state.game === 'win')) {
+            resetGame();
+            return;
+          }
           if (gamePaused) return;
           button.classList.add('pressed');
           dispatchKeyEvent(key, code, 'keydown');
