@@ -164,15 +164,25 @@
     }
     .dpad {
       position: relative;
-      width: clamp(120px, 32vw, 170px);
-      height: clamp(120px, 32vw, 170px);
+      width: clamp(86px, 22vw, 120px);
+      height: clamp(86px, 22vw, 120px);
       pointer-events: none;
+    }
+    .dpad::before {
+      content: '';
+      position: absolute;
+      inset: 18px;
+      border-radius: 999px;
+      border: 2px solid rgba(244, 211, 94, 0.35);
+      background: rgba(10, 10, 10, 0.2);
+      box-shadow: inset 0 0 18px rgba(244, 211, 94, 0.15);
     }
     .dpad .control-button {
       position: absolute;
-      width: clamp(52px, 14vw, 74px);
-      height: clamp(52px, 14vw, 74px);
-      border-radius: 16px;
+      width: clamp(34px, 9vw, 46px);
+      height: clamp(34px, 9vw, 46px);
+      border-radius: 10px;
+      font-size: clamp(0.75rem, 3vw, 0.95rem);
     }
     .dpad .up {
       top: 0;
@@ -2043,9 +2053,15 @@
       helpButton.addEventListener('click', showInstructions);
     }
 
-    function dispatchKeyEvent(key, code, type) {
-      const event = new KeyboardEvent(type, { key, code, bubbles: true });
-      window.dispatchEvent(event);
+    function setKeyState(code, isDown) {
+      if (code === 'Space' && isDown && !pressed.has('Space')) {
+        jumpPressed = true;
+      }
+      if (isDown) {
+        pressed.add(code);
+      } else {
+        pressed.delete(code);
+      }
     }
 
     if (controlButtons.length && isTouchDevice) {
@@ -2053,17 +2069,25 @@
         const key = button.dataset.key;
         const code = button.dataset.code || button.dataset.key;
         const press = () => {
+          if (code === 'Space' && instructionModal && instructionModal.classList.contains('is-visible')) {
+            if (document.documentElement.requestFullscreen) {
+              document.documentElement.requestFullscreen().catch(() => {});
+            }
+            hideInstructions();
+            return;
+          }
           if (code === 'Space' && (state.game === 'start' || state.game === 'gameover' || state.game === 'win')) {
             resetGame();
+            gamePaused = false;
             return;
           }
           if (gamePaused) return;
           button.classList.add('pressed');
-          dispatchKeyEvent(key, code, 'keydown');
+          setKeyState(code, true);
         };
         const release = () => {
           button.classList.remove('pressed');
-          dispatchKeyEvent(key, code, 'keyup');
+          setKeyState(code, false);
         };
         button.addEventListener('touchstart', (event) => {
           event.preventDefault();
