@@ -108,10 +108,176 @@
       transform:translateY(-2px);
       box-shadow:0 8px 16px rgba(78,205,196,0.4);
     }
+    html,
+    body {
+      height: 100%;
+    }
+    body {
+      justify-content: center;
+      overflow: hidden;
+    }
+    #sidebar-placeholder {
+      display: none;
+    }
+    #game-container {
+      width: min(1200px, 100%);
+      max-width: calc(100vw - 32px);
+      height: 100vh;
+      padding: 24px;
+      gap: 0;
+    }
+    h1 {
+      display: none;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      max-height: calc(100vh - 32px);
+      border-radius: 18px;
+    }
+    #info {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(12, 18, 46, 0.65);
+      box-shadow: 0 0 18px rgba(120, 190, 255, 0.35);
+      z-index: 3;
+    }
+    #specialWeapon {
+      position: absolute;
+      top: 64px;
+      left: 16px;
+      margin: 0;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      background: rgba(12, 18, 46, 0.65);
+      box-shadow: 0 0 18px rgba(120, 190, 255, 0.35);
+      z-index: 3;
+    }
+    #message {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      font-size: 20px;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 10px 18px;
+      border-radius: 999px;
+      min-height: 28px;
+      z-index: 3;
+    }
+    #restartBtn {
+      position: absolute;
+      bottom: 18px;
+      left: 16px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(0, 174, 255, 0.9);
+      color: #021c33;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 8px 16px;
+      cursor: pointer;
+      z-index: 3;
+    }
+    #touch-controls {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 22px 20px;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .control-cluster {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .control-row {
+      display: flex;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .control-button {
+      width: clamp(58px, 16vw, 86px);
+      height: clamp(58px, 16vw, 86px);
+      border-radius: 999px;
+      border: 2px solid rgba(0, 174, 255, 0.5);
+      background: rgba(4, 20, 68, 0.55);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(1.1rem, 4.2vw, 1.6rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      touch-action: none;
+      backdrop-filter: blur(6px);
+      transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .control-button.pressed,
+    .control-button:active {
+      background: rgba(0, 174, 255, 0.25);
+      border-color: rgba(140, 220, 255, 0.9);
+      box-shadow: 0 0 24px rgba(0, 174, 255, 0.45);
+    }
+    body.touch-device #touch-controls {
+      display: flex;
+    }
+    #help-button {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 174, 255, 0.55);
+      background: rgba(4, 20, 68, 0.45);
+      color: rgba(255, 255, 255, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1001;
+      backdrop-filter: blur(6px);
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    #help-button:hover,
+    #help-button:focus-visible {
+      border-color: rgba(140, 220, 255, 0.9);
+      background: rgba(0, 174, 255, 0.25);
+    }
+    @media (pointer: fine) {
+      #help-button {
+        display: flex;
+      }
+    }
   </style>
   <link rel="stylesheet" href="../sidebar.css" />
+  <link rel="stylesheet" href="../flyout.css" />
+  <script src="../flyout.js" defer></script>
 </head>
 <body>
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+  <button id="help-button" type="button" aria-label="How to play">?</button>
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
     <div id="tutorialOverlay" class="overlay hidden">
@@ -138,10 +304,27 @@
     </div>
     <h1>Ultra Tanks</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="touch-controls" aria-hidden="true">
+      <div class="control-cluster">
+        <div class="control-row">
+          <button type="button" class="control-button" data-action="left" aria-label="Rotate Left">L</button>
+          <button type="button" class="control-button" data-action="right" aria-label="Rotate Right">R</button>
+        </div>
+        <div class="control-row">
+          <button type="button" class="control-button" data-action="up" aria-label="Move Forward">F</button>
+          <button type="button" class="control-button" data-action="down" aria-label="Move Backward">B</button>
+        </div>
+      </div>
+      <div class="control-cluster">
+        <button type="button" class="control-button" data-action="fire" aria-label="Fire">Fire</button>
+        <button type="button" class="control-button" data-action="special" aria-label="Use Special">Spec</button>
+        <button type="button" class="control-button" data-action="switch" aria-label="Switch Special">Next</button>
+      </div>
+    </div>
     <div id="info"></div>
     <div id="specialWeapon"></div>
     <div id="message"></div>
-    <button id="restartBtn" style="margin-top:10px;">Restart</button>
+    <button id="restartBtn">Restart</button>
   </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -189,7 +372,6 @@
     let pointerY = 0;
 
     const specialWeapons = ['Guided Missile', 'Mine', 'Air Raid'];
-    const TUTORIAL_KEY = 'ultraTanksTutorialSeen';
     let specialWeaponIndex = 0;
 
     const player = {x:0,y:0,angle:0,color:'#0f0',alive:true,explosion:0,invuln:0};
@@ -201,6 +383,8 @@
     let running = false;
     let gameOver = false;
     let nextLevelTimeout = null;
+    let gamePaused = true;
+    let gameStarted = false;
 
     function obstacleCollision(x, y) {
       for (const o of obstacles) {
@@ -291,7 +475,7 @@
       startLevel();
     }
 
-  function shoot(tank) {
+    function shoot(tank) {
       if (bullets.filter(b => b.owner === tank).length >= 2) return;
       bullets.push({ x: tank.x + Math.cos(tank.angle) * 20,
                     y: tank.y + Math.sin(tank.angle) * 20,
@@ -300,9 +484,57 @@
                     bounces: 0 });
     }
 
+    function fireWeapon() {
+      if (!running || !player.alive || gamePaused) return;
+      shoot(player);
+    }
+
    function updateInfo() {
      const remaining = enemies.filter(e => e.alive).length;
-      infoEl.textContent = `Level: ${level} | Lives: ${lives} | Enemies Left: ${remaining} | Air Raids: ${airRaidAvailable} | Guided Missiles: ${guidedMissilesRemaining}`;
+     infoEl.textContent = `Level: ${level} | Lives: ${lives} | Enemies Left: ${remaining} | Air Raids: ${airRaidAvailable} | Guided Missiles: ${guidedMissilesRemaining}`;
+   }
+
+   function resizeCanvas() {
+     const padding = 24;
+     const maxWidth = Math.max(320, window.innerWidth - padding * 2);
+     const maxHeight = Math.max(320, window.innerHeight - padding * 2);
+     const oldWidth = canvas.width;
+     const oldHeight = canvas.height;
+     const nextWidth = Math.floor(maxWidth);
+     const nextHeight = Math.floor(maxHeight);
+     if (nextWidth === oldWidth && nextHeight === oldHeight) return;
+     canvas.width = nextWidth;
+     canvas.height = nextHeight;
+     if (oldWidth && oldHeight) {
+       const scaleX = canvas.width / oldWidth;
+       const scaleY = canvas.height / oldHeight;
+       player.x *= scaleX;
+       player.y *= scaleY;
+       enemies.forEach(e => {
+         e.x *= scaleX;
+         e.y *= scaleY;
+       });
+       bullets.forEach(b => {
+         b.x *= scaleX;
+         b.y *= scaleY;
+       });
+       obstacles.forEach(o => {
+         o.x *= scaleX;
+         o.y *= scaleY;
+         o.w *= scaleX;
+         o.h *= scaleY;
+       });
+       guidedMissiles.forEach(m => {
+         m.x *= scaleX;
+         m.y *= scaleY;
+       });
+       if (mine) {
+         mine.x *= scaleX;
+         mine.y *= scaleY;
+       }
+       pointerX *= scaleX;
+       pointerY *= scaleY;
+     }
    }
 
    function updateSpecialWeaponDisplay() {
@@ -310,7 +542,7 @@
    }
 
     function update() {
-      if (!running) return;
+      if (gamePaused || !running) return;
       const bounce = false;
 
       if (player.alive) {
@@ -722,6 +954,7 @@
     setInterval(loop, FRAME_TIME);
 
     window.addEventListener('keydown', e => {
+      if (gamePaused) return;
       if (e.key === ' ' && gameOver) {
         e.preventDefault();
         restartGame();
@@ -730,12 +963,12 @@
       keys[e.key] = true;
       if (e.key === ' ' && running && player.alive) {
         e.preventDefault();
-        shoot(player);
+        fireWeapon();
       }
     });
 
-    canvas.addEventListener('click', () => {
-      if (!running || !player.alive) return;
+    function useSpecialWeapon() {
+      if (gamePaused || !running || !player.alive) return;
       const weapon = specialWeapons[specialWeaponIndex];
       if (weapon === 'Guided Missile' && guidedMissilesRemaining > 0) {
         guidedMissiles.push({ x: player.x + Math.cos(player.angle) * 20, y: player.y + Math.sin(player.angle) * 20, explosion: 0, safeTime: 30 });
@@ -755,16 +988,24 @@
         canvas.style.cursor = 'crosshair';
         setMessage('3');
       }
-    });
+    }
 
-    canvas.addEventListener('wheel', e => {
-      e.preventDefault();
-      if (e.deltaY < 0) {
+    function cycleSpecialWeapon(direction) {
+      if (direction < 0) {
         specialWeaponIndex = (specialWeaponIndex + specialWeapons.length - 1) % specialWeapons.length;
       } else {
         specialWeaponIndex = (specialWeaponIndex + 1) % specialWeapons.length;
       }
       updateSpecialWeaponDisplay();
+    }
+
+    canvas.addEventListener('click', () => {
+      useSpecialWeapon();
+    });
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      cycleSpecialWeapon(e.deltaY < 0 ? -1 : 1);
     });
 
     canvas.addEventListener('mousemove', e => {
@@ -775,33 +1016,91 @@
       pointerY = (e.clientY - rect.top) * scaleY;
     });
 
-    window.addEventListener('keyup', e => { keys[e.key] = false; });
+    window.addEventListener('keyup', e => {
+      if (gamePaused) return;
+      keys[e.key] = false;
+    });
 
     window.addEventListener('load', () => {
-      let tutorialSeen = false;
-      try {
-        tutorialSeen = localStorage.getItem(TUTORIAL_KEY) === 'true';
-      } catch (err) {
-        tutorialSeen = false;
+      const instructionKey = 'vibecade-instructions-ultra-tanks';
+      const hasSeenInstructions = sessionStorage.getItem(instructionKey) === '1';
+      const controlButtons = document.querySelectorAll('.control-button');
+      const helpButton = document.getElementById('help-button');
+      const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+      if (isTouchDevice) {
+        document.body.classList.add('touch-device');
       }
 
-      if (tutorialSeen) {
+      function startGame() {
+        if (gameStarted) return;
+        gameStarted = true;
+        gamePaused = false;
+        resizeCanvas();
         restartGame();
-      } else if (tutorialOverlay) {
-        tutorialOverlay.classList.remove('hidden');
       }
 
+      function showInstructions() {
+        gamePaused = true;
+        if (tutorialOverlay) tutorialOverlay.classList.remove('hidden');
+      }
+
+      function hideInstructions() {
+        if (tutorialOverlay) tutorialOverlay.classList.add('hidden');
+        if (!gameStarted) {
+          startGame();
+        } else {
+          gamePaused = false;
+        }
+        sessionStorage.setItem(instructionKey, '1');
+      }
+
+      if (helpButton) {
+        helpButton.addEventListener('click', showInstructions);
+      }
       if (startGameBtn) {
-        startGameBtn.addEventListener('click', () => {
-          try {
-            localStorage.setItem(TUTORIAL_KEY, 'true');
-          } catch (err) {
-            // ignore storage errors
+        startGameBtn.addEventListener('click', hideInstructions);
+      }
+      if (tutorialOverlay) {
+        tutorialOverlay.addEventListener('click', (event) => {
+          if (event.target === tutorialOverlay) {
+            hideInstructions();
           }
-          if (tutorialOverlay) {
-            tutorialOverlay.classList.add('hidden');
-          }
-          restartGame();
+        });
+      }
+
+      if (controlButtons.length && isTouchDevice) {
+        controlButtons.forEach((button) => {
+          const action = button.dataset.action;
+          const press = () => {
+            if (gamePaused) return;
+            button.classList.add('pressed');
+            if (action === 'left') keys['ArrowLeft'] = true;
+            if (action === 'right') keys['ArrowRight'] = true;
+            if (action === 'up') keys['ArrowUp'] = true;
+            if (action === 'down') keys['ArrowDown'] = true;
+            if (action === 'fire') fireWeapon();
+            if (action === 'special') useSpecialWeapon();
+            if (action === 'switch') cycleSpecialWeapon(1);
+          };
+          const release = () => {
+            button.classList.remove('pressed');
+            if (action === 'left') keys['ArrowLeft'] = false;
+            if (action === 'right') keys['ArrowRight'] = false;
+            if (action === 'up') keys['ArrowUp'] = false;
+            if (action === 'down') keys['ArrowDown'] = false;
+          };
+          button.addEventListener('touchstart', (event) => {
+            event.preventDefault();
+            press();
+          }, { passive: false });
+          button.addEventListener('touchend', (event) => {
+            event.preventDefault();
+            release();
+          }, { passive: false });
+          button.addEventListener('touchcancel', release);
+          button.addEventListener('mousedown', press);
+          button.addEventListener('mouseup', release);
+          button.addEventListener('mouseleave', release);
         });
       }
 
@@ -811,16 +1110,19 @@
         });
       }
 
+      window.addEventListener('resize', () => {
+        window.requestAnimationFrame(resizeCanvas);
+      });
+
+      if (hasSeenInstructions) {
+        if (tutorialOverlay) tutorialOverlay.classList.add('hidden');
+        startGame();
+      } else if (tutorialOverlay) {
+        tutorialOverlay.classList.remove('hidden');
+      }
+
       loop();
     });
-  </script>
-  <script>
-    fetch('../sidebar.html')
-      .then(r => r.text())
-      .then(html => {
-        const placeholder = document.getElementById('sidebar-placeholder');
-        if(placeholder) placeholder.outerHTML = html;
-      });
   </script>
 </body>
 </html>

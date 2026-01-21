@@ -4,16 +4,27 @@ export class UI extends Phaser.Scene {
     }
 
     create() {
-        const shadow = { shadow: { offsetX: 1, offsetY: 1, color: '#000', blur: 0 } };
-        this.scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#f0f0f0', ...shadow });
-        this.livesText = this.add.text(500, 10, 'Lives: 3', { fontSize: '20px', fill: '#f0f0f0', ...shadow });
-        this.missionText = this.add.text(10, 40, 'Mission: None', { fontSize: '16px', fill: '#d7e7ff', ...shadow });
-        this.requirementsText = this.add.text(10, 60, 'Needed: --', { fontSize: '14px', fill: '#c8d1ff', ...shadow });
-        this.clueText = this.add.text(10, 78, 'Clues: 0', { fontSize: '16px', fill: '#ffb347', ...shadow });
-        this.itemsText = this.add.text(10, 98, 'Items: None', { fontSize: '14px', fill: '#a3ff8f', ...shadow });
-        this.treasureText = this.add.text(10, 118, 'Treasures: None', { fontSize: '14px', fill: '#6ae8ff', ...shadow });
+        const panelX = 12;
+        const panelY = 12;
+        const panelWidth = 360;
+        const panelHeight = 156;
+        this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x0a1424, 0.7)
+            .setOrigin(0, 0)
+            .setStrokeStyle(2, 0x5ce1ff, 0.35);
 
-        // Listen to registry events
+        const style = { fontSize: '16px', fill: '#e8f6ff', fontFamily: 'Trebuchet MS' };
+        const minor = { fontSize: '13px', fill: '#a8c9ff', fontFamily: 'Trebuchet MS' };
+        const accent = { fontSize: '15px', fill: '#ffd58a', fontFamily: 'Trebuchet MS' };
+
+        this.titleText = this.add.text(panelX + 12, panelY + 10, 'Doctor Dude Lab', { fontSize: '18px', fill: '#8af7ff', fontFamily: 'Trebuchet MS' });
+        this.scoreText = this.add.text(panelX + 12, panelY + 36, 'Score: 0', style);
+        this.livesText = this.add.text(panelX + 220, panelY + 36, 'Lives: 3', style);
+        this.missionText = this.add.text(panelX + 12, panelY + 62, 'Mission: None', minor);
+        this.requirementsText = this.add.text(panelX + 12, panelY + 82, 'Needed: --', minor);
+        this.clueText = this.add.text(panelX + 12, panelY + 102, 'Clues: 0', accent);
+        this.itemsText = this.add.text(panelX + 12, panelY + 120, 'Items: None', minor);
+        this.treasureText = this.add.text(panelX + 12, panelY + 138, 'Treasures: None', minor);
+
         this.registry.events.on('changedata', this.updateData, this);
         this.clueTarget = 0;
     }

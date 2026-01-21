@@ -137,14 +137,222 @@
         grid-template-columns: repeat(2, minmax(0,1fr));
       }
     }
+    html,
+    body {
+      height: 100%;
+    }
+    body {
+      justify-content: center;
+    }
+    #sidebar-placeholder {
+      display: none;
+    }
+    #game-container {
+      width: min(1200px, 100%);
+      max-width: calc(100vw - 32px);
+      height: 100vh;
+      padding: 24px;
+      gap: 0;
+    }
+    h1 {
+      display: none;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      max-height: calc(100vh - 32px);
+      margin-top: 0;
+    }
+    #hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      margin: 0;
+      width: min(860px, calc(100% - 32px));
+      z-index: 3;
+    }
+    #message {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      font-size: 1rem;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 10px 18px;
+      border-radius: 999px;
+      min-height: 28px;
+      z-index: 3;
+    }
+    #controls {
+      display: none;
+    }
+    #touch-controls {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 22px 20px;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .control-cluster {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .control-row {
+      display: flex;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .control-button {
+      width: clamp(58px, 16vw, 86px);
+      height: clamp(58px, 16vw, 86px);
+      border-radius: 999px;
+      border: 2px solid rgba(113, 233, 255, 0.5);
+      background: rgba(8, 12, 20, 0.55);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(1.2rem, 4.5vw, 1.8rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      touch-action: none;
+      backdrop-filter: blur(6px);
+      transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .control-button.pressed,
+    .control-button:active {
+      background: rgba(113, 233, 255, 0.25);
+      border-color: rgba(170, 244, 255, 0.9);
+      box-shadow: 0 0 24px rgba(113, 233, 255, 0.35);
+    }
+    body.touch-device #touch-controls {
+      display: flex;
+    }
+    #help-button {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(113, 233, 255, 0.55);
+      background: rgba(8, 12, 20, 0.45);
+      color: rgba(255, 255, 255, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1001;
+      backdrop-filter: blur(6px);
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    #help-button:hover,
+    #help-button:focus-visible {
+      border-color: rgba(170, 244, 255, 0.9);
+      background: rgba(113, 233, 255, 0.25);
+    }
+    #instruction-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.78);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1000;
+      padding: 24px;
+      text-align: left;
+    }
+    #instruction-modal.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #instruction-card {
+      max-width: 520px;
+      width: 100%;
+      background: rgba(8, 12, 20, 0.95);
+      border: 1px solid rgba(113, 233, 255, 0.35);
+      border-radius: 18px;
+      padding: 20px 22px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      color: #eef1ff;
+    }
+    #instruction-card h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #71e9ff;
+    }
+    #instruction-card p {
+      margin: 8px 0;
+      color: #d7f6ff;
+      line-height: 1.5;
+    }
+    #instruction-close {
+      margin-top: 14px;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(113, 233, 255, 0.9);
+      color: #08111c;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    @media (pointer: fine) {
+      #help-button {
+        display: flex;
+      }
+    }
   </style>
   <link rel="stylesheet" href="../sidebar.css" />
+  <link rel="stylesheet" href="../flyout.css" />
+  <script src="../flyout.js" defer></script>
 </head>
 <body>
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+  <button id="help-button" type="button" aria-label="How to play">?</button>
+  <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
+    <div id="instruction-card">
+      <h2>How to Play</h2>
+      <p>Steer with Left/Right and manage speed with Up/Down.</p>
+      <p>Dodge rivals, stay on track, and finish each lap.</p>
+      <button id="instruction-close" type="button">Start</button>
+    </div>
+  </div>
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
     <h1>Pole Position<span>Velocity Reborn</span></h1>
     <canvas id="gameCanvas" width="1080" height="675"></canvas>
+    <div id="touch-controls" aria-hidden="true">
+      <div class="control-cluster">
+        <div class="control-row">
+          <button type="button" class="control-button" data-action="left" aria-label="Steer Left">L</button>
+          <button type="button" class="control-button" data-action="right" aria-label="Steer Right">R</button>
+        </div>
+      </div>
+      <div class="control-cluster">
+        <button type="button" class="control-button" data-action="up" aria-label="Accelerate">Up</button>
+        <button type="button" class="control-button" data-action="down" aria-label="Brake">Dn</button>
+      </div>
+    </div>
     <div id="hud">
       <div class="hud-card">
         <div class="hud-label">Score</div>
@@ -440,8 +648,11 @@
     resizeGame();
 
     const keys = { left: false, right: false, up: false, down: false };
+    let gamePaused = true;
+    let gameStarted = false;
 
     document.addEventListener('keydown', (e) => {
+      if (gamePaused) return;
       if (e.code === 'ArrowLeft') keys.left = true;
       if (e.code === 'ArrowRight') keys.right = true;
       if (e.code === 'ArrowUp') keys.up = true;
@@ -457,6 +668,7 @@
     });
 
     document.addEventListener('keyup', (e) => {
+      if (gamePaused) return;
       if (e.code === 'ArrowLeft') keys.left = false;
       if (e.code === 'ArrowRight') keys.right = false;
       if (e.code === 'ArrowUp') keys.up = false;
@@ -898,6 +1110,11 @@
     let lastTime = performance.now();
 
     function gameLoop(timestamp) {
+      if (gamePaused) {
+        render();
+        requestAnimationFrame(gameLoop);
+        return;
+      }
       const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
       lastTime = timestamp;
       update(dt);
@@ -905,19 +1122,100 @@
       requestAnimationFrame(gameLoop);
     }
 
-    resetRace(0);
     requestAnimationFrame(gameLoop);
 
-    messageEl.textContent = 'Press Enter to launch the series.';
-  </script>
-  <script>
-    fetch('../sidebar.html')
-      .then(r => r.text())
-      .then(html => {
-        const placeholder = document.getElementById('sidebar-placeholder');
-        if (placeholder) placeholder.outerHTML = html;
-        resizeGame();
+    const instructionModal = document.getElementById('instruction-modal');
+    const instructionClose = document.getElementById('instruction-close');
+    const helpButton = document.getElementById('help-button');
+    const instructionKey = 'vibecade-instructions-pole';
+    const hasSeenInstructions = sessionStorage.getItem(instructionKey) === '1';
+    const controlButtons = document.querySelectorAll('.control-button');
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    if (isTouchDevice) {
+      document.body.classList.add('touch-device');
+    }
+
+    function startGame() {
+      if (gameStarted) return;
+      gameStarted = true;
+      gamePaused = false;
+      resizeGame();
+      resetRace(0);
+      messageEl.textContent = '';
+    }
+
+    function showInstructions() {
+      gamePaused = true;
+      if (instructionModal) instructionModal.classList.add('is-visible');
+    }
+
+    function hideInstructions() {
+      if (instructionModal) instructionModal.classList.remove('is-visible');
+      if (!gameStarted) {
+        startGame();
+      } else {
+        gamePaused = false;
+      }
+      sessionStorage.setItem(instructionKey, '1');
+    }
+
+    if (instructionClose) {
+      instructionClose.addEventListener('click', hideInstructions);
+    }
+    if (instructionModal) {
+      instructionModal.addEventListener('click', (event) => {
+        if (event.target === instructionModal) {
+          hideInstructions();
+        }
       });
+    }
+    if (helpButton) {
+      helpButton.addEventListener('click', showInstructions);
+    }
+
+    if (controlButtons.length && isTouchDevice) {
+      controlButtons.forEach((button) => {
+        const action = button.dataset.action;
+        const press = () => {
+          if (gamePaused) return;
+          button.classList.add('pressed');
+          if (action === 'left') keys.left = true;
+          if (action === 'right') keys.right = true;
+          if (action === 'up') keys.up = true;
+          if (action === 'down') keys.down = true;
+        };
+        const release = () => {
+          button.classList.remove('pressed');
+          if (action === 'left') keys.left = false;
+          if (action === 'right') keys.right = false;
+          if (action === 'up') keys.up = false;
+          if (action === 'down') keys.down = false;
+        };
+        button.addEventListener('touchstart', (event) => {
+          event.preventDefault();
+          press();
+        }, { passive: false });
+        button.addEventListener('touchend', (event) => {
+          event.preventDefault();
+          release();
+        }, { passive: false });
+        button.addEventListener('touchcancel', release);
+        button.addEventListener('mousedown', press);
+        button.addEventListener('mouseup', release);
+        button.addEventListener('mouseleave', release);
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      window.requestAnimationFrame(resizeGame);
+    });
+
+    messageEl.textContent = 'Press Enter to launch the series.';
+
+    if (hasSeenInstructions) {
+      if (instructionModal) instructionModal.classList.remove('is-visible');
+      startGame();
+    }
   </script>
 </body>
 </html>

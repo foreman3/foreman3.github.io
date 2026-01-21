@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Adventure</title>
+  <title>Pitfall</title>
   <style>
     body {
       margin: 0;
       min-height: 100vh;
       display: flex;
-      background: #000;
+      background: #06080f;
       color: #f8f8f2;
       font-family: "Press Start 2P", "Courier New", monospace;
       letter-spacing: 0.04em;
@@ -23,13 +23,11 @@
       backdrop-filter: blur(6px);
       border-right: 1px solid rgba(255, 255, 255, 0.08);
     }
-
     #sidebar img {
       display: block;
       width: 160px;
       margin: 0 auto 24px;
     }
-
     #sidebar h3 {
       margin: 0 0 14px;
       font-size: 0.85rem;
@@ -37,17 +35,14 @@
       text-transform: uppercase;
       color: rgba(216, 226, 255, 0.75);
     }
-
     #sidebar ul {
       list-style: none;
       padding: 0;
       margin: 0 0 28px;
     }
-
     #sidebar li {
       margin: 15px 0;
     }
-
     #sidebar a {
       color: #dce3ff;
       text-decoration: none;
@@ -55,7 +50,6 @@
       font-weight: 600;
       transition: color 0.3s, text-shadow 0.3s;
     }
-
     #sidebar a:hover {
       color: #fffb96;
       text-shadow: 0 0 8px rgba(255, 251, 150, 0.9);
@@ -73,22 +67,22 @@
     h1 {
       margin: 0 0 16px;
       font-size: 28px;
-      color: #ffde17;
+      color: #f4d35e;
       text-shadow: 2px 2px #000;
     }
     canvas {
       width: 512px;
       height: 448px;
       image-rendering: pixelated;
-      border: 4px solid #ffde17;
-      box-shadow: 0 0 16px rgba(255, 222, 23, 0.5);
-      background: #2b2b2b;
+      border: 4px solid #f4d35e;
+      box-shadow: 0 0 16px rgba(244, 211, 94, 0.35);
+      background: #0a0d16;
     }
     #info {
       margin-top: 12px;
       padding: 8px 12px;
       background: rgba(20, 20, 20, 0.85);
-      border: 2px solid #ffde17;
+      border: 2px solid #f4d35e;
       border-radius: 4px;
       font-size: 12px;
       line-height: 1.6;
@@ -97,16 +91,248 @@
     #message {
       margin-top: 16px;
       font-size: 14px;
-      color: #ffde17;
+      color: #f4d35e;
+    }
+    html,
+    body {
+      height: 100%;
+    }
+    body {
+      justify-content: center;
+      overflow: hidden;
+    }
+    #sidebar-placeholder {
+      display: none;
+    }
+    #game-container {
+      position: relative;
+      width: min(1200px, 100%);
+      max-width: calc(100vw - 32px);
+      height: 100vh;
+      padding: 24px;
+      gap: 0;
+    }
+    h1 {
+      display: none;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      max-height: calc(100vh - 32px);
+      image-rendering: pixelated;
+    }
+    #info {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      margin: 0;
+      font-size: 12px;
+      padding: 8px 12px;
+      background: rgba(20, 20, 20, 0.85);
+      border: 2px solid #f4d35e;
+      border-radius: 4px;
+      z-index: 3;
+    }
+    #message {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      font-size: 13px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px 18px;
+      border-radius: 999px;
+      min-height: 28px;
+      z-index: 3;
+    }
+    #touch-controls {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 22px 20px;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .control-cluster {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .control-row {
+      display: flex;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .control-button {
+      width: clamp(58px, 16vw, 86px);
+      height: clamp(58px, 16vw, 86px);
+      border-radius: 999px;
+      border: 2px solid rgba(244, 211, 94, 0.5);
+      background: rgba(10, 10, 10, 0.55);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(1.2rem, 4.5vw, 1.8rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      touch-action: none;
+      backdrop-filter: blur(6px);
+      transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .control-button.pressed,
+    .control-button:active {
+      background: rgba(244, 211, 94, 0.25);
+      border-color: rgba(255, 240, 180, 0.9);
+      box-shadow: 0 0 24px rgba(244, 211, 94, 0.35);
+    }
+    body.touch-device #touch-controls {
+      display: flex;
+    }
+    #help-button {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(244, 211, 94, 0.55);
+      background: rgba(10, 10, 10, 0.45);
+      color: rgba(255, 255, 255, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1001;
+      backdrop-filter: blur(6px);
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    #help-button:hover,
+    #help-button:focus-visible {
+      border-color: rgba(255, 240, 180, 0.9);
+      background: rgba(244, 211, 94, 0.25);
+    }
+    #debug-portal {
+      position: fixed;
+      bottom: 18px;
+      right: 16px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(244, 211, 94, 0.55);
+      background: rgba(10, 10, 10, 0.5);
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 10px;
+      cursor: pointer;
+      z-index: 1001;
+      backdrop-filter: blur(6px);
+      letter-spacing: 1px;
+    }
+    #instruction-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.78);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1000;
+      padding: 24px;
+      text-align: left;
+    }
+    #instruction-modal.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #instruction-card {
+      max-width: 560px;
+      width: 100%;
+      background: rgba(10, 10, 10, 0.95);
+      border: 1px solid rgba(244, 211, 94, 0.35);
+      border-radius: 18px;
+      padding: 20px 22px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      color: #f8f8f2;
+    }
+    #instruction-card h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #f4d35e;
+    }
+    #instruction-card p {
+      margin: 8px 0;
+      color: #f8f8f2;
+      line-height: 1.5;
+    }
+    #instruction-close {
+      margin-top: 14px;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(244, 211, 94, 0.9);
+      color: #111;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    @media (pointer: fine) {
+      #help-button {
+        display: flex;
+      }
     }
   </style>
   <link rel="stylesheet" href="../sidebar.css" />
+  <link rel="stylesheet" href="../flyout.css" />
+  <script src="../flyout.js" defer></script>
 </head>
 <body>
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+  <button id="help-button" type="button" aria-label="How to play">?</button>
+  <button id="debug-portal" type="button" aria-label="Teleport to level 90">LVL 90</button>
+  <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
+    <div id="instruction-card">
+      <h2>How to Play</h2>
+      <p>Run left or right, jump pits, and grab swinging vines to cross ponds.</p>
+      <p>Use ladders to enter underground tunnels. Each tunnel screen jumps you 3-4 screens ahead.</p>
+      <p>Watch for rolling rocks, snapping crocodiles, pulsing ponds/quicksand, and scorpions below.</p>
+      <p>Score for every screen crossed. Every 7 screens holds treasure. Find 4 special treasures to win.</p>
+      <button id="instruction-close" type="button">Start</button>
+    </div>
+  </div>
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
-    <h1>Adventure</h1>
-    <canvas id="gameCanvas" width="512" height="448"></canvas>
+    <h1>Pitfall</h1>
+    <canvas id="gameCanvas" width="960" height="540"></canvas>
+    <div id="touch-controls" aria-hidden="true">
+      <div class="control-cluster">
+        <div class="control-row">
+          <button type="button" class="control-button" data-key="ArrowLeft" data-code="ArrowLeft" aria-label="Move Left">L</button>
+          <button type="button" class="control-button" data-key="ArrowRight" data-code="ArrowRight" aria-label="Move Right">R</button>
+        </div>
+        <div class="control-row">
+          <button type="button" class="control-button" data-key="ArrowUp" data-code="ArrowUp" aria-label="Climb Up">U</button>
+          <button type="button" class="control-button" data-key="ArrowDown" data-code="ArrowDown" aria-label="Climb Down">D</button>
+        </div>
+      </div>
+      <div class="control-cluster">
+        <button type="button" class="control-button" data-key=" " data-code="Space" aria-label="Jump or Grab">Jump</button>
+      </div>
+    </div>
     <div id="info"></div>
     <div id="message">Press Space to Begin</div>
   </div>
@@ -115,92 +341,1596 @@
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
 
-    const tileSize = 32;
-    const map = [
-      "################",
-      "#H.....#.......#",
-      "#.###..#..###..#",
-      "#...#..#..#....#",
-      "###.#.##..#.####",
-      "#...#....D#....#",
-      "#.#####.###.##.#",
-      "#.....#.....#..#",
-      "#.###.#.###.#G.#",
-      "#...#.#...#.#..#",
-      "###.#.###.#.##.#",
-      "#K..#.....#..C.#",
-      "#...#####.#....#",
-      "################"
-    ];
+    const WORLD = { w: canvas.width, h: canvas.height };
+    const SURFACE_Y = 300;
+    const GROUND_DEPTH = 36;
+    const TUNNEL_TOP = SURFACE_Y + 10;
+    const TUNNEL_FLOOR = WORLD.h - 18;
+    const POND_LEFT = 240;
+    const POND_RIGHT = WORLD.w - 240;
+    const QUICKSAND_LEFT = 240;
+    const QUICKSAND_RIGHT = WORLD.w - 240;
+    const VINE_LENGTH = 230;
+    const PULSE_RATE = 0.8;
+    const MONKEY_SPEED = 420;
+    const MONKEY_SIZE = { w: 28, h: 40 };
+
+    function createMonkey(side, randFn, delay) {
+      const rand = randFn || Math.random;
+      const dir = side >= 0 ? 1 : -1;
+      const startX = dir > 0 ? 40 : (WORLD.w - 68);
+      return {
+        x: startX,
+        y: -MONKEY_SIZE.h - 10,
+        vx: 0,
+        vy: 0,
+        dir,
+        intendedDir: dir,
+        onGround: false,
+        onVine: false,
+        inactive: false,
+        spawnDelay: delay || 0,
+        vineCooldown: 0,
+        vineTimer: 0,
+        lastAbsAngle: null,
+        lastEndX: null,
+        vineHoldTime: 0,
+        nextJump: 0.6 + rand() * 1.2
+      };
+    }
+    const SCREEN_COUNT = 100;
+    const TREASURE_INTERVAL = 7;
+    const SPECIAL_TUNNEL_MAP = new Map([
+      [96, 1],
+      [1, 5],
+      [5, 12],
+      [12, 26],
+      [23, 72],
+      [77, 44],
+      [46, 87]
+    ]);
+    const SPECIAL_TUNNEL_NO_LADDER = new Set([1, 5, 12]);
+    const SPECIAL_TUNNEL_FORCE_LADDER = new Set([96, 26, 23, 72, 77, 44, 46, 87]);
+    const SPECIAL_TUNNEL_NO_SCORPION = new Set([96, 1, 5, 12, 26]);
+
+    const COLORS = {
+      skyTop: '#0b1427',
+      skyBottom: '#12223a',
+      groundTop: '#6c4a2e',
+      groundBottom: '#3b2a1e',
+      jungle: '#1d5b3a',
+      tunnel: '#050505',
+      water: '#1b3c5d',
+      sand: '#9d7a2a'
+    };
+
+    const pressed = new Set();
+    let jumpPressed = false;
+    let gamePaused = true;
+    let gameStarted = false;
+
+    function svgToImage(svg) {
+      const img = new Image();
+      const encoded = encodeURIComponent(svg).replace(/'/g, '%27').replace(/\"/g, '%22');
+      img.src = `data:image/svg+xml;charset=utf-8,${encoded}`;
+      return img;
+    }
+
+    const assets = {
+      harryRun1: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='40' height='54' viewBox='0 0 40 54'>
+          <rect width='40' height='54' fill='none'/>
+          <rect x='11' y='3' width='12' height='4' rx='1' fill='#5a3a1a'/>
+          <rect x='8' y='6' width='18' height='5' rx='1' fill='#7a4b1e'/>
+          <rect x='11' y='11' width='9' height='10' rx='2' fill='#e7c29b'/>
+          <rect x='20' y='13' width='4' height='4' rx='2' fill='#e7c29b'/>
+          <rect x='13' y='14' width='3' height='2' fill='#2d1b0f' opacity='0.6'/>
+          <rect x='11' y='22' width='14' height='16' rx='3' fill='#7a4b2d'/>
+          <rect x='11' y='24' width='14' height='6' rx='3' fill='#6a4025'/>
+          <rect x='8' y='26' width='6' height='6' rx='2' fill='#e7c29b'/>
+          <rect x='22' y='27' width='6' height='6' rx='2' fill='#e7c29b'/>
+          <rect x='11' y='36' width='9' height='16' rx='3' fill='#c2a46a'/>
+          <rect x='20' y='34' width='10' height='18' rx='3' fill='#b5965f'/>
+          <rect x='11' y='44' width='9' height='4' rx='2' fill='#4a2a18'/>
+          <rect x='22' y='46' width='10' height='4' rx='2' fill='#4a2a18'/>
+        </svg>
+      `),
+      harryRun2: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='40' height='54' viewBox='0 0 40 54'>
+          <rect width='40' height='54' fill='none'/>
+          <rect x='11' y='3' width='12' height='4' rx='1' fill='#5a3a1a'/>
+          <rect x='8' y='6' width='18' height='5' rx='1' fill='#7a4b1e'/>
+          <rect x='11' y='11' width='9' height='10' rx='2' fill='#e7c29b'/>
+          <rect x='20' y='13' width='4' height='4' rx='2' fill='#e7c29b'/>
+          <rect x='13' y='14' width='3' height='2' fill='#2d1b0f' opacity='0.6'/>
+          <rect x='11' y='22' width='14' height='16' rx='3' fill='#7a4b2d'/>
+          <rect x='11' y='24' width='14' height='6' rx='3' fill='#6a4025'/>
+          <rect x='6' y='26' width='6' height='6' rx='2' fill='#e7c29b'/>
+          <rect x='22' y='26' width='6' height='6' rx='2' fill='#e7c29b'/>
+          <rect x='9' y='34' width='10' height='18' rx='3' fill='#b5965f'/>
+          <rect x='21' y='36' width='9' height='16' rx='3' fill='#c2a46a'/>
+          <rect x='9' y='46' width='10' height='4' rx='2' fill='#4a2a18'/>
+          <rect x='20' y='44' width='9' height='4' rx='2' fill='#4a2a18'/>
+        </svg>
+      `),
+      harryJump: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='40' height='54' viewBox='0 0 40 54'>
+          <rect width='40' height='54' fill='none'/>
+          <rect x='11' y='3' width='12' height='4' rx='1' fill='#5a3a1a'/>
+          <rect x='8' y='6' width='18' height='5' rx='1' fill='#7a4b1e'/>
+          <rect x='11' y='11' width='9' height='10' rx='2' fill='#e7c29b'/>
+          <rect x='20' y='13' width='4' height='4' rx='2' fill='#e7c29b'/>
+          <rect x='13' y='14' width='3' height='2' fill='#2d1b0f' opacity='0.6'/>
+          <rect x='11' y='22' width='14' height='16' rx='3' fill='#7a4b2d'/>
+          <rect x='11' y='24' width='14' height='6' rx='3' fill='#6a4025'/>
+          <rect x='4' y='20' width='8' height='6' rx='2' fill='#e7c29b'/>
+          <rect x='28' y='20' width='8' height='6' rx='2' fill='#e7c29b'/>
+          <rect x='11' y='36' width='9' height='12' rx='3' fill='#c2a46a'/>
+          <rect x='22' y='36' width='9' height='12' rx='3' fill='#c2a46a'/>
+          <rect x='11' y='44' width='9' height='4' rx='2' fill='#4a2a18'/>
+          <rect x='22' y='44' width='9' height='4' rx='2' fill='#4a2a18'/>
+        </svg>
+      `),
+      harryVine: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='40' height='54' viewBox='0 0 40 54'>
+          <rect width='40' height='54' fill='none'/>
+          <rect x='11' y='5' width='12' height='4' rx='1' fill='#5a3a1a'/>
+          <rect x='8' y='8' width='18' height='5' rx='1' fill='#7a4b1e'/>
+          <rect x='11' y='13' width='9' height='10' rx='2' fill='#e7c29b'/>
+          <rect x='20' y='15' width='4' height='4' rx='2' fill='#e7c29b'/>
+          <rect x='13' y='16' width='3' height='2' fill='#2d1b0f' opacity='0.6'/>
+          <rect x='11' y='23' width='14' height='16' rx='3' fill='#7a4b2d'/>
+          <rect x='11' y='25' width='14' height='6' rx='3' fill='#6a4025'/>
+          <rect x='6' y='22' width='8' height='8' rx='3' fill='#e7c29b'/>
+          <rect x='26' y='22' width='8' height='8' rx='3' fill='#e7c29b'/>
+          <rect x='12' y='39' width='8' height='12' rx='3' fill='#c2a46a'/>
+          <rect x='22' y='39' width='8' height='12' rx='3' fill='#c2a46a'/>
+          <rect x='12' y='47' width='8' height='4' rx='2' fill='#4a2a18'/>
+          <rect x='22' y='47' width='8' height='4' rx='2' fill='#4a2a18'/>
+        </svg>
+      `),
+      rock: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='44' height='36' viewBox='0 0 44 36'>
+          <path d='M4 22 Q10 6 26 4 Q40 6 40 20 Q38 32 20 34 Q6 32 4 22Z' fill='#8b6b4c' stroke='#3f2b1f' stroke-width='2'/>
+          <path d='M14 20 Q18 12 28 12' stroke='#b5926f' stroke-width='3' fill='none'/>
+        </svg>
+      `),
+      vine: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='24' height='120' viewBox='0 0 24 120'>
+          <path d='M12 2 C8 26 16 40 12 64 C8 84 14 100 12 118' stroke='#5bb24a' stroke-width='4' fill='none'/>
+          <circle cx='12' cy='24' r='4' fill='#7ad164'/>
+          <circle cx='10' cy='60' r='4' fill='#7ad164'/>
+          <circle cx='14' cy='92' r='4' fill='#7ad164'/>
+        </svg>
+      `),
+      crocOpen: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='70' height='26' viewBox='0 0 70 26'>
+          <path d='M2 18 Q12 6 30 6 H56 Q66 6 68 16 Q58 22 42 22 H22 Q10 24 2 18Z' fill='#2e7a3c' stroke='#1c4225' stroke-width='2'/>
+          <path d='M22 6 Q34 -2 52 4' fill='none' stroke='#2e7a3c' stroke-width='6' stroke-linecap='round'/>
+          <path d='M24 10 Q36 2 48 6' fill='none' stroke='#1c4225' stroke-width='2' stroke-linecap='round'/>
+          <polygon points='30,9 34,6 38,9' fill='#f2f2f2'/>
+          <polygon points='38,9 42,6 46,9' fill='#f2f2f2'/>
+          <polygon points='46,9 50,6 54,9' fill='#f2f2f2'/>
+          <circle cx='18' cy='12' r='3' fill='#111'/>
+        </svg>
+      `),
+      crocClosed: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='70' height='26' viewBox='0 0 70 26'>
+          <path d='M2 18 Q12 6 30 6 H56 Q66 6 68 16 Q58 22 42 22 H22 Q10 24 2 18Z' fill='#2e7a3c' stroke='#1c4225' stroke-width='2'/>
+          <rect x='28' y='12' width='24' height='4' fill='#f2f2f2'/>
+          <path d='M24 8 Q40 8 54 10' fill='none' stroke='#1c4225' stroke-width='2'/>
+          <circle cx='18' cy='12' r='3' fill='#111'/>
+        </svg>
+      `),
+      scorpionA: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='50' height='28' viewBox='0 0 50 28'>
+          <rect x='8' y='10' width='26' height='10' rx='5' fill='#6d3a2b'/>
+          <circle cx='10' cy='8' r='4' fill='#6d3a2b'/>
+          <path d='M34 14 Q44 6 46 2' stroke='#6d3a2b' stroke-width='3' fill='none'/>
+          <circle cx='46' cy='2' r='3' fill='#6d3a2b'/>
+          <path d='M6 14 L2 10' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M6 18 L2 22' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M8 20 L2 26' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M16 20 L8 26' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M24 20 L18 26' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M32 20 L28 26' stroke='#6d3a2b' stroke-width='2'/>
+        </svg>
+      `),
+      scorpionB: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='50' height='28' viewBox='0 0 50 28'>
+          <rect x='8' y='10' width='26' height='10' rx='5' fill='#6d3a2b'/>
+          <circle cx='10' cy='8' r='4' fill='#6d3a2b'/>
+          <path d='M34 14 Q40 2 44 4' stroke='#6d3a2b' stroke-width='3' fill='none'/>
+          <circle cx='44' cy='4' r='3' fill='#6d3a2b'/>
+          <path d='M6 12 L2 8' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M6 16 L2 20' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M8 20 L4 24' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M16 20 L10 24' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M24 20 L20 24' stroke='#6d3a2b' stroke-width='2'/>
+          <path d='M32 20 L30 24' stroke='#6d3a2b' stroke-width='2'/>
+        </svg>
+      `),
+      barrel: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='36' height='44' viewBox='0 0 36 44'>
+          <rect x='6' y='4' width='24' height='36' rx='6' fill='#8b4d2b' stroke='#4a2616' stroke-width='2'/>
+          <rect x='6' y='10' width='24' height='4' fill='#c47a3a'/>
+          <rect x='6' y='20' width='24' height='4' fill='#c47a3a'/>
+          <rect x='6' y='30' width='24' height='4' fill='#c47a3a'/>
+        </svg>
+      `),
+      ladder: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='36' height='150' viewBox='0 0 36 150'>
+          <rect width='36' height='150' fill='none'/>
+          <rect x='6' y='4' width='6' height='142' fill='#c08a42'/>
+          <rect x='24' y='4' width='6' height='142' fill='#c08a42'/>
+          <g stroke='#e2b674' stroke-width='4'>
+            <line x1='6' y1='18' x2='30' y2='18'/>
+            <line x1='6' y1='38' x2='30' y2='38'/>
+            <line x1='6' y1='58' x2='30' y2='58'/>
+            <line x1='6' y1='78' x2='30' y2='78'/>
+            <line x1='6' y1='98' x2='30' y2='98'/>
+            <line x1='6' y1='118' x2='30' y2='118'/>
+            <line x1='6' y1='138' x2='30' y2='138'/>
+          </g>
+        </svg>
+      `),
+      treasure: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='44' height='36' viewBox='0 0 44 36'>
+          <rect x='4' y='12' width='36' height='20' rx='4' fill='#b9772c' stroke='#6a3c1b' stroke-width='2'/>
+          <rect x='4' y='8' width='36' height='10' rx='4' fill='#d99b42' stroke='#6a3c1b' stroke-width='2'/>
+          <rect x='18' y='16' width='8' height='6' rx='2' fill='#f7d56a'/>
+        </svg>
+      `),
+      idol: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='36' height='46' viewBox='0 0 36 46'>
+          <rect x='6' y='4' width='24' height='32' rx='4' fill='#d9b44a' stroke='#8a6a1e' stroke-width='2'/>
+          <rect x='10' y='12' width='6' height='6' fill='#3b2a1e'/>
+          <rect x='20' y='12' width='6' height='6' fill='#3b2a1e'/>
+          <rect x='12' y='22' width='12' height='6' fill='#3b2a1e'/>
+          <rect x='4' y='34' width='28' height='8' rx='4' fill='#c59a34' stroke='#8a6a1e' stroke-width='2'/>
+        </svg>
+      `)
+      ,
+      statue: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='140' height='200' viewBox='0 0 140 200'>
+          <rect x='22' y='24' width='96' height='128' rx='12' fill='#5e6c72' stroke='#2b3336' stroke-width='4'/>
+          <rect x='30' y='36' width='80' height='90' rx='10' fill='#77878e'/>
+          <rect x='46' y='60' width='16' height='16' fill='#1f2528'/>
+          <rect x='78' y='60' width='16' height='16' fill='#1f2528'/>
+          <rect x='50' y='92' width='40' height='12' fill='#1f2528'/>
+          <rect x='18' y='150' width='104' height='26' rx='8' fill='#4a565b' stroke='#2b3336' stroke-width='4'/>
+          <rect x='10' y='176' width='120' height='16' rx='8' fill='#3c4549' stroke='#2b3336' stroke-width='4'/>
+        </svg>
+      `)
+      ,
+      monkeyRun1: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='28' height='40' viewBox='0 0 28 40'>
+          <rect width='28' height='40' fill='none'/>
+          <rect x='8' y='4' width='12' height='10' rx='3' fill='#7a4b2d'/>
+          <rect x='6' y='12' width='16' height='12' rx='4' fill='#9b6237'/>
+          <rect x='6' y='24' width='6' height='12' rx='3' fill='#6a3c21'/>
+          <rect x='16' y='22' width='6' height='14' rx='3' fill='#5b311b'/>
+          <rect x='4' y='16' width='6' height='6' rx='3' fill='#9b6237'/>
+          <rect x='18' y='16' width='6' height='6' rx='3' fill='#9b6237'/>
+        </svg>
+      `),
+      monkeyRun2: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='28' height='40' viewBox='0 0 28 40'>
+          <rect width='28' height='40' fill='none'/>
+          <rect x='8' y='4' width='12' height='10' rx='3' fill='#7a4b2d'/>
+          <rect x='6' y='12' width='16' height='12' rx='4' fill='#9b6237'/>
+          <rect x='6' y='22' width='6' height='14' rx='3' fill='#5b311b'/>
+          <rect x='16' y='24' width='6' height='12' rx='3' fill='#6a3c21'/>
+          <rect x='3' y='16' width='6' height='6' rx='3' fill='#9b6237'/>
+          <rect x='19' y='16' width='6' height='6' rx='3' fill='#9b6237'/>
+        </svg>
+      `),
+      monkeyJump: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='28' height='40' viewBox='0 0 28 40'>
+          <rect width='28' height='40' fill='none'/>
+          <rect x='8' y='4' width='12' height='10' rx='3' fill='#7a4b2d'/>
+          <rect x='6' y='12' width='16' height='12' rx='4' fill='#9b6237'/>
+          <rect x='6' y='24' width='6' height='10' rx='3' fill='#6a3c21'/>
+          <rect x='16' y='24' width='6' height='10' rx='3' fill='#6a3c21'/>
+          <rect x='4' y='10' width='6' height='6' rx='3' fill='#9b6237'/>
+          <rect x='18' y='10' width='6' height='6' rx='3' fill='#9b6237'/>
+        </svg>
+      `),
+      monkeyVine: svgToImage(`
+        <svg xmlns='http://www.w3.org/2000/svg' width='28' height='40' viewBox='0 0 28 40'>
+          <rect width='28' height='40' fill='none'/>
+          <rect x='8' y='6' width='12' height='10' rx='3' fill='#7a4b2d'/>
+          <rect x='6' y='14' width='16' height='12' rx='4' fill='#9b6237'/>
+          <rect x='6' y='26' width='6' height='10' rx='3' fill='#6a3c21'/>
+          <rect x='16' y='26' width='6' height='10' rx='3' fill='#6a3c21'/>
+          <rect x='2' y='14' width='6' height='6' rx='3' fill='#9b6237'/>
+          <rect x='20' y='14' width='6' height='6' rx='3' fill='#9b6237'/>
+        </svg>
+      `)
+    };
 
     const state = {
       game: 'start',
       score: 0,
-      lastTime: 0
+      lives: 3,
+      screenIndex: 0,
+      treasures: 0,
+      specials: 0,
+      idolLight: false,
+      idolLife: false,
+      idolMonkey: false,
+      idolScorpion: false,
+      respawnUnderground: false,
+      lastTime: 0,
+      messageTimer: 0,
+      messageText: '',
+      frameTime: 0,
+      jumpedThisFrame: false,
+      toast: '',
+      toastTimer: 0,
+      winTime: 0,
+      deathTimer: 0,
+      pendingGameOver: false
     };
 
-    const walls = [];
-    const hero = { x: 0, y: 0, size: 22, speed: 110, hasKey: false };
-    const dragon = { x: 0, y: 0, size: 26, speed: 65 };
-    const key = { x: 0, y: 0, size: 18, collected: false };
-    const chalice = { x: 0, y: 0, size: 20, collected: false };
-    const gate = { x: 0, y: 0, open: false };
+    function createRng(seed) {
+      let value = seed;
+      return () => {
+        value = (value * 16807) % 2147483647;
+        return (value - 1) / 2147483646;
+      };
+    }
 
-    function parseMap() {
-      walls.length = 0;
-      for (let y = 0; y < map.length; y++) {
-        for (let x = 0; x < map[y].length; x++) {
-          const tile = map[y][x];
-          const worldX = x * tileSize;
-          const worldY = y * tileSize;
-          if (tile === '#') {
-            walls.push({ x: worldX, y: worldY });
-          } else if (tile === 'H') {
-            hero.startX = worldX + (tileSize - hero.size) / 2;
-            hero.startY = worldY + (tileSize - hero.size) / 2;
-          } else if (tile === 'D') {
-            dragon.startX = worldX + (tileSize - dragon.size) / 2;
-            dragon.startY = worldY + (tileSize - dragon.size) / 2;
-          } else if (tile === 'K') {
-            key.startX = worldX + (tileSize - key.size) / 2;
-            key.startY = worldY + (tileSize - key.size) / 2;
-          } else if (tile === 'C') {
-            chalice.startX = worldX + (tileSize - chalice.size) / 2;
-            chalice.startY = worldY + (tileSize - chalice.size) / 2;
-          } else if (tile === 'G') {
-            gate.x = worldX;
-            gate.y = worldY;
+    const rng = createRng(62461);
+
+    function pick(list) {
+      return list[Math.floor(rng() * list.length)];
+    }
+
+    function makeScreens() {
+      const screens = [];
+      const idolScreens = new Map();
+      idolScreens.set(24, 'light');
+      idolScreens.set(97, 'life');
+      idolScreens.set(49, 'scorpion');
+      idolScreens.set(74, 'monkey');
+
+      for (let i = 0; i < SCREEN_COUNT; i++) {
+        const hasTreasure = i % TREASURE_INTERVAL === 0 && i !== 0;
+        const hasSpecial = idolScreens.has(i);
+        const specialType = idolScreens.get(i) || null;
+        const treasureUnderground = hasTreasure && rng() < 0.5;
+        let hasLadder = treasureUnderground || rng() < 0.25;
+        const obstaclePool = [
+          'pit',
+          'rocks',
+          'vine',
+          'croc',
+          'pond-pulse',
+          'quicksand-vine',
+          'quicksand-pulse',
+          'barrels'
+        ];
+        const obstacle = hasLadder
+          ? pick(['rocks', 'pond-pulse', 'quicksand-pulse', 'barrels'])
+          : pick(obstaclePool);
+        const pitWidth = 110 + Math.floor(rng() * 60);
+        const pitX = 200 + Math.floor(rng() * 420);
+        const vineX = WORLD.w / 2;
+        const rockSpeed = 120 + rng() * 60;
+        const ladderX = rng() < 0.5 ? 80 : (WORLD.w - 116);
+        let scorpionCount = rng() < 0.6 ? 1 : 2;
+        if (i >= 50 && rng() < 0.5) {
+          scorpionCount += 1;
+        }
+        const scorpions = Array.from({ length: scorpionCount }, (_, s) => ({
+          x: 120 + s * 260 + Math.floor(rng() * 120),
+          dir: rng() < 0.5 ? -1 : 1,
+          speed: 40 + rng() * 25
+        }));
+        if (SPECIAL_TUNNEL_NO_LADDER.has(i)) {
+          hasLadder = false;
+        }
+        if (SPECIAL_TUNNEL_FORCE_LADDER.has(i)) {
+          hasLadder = true;
+        }
+        if (SPECIAL_TUNNEL_NO_SCORPION.has(i)) {
+          scorpions.length = 0;
+        }
+        const barrelCount = 1 + Math.floor(rng() * 3);
+        const barrelSpacing = 150 + Math.floor(rng() * 40);
+        const barrelStart = WORLD.w + Math.floor(rng() * 220);
+        const barrels = Array.from({ length: barrelCount }, (_, b) => ({
+          x: barrelStart + b * barrelSpacing,
+          y: SURFACE_Y - 40
+        }));
+        const barrelsInit = barrels.map((barrel) => ({ x: barrel.x, y: barrel.y }));
+        const barrelSpeed = 110 + rng() * 70;
+        const isPondType = obstacle === 'vine' || obstacle === 'croc' || obstacle === 'pond-pulse';
+        const isQuicksandType = obstacle === 'quicksand-vine' || obstacle === 'quicksand-pulse';
+        const extraVine = !isPondType && !isQuicksandType && rng() < 0.25;
+        const hasBarrels = !isPondType && !isQuicksandType;
+        const pulsePause = Math.max(0, 2 - (i / 100));
+        const pulseOffset = rng() * 6;
+        const monkeySlots = i < 25 ? 0 : (i < 50 ? 1 : (i < 75 ? 2 : 5));
+        const monkeys = [];
+        for (let m = 0; m < monkeySlots; m++) {
+          if (rng() < 0.5) {
+            const side = rng() < 0.5 ? -1 : 1;
+            const delay = monkeys.length;
+            monkeys.push(createMonkey(side, rng, delay));
           }
+        }
+        const monkeysInit = monkeys.map((monkey) => ({ ...monkey }));
+
+        screens.push({
+          obstacle,
+          pitX,
+          pitWidth,
+          vineX,
+          rockSpeed,
+          ladderX,
+          hasLadder,
+          hasTreasure,
+          hasSpecial,
+          specialType,
+          treasureUnderground,
+          scorpions,
+          barrels,
+          barrelsInit,
+          barrelSpeed,
+          barrelSpacing,
+          extraVine,
+          hasBarrels,
+          crocPhase: rng() * Math.PI * 2,
+          quicksandPhase: rng() * Math.PI * 2,
+          pulsePause,
+          pulseOffset,
+          monkeys,
+          monkeysInit
+        });
+      }
+      return screens;
+    }
+
+    const screens = makeScreens();
+
+    const player = {
+      w: 30,
+      h: 52,
+      x: 100,
+      y: SURFACE_Y - 52,
+      vx: 0,
+      vy: 0,
+      onGround: true,
+      onLadder: false,
+      onVine: false,
+      onCroc: false,
+      facing: 1,
+      vineAngle: 0,
+      deadAngle: 0,
+      tunnelStep: 3,
+      vineCooldown: 0,
+      underground: false
+    };
+
+    function resetPlayer() {
+      player.x = 100;
+      player.y = state.respawnUnderground ? (TUNNEL_FLOOR - player.h) : (SURFACE_Y - player.h);
+      player.vx = 0;
+      player.vy = 0;
+      player.onGround = true;
+      player.onLadder = false;
+      player.onVine = false;
+      player.onCroc = false;
+      player.underground = state.respawnUnderground;
+      player.vineCooldown = 0;
+      player.tunnelStep = rng() < 0.5 ? 3 : 4;
+      resetScreenItems(screenData());
+    }
+
+    function screenData() {
+      return screens[state.screenIndex];
+    }
+
+    function loseLife(reason) {
+      if (state.game !== 'play') return;
+      state.lives -= 1;
+      state.messageTimer = 1.6;
+      state.game = 'dead';
+      state.respawnUnderground = player.underground;
+      state.pendingGameOver = state.lives <= 0;
+      player.vx = 0;
+      player.vy = -260;
+      player.deadAngle = 0;
+      state.deathTimer = 1.2;
+    }
+
+    function gainScore(amount) {
+      state.score += amount;
+    }
+
+    function wrapScreenIndex(value) {
+      let idx = value % SCREEN_COUNT;
+      if (idx < 0) idx += SCREEN_COUNT;
+      return idx;
+    }
+
+    function advanceScreen(dir) {
+      if (player.underground && dir === 1 && SPECIAL_TUNNEL_MAP.has(state.screenIndex)) {
+        state.screenIndex = SPECIAL_TUNNEL_MAP.get(state.screenIndex);
+      } else {
+        const step = player.underground ? player.tunnelStep : 1;
+        state.screenIndex = wrapScreenIndex(state.screenIndex + dir * step);
+      }
+      gainScore(150);
+      const data = screenData();
+      if (data.obstacle === 'rocks') {
+        data.rockX = WORLD.w + 60;
+      }
+    }
+
+    function isOnLadder() {
+      const data = screenData();
+      if (!data.hasLadder) return false;
+      const ladderX = data.ladderX;
+      const ladderWidth = 40;
+      const ladderTop = SURFACE_Y - 12;
+      const ladderBottom = TUNNEL_FLOOR;
+      const withinX = player.x + player.w * 0.5 > ladderX && player.x + player.w * 0.5 < ladderX + ladderWidth;
+      const withinY = player.y + player.h > ladderTop && player.y < ladderBottom;
+      return withinX && withinY;
+    }
+
+    function getCrocZones() {
+      return [
+        POND_LEFT + 30,
+        (POND_LEFT + POND_RIGHT) / 2 - 35,
+        POND_RIGHT - 110
+      ];
+    }
+
+    function checkCrocSupport(data) {
+      if (!data || data.obstacle !== 'croc') return false;
+      const crocY = data.crocY ?? (SURFACE_Y - 6);
+      const crocOpen = Math.sin((state.frameTime + data.crocPhase) * 2.2) > 0.4;
+      const crocZones = getCrocZones();
+      for (const cx of crocZones) {
+        const crocBox = { x: cx, y: crocY - 6, w: 70, h: 30 };
+        if (intersects(player, crocBox)) {
+          const rel = (player.x + player.w * 0.5) - cx;
+          const onBack = rel >= 50;
+          if (!crocOpen || onBack) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function resetScreenItems(data) {
+      if (!data) return;
+      if (data.obstacle === 'rocks') {
+        data.rockX = WORLD.w + 60;
+      }
+      if (data.hasBarrels && Array.isArray(data.barrelsInit)) {
+        data.barrels = data.barrelsInit.map((barrel) => ({ x: barrel.x, y: barrel.y }));
+      }
+      if (state.respawnUnderground && Array.isArray(data.scorpions)) {
+        data.scorpions.forEach((scorpion, index) => {
+          scorpion.x = WORLD.w - 160 - index * 140;
+        });
+      }
+      if (Array.isArray(data.monkeysInit)) {
+        data.monkeys = data.monkeysInit.map((monkey) => ({ ...monkey }));
+      }
+    }
+
+    function handleInput(dt, data) {
+      const speed = player.underground ? 170 : 210;
+      if (pressed.has('ArrowLeft')) {
+        player.vx = -speed;
+        player.facing = -1;
+      } else if (pressed.has('ArrowRight')) {
+        player.vx = speed;
+        player.facing = 1;
+      } else {
+        player.vx = 0;
+      }
+
+      if (player.onLadder) {
+        player.vy = 0;
+        if (pressed.has('ArrowUp')) player.vy = -160;
+        if (pressed.has('ArrowDown')) player.vy = 160;
+      }
+
+      const crocSupport = checkCrocSupport(data);
+      const canJumpFromGround = (player.onGround || crocSupport);
+      const wantsJump = jumpPressed || pressed.has('Space');
+      if (wantsJump && canJumpFromGround && !player.onVine && !player.onLadder) {
+        player.vy = -560;
+        player.onGround = false;
+        player.onCroc = false;
+        state.jumpedThisFrame = true;
+      }
+    }
+
+    function getVineState(data, timeSeconds) {
+      const t = timeSeconds;
+      const angle = Math.sin(t * 1.8) * 0.8;
+      const anchorX = data.vineX;
+      const anchorY = 20;
+      const length = VINE_LENGTH;
+      const endX = anchorX - Math.sin(angle) * length;
+      const endY = anchorY + Math.cos(angle) * length;
+      return { angle, anchorX, anchorY, length, endX, endY };
+    }
+
+    function isPondObstacle(obstacle) {
+      return obstacle === 'vine' || obstacle === 'croc' || obstacle === 'pond-pulse';
+    }
+
+    function isQuicksandObstacle(obstacle) {
+      return obstacle === 'quicksand-vine' || obstacle === 'quicksand-pulse';
+    }
+
+    function hasVine(obstacle) {
+      return obstacle === 'vine' || obstacle === 'quicksand-vine';
+    }
+
+    function hasVineOnScreen(data) {
+      return hasVine(data.obstacle) || data.extraVine;
+    }
+
+    function getPulseFactor(data) {
+      const halfPeriod = 1 / PULSE_RATE;
+      const pause = data.pulsePause || 0;
+      const cycle = halfPeriod * 2 + pause;
+      const t = (state.frameTime + (data.pulseOffset || 0)) % cycle;
+      if (t < halfPeriod) {
+        return 1 - t / halfPeriod;
+      }
+      if (t < halfPeriod + pause) {
+        return 0;
+      }
+      return (t - halfPeriod - pause) / halfPeriod;
+    }
+
+    function getGapForObstacle(data) {
+      if (isPondObstacle(data.obstacle)) {
+        const baseWidth = POND_RIGHT - POND_LEFT;
+        const center = (POND_LEFT + POND_RIGHT) / 2;
+        const factor = data.obstacle === 'pond-pulse' ? getPulseFactor(data) : 1;
+        const width = baseWidth * factor;
+        return { left: center - width / 2, right: center + width / 2, width, factor };
+      }
+      if (isQuicksandObstacle(data.obstacle)) {
+        const baseWidth = QUICKSAND_RIGHT - QUICKSAND_LEFT;
+        const center = (QUICKSAND_LEFT + QUICKSAND_RIGHT) / 2;
+        const factor = data.obstacle === 'quicksand-pulse' ? getPulseFactor(data) : 1;
+        const width = baseWidth * factor;
+        return { left: center - width / 2, right: center + width / 2, width, factor };
+      }
+      return null;
+    }
+
+    function updatePlayer(dt) {
+      const data = screenData();
+      player.onLadder = isOnLadder();
+      if (player.vineCooldown > 0) {
+        player.vineCooldown = Math.max(0, player.vineCooldown - dt);
+      }
+
+      if (!player.onVine) {
+        if (!player.onLadder) {
+          player.vy += 1500 * dt;
+        }
+        player.x += player.vx * dt;
+        player.y += player.vy * dt;
+      }
+
+      let groundY = player.underground ? TUNNEL_FLOOR - player.h : SURFACE_Y - player.h;
+      let blockGround = false;
+      if (!player.underground && data.obstacle === 'pit') {
+        const feetX = player.x + player.w * 0.5;
+        const inPit = feetX > data.pitX && feetX < data.pitX + data.pitWidth;
+        blockGround = inPit;
+      }
+      if (!player.underground && (isPondObstacle(data.obstacle) || isQuicksandObstacle(data.obstacle))) {
+        const gap = getGapForObstacle(data);
+        const feetX = player.x + player.w * 0.5;
+        const inGap = gap && gap.width > 6 && feetX > gap.left && feetX < gap.right;
+        blockGround = blockGround || (inGap && !player.onVine && !player.onCroc);
+      }
+      if (!player.onLadder && !player.onVine && !state.jumpedThisFrame) {
+        if (!blockGround && player.y >= groundY) {
+          player.y = groundY;
+          player.vy = 0;
+          player.onGround = true;
+        } else {
+          player.onGround = false;
+        }
+      }
+
+      if (!player.underground && data.obstacle === 'pit') {
+        const pitLeft = data.pitX;
+        const pitRight = data.pitX + data.pitWidth;
+        const feetX = player.x + player.w * 0.5;
+        if (feetX > pitLeft && feetX < pitRight && player.y + player.h >= SURFACE_Y - 4) {
+          player.onGround = false;
+        }
+        if (feetX > pitLeft && feetX < pitRight && player.y > SURFACE_Y + 30) {
+          loseLife('pit');
+        }
+      }
+
+      if (!player.underground && isQuicksandObstacle(data.obstacle)) {
+        // Ground is removed over quicksand; falling is handled after obstacle updates.
+      }
+
+      if (!player.underground && hasVineOnScreen(data)) {
+        const vineState = getVineState(data, state.frameTime);
+        const dx = (player.x + player.w * 0.5) - vineState.endX;
+        const dy = (player.y + player.h * 0.4) - vineState.endY;
+        const dist = Math.hypot(dx, dy);
+        if (!player.onVine && player.vineCooldown <= 0 && !player.onGround && dist < 44) {
+          player.onVine = true;
+          player.vineAngle = vineState.angle;
+          player.vx = 0;
+          player.vy = 0;
+        }
+        if (player.onVine) {
+          const wantsRelease = pressed.has('ArrowDown') || jumpPressed || pressed.has('Space');
+          if (wantsRelease) {
+            if (pressed.has('ArrowDown')) {
+              player.vx = Math.cos(player.vineAngle) * 120;
+              player.vy = 160;
+            } else {
+              player.vx = -Math.sin(player.vineAngle) * 360;
+              player.vy = -240;
+            }
+            player.onVine = false;
+            player.vineCooldown = 0.35;
+          } else {
+            player.vineAngle = vineState.angle;
+            player.x = vineState.endX - player.w * 0.5;
+            player.y = vineState.endY - player.h * 0.4;
+          }
+        }
+      }
+
+      if (!player.underground && data.obstacle === 'croc' && checkCrocSupport(data) && player.vy >= 0 && !pressed.has('Space') && !state.jumpedThisFrame) {
+        const crocY = SURFACE_Y - 6;
+        player.y = crocY - player.h + 6;
+        player.vy = 0;
+        player.onGround = true;
+        player.onCroc = true;
+      }
+
+      if (player.x < -player.w) {
+        advanceScreen(-1);
+        player.x = WORLD.w - player.w - 2;
+      }
+      if (player.x > WORLD.w + 2) {
+        advanceScreen(1);
+        player.x = 2;
+      }
+
+      if (player.underground && player.onLadder && player.y + player.h < SURFACE_Y - 6) {
+        player.underground = false;
+        player.y = SURFACE_Y - player.h;
+      }
+      if (!player.underground && player.onLadder && player.y > TUNNEL_TOP + 10) {
+        player.underground = true;
+        player.onGround = true;
+      }
+    }
+
+    function updateObstacles(dt) {
+      const data = screenData();
+      if (data.obstacle === 'rocks') {
+        if (data.rockX == null) data.rockX = WORLD.w + 60;
+        data.rockX -= data.rockSpeed * dt;
+        if (data.rockX < -60) data.rockX = WORLD.w + 60;
+        const rockBox = { x: data.rockX, y: SURFACE_Y - 40, w: 40, h: 32 };
+        if (!player.underground && intersects(player, rockBox)) {
+          loseLife('rock');
+        }
+      }
+
+      if (data.hasBarrels) {
+        data.barrels.forEach((barrel) => {
+          const barrelBox = { x: barrel.x, y: barrel.y, w: 36, h: 40 };
+          if (!player.underground && intersects(player, barrelBox)) {
+            loseLife('barrel');
+          }
+        });
+        data.barrels.forEach((barrel) => {
+          barrel.x -= data.barrelSpeed * dt;
+          if (barrel.x < -60) {
+            barrel.x = WORLD.w + (data.barrelSpacing || 160);
+          }
+        });
+      }
+
+      if (data.obstacle === 'croc') {
+        player.onCroc = false;
+        const t = performance.now() / 1000 + data.crocPhase;
+        data.crocOpen = Math.sin(t * 2.2) > 0.4;
+        const crocY = SURFACE_Y - 6;
+        data.crocY = crocY;
+        const crocZones = getCrocZones();
+        crocZones.forEach((cx) => {
+          const crocBox = { x: cx, y: crocY - 6, w: 70, h: 30 };
+          if (!player.underground && intersects(player, crocBox)) {
+            const rel = (player.x + player.w * 0.5) - cx;
+            const onBack = rel >= 50;
+            if (data.crocOpen && !onBack) {
+              loseLife('croc');
+            } else if (!state.jumpedThisFrame && player.vy >= 0) {
+              player.y = crocY - player.h + 6;
+              player.vy = 0;
+              player.onGround = true;
+              player.onCroc = true;
+            }
+          }
+        });
+      }
+
+      if (!player.underground && (isPondObstacle(data.obstacle) || isQuicksandObstacle(data.obstacle))) {
+        const gap = getGapForObstacle(data);
+        const feetX = player.x + player.w * 0.5;
+        const inGap = gap && gap.width > 6 && feetX > gap.left && feetX < gap.right;
+        const canStand = player.onVine || player.onCroc;
+        if (inGap && !canStand && player.y + player.h >= SURFACE_Y - 4) {
+          player.onGround = false;
+        }
+        if (inGap && !canStand && player.y > SURFACE_Y + 30) {
+          loseLife(isQuicksandObstacle(data.obstacle) ? 'quicksand' : 'pond');
+        }
+      }
+
+      if (Array.isArray(data.monkeys) && data.monkeys.length) {
+        const gap = getGapForObstacle(data);
+        const pitGap = data.obstacle === 'pit'
+          ? { left: data.pitX, right: data.pitX + data.pitWidth, width: data.pitWidth, type: 'pit' }
+          : null;
+        data.monkeys.forEach((monkey) => {
+          if (monkey.inactive) return;
+          if (monkey.spawnDelay > 0) {
+            monkey.spawnDelay = Math.max(0, monkey.spawnDelay - dt);
+            return;
+          }
+          if (monkey.onVine) {
+            monkey.vineTimer -= dt;
+            monkey.vineHoldTime += dt;
+            const vineState = getVineState(data, state.frameTime);
+            monkey.x = vineState.endX - MONKEY_SIZE.w / 2;
+            monkey.y = vineState.endY - MONKEY_SIZE.h * 0.5;
+            const gap = data.obstacle === 'pit'
+              ? { left: data.pitX, right: data.pitX + data.pitWidth }
+              : getGapForObstacle(data);
+            const targetX = gap ? (gap.left + gap.right) / 2 : WORLD.w / 2;
+            const thresholdX = targetX + monkey.intendedDir * 80;
+            const crossed = monkey.lastEndX !== null && (monkey.intendedDir > 0
+              ? (monkey.lastEndX < thresholdX && vineState.endX >= thresholdX)
+              : (monkey.lastEndX > thresholdX && vineState.endX <= thresholdX));
+            monkey.lastEndX = vineState.endX;
+            const fallback = monkey.vineHoldTime > 1.6
+              && (monkey.intendedDir > 0 ? vineState.endX >= targetX : vineState.endX <= targetX);
+            if (monkey.vineHoldTime > 0.15 && (crossed || fallback)) {
+              monkey.onVine = false;
+              monkey.vx = MONKEY_SPEED * monkey.intendedDir;
+              monkey.vy = -240;
+              monkey.dir = monkey.intendedDir;
+              monkey.vineCooldown = 0.6;
+            }
+          } else {
+            if (monkey.vineCooldown > 0) {
+              monkey.vineCooldown = Math.max(0, monkey.vineCooldown - dt);
+            }
+            monkey.vy += 1500 * dt;
+            monkey.x += monkey.vx * dt;
+            monkey.y += monkey.vy * dt;
+            const groundY = SURFACE_Y - MONKEY_SIZE.h;
+            const surfaceGap = pitGap || gap;
+            const inGap = surfaceGap && surfaceGap.width > 6
+              && (monkey.x + MONKEY_SIZE.w * 0.5) > surfaceGap.left
+              && (monkey.x + MONKEY_SIZE.w * 0.5) < surfaceGap.right;
+            if (!inGap && monkey.y >= groundY) {
+              monkey.y = groundY;
+              monkey.vy = 0;
+              monkey.onGround = true;
+              if (monkey.vx === 0) {
+                monkey.vx = MONKEY_SPEED * monkey.intendedDir;
+                monkey.dir = monkey.intendedDir;
+              }
+            } else if (inGap) {
+              monkey.onGround = false;
+            } else {
+              monkey.onGround = false;
+            }
+
+            if (hasVineOnScreen(data) && monkey.vy < 0 && monkey.vineCooldown <= 0) {
+              const vineState = getVineState(data, state.frameTime);
+              const dx = (monkey.x + MONKEY_SIZE.w * 0.5) - vineState.endX;
+              const dy = (monkey.y + MONKEY_SIZE.h * 0.4) - vineState.endY;
+              const dist = Math.hypot(dx, dy);
+              if (dist < 28 && !monkey.onVine) {
+                monkey.onVine = true;
+                monkey.vineTimer = 0.55 + Math.random() * 0.2;
+                monkey.lastAbsAngle = null;
+                monkey.lastEndX = null;
+                monkey.vineHoldTime = 0;
+              }
+            }
+
+            if (monkey.onGround) {
+              monkey.nextJump -= dt;
+              if (state.idolMonkey) {
+                monkey.intendedDir = (monkey.x + MONKEY_SIZE.w * 0.5) < (player.x + player.w * 0.5) ? -1 : 1;
+                monkey.dir = monkey.intendedDir;
+                monkey.vx = MONKEY_SPEED * monkey.dir;
+              }
+              const isPit = data.obstacle === 'pit';
+              const hasGap = surfaceGap && surfaceGap.width > 6;
+              const isPond = isPondObstacle(data.obstacle);
+              const isSand = isQuicksandObstacle(data.obstacle);
+              const headingRight = monkey.dir >= 0;
+              const gapEdge = headingRight ? surfaceGap?.left : surfaceGap?.right;
+              const monkeyCenter = monkey.x + MONKEY_SIZE.w * 0.5;
+              const approachingGap = hasGap && (headingRight
+                ? monkeyCenter < surfaceGap.left
+                : monkeyCenter > surfaceGap.right);
+              const atGapEdge = approachingGap && (headingRight
+                ? (monkey.x + MONKEY_SIZE.w) >= (gapEdge - 4)
+                : monkey.x <= (gapEdge + 4));
+
+              if (hasGap && (isPond || isSand || isPit)) {
+                const canPulseCross = data.obstacle === 'pond-pulse' || data.obstacle === 'quicksand-pulse';
+                const gapSmall = surfaceGap.width < 18;
+                if (isPit) {
+                  if (atGapEdge && monkey.nextJump <= 0) {
+                    monkey.vy = -560;
+                    monkey.onGround = false;
+                    monkey.nextJump = 0.6 + Math.random() * 1.2;
+                    monkey.vx = MONKEY_SPEED * monkey.dir;
+                  } else if (atGapEdge) {
+                    monkey.vx = 0;
+                  } else {
+                    monkey.vx = MONKEY_SPEED * monkey.dir;
+                  }
+                } else if (data.obstacle === 'croc') {
+                  monkey.vx = MONKEY_SPEED * monkey.dir;
+                } else if (canPulseCross && gapSmall) {
+                  monkey.vx = MONKEY_SPEED * monkey.dir;
+                } else if (hasVineOnScreen(data)) {
+                  if (atGapEdge) {
+                    monkey.vx = 0;
+                    const vineState = getVineState(data, state.frameTime);
+                    const reach = Math.abs((monkey.x + MONKEY_SIZE.w * 0.5) - vineState.endX);
+                    if (reach < 180 && monkey.nextJump <= 0) {
+                      monkey.vy = -560;
+                      monkey.onGround = false;
+                      monkey.vx = MONKEY_SPEED * monkey.dir;
+                      monkey.nextJump = 0.8 + Math.random() * 1.2;
+                    }
+                  } else {
+                    monkey.vx = MONKEY_SPEED * monkey.dir;
+                  }
+                } else {
+                  if (atGapEdge) {
+                    monkey.vx = 0;
+                  } else {
+                    monkey.vx = MONKEY_SPEED * monkey.dir;
+                  }
+                }
+              } else if (monkey.nextJump <= 0) {
+                monkey.vy = -560;
+                monkey.onGround = false;
+                monkey.nextJump = 0.6 + Math.random() * 1.2;
+              }
+              if (hasGap && atGapEdge && monkey.vx === 0) {
+                monkey.x = headingRight
+                  ? surfaceGap.left - MONKEY_SIZE.w - 2
+                  : surfaceGap.right + 2;
+              }
+            }
+          }
+
+          if (data.obstacle === 'croc') {
+            const crocY = SURFACE_Y - 6;
+            const crocZones = getCrocZones();
+            const crocOpen = Math.sin((state.frameTime + data.crocPhase) * 2.2) > 0.4;
+            crocZones.forEach((cx) => {
+              const crocBox = { x: cx, y: crocY - 6, w: 70, h: 30 };
+              if (intersects(monkey, crocBox)) {
+                const rel = (monkey.x + MONKEY_SIZE.w * 0.5) - cx;
+                const onBack = rel >= 50;
+                if (!crocOpen || onBack) {
+                  monkey.y = crocY - MONKEY_SIZE.h + 6;
+                  monkey.vy = 0;
+                  monkey.onGround = true;
+                }
+              }
+            });
+          }
+
+          if (!state.idolMonkey && intersects(player, { x: monkey.x, y: monkey.y, w: MONKEY_SIZE.w, h: MONKEY_SIZE.h })) {
+            loseLife('monkey');
+          }
+
+          if (monkey.x < -80 || monkey.x > WORLD.w + 80) {
+            if (state.idolMonkey) {
+              monkey.inactive = true;
+            } else {
+              const side = Math.random() < 0.5 ? -1 : 1;
+              Object.assign(monkey, createMonkey(side));
+            }
+          }
+        });
+      }
+
+      if (player.underground) {
+        data.scorpions.forEach((scorpion) => {
+          const target = player.x + player.w * 0.5;
+          const scorpMid = scorpion.x + 25;
+          const repel = state.idolScorpion;
+          const desiredDir = target >= scorpMid ? (repel ? -1 : 1) : (repel ? 1 : -1);
+          const atLeftEdge = scorpion.x <= 60;
+          const atRightEdge = scorpion.x >= WORLD.w - 110;
+          if (repel && ((desiredDir < 0 && atLeftEdge) || (desiredDir > 0 && atRightEdge))) {
+            scorpion.dir = 0;
+          } else {
+            scorpion.dir = desiredDir;
+            scorpion.x += scorpion.dir * scorpion.speed * dt;
+            scorpion.x = Math.max(60, Math.min(WORLD.w - 110, scorpion.x));
+          }
+          const scorpBox = { x: scorpion.x, y: TUNNEL_FLOOR - 26, w: 50, h: 24 };
+          if (intersects(player, scorpBox)) {
+            loseLife('scorpion');
+          }
+        });
+      }
+    }
+
+    function intersects(a, b) {
+      return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
+    }
+
+    function checkTreasure() {
+      const data = screenData();
+      if (data.hasTreasure && !data.treasureCollected && !data.treasureUnderground && !player.underground) {
+        const treasureBox = { x: WORLD.w / 2 - 22, y: SURFACE_Y - 36, w: 44, h: 36 };
+        if (intersects(player, treasureBox)) {
+          data.treasureCollected = true;
+          state.treasures += 1;
+          state.lives += 1;
+          gainScore(1200);
+          state.messageTimer = 1.5;
+          state.messageText = 'Treasure secured!';
+        }
+      }
+      if (data.hasTreasure && !data.treasureCollected && data.treasureUnderground && player.underground) {
+        const treasureBox = { x: WORLD.w / 2 - 22, y: TUNNEL_FLOOR - 30, w: 44, h: 36 };
+        if (intersects(player, treasureBox)) {
+          data.treasureCollected = true;
+          state.treasures += 1;
+          state.lives += 1;
+          gainScore(1200);
+          state.messageTimer = 1.5;
+          state.messageText = 'Treasure secured!';
+        }
+      }
+      if (data.hasSpecial && !data.specialCollected && !player.underground) {
+        const idolBox = { x: WORLD.w / 2 + 120, y: SURFACE_Y - 48, w: 36, h: 46 };
+        if (intersects(player, idolBox)) {
+          data.specialCollected = true;
+          state.specials += 1;
+          if (data.specialType === 'life') {
+            state.lives += 30;
+            state.idolLife = true;
+            state.messageText = 'Icon of Life found';
+          } else if (data.specialType === 'light') {
+            state.idolLight = true;
+            state.messageText = 'Icon of Light found';
+          } else if (data.specialType === 'monkey') {
+            state.idolMonkey = true;
+            state.messageText = 'Icon of Monkeys found';
+          } else if (data.specialType === 'scorpion') {
+            state.idolScorpion = true;
+            state.messageText = 'Icon of Scorpions found';
+          }
+          gainScore(3000);
+          state.messageTimer = 1.6;
         }
       }
     }
 
-    function resetGame() {
-      hero.x = hero.startX;
-      hero.y = hero.startY;
-      hero.hasKey = false;
-      dragon.x = dragon.startX;
-      dragon.y = dragon.startY;
-      key.x = key.startX;
-      key.y = key.startY;
-      key.collected = false;
-      chalice.x = chalice.startX;
-      chalice.y = chalice.startY;
-      chalice.collected = false;
-      gate.open = false;
-      state.score = 0;
-      state.game = 'play';
-      document.getElementById('message').innerText = '';
+    function checkStatueWin() {
+      if (state.screenIndex !== 89 || player.underground) return;
+      if (state.specials < 4) return;
+      const statueBox = { x: WORLD.w / 2 - 70, y: SURFACE_Y - 170, w: 140, h: 200 };
+      if (intersects(player, statueBox)) {
+        state.game = 'win';
+        state.winTime = state.frameTime;
+      }
     }
 
-    parseMap();
-    resetGame();
-    state.game = 'start';
+    function update(dt) {
+      if (state.game === 'dead') {
+        player.vy += 1500 * dt;
+        player.y += player.vy * dt;
+        player.deadAngle += 6 * dt;
+        state.deathTimer -= dt;
+      if (state.deathTimer <= 0) {
+        if (state.pendingGameOver) {
+          state.game = 'gameover';
+          state.pendingGameOver = false;
+        } else {
+          resetPlayer();
+          state.game = 'play';
+        }
+      }
+        return;
+      }
+      if (state.game !== 'play') return;
+      const data = screenData();
+      state.jumpedThisFrame = false;
+      handleInput(dt, data);
+      jumpPressed = false;
+      updatePlayer(dt);
+      updateObstacles(dt);
+      checkTreasure();
+      checkStatueWin();
+      if (state.messageTimer > 0) {
+        state.messageTimer -= dt;
+        if (state.messageTimer <= 0) {
+          state.messageText = '';
+        }
+      }
+      if (state.toastTimer > 0) {
+        state.toastTimer -= dt;
+        if (state.toastTimer <= 0) {
+          state.toast = '';
+        }
+      }
+    }
 
-    const pressed = new Set();
+    function drawBackground() {
+      const data = screenData();
+      const grad = ctx.createLinearGradient(0, 0, 0, WORLD.h);
+      grad.addColorStop(0, COLORS.skyTop);
+      grad.addColorStop(0.5, COLORS.skyBottom);
+      grad.addColorStop(1, '#0a0d16');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, WORLD.w, WORLD.h);
+
+      ctx.fillStyle = '#081f13';
+      for (let i = 0; i < 14; i++) {
+        const x = i * 78 - 40;
+        const height = 180 + (i % 4) * 24;
+        ctx.fillRect(x, SURFACE_Y - 160 - height, 28, height);
+      }
+      ctx.fillStyle = '#102a1c';
+      for (let i = 0; i < 12; i++) {
+        const x = i * 90 + 10;
+        const height = 200 + (i % 3) * 28;
+        ctx.fillRect(x, SURFACE_Y - 170 - height, 36, height);
+      }
+      ctx.fillStyle = '#154c32';
+      for (let i = 0; i < 18; i++) {
+        const x = i * 60 - 20;
+        const radius = 48 + (i % 3) * 8;
+        ctx.beginPath();
+        ctx.arc(x + 30, SURFACE_Y - 145, radius, Math.PI, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#c7a56a';
+      ctx.fillRect(0, SURFACE_Y - 120, WORLD.w, 50);
+      ctx.fillStyle = '#2b7a4f';
+      ctx.beginPath();
+      ctx.moveTo(0, SURFACE_Y - 150);
+      for (let x = 0; x <= WORLD.w; x += 45) {
+        const y = SURFACE_Y - 150 - (x % 90 === 0 ? 26 : 10);
+        ctx.lineTo(x + 22, y);
+        ctx.lineTo(x + 45, SURFACE_Y - 150);
+      }
+      ctx.lineTo(WORLD.w, SURFACE_Y - 40);
+      ctx.lineTo(0, SURFACE_Y - 40);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#3a8a5e';
+      for (let i = 0; i < 10; i++) {
+        const x = i * 110 + 20;
+        ctx.beginPath();
+        ctx.arc(x, SURFACE_Y - 120, 32, Math.PI, Math.PI * 2);
+        ctx.arc(x + 30, SURFACE_Y - 120, 38, Math.PI, Math.PI * 2);
+        ctx.arc(x + 60, SURFACE_Y - 120, 28, Math.PI, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#2f7a52';
+      ctx.beginPath();
+      ctx.moveTo(0, SURFACE_Y - 70);
+      for (let x = 0; x <= WORLD.w; x += 55) {
+        const y = SURFACE_Y - 70 - (x % 110 === 0 ? 14 : 6);
+        ctx.lineTo(x + 28, y);
+        ctx.lineTo(x + 55, SURFACE_Y - 70);
+      }
+      ctx.lineTo(WORLD.w, SURFACE_Y - 40);
+      ctx.lineTo(0, SURFACE_Y - 40);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#2b6f4c';
+      ctx.fillRect(0, SURFACE_Y - 58, WORLD.w, 18);
+
+      const gap = getGapForObstacle(data);
+      const hasGap = gap && gap.width > 4;
+      ctx.fillStyle = COLORS.groundTop;
+      if (hasGap) {
+        ctx.fillRect(0, SURFACE_Y, gap.left, GROUND_DEPTH);
+        ctx.fillRect(gap.right, SURFACE_Y, WORLD.w - gap.right, GROUND_DEPTH);
+      } else {
+        ctx.fillRect(0, SURFACE_Y, WORLD.w, GROUND_DEPTH);
+      }
+      ctx.fillStyle = COLORS.groundBottom;
+      if (hasGap) {
+        ctx.fillRect(0, SURFACE_Y + GROUND_DEPTH, gap.left, WORLD.h - SURFACE_Y - GROUND_DEPTH);
+        ctx.fillRect(gap.right, SURFACE_Y + GROUND_DEPTH, WORLD.w - gap.right, WORLD.h - SURFACE_Y - GROUND_DEPTH);
+      } else {
+        ctx.fillRect(0, SURFACE_Y + GROUND_DEPTH, WORLD.w, WORLD.h - SURFACE_Y - GROUND_DEPTH);
+      }
+      if (player.underground) {
+        ctx.fillStyle = COLORS.tunnel;
+        ctx.fillRect(0, TUNNEL_TOP, WORLD.w, WORLD.h - TUNNEL_TOP);
+      }
+    }
+
+    function drawTunnel() {
+      ctx.fillStyle = COLORS.tunnel;
+      ctx.fillRect(0, TUNNEL_TOP, WORLD.w, WORLD.h - TUNNEL_TOP);
+      ctx.fillStyle = '#2b1e16';
+      ctx.fillRect(0, TUNNEL_FLOOR, WORLD.w, WORLD.h - TUNNEL_FLOOR);
+      ctx.fillStyle = '#141414';
+      for (let i = 0; i < 12; i++) {
+        const x = i * 90 + 20;
+        ctx.beginPath();
+        ctx.moveTo(x, TUNNEL_TOP);
+        ctx.lineTo(x + 18, TUNNEL_TOP + 24 + (i % 3) * 6);
+        ctx.lineTo(x + 36, TUNNEL_TOP);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = '#1f1f1f';
+      for (let i = 0; i < 10; i++) {
+        const x = i * 110 + 10;
+        ctx.beginPath();
+        ctx.moveTo(x, TUNNEL_FLOOR);
+        ctx.lineTo(x + 22, TUNNEL_FLOOR - 26 - (i % 2) * 6);
+        ctx.lineTo(x + 44, TUNNEL_FLOOR);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = 'rgba(80, 80, 80, 0.35)';
+      for (let i = 0; i < 16; i++) {
+        const x = i * 60 + 10;
+        ctx.fillRect(x, TUNNEL_TOP + 10 + (i % 4) * 18, 18, 6);
+      }
+    }
+
+    function drawPit(data) {
+      ctx.fillStyle = COLORS.tunnel;
+      ctx.fillRect(data.pitX, SURFACE_Y, data.pitWidth, 90);
+      ctx.fillStyle = '#0b111a';
+      ctx.fillRect(data.pitX, SURFACE_Y + 90, data.pitWidth, WORLD.h - SURFACE_Y - 90);
+    }
+
+    function drawPond(gap) {
+      if (!gap || gap.width <= 4) return;
+      const height = player.underground ? (TUNNEL_TOP - SURFACE_Y) : (WORLD.h - SURFACE_Y);
+      ctx.fillStyle = COLORS.water;
+      ctx.fillRect(gap.left, SURFACE_Y, gap.width, height);
+    }
+
+    function drawQuicksand(gap) {
+      if (!gap || gap.width <= 4) return;
+      const height = player.underground ? (TUNNEL_TOP - SURFACE_Y) : (WORLD.h - SURFACE_Y);
+      const t = performance.now() / 1000;
+      ctx.fillStyle = COLORS.sand;
+      ctx.fillRect(gap.left, SURFACE_Y, gap.width, height);
+      ctx.fillStyle = `rgba(255,255,255,${0.06 + Math.sin(t * 3) * 0.04})`;
+      ctx.fillRect(gap.left + 6, SURFACE_Y + 6, Math.max(0, gap.width - 12), 12);
+    }
+
+    function drawObstacles() {
+      const data = screenData();
+      if (data.obstacle === 'pit') {
+        drawPit(data);
+      }
+      if (hasVineOnScreen(data)) {
+        if (isQuicksandObstacle(data.obstacle)) {
+          drawQuicksand(getGapForObstacle(data));
+        } else if (isPondObstacle(data.obstacle)) {
+          drawPond(getGapForObstacle(data));
+        }
+        const vineState = getVineState(data, state.frameTime);
+        ctx.save();
+        ctx.translate(vineState.anchorX, vineState.anchorY);
+        ctx.rotate(vineState.angle);
+        ctx.drawImage(assets.vine, -12, 0, 24, vineState.length);
+        ctx.fillStyle = '#7ad164';
+        ctx.beginPath();
+        ctx.arc(0, vineState.length, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      if (data.obstacle === 'rocks') {
+        const rockX = data.rockX ?? 120;
+        const rockY = SURFACE_Y - 38;
+        const rockW = 44;
+        const rockH = 36;
+        const rockRoll = -state.frameTime * 3.6;
+        ctx.save();
+        ctx.translate(rockX + rockW / 2, rockY + rockH / 2);
+        ctx.rotate(rockRoll);
+        ctx.drawImage(assets.rock, -rockW / 2, -rockH / 2, rockW, rockH);
+        ctx.restore();
+      }
+      if (data.hasBarrels) {
+        data.barrels.forEach((barrel, index) => {
+          const barrelW = 36;
+          const barrelH = 44;
+          const barrelRoll = -state.frameTime * 4 + index * 0.6;
+          ctx.save();
+          ctx.translate(barrel.x + barrelW / 2, barrel.y + barrelH / 2);
+          ctx.rotate(barrelRoll);
+          ctx.drawImage(assets.barrel, -barrelW / 2, -barrelH / 2, barrelW, barrelH);
+          ctx.restore();
+        });
+      }
+      if (data.obstacle === 'croc') {
+        drawPond(getGapForObstacle(data));
+        const crocY = SURFACE_Y - 6;
+        const crocZones = getCrocZones();
+        crocZones.forEach((cx) => {
+          ctx.drawImage(data.crocOpen ? assets.crocOpen : assets.crocClosed, cx, crocY, 70, 26);
+
+        });
+      }
+      if (data.obstacle === 'pond-pulse') {
+        drawPond(getGapForObstacle(data));
+      }
+      if (isQuicksandObstacle(data.obstacle)) {
+        drawQuicksand(getGapForObstacle(data));
+      }
+    }
+
+    function drawLadder() {
+      const data = screenData();
+      if (!data.hasLadder) return;
+      ctx.fillStyle = COLORS.tunnel;
+      const ladderTop = SURFACE_Y;
+      const ladderHeight = TUNNEL_FLOOR - ladderTop;
+      ctx.fillRect(data.ladderX - 10, ladderTop, 56, ladderHeight);
+      ctx.drawImage(assets.ladder, data.ladderX, SURFACE_Y - 12, 36, ladderHeight + 12);
+    }
+
+    function drawTreasures() {
+      const data = screenData();
+      if (data.hasTreasure && !data.treasureCollected && !data.treasureUnderground && !player.underground) {
+        ctx.drawImage(assets.treasure, WORLD.w / 2 - 22, SURFACE_Y - 36, 44, 36);
+      }
+      if (data.hasTreasure && !data.treasureCollected && data.treasureUnderground && player.underground) {
+        ctx.drawImage(assets.treasure, WORLD.w / 2 - 22, TUNNEL_FLOOR - 30, 44, 36);
+      }
+      if (data.hasSpecial && !data.specialCollected && !player.underground) {
+        ctx.drawImage(assets.idol, WORLD.w / 2 + 120, SURFACE_Y - 48, 36, 46);
+      }
+      if (state.screenIndex === 89 && !player.underground) {
+        ctx.drawImage(assets.statue, WORLD.w / 2 - 70, SURFACE_Y - 170, 140, 200);
+      }
+    }
+
+    function drawScorpions() {
+      if (!player.underground) return;
+      const data = screenData();
+      data.scorpions.forEach((scorpion, index) => {
+        const scorpCenterX = scorpion.x + 25;
+        const scorpCenterY = TUNNEL_FLOOR - 26 + 14;
+        if (!state.idolLight) {
+          const playerCenterX = player.x + player.w / 2;
+          const playerCenterY = player.y + player.h / 2;
+          const dist = Math.hypot(playerCenterX - scorpCenterX, playerCenterY - scorpCenterY);
+          if (dist > 90) return;
+          ctx.filter = 'grayscale(1) brightness(0.35)';
+        }
+        const scorpW = 50;
+        const scorpH = 28;
+        const scorpY = TUNNEL_FLOOR - 26;
+        const frame = Math.floor(state.frameTime * 6 + index) % 2;
+        const sprite = frame === 0 ? assets.scorpionA : assets.scorpionB;
+        ctx.save();
+        if (scorpion.dir > 0) {
+          ctx.translate(scorpion.x + scorpW, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(sprite, 0, scorpY, scorpW, scorpH);
+        } else {
+          ctx.drawImage(sprite, scorpion.x, scorpY, scorpW, scorpH);
+        }
+        ctx.restore();
+        if (!state.idolLight) {
+          ctx.filter = 'none';
+        }
+      });
+    }
+
+    function drawMonkeys() {
+      const data = screenData();
+      if (!data.monkeys || !data.monkeys.length) return;
+      data.monkeys.forEach((monkey, index) => {
+        if (monkey.inactive) return;
+        const frame = Math.floor(state.frameTime * 6 + index) % 2;
+        let sprite = frame === 0 ? assets.monkeyRun1 : assets.monkeyRun2;
+        if (monkey.onVine) {
+          sprite = assets.monkeyVine;
+        } else if (!monkey.onGround) {
+          sprite = assets.monkeyJump;
+        }
+        ctx.save();
+        if (monkey.dir < 0) {
+          ctx.translate(monkey.x + MONKEY_SIZE.w, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(sprite, 0, monkey.y, MONKEY_SIZE.w, MONKEY_SIZE.h);
+        } else {
+          ctx.drawImage(sprite, monkey.x, monkey.y, MONKEY_SIZE.w, MONKEY_SIZE.h);
+        }
+        ctx.restore();
+      });
+    }
+
+    function drawPlayer() {
+      let sprite = assets.harryRun1;
+      if (player.onVine) {
+        sprite = assets.harryVine;
+      } else if (!player.onGround && !player.onLadder) {
+        sprite = assets.harryJump;
+      } else if (Math.abs(player.vx) > 20) {
+        const frame = Math.floor(performance.now() / 140) % 2;
+        sprite = frame === 0 ? assets.harryRun1 : assets.harryRun2;
+      }
+
+      ctx.save();
+      const dimInCave = player.underground && !state.idolLight;
+      if (dimInCave) {
+        ctx.filter = 'grayscale(1) brightness(0.45)';
+      }
+      if (state.game === 'dead') {
+        ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+        ctx.rotate(player.deadAngle);
+        ctx.drawImage(sprite, -player.w / 2, -player.h / 2, player.w, player.h);
+      } else if (player.facing === -1) {
+        ctx.translate(player.x + player.w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(sprite, 0, player.y, player.w, player.h);
+      } else {
+        ctx.drawImage(sprite, player.x, player.y, player.w, player.h);
+      }
+      if (dimInCave) {
+        ctx.filter = 'none';
+      }
+      ctx.restore();
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, WORLD.w, WORLD.h);
+      drawBackground();
+      if (player.underground) {
+        drawTunnel();
+      }
+      drawObstacles();
+      drawLadder();
+      drawTreasures();
+      drawScorpions();
+      drawMonkeys();
+      drawPlayer();
+      if (state.game === 'win') {
+        const t = state.frameTime - state.winTime;
+        const glow = 0.5 + Math.sin(t * 3) * 0.3;
+        ctx.fillStyle = `rgba(252, 163, 17, ${0.12 + glow * 0.15})`;
+        ctx.fillRect(0, 0, WORLD.w, WORLD.h);
+        for (let i = 0; i < 10; i++) {
+          const angle = t * 0.6 + i * 0.6;
+          const radius = 120 + (t * 60) % 180;
+          const cx = WORLD.w / 2 + Math.cos(angle) * radius;
+          const cy = SURFACE_Y - 40 + Math.sin(angle) * radius * 0.6;
+          ctx.fillStyle = `rgba(255, 244, 182, ${0.4 - (i % 3) * 0.1})`;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 6 + (i % 3) * 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.strokeStyle = 'rgba(255, 244, 182, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(WORLD.w / 2, SURFACE_Y - 40, 110 + (t * 40) % 60, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (state.toast) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+        ctx.fillRect(WORLD.w - 240, 18, 220, 30);
+        ctx.fillStyle = '#f4d35e';
+        ctx.font = '12px "Press Start 2P", monospace';
+        ctx.fillText(state.toast, WORLD.w - 230, 38);
+      }
+    }
+
+    function loop(timestamp) {
+      state.frameTime = timestamp / 1000;
+      const dt = (timestamp - state.lastTime) / 1000 || 0;
+      state.lastTime = timestamp;
+      if ((state.game === 'play' || state.game === 'dead') && !gamePaused) {
+        update(dt);
+      }
+      render();
+      const infoText = `Screen ${state.screenIndex + 1}/100  |  Score ${Math.floor(state.score)}  |  Lives ${state.lives}  |  Treasures ${state.treasures}  |  Idols ${state.specials}/4`;
+      document.getElementById('info').innerText = infoText;
+      const messageEl = document.getElementById('message');
+      if (state.game === 'start') {
+        messageEl.innerText = 'Press Space to Begin';
+      } else if (state.game === 'gameover') {
+        messageEl.innerText = 'Out of lives. Press Space to Retry';
+      } else if (state.game === 'win') {
+        messageEl.innerText = 'All special treasures found! Press Space to Play Again';
+      } else if (state.game === 'dead') {
+        messageEl.innerText = 'Ouch!';
+      } else if (state.messageTimer > 0) {
+        messageEl.innerText = state.messageText || 'Treasure secured!';
+      } else {
+        messageEl.innerText = '';
+      }
+      requestAnimationFrame(loop);
+    }
+
+    function resetGame() {
+      state.score = 0;
+      state.lives = 3;
+      state.screenIndex = 0;
+      state.treasures = 0;
+      state.specials = 0;
+      state.messageText = '';
+      state.idolLight = false;
+      state.idolLife = false;
+      state.idolMonkey = false;
+      state.idolScorpion = false;
+      state.game = 'play';
+      state.pendingGameOver = false;
+      state.respawnUnderground = false;
+      state.winTime = 0;
+      screens.forEach((screen) => {
+        screen.treasureCollected = false;
+        screen.specialCollected = false;
+        screen.rockX = WORLD.w + 60;
+        if (Array.isArray(screen.monkeysInit)) {
+          screen.monkeys = screen.monkeysInit.map((monkey) => ({ ...monkey, inactive: false }));
+        }
+      });
+      resetPlayer();
+    }
+
     document.addEventListener('keydown', (e) => {
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
-        pressed.add(e.code);
+        if (e.code === 'KeyM' || e.key === 'm' || e.key === 'M') {
+          const data = screenData();
+          if (!data.monkeys) data.monkeys = [];
+          const side = Math.random() < 0.5 ? -1 : 1;
+          data.monkeys.push(createMonkey(side));
+          state.toast = `Monkey spawned (${data.monkeys.length})`;
+          state.toastTimer = 1.4;
+        }
+      if (gamePaused) return;
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+        if (e.code === 'Space' && !pressed.has('Space')) {
+          jumpPressed = true;
+        }
+        pressed.add(e.code === 'Space' ? 'Space' : e.code);
         e.preventDefault();
       }
       if (e.code === 'Space') {
@@ -210,198 +1940,116 @@
       }
     });
     document.addEventListener('keyup', (e) => {
-      pressed.delete(e.code);
+      if (e.code === 'Space') {
+        pressed.delete('Space');
+      } else {
+        pressed.delete(e.code);
+      }
     });
 
-    function isBlocked(nx, ny, size) {
-      const left = Math.floor(nx / tileSize);
-      const right = Math.floor((nx + size - 1) / tileSize);
-      const top = Math.floor(ny / tileSize);
-      const bottom = Math.floor((ny + size - 1) / tileSize);
-      for (let ty = top; ty <= bottom; ty++) {
-        for (let tx = left; tx <= right; tx++) {
-          const row = map[ty];
-          if (!row) return true;
-          const tile = row[tx];
-          if (!tile || tile === '#') return true;
-          if (tile === 'G' && !gate.open) return true;
-        }
-      }
-      return false;
-    }
-
-    function moveHero(dt) {
-      let mx = 0;
-      let my = 0;
-      if (pressed.has('ArrowLeft')) mx -= 1;
-      if (pressed.has('ArrowRight')) mx += 1;
-      if (pressed.has('ArrowUp')) my -= 1;
-      if (pressed.has('ArrowDown')) my += 1;
-      if (mx !== 0 || my !== 0) {
-        const len = Math.hypot(mx, my);
-        mx = (mx / len) * hero.speed * dt;
-        my = (my / len) * hero.speed * dt;
-        const newX = hero.x + mx;
-        if (!isBlocked(newX, hero.y, hero.size)) {
-          hero.x = newX;
-        }
-        const newY = hero.y + my;
-        if (!isBlocked(hero.x, newY, hero.size)) {
-          hero.y = newY;
-        }
-      }
-    }
-
-    function moveDragon(dt) {
-      const dx = hero.x - dragon.x;
-      const dy = hero.y - dragon.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist > 1) {
-        const speed = dragon.speed * dt;
-        const stepX = (dx / dist) * speed;
-        const stepY = (dy / dist) * speed;
-        const nx = dragon.x + stepX;
-        const ny = dragon.y + stepY;
-        if (!isBlocked(nx, dragon.y, dragon.size)) {
-          dragon.x = nx;
-        }
-        if (!isBlocked(dragon.x, ny, dragon.size)) {
-          dragon.y = ny;
-        }
-      }
-    }
-
-    function overlaps(a, b) {
-      const ax = a.x + a.size / 2;
-      const ay = a.y + a.size / 2;
-      const bx = b.x + b.size / 2;
-      const by = b.y + b.size / 2;
-      const dist = Math.hypot(ax - bx, ay - by);
-      return dist < (a.size + b.size) / 2;
-    }
-
-    function update(dt) {
-      if (state.game !== 'play') return;
-      state.score += dt * 60;
-      moveHero(dt);
-      moveDragon(dt);
-
-      if (!key.collected && overlaps(hero, key)) {
-        key.collected = true;
-        hero.hasKey = true;
-      }
-
-      if (!gate.open && hero.hasKey) {
-        const gateRect = { x: gate.x, y: gate.y, size: tileSize };
-        if (overlaps({ x: hero.x, y: hero.y, size: hero.size }, gateRect)) {
-          gate.open = true;
-        }
-      }
-
-      if (!chalice.collected && overlaps(hero, chalice)) {
-        chalice.collected = true;
-        state.game = 'win';
-        document.getElementById('message').innerText = 'You found the Chalice! Press Space to Replay';
-        return;
-      }
-
-      if (overlaps(hero, dragon)) {
-        state.game = 'gameover';
-        document.getElementById('message').innerText = 'The dragon caught you! Press Space to Retry';
-        return;
-      }
-    }
-
-    function drawTiles() {
-      for (let y = 0; y < map.length; y++) {
-        for (let x = 0; x < map[y].length; x++) {
-          const tile = map[y][x];
-          const px = x * tileSize;
-          const py = y * tileSize;
-          if (tile === '#') {
-            ctx.fillStyle = '#21541c';
-            ctx.fillRect(px, py, tileSize, tileSize);
-            ctx.strokeStyle = '#122b10';
-            ctx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-          } else if (tile === 'G') {
-            ctx.fillStyle = gate.open ? '#1f1f1f' : '#b37d4e';
-            ctx.fillRect(px, py, tileSize, tileSize);
-            if (!gate.open) {
-              ctx.strokeStyle = '#e5c07b';
-              ctx.strokeRect(px + 4, py + 4, tileSize - 8, tileSize - 8);
-            }
-          } else {
-            ctx.fillStyle = '#2b2b2b';
-            ctx.fillRect(px, py, tileSize, tileSize);
-          }
-        }
-      }
-    }
-
-    function drawHero() {
-      ctx.fillStyle = '#ffde17';
-      ctx.fillRect(hero.x, hero.y, hero.size, hero.size);
-      ctx.strokeStyle = '#000';
-      ctx.strokeRect(hero.x + 0.5, hero.y + 0.5, hero.size - 1, hero.size - 1);
-    }
-
-    function drawDragon() {
-      ctx.fillStyle = '#d94f30';
-      ctx.fillRect(dragon.x, dragon.y, dragon.size, dragon.size);
-      ctx.strokeStyle = '#000';
-      ctx.strokeRect(dragon.x + 0.5, dragon.y + 0.5, dragon.size - 1, dragon.size - 1);
-    }
-
-    function drawKey() {
-      if (key.collected) return;
-      ctx.fillStyle = '#fff200';
-      ctx.fillRect(key.x, key.y, key.size, key.size);
-      ctx.fillStyle = '#000';
-      ctx.fillRect(key.x + key.size / 2 - 2, key.y + key.size / 4, 4, key.size / 2);
-    }
-
-    function drawChalice() {
-      if (chalice.collected) return;
-      ctx.fillStyle = '#f0ad1a';
-      ctx.fillRect(chalice.x, chalice.y, chalice.size, chalice.size);
-      ctx.fillStyle = '#000';
-      ctx.fillRect(chalice.x + 3, chalice.y + chalice.size - 6, chalice.size - 6, 4);
-    }
-
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawTiles();
-      drawChalice();
-      drawKey();
-      drawDragon();
-      drawHero();
-    }
-
-    function loop(timestamp) {
-      const dt = (timestamp - state.lastTime) / 1000 || 0;
-      state.lastTime = timestamp;
-      if (state.game === 'play') {
-        update(dt);
-      }
-      render();
-      document.getElementById('info').innerText = `Key: ${hero.hasKey ? 'Collected' : 'Missing'}  |  Gate: ${gate.open ? 'Open' : 'Closed'}  |  Score: ${Math.floor(state.score)}`;
-      if (state.game === 'start') {
-        document.getElementById('message').innerText = 'Press Space to Begin';
-      }
-      requestAnimationFrame(loop);
-    }
-
     requestAnimationFrame(loop);
-  </script>
-  <script>
-    fetch('../sidebar.html')
-      .then(r => r.text())
-      .then(html => {
-        const placeholder = document.getElementById('sidebar-placeholder');
-        if (placeholder) placeholder.outerHTML = html;
+
+    const instructionModal = document.getElementById('instruction-modal');
+    const instructionClose = document.getElementById('instruction-close');
+    const helpButton = document.getElementById('help-button');
+    const debugPortal = document.getElementById('debug-portal');
+    const instructionKey = 'vibecade-instructions-pitfall';
+    const hasSeenInstructions = sessionStorage.getItem(instructionKey) === '1';
+    const controlButtons = document.querySelectorAll('.control-button');
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches
+      || 'ontouchstart' in window
+      || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+    if (isTouchDevice) {
+      document.body.classList.add('touch-device');
+    }
+
+    function startGame() {
+      if (gameStarted) return;
+      gameStarted = true;
+      gamePaused = false;
+      state.game = 'start';
+    }
+
+    function showInstructions() {
+      gamePaused = true;
+      if (instructionModal) instructionModal.classList.add('is-visible');
+    }
+
+    function hideInstructions() {
+      if (instructionModal) instructionModal.classList.remove('is-visible');
+      if (!gameStarted) {
+        startGame();
+      } else {
+        gamePaused = false;
+      }
+      sessionStorage.setItem(instructionKey, '1');
+    }
+
+    if (instructionClose) {
+      instructionClose.addEventListener('click', hideInstructions);
+    }
+    if (instructionModal) {
+      instructionModal.addEventListener('click', (event) => {
+        if (event.target === instructionModal) {
+          hideInstructions();
+        }
       });
+    }
+    if (helpButton) {
+      helpButton.addEventListener('click', showInstructions);
+    }
+    if (debugPortal) {
+      debugPortal.addEventListener('click', () => {
+        state.screenIndex = 89;
+        state.specials = 4;
+        state.idolLight = true;
+        state.idolLife = true;
+        state.idolMonkey = true;
+        state.idolScorpion = true;
+        state.game = 'play';
+        state.respawnUnderground = false;
+        player.underground = false;
+        resetPlayer();
+      });
+    }
+
+    function dispatchKeyEvent(key, code, type) {
+      const event = new KeyboardEvent(type, { key, code, bubbles: true });
+      window.dispatchEvent(event);
+    }
+
+    if (controlButtons.length && isTouchDevice) {
+      controlButtons.forEach((button) => {
+        const key = button.dataset.key;
+        const code = button.dataset.code || button.dataset.key;
+        const press = () => {
+          if (gamePaused) return;
+          button.classList.add('pressed');
+          dispatchKeyEvent(key, code, 'keydown');
+        };
+        const release = () => {
+          button.classList.remove('pressed');
+          dispatchKeyEvent(key, code, 'keyup');
+        };
+        button.addEventListener('touchstart', (event) => {
+          event.preventDefault();
+          press();
+        }, { passive: false });
+        button.addEventListener('touchend', (event) => {
+          event.preventDefault();
+          release();
+        }, { passive: false });
+        button.addEventListener('touchcancel', release);
+        button.addEventListener('mousedown', press);
+        button.addEventListener('mouseup', release);
+        button.addEventListener('mouseleave', release);
+      });
+    }
+
+    if (hasSeenInstructions) {
+      if (instructionModal) instructionModal.classList.remove('is-visible');
+      startGame();
+    }
   </script>
 </body>
 </html>
-
-

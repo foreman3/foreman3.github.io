@@ -3,76 +3,131 @@ const MatterBody = Phaser.Physics.Matter.Matter.Body;
 export class MainTable extends Phaser.Scene {
     constructor() {
         super({ key: 'MainTable' });
-        this.tableWidth = Math.min(window.innerWidth * 0.7, 900);
-        this.tableHeight = Math.min(window.innerHeight * 0.85, 1000);
+        this.tableWidth = Math.min(window.innerWidth * 0.85, 980);
+        this.tableHeight = Math.min(window.innerHeight * 0.95, 1120);
     }
 
     preload() {
-        // Update to current intended size before drawing textures
-        this.tableWidth = Math.min(window.innerWidth * 0.7, 900);
-        this.tableHeight = Math.min(window.innerHeight * 0.85, 1000);
+        this.tableWidth = Math.min(window.innerWidth * 0.85, 980);
+        this.tableHeight = Math.min(window.innerHeight * 0.95, 1120);
 
         const g = this.make.graphics({ x: 0, y: 0, add: false });
-        g.fillStyle(0xffd700, 1);
+
+        g.fillStyle(0xe6f0ff, 1);
+        g.fillCircle(12, 12, 12);
+        g.fillStyle(0xffffff, 1);
+        g.fillCircle(7, 7, 4);
+        g.lineStyle(2, 0xa9c4ff, 0.9);
+        g.strokeCircle(12, 12, 11);
+        g.generateTexture('ball', 24, 24);
+        g.clear();
+
+        g.fillStyle(0x2be4ff, 1);
+        g.fillCircle(32, 32, 32);
+        g.lineStyle(4, 0xffffff, 0.85);
+        g.strokeCircle(32, 32, 28);
+        g.lineStyle(2, 0x5fd2ff, 0.7);
+        g.strokeCircle(32, 32, 22);
+        g.fillStyle(0x0b1522, 1);
+        g.fillCircle(32, 32, 14);
+        g.generateTexture('bumper', 64, 64);
+        g.clear();
+
+        g.fillStyle(0xc2e7ff, 1);
+        g.fillCircle(7, 7, 7);
+        g.lineStyle(2, 0x0b1c30, 0.8);
+        g.strokeCircle(7, 7, 6);
+        g.generateTexture('post', 14, 14);
+        g.clear();
+
+        g.fillStyle(0xff7a52, 1);
+        g.fillRoundedRect(0, 0, 52, 20, 6);
+        g.lineStyle(2, 0xffffff, 0.75);
+        g.strokeRoundedRect(0, 0, 52, 20, 6);
+        g.generateTexture('target', 52, 20);
+        g.clear();
+
+        g.fillStyle(0x9cf7ff, 1);
         g.fillCircle(10, 10, 10);
-        g.generateTexture('ball', 20, 20);
+        g.fillStyle(0x091320, 1);
+        g.fillCircle(10, 10, 4);
+        g.lineStyle(2, 0xffffff, 0.6);
+        g.strokeCircle(10, 10, 8);
+        g.generateTexture('laneLight', 20, 20);
         g.clear();
 
-        g.fillStyle(0xff4444, 1);
-        g.fillCircle(20, 20, 20);
-        g.generateTexture('bumper', 40, 40);
-        g.clear();
-
-        g.fillStyle(0x8b4513, 1);
-        g.fillRect(0, 0, 15, 40);
-        g.generateTexture('book', 15, 40);
-        g.clear();
-
-        // Simple vertical gradient playfield (using Phaser fillGradientStyle)
-        const bg = this.make.graphics({ x: 0, y: 0, add: false });
-        bg.fillGradientStyle(0x16222f, 0x1c2d3e, 0x0c1118, 0x0b0f14, 1);
-        bg.fillRect(0, 0, this.tableWidth, this.tableHeight);
-        bg.generateTexture('playfield', this.tableWidth, this.tableHeight);
-
-        // Flipper textures (tapered with round tips)
         const flipperG = this.make.graphics({ x: 0, y: 0, add: false });
-        const drawFlipper = (key, color, flip = 1) => {
+        const drawFlipper = (key, color, tipDir = 1) => {
             flipperG.clear();
             flipperG.fillStyle(color, 1);
             flipperG.lineStyle(2, 0xffffff, 0.6);
-            const length = 130;
-            const back = 30;
-            const tipRadius = 14;
-            const verts = [
-                { x: -length / 2, y: -10 },
-                { x: -length / 2 + back, y: -12 },
-                { x: length / 2 - tipRadius, y: -6 },
-                { x: length / 2, y: 0 },
-                { x: length / 2 - tipRadius, y: 6 },
-                { x: -length / 2 + back, y: 12 },
-                { x: -length / 2, y: 10 }
-            ].map(v => ({ x: v.x * flip, y: v.y }));
-            flipperG.fillPoints(verts, true);
-            flipperG.strokePoints(verts, true);
-            flipperG.fillCircle((length / 2) * flip, 0, tipRadius);
-            flipperG.strokeCircle((length / 2) * flip, 0, tipRadius);
-            flipperG.generateTexture(key, length + 30, 40);
+            const length = 122;
+            const height = 20;
+            const radius = 10;
+            flipperG.fillRoundedRect(-length / 2, -height / 2, length, height, radius);
+            flipperG.strokeRoundedRect(-length / 2, -height / 2, length, height, radius);
+            flipperG.fillCircle((length / 2) * tipDir, 0, height / 2 + 2);
+            flipperG.strokeCircle((length / 2) * tipDir, 0, height / 2 + 2);
+            flipperG.generateTexture(key, length + 24, height + 16);
         };
-        drawFlipper('flipperL', 0xff7f50, 1);
-        drawFlipper('flipperR', 0x4fa8ff, -1);
+        drawFlipper('flipperL', 0xff8a3d, 1);
+        drawFlipper('flipperR', 0x4bb2ff, -1);
+
+        const bg = this.make.graphics({ x: 0, y: 0, add: false });
+        bg.fillGradientStyle(0x1b0f2b, 0x2a1144, 0x0a1a2f, 0x120a1f, 1);
+        bg.fillRect(0, 0, this.tableWidth, this.tableHeight);
+        bg.lineStyle(2, 0xff4ecb, 0.12);
+        for (let y = 40; y < this.tableHeight; y += 90) {
+            bg.lineBetween(30, y, this.tableWidth - 30, y - 20);
+        }
+        bg.lineStyle(2, 0x3fffea, 0.15);
+        for (let x = 40; x < this.tableWidth; x += 140) {
+            bg.lineBetween(x, 60, x + 30, this.tableHeight - 80);
+        }
+        bg.fillStyle(0xffe45c, 0.08);
+        for (let x = 80; x < this.tableWidth; x += 160) {
+            for (let y = 120; y < this.tableHeight; y += 180) {
+                bg.fillCircle(x, y, 10);
+            }
+        }
+        bg.lineStyle(3, 0x6cf7ff, 0.22);
+        bg.strokeRoundedRect(18, 18, this.tableWidth - 36, this.tableHeight - 36, 24);
+        bg.generateTexture('playfield', this.tableWidth, this.tableHeight);
+
+        const decal = this.make.graphics({ x: 0, y: 0, add: false });
+        decal.fillStyle(0xff00aa, 0.18);
+        decal.fillRoundedRect(0, 0, 220, 80, 18);
+        decal.lineStyle(3, 0xffffff, 0.4);
+        decal.strokeRoundedRect(0, 0, 220, 80, 18);
+        decal.fillStyle(0x00f7ff, 0.45);
+        decal.fillTriangle(40, 50, 180, 40, 90, 10);
+        decal.generateTexture('decalA', 220, 80);
+        decal.clear();
+
+        decal.fillStyle(0xffe45c, 0.18);
+        decal.fillRoundedRect(0, 0, 200, 70, 16);
+        decal.lineStyle(3, 0xffffff, 0.35);
+        decal.strokeRoundedRect(0, 0, 200, 70, 16);
+        decal.fillStyle(0xff4ecb, 0.5);
+        decal.fillTriangle(30, 50, 170, 45, 110, 8);
+        decal.generateTexture('decalB', 200, 70);
     }
 
     create() {
-        // Sync table to current game size (allows taller view)
         this.tableWidth = this.scale.gameSize.width;
         this.tableHeight = this.scale.gameSize.height;
-        this.add.image(this.tableWidth / 2, this.tableHeight / 2, 'playfield');
 
-        // Launch UI scene in parallel
+        this.add.image(this.tableWidth / 2, this.tableHeight / 2, 'playfield');
+        this.add.image(this.tableWidth * 0.32, this.tableHeight * 0.32, 'decalA').setRotation(-0.2).setAlpha(0.9);
+        this.add.image(this.tableWidth * 0.68, this.tableHeight * 0.62, 'decalB').setRotation(0.15).setAlpha(0.9);
+        this.add.rectangle(this.tableWidth / 2, this.tableHeight / 2, this.tableWidth - 16, this.tableHeight - 16, 0x120b1f, 0.18)
+            .setStrokeStyle(3, 0xff7bd5, 0.25)
+            .setDepth(1);
+
         if (!this.scene.isActive('UI')) this.scene.launch('UI');
 
-        this.matter.world.setBounds(0, 0, this.tableWidth, this.tableHeight);
-        this.matter.world.setGravity(0, 0.65);
+        this.matter.world.setBounds(0, 0, this.tableWidth, this.tableHeight, 36, true, true, true, false);
+        this.matter.world.setGravity(0, 0.48);
 
         this.defineMissions();
         this.initState();
@@ -82,30 +137,29 @@ export class MainTable extends Phaser.Scene {
         this.createPlunger();
         this.createBumpers();
         this.createSlingshots();
-        this.createClueObjects();
-        this.createRampsAndSpinners();
+        this.createTargets();
+        this.createLanes();
+        this.createRamps();
         this.createLocksAndTunnel();
 
-        // After core geometry is ready, select mission
         this.startNextMission();
 
         this.setupCollisions();
         this.setupInput();
 
         this.spawnBall();
-        // Ensure lives start at a playable value each load
         this.registry.set('lives', 3);
     }
 
     defineMissions() {
         this.missions = [
-            { id: 'egypt', name: "Pharaoh's Scepter", treasure: 'Scepter of Dawn', requiredClues: 3, requiredItems: ['Ancient Map', 'Sun Talisman'] },
-            { id: 'atlantis', name: "Neptune's Trident", treasure: "Neptune's Trident", requiredClues: 4, requiredItems: ['Ancient Map', 'Pearl Compass'] },
-            { id: 'jungle', name: 'Jungle Idol', treasure: 'Emerald Idol', requiredClues: 4, requiredItems: ['Secret Journal', 'Jungle Totem'] },
-            { id: 'pirate', name: 'Pirate Chest', treasure: "Captain's Chest", requiredClues: 3, requiredItems: ['Captain\'s Coin', 'Pearl Compass'] },
-            { id: 'space', name: 'Astral Artifact', treasure: 'Starborn Relic', requiredClues: 5, requiredItems: ['Astral Key', 'Secret Journal'] }
+            { id: 'shock', name: 'Shock Therapy', treasure: 'Stun Module', requiredClues: 3, requiredItems: ['Lab Key', 'Brain Chip'] },
+            { id: 'toxin', name: 'Toxin Flush', treasure: 'Antidote Core', requiredClues: 4, requiredItems: ['Lab Key', 'Bio Sample'] },
+            { id: 'signal', name: 'Signal Sweep', treasure: 'Signal Prism', requiredClues: 3, requiredItems: ['Brain Chip', 'Pulse Coil'] },
+            { id: 'orbit', name: 'Orbit Burst', treasure: 'Orbit Relay', requiredClues: 4, requiredItems: ['Bio Sample', 'Pulse Coil'] },
+            { id: 'zen', name: 'Zenith Mode', treasure: 'Zenith Crown', requiredClues: 5, requiredItems: ['Star Chart', 'Lab Key'] }
         ];
-        this.itemPool = ['Ancient Map', 'Sun Talisman', 'Pearl Compass', 'Secret Journal', 'Jungle Totem', 'Astral Key', "Captain's Coin"];
+        this.itemPool = ['Lab Key', 'Brain Chip', 'Bio Sample', 'Pulse Coil', 'Star Chart'];
         this.availableMissions = Phaser.Utils.Array.Shuffle([...this.missions]);
     }
 
@@ -120,7 +174,7 @@ export class MainTable extends Phaser.Scene {
         this.clueCount = 0;
         this.registry.set('clues', this.clueCount);
         this.tunnelOpen = false;
-        this.bookDrops = 0;
+        this.targetDrops = 0;
         this.laneStates = [false, false, false];
         this.spinnerHits = 0;
         this.lockedBalls = [];
@@ -128,51 +182,85 @@ export class MainTable extends Phaser.Scene {
     }
 
     createTable() {
-        const wallOptions = { isStatic: true, restitution: 0.8, label: 'wall' };
-        this.matter.add.rectangle(10, this.tableHeight / 2, 20, this.tableHeight, wallOptions);
-        this.matter.add.rectangle(this.tableWidth - 10, this.tableHeight / 2, 20, this.tableHeight, wallOptions);
-        // Top wall split to leave an opening for the plunger lane to feed the playfield
-        this.matter.add.rectangle((this.tableWidth - 160) / 2, 10, this.tableWidth - 160, 20, wallOptions); // left/top
-        // Angled guide to push the skill shot onto the field
-        this.matter.add.rectangle(this.tableWidth - 90, 70, 140, 16, { ...wallOptions, angle: -Math.PI / 5 });
-        // Curved guide around plunger (stacked small walls)
-        const guideStartX = this.tableWidth - 40;
-        const guideStartY = this.tableHeight - 220;
-        for (let i = 0; i < 5; i++) {
-            const angle = -Math.PI / 3 + i * (Math.PI / 15);
-            const x = guideStartX - i * 24;
-            const y = guideStartY - i * 18;
-            this.matter.add.rectangle(x, y, 70, 12, { ...wallOptions, angle });
+        const wallOptions = { isStatic: true, restitution: 0.78, label: 'wall' };
+        const addWall = (x, y, w, h, angle = 0, color = 0x1c1530, alpha = 0.9, label = 'wall') => {
+            const body = this.matter.add.rectangle(x, y, w, h, { ...wallOptions, angle, label });
+            this.add.rectangle(x, y, w, h, color, alpha).setRotation(angle).setDepth(1);
+            return body;
+        };
+
+        const edge = 18;
+        const laneDividerX = this.tableWidth - 106;
+        const plungerLaneX = this.tableWidth - 70;
+        const plungerWallX = this.tableWidth - 92;
+        const topGap = 120;
+
+        addWall(edge, this.tableHeight * 0.5, edge * 2, this.tableHeight * 0.95);
+        addWall(this.tableWidth - edge, this.tableHeight * 0.5, edge * 2, this.tableHeight * 0.95);
+        addWall(edge + (laneDividerX - edge * 2) / 2, 16, laneDividerX - edge * 2, 26);
+
+        this.laneDivider = addWall(laneDividerX, this.tableHeight / 2, 16, this.tableHeight, 0, 0x0b0d18, 0.9, 'divider');
+        this.add.rectangle(laneDividerX + 26, this.tableHeight / 2, 52, this.tableHeight, 0x0b0d18, 0.5).setDepth(1);
+
+        // Narrow plunger lane walls to keep the ball aligned.
+        addWall(plungerWallX, this.tableHeight * 0.5, 12, this.tableHeight, 0, 0x151225, 0.95, 'plungerWall');
+        addWall(this.tableWidth - 30, this.tableHeight * 0.5, 10, this.tableHeight, 0, 0x151225, 0.95, 'plungerWall');
+        // Lane exit guide to feed the ball onto the playfield.
+        addWall(this.tableWidth - 88, 170, 150, 14, -Math.PI / 4.6, 0x2b1a42, 0.95);
+        // Curved lane guide to feed the ball onto the playfield.
+        const curveStartX = this.tableWidth - 78;
+        const curveStartY = 240;
+        for (let i = 0; i < 6; i++) {
+            const angle = -Math.PI / 2.6 + i * (Math.PI / 14);
+            const x = curveStartX - i * 16;
+            const y = curveStartY - i * 20;
+            addWall(x, y, 70, 12, angle, 0x2b1a42, 0.95);
         }
 
-        // Plunger lane divider
-        const dividerX = this.tableWidth - 90;
-        this.matter.add.rectangle(dividerX, this.tableHeight / 2, 12, this.tableHeight, { ...wallOptions, label: 'divider' });
-        this.add.rectangle(dividerX + 20, this.tableHeight / 2, 40, this.tableHeight, 0x0c1622, 0.25).setDepth(0);
-        // Top lane stop to keep ball in lane until launched
-        this.matter.add.rectangle(this.tableWidth - 70, 140, 40, 14, { ...wallOptions, label: 'laneStop' });
+        addWall(this.tableWidth - 100, topGap, 130, 16, -Math.PI / 4.8, 0x2b1a42, 0.9);
+        addWall(this.tableWidth * 0.18, topGap + 10, 170, 16, Math.PI / 6, 0x2b1a42, 0.9);
+        addWall(this.tableWidth * 0.24, this.tableHeight - 212, 170, 18, Math.PI / 5, 0x2b1a42, 0.95);
+        addWall(this.tableWidth * 0.67, this.tableHeight - 212, 170, 18, -Math.PI / 5, 0x2b1a42, 0.95);
 
-        // Drain sensors
-        this.drain = this.matter.add.rectangle(this.tableWidth / 2, this.tableHeight + 10, this.tableWidth - 100, 20, { isStatic: true, isSensor: true, label: 'drain' });
-        this.leftOutlane = this.matter.add.rectangle(80, this.tableHeight - 10, 60, 20, { isStatic: true, isSensor: true, label: 'leftOutlane' });
-        this.kickback = this.matter.add.rectangle(80, this.tableHeight - 60, 20, 80, { isStatic: true, label: 'kickback' });
+        addWall(this.tableWidth * 0.43, this.tableHeight - 290, 120, 16, Math.PI / 2.9, 0x231737, 0.9);
+        addWall(this.tableWidth * 0.57, this.tableHeight - 290, 120, 16, -Math.PI / 2.9, 0x231737, 0.9);
 
-        // Side art for readability
-        this.add.rectangle(520, 400, 20, 800, 0x0c1622, 0.7).setDepth(0);
-        this.add.rectangle(300, 10, 600, 20, 0x22354d, 0.9).setDepth(0);
+        this.addPost(this.tableWidth * 0.18, this.tableHeight - 255);
+        this.addPost(this.tableWidth * 0.32, this.tableHeight - 240);
+        this.addPost(this.tableWidth * 0.68, this.tableHeight - 240);
+        this.addPost(this.tableWidth * 0.82, this.tableHeight - 255);
+
+        this.spinner = this.matter.add.rectangle(this.tableWidth * 0.5, 230, 16, 110, { isStatic: true, isSensor: true, label: 'spinner' });
+        this.add.rectangle(this.tableWidth * 0.5, 230, 12, 100, 0x9cf7ff, 0.55).setStrokeStyle(2, 0xffffff, 0.4);
+
+        this.leftOrbit = this.matter.add.rectangle(this.tableWidth * 0.16, 260, 28, 160, { isStatic: true, isSensor: true, label: 'leftOrbit' });
+        this.rightOrbit = this.matter.add.rectangle(this.tableWidth * 0.84, 260, 28, 160, { isStatic: true, isSensor: true, label: 'rightOrbit' });
+
+        this.drain = this.matter.add.rectangle(this.tableWidth / 2, this.tableHeight + 10, this.tableWidth - 200, 20, { isStatic: true, isSensor: true, label: 'drain' });
+        this.leftOutlane = this.matter.add.rectangle(70, this.tableHeight - 20, 50, 24, { isStatic: true, isSensor: true, label: 'leftOutlane' });
+        this.rightOutlane = this.matter.add.rectangle(this.tableWidth - 70, this.tableHeight - 20, 50, 24, { isStatic: true, isSensor: true, label: 'rightOutlane' });
+        this.leftInlane = this.matter.add.rectangle(this.tableWidth * 0.32, this.tableHeight - 140, 60, 20, { isStatic: true, isSensor: true, label: 'leftInlane' });
+        this.rightInlane = this.matter.add.rectangle(this.tableWidth * 0.68, this.tableHeight - 140, 60, 20, { isStatic: true, isSensor: true, label: 'rightInlane' });
+        this.kickback = this.matter.add.rectangle(70, this.tableHeight - 96, 20, 110, { isStatic: true, label: 'kickback' });
+    }
+
+    addPost(x, y) {
+        const post = this.matter.add.circle(x, y, 7, { isStatic: true, restitution: 1.1, label: 'post' });
+        this.add.image(x, y, 'post').setDepth(2);
+        return post;
     }
 
     createFlippers() {
-        const fY = this.tableHeight - 140;
+        const fY = this.tableHeight - 118;
         this.flippers = {
-            left: this.createFlipper(this.tableWidth * 0.33, fY, 'left'),
-            right: this.createFlipper(this.tableWidth * 0.57, fY, 'right')
+            left: this.createFlipper(this.tableWidth * 0.37, fY, 'left'),
+            right: this.createFlipper(this.tableWidth * 0.63, fY, 'right')
         };
     }
 
     createFlipper(x, y, side) {
-        const width = 130;
-        const height = 22;
+        const width = 122;
+        const height = 20;
         const body = this.matter.add.rectangle(x, y, width, height, {
             chamfer: 6,
             friction: 0,
@@ -182,113 +270,101 @@ export class MainTable extends Phaser.Scene {
         const pivot = this.matter.add.circle(side === 'left' ? x - width * 0.45 : x + width * 0.45, y, 4, { isStatic: true, label: `${side}Pivot` });
         this.matter.add.constraint(body, pivot, 0, 1, { pointA: { x: side === 'left' ? -width * 0.45 : width * 0.45, y: 0 } });
 
-        // Down by default, flip up on press
-        body.restAngle = side === 'left' ? Phaser.Math.DegToRad(20) : Phaser.Math.DegToRad(-20);
-        body.activeAngle = side === 'left' ? Phaser.Math.DegToRad(-28) : Phaser.Math.DegToRad(28);
+        body.restAngle = side === 'left' ? Phaser.Math.DegToRad(22) : Phaser.Math.DegToRad(-22);
+        body.activeAngle = side === 'left' ? Phaser.Math.DegToRad(-34) : Phaser.Math.DegToRad(34);
         MatterBody.setAngle(body, body.restAngle);
         const tex = side === 'left' ? 'flipperL' : 'flipperR';
-        body.sprite = this.add.image(x, y, tex).setOrigin(0.5).setDepth(3).setScale(0.95);
+        body.sprite = this.add.image(x, y, tex).setOrigin(0.5).setDepth(4).setScale(1);
         return body;
     }
 
     createPlunger() {
-        const laneX = this.tableWidth - 60;
-        const laneBottom = this.tableHeight - 60;
+        const laneX = this.tableWidth - 70;
+        const laneBottom = this.tableHeight - 72;
         this.plunger = this.matter.add.rectangle(laneX, laneBottom, 18, 70, { isStatic: true, label: 'plunger' });
         this.plungerPull = 0;
         this.plungerRestY = laneBottom;
-        this.matter.add.rectangle(laneX, laneBottom - 90, 30, 20, { isStatic: true, label: 'plungerStop' });
-        this.plungerSprite = this.add.rectangle(laneX, laneBottom, 24, 80, 0xcccccc).setDepth(3);
+        this.plungerSprite = this.add.rectangle(laneX, laneBottom, 24, 80, 0x9fb3c8, 0.9)
+            .setStrokeStyle(2, 0xffffff, 0.7)
+            .setDepth(3);
     }
 
     createBumpers() {
-        const opts = { isStatic: true, restitution: 1.6, label: 'bumper' };
+        const opts = { isStatic: true, restitution: 1.35, label: 'bumper' };
+        const midX = this.tableWidth * 0.5;
         this.bumpers = [
-            this.matter.add.circle(this.tableWidth * 0.48, 200, 22, opts),
-            this.matter.add.circle(this.tableWidth * 0.38, 260, 20, opts),
-            this.matter.add.circle(this.tableWidth * 0.58, 260, 20, opts)
+            this.matter.add.circle(midX, 240, 28, opts),
+            this.matter.add.circle(midX - 70, 300, 26, opts),
+            this.matter.add.circle(midX + 70, 300, 26, opts)
         ];
         this.bumpers.forEach((b, i) => {
-            const sprite = this.add.image(b.position.x, b.position.y, 'bumper').setScale(0.9 + i * 0.05);
-            sprite.setTint([0xffb347, 0xff5959, 0xffd26f][i % 3]);
-            sprite.setStrokeStyle?.(2, 0xffffff, 0.6);
+            const sprite = this.add.image(b.position.x, b.position.y, 'bumper').setScale(0.95);
+            sprite.setTint([0x28e0ff, 0xff8a3d, 0x7affad][i % 3]);
         });
     }
 
     createSlingshots() {
-        const opts = { isStatic: true, restitution: 1.3, label: 'slingshot' };
+        const opts = { isStatic: true, restitution: 1.2, label: 'slingshot' };
         this.slings = [];
-        // Upper mid slings
-        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.3, this.tableHeight - 220, 90, 40, 0.35, opts));
-        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.7, this.tableHeight - 220, 90, 40, 0.35, opts));
-        // Lower near-flipper slings
-        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.34, this.tableHeight - 120, 70, 32, 0.3, opts));
-        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.63, this.tableHeight - 120, 70, 32, 0.3, opts));
-
-        const slingDecor = [
-            { x: this.tableWidth * 0.3, y: this.tableHeight - 220 },
-            { x: this.tableWidth * 0.7, y: this.tableHeight - 220 },
-            { x: this.tableWidth * 0.34, y: this.tableHeight - 120 },
-            { x: this.tableWidth * 0.63, y: this.tableHeight - 120 }
-        ];
-        slingDecor.forEach(pos => {
-            this.add.triangle(pos.x, pos.y, 0, 26, 28, -26, -28, -26, 0xff69b4, 0.7)
-                .setStrokeStyle(2, 0xffffff, 0.5);
+        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.28, this.tableHeight - 200, 110, 46, 0.35, opts));
+        this.slings.push(this.matter.add.trapezoid(this.tableWidth * 0.72, this.tableHeight - 200, 110, 46, 0.35, opts));
+        this.slings.forEach((sling, index) => {
+            const tint = index === 0 ? 0xffc08a : 0x8acbff;
+            this.add.triangle(sling.position.x, sling.position.y, 0, 30, 34, -30, -34, -30, tint, 0.7)
+                .setStrokeStyle(2, 0xffffff, 0.45);
         });
     }
 
-    createClueObjects() {
-        // Bookcase
-        this.books = [];
-        this.bookGroup = this.add.group();
-        for (let i = 0; i < 5; i++) {
-            const bookX = this.tableWidth * 0.26 + i * 18;
-            const book = this.matter.add.rectangle(bookX, this.tableHeight * 0.48, 12, 36, { isStatic: true, label: 'book', chamfer: 2 });
-            book.alive = true;
-            this.books.push(book);
-            const sprite = this.add.image(bookX, this.tableHeight * 0.48, 'book').setOrigin(0.5, 0.5);
-            this.bookGroup.add(sprite);
+    createTargets() {
+        this.targets = [];
+        this.targetGroup = this.add.group();
+        const startX = this.tableWidth * 0.58;
+        const startY = this.tableHeight * 0.5;
+        for (let i = 0; i < 4; i++) {
+            const targetX = startX + i * 52;
+            const target = this.matter.add.rectangle(targetX, startY, 42, 18, { isStatic: true, label: 'target', chamfer: 4 });
+            target.alive = true;
+            this.targets.push(target);
+            const sprite = this.add.image(targetX, startY, 'target').setOrigin(0.5);
+            this.targetGroup.add(sprite);
         }
-
-        // Upper lanes for clue set
-        this.lanes = [
-            this.matter.add.rectangle(this.tableWidth * 0.35, 110, 40, 10, { isStatic: true, isSensor: true, label: 'lane0' }),
-            this.matter.add.rectangle(this.tableWidth * 0.5, 90, 40, 10, { isStatic: true, isSensor: true, label: 'lane1' }),
-            this.matter.add.rectangle(this.tableWidth * 0.65, 110, 40, 10, { isStatic: true, isSensor: true, label: 'lane2' })
-        ];
-        this.add.text(this.tableWidth * 0.35, 60, 'Ancient Runes', { fontSize: '12px', fill: '#8ee1ff' });
-
-        // Spinner lane sensor
-        this.spinner = this.matter.add.rectangle(480, 200, 16, 90, { isStatic: true, isSensor: true, label: 'spinner' });
     }
 
-    createRampsAndSpinners() {
-        // Ramps as sensors to award clues/items
-        this.leftRamp = this.matter.add.rectangle(this.tableWidth * 0.25, this.tableHeight * 0.65, 60, 30, { isStatic: true, isSensor: true, label: 'leftRamp' });
-        this.rightRamp = this.matter.add.rectangle(this.tableWidth * 0.7, this.tableHeight * 0.56, 60, 30, { isStatic: true, isSensor: true, label: 'rightRamp' });
-        this.itemRamp = this.matter.add.rectangle(this.tableWidth * 0.48, this.tableHeight * 0.5, 60, 30, { isStatic: true, isSensor: true, label: 'itemRamp' });
+    createLanes() {
+        this.lanes = [
+            this.matter.add.rectangle(this.tableWidth * 0.3, 90, 50, 12, { isStatic: true, isSensor: true, label: 'lane0' }),
+            this.matter.add.rectangle(this.tableWidth * 0.5, 70, 50, 12, { isStatic: true, isSensor: true, label: 'lane1' }),
+            this.matter.add.rectangle(this.tableWidth * 0.7, 90, 50, 12, { isStatic: true, isSensor: true, label: 'lane2' })
+        ];
+        this.laneLights = [
+            this.add.image(this.tableWidth * 0.3, 62, 'laneLight').setAlpha(0.2),
+            this.add.image(this.tableWidth * 0.5, 42, 'laneLight').setAlpha(0.2),
+            this.add.image(this.tableWidth * 0.7, 62, 'laneLight').setAlpha(0.2)
+        ];
+    }
 
-        // Decorative ramp arrows with themed colors
-        this.addTriangle(this.tableWidth * 0.25, this.tableHeight * 0.64, 0xc9863a);
-        this.addTriangle(this.tableWidth * 0.7, this.tableHeight * 0.55, 0x2aa9ff);
-        this.addTriangle(this.tableWidth * 0.48, this.tableHeight * 0.49, 0xd1ff5c);
+    createRamps() {
+        this.leftRamp = this.matter.add.rectangle(this.tableWidth * 0.23, this.tableHeight * 0.6, 70, 34, { isStatic: true, isSensor: true, label: 'leftRamp' });
+        this.rightRamp = this.matter.add.rectangle(this.tableWidth * 0.77, this.tableHeight * 0.58, 70, 34, { isStatic: true, isSensor: true, label: 'rightRamp' });
+        this.itemRamp = this.matter.add.rectangle(this.tableWidth * 0.5, this.tableHeight * 0.46, 70, 34, { isStatic: true, isSensor: true, label: 'itemRamp' });
 
-        // Themed markers
-        this.add.text(this.tableWidth * 0.2, this.tableHeight * 0.61, 'Clue Ramp', { fontSize: '12px', fill: '#ffdca8' });
-        this.add.text(this.tableWidth * 0.65, this.tableHeight * 0.53, 'Clue Ramp', { fontSize: '12px', fill: '#a8e2ff' });
-        this.add.text(this.tableWidth * 0.42, this.tableHeight * 0.47, 'Item Cache', { fontSize: '12px', fill: '#e5ff9e' });
+        this.addTriangle(this.tableWidth * 0.23, this.tableHeight * 0.59, 0xffb85b);
+        this.addTriangle(this.tableWidth * 0.77, this.tableHeight * 0.57, 0x5ce1ff);
+        this.addTriangle(this.tableWidth * 0.5, this.tableHeight * 0.45, 0x9dff7a);
     }
 
     createLocksAndTunnel() {
-        this.lockSaucer = this.matter.add.circle(70, 430, 18, { isStatic: true, isSensor: true, label: 'lock' });
-        this.tunnel = this.matter.add.rectangle(this.tableWidth * 0.28, this.tableHeight * 0.44, 80, 40, { isStatic: true, isSensor: true, label: 'tunnel' });
-        this.tunnelGate = this.matter.add.rectangle(this.tableWidth * 0.28, this.tableHeight * 0.48, 120, 12, { isStatic: true, label: 'tunnelGate' });
-        this.tunnelIndicator = this.add.rectangle(this.tableWidth * 0.28, this.tableHeight * 0.44, 70, 40, 0x1c1f2b, 0.35).setStrokeStyle(2, 0xffd700, 0);
-        this.add.text(this.tableWidth * 0.24, this.tableHeight * 0.40, 'Secret Tunnel', { fontSize: '12px', fill: '#ffd700' });
+        this.lockSaucer = this.matter.add.circle(this.tableWidth * 0.18, this.tableHeight * 0.36, 20, { isStatic: true, isSensor: true, label: 'lock' });
+        this.add.circle(this.tableWidth * 0.18, this.tableHeight * 0.36, 22, 0x28e0ff, 0.4)
+            .setStrokeStyle(2, 0xffffff, 0.6);
+
+        this.tunnel = this.matter.add.rectangle(this.tableWidth * 0.66, this.tableHeight * 0.38, 90, 46, { isStatic: true, isSensor: true, label: 'tunnel' });
+        this.tunnelGate = this.matter.add.rectangle(this.tableWidth * 0.66, this.tableHeight * 0.42, 130, 14, { isStatic: true, label: 'tunnelGate' });
+        this.tunnelIndicator = this.add.rectangle(this.tableWidth * 0.66, this.tableHeight * 0.38, 90, 46, 0x182030, 0.35).setStrokeStyle(2, 0xffd700, 0);
     }
 
     addTriangle(x, y, color) {
-        const tri = this.add.triangle(x, y, 0, 30, 30, -30, -30, -30, color, 0.7);
+        const tri = this.add.triangle(x, y, 0, 32, 34, -32, -34, -32, color, 0.75);
         tri.setStrokeStyle(2, color);
     }
 
@@ -301,10 +377,10 @@ export class MainTable extends Phaser.Scene {
 
     setupCollisions() {
         this.matter.world.on('collisionstart', (event) => {
-            event.pairs.forEach(pair => {
+            event.pairs.forEach((pair) => {
                 const bodies = [pair.bodyA, pair.bodyB];
-                const ballBody = bodies.find(b => b.label === 'ball');
-                const other = bodies.find(b => b !== ballBody);
+                const ballBody = bodies.find((b) => b.label === 'ball');
+                const other = bodies.find((b) => b !== ballBody);
                 if (!ballBody || !other) return;
                 this.handleCollision(other, ballBody);
             });
@@ -312,15 +388,15 @@ export class MainTable extends Phaser.Scene {
     }
 
     spawnBall(spawnX = null, spawnY = null) {
-        const laneX = this.tableWidth - 60;
-        const laneY = this.tableHeight - 140;
+        const laneX = this.tableWidth - 70;
+        const laneY = this.tableHeight - 170;
         const ball = this.matter.add.image(spawnX ?? laneX, spawnY ?? laneY, 'ball');
-        ball.setCircle(10);
-        ball.setBounce(0.88);
-        ball.setFriction(0.005);
+        ball.setCircle(12);
+        ball.setBounce(0.86);
+        ball.setFriction(0.004);
         ball.setFrictionAir(0.001);
         ball.body.label = 'ball';
-        ball.setDepth(2);
+        ball.setDepth(3);
         if (!this.balls) this.balls = [];
         this.balls.push(ball);
         return ball;
@@ -329,28 +405,37 @@ export class MainTable extends Phaser.Scene {
     handleCollision(body, ballBody) {
         switch (body.label) {
             case 'bumper':
-                this.addScore(120);
+                this.addScore(160);
                 break;
             case 'slingshot':
-                this.addScore(60);
+                this.addScore(90);
                 break;
-            case 'book':
-                this.hitBook(body);
+            case 'target':
+                this.hitTarget(body);
                 break;
             case 'lane0':
             case 'lane1':
             case 'lane2':
                 this.lightLane(body.label);
                 break;
+            case 'leftOrbit':
+            case 'rightOrbit':
+                this.collectClue('orbit');
+                this.addScore(120);
+                break;
+            case 'leftInlane':
+            case 'rightInlane':
+                this.addScore(60);
+                break;
             case 'spinner':
                 this.spinnerHits++;
                 if (this.spinnerHits % 6 === 0) this.collectClue('spinner');
-                this.addScore(40);
+                this.addScore(60);
                 break;
             case 'leftRamp':
             case 'rightRamp':
                 this.collectClue('ramp');
-                this.addScore(150);
+                this.addScore(220);
                 break;
             case 'itemRamp':
                 this.tryAwardItem();
@@ -367,31 +452,34 @@ export class MainTable extends Phaser.Scene {
             case 'leftOutlane':
                 this.triggerKickback(ballBody);
                 break;
+            case 'rightOutlane':
+                this.onDrain(ballBody);
+                break;
             default:
                 break;
         }
     }
 
-    hitBook(book) {
-        if (book.alive === false) return;
-        book.alive = false;
-        this.bookDrops++;
-        this.addScore(200);
-        // Hide the matching sprite
-        const sprite = this.bookGroup.getChildren()[this.books.indexOf(book)];
+    hitTarget(target) {
+        if (target.alive === false) return;
+        target.alive = false;
+        target.isSensor = true;
+        this.targetDrops++;
+        this.addScore(260);
+        const sprite = this.targetGroup.getChildren()[this.targets.indexOf(target)];
         if (sprite) sprite.setVisible(false);
-        if (this.bookDrops >= this.books.length) {
-            this.collectClue('bookcase');
-            this.time.delayedCall(1200, () => this.resetBooks());
+        if (this.targetDrops >= this.targets.length) {
+            this.collectClue('targets');
+            this.time.delayedCall(1200, () => this.resetTargets());
         }
     }
 
-    resetBooks() {
-        this.bookDrops = 0;
-        this.books.forEach((b, i) => {
-            b.alive = true;
-            b.isSensor = false;
-            const sprite = this.bookGroup.getChildren()[i];
+    resetTargets() {
+        this.targetDrops = 0;
+        this.targets.forEach((target, i) => {
+            target.alive = true;
+            target.isSensor = false;
+            const sprite = this.targetGroup.getChildren()[i];
             if (sprite) sprite.setVisible(true);
         });
     }
@@ -399,18 +487,19 @@ export class MainTable extends Phaser.Scene {
     lightLane(label) {
         const idx = Number(label.replace('lane', ''));
         this.laneStates[idx] = true;
-        this.addScore(50);
+        this.addScore(70);
+        if (this.laneLights?.[idx]) this.laneLights[idx].setAlpha(1);
         if (this.laneStates.every(Boolean)) {
             this.collectClue('lanes');
             this.laneStates = [false, false, false];
+            this.laneLights.forEach((light) => light.setAlpha(0.2));
         }
     }
 
-    collectClue(source) {
+    collectClue() {
         if (!this.activeMission) return;
         this.clueCount += 1;
         this.registry.set('clues', this.clueCount);
-        // More than one path to the gate
         if (this.clueCount >= this.activeMission.requiredClues && this.hasRequiredItems()) {
             this.openTunnel();
         }
@@ -419,15 +508,15 @@ export class MainTable extends Phaser.Scene {
     tryAwardItem() {
         if (!this.activeMission) return;
         if (this.clueCount < this.activeMission.requiredClues) {
-            this.addScore(50);
+            this.addScore(70);
             return;
         }
-        const missing = this.itemPool.filter(item => !this.items.includes(item));
+        const missing = this.itemPool.filter((item) => !this.items.includes(item));
         if (missing.length === 0) return;
         const item = Phaser.Utils.Array.GetRandom(missing);
         this.items.push(item);
         this.registry.set('items', this.items);
-        this.addScore(300);
+        this.addScore(340);
         if (this.hasRequiredItems() && this.clueCount >= this.activeMission.requiredClues) {
             this.openTunnel();
         }
@@ -435,7 +524,7 @@ export class MainTable extends Phaser.Scene {
 
     hasRequiredItems() {
         if (!this.activeMission) return false;
-        return this.activeMission.requiredItems.every(req => this.items.includes(req));
+        return this.activeMission.requiredItems.every((req) => this.items.includes(req));
     }
 
     openTunnel() {
@@ -454,23 +543,22 @@ export class MainTable extends Phaser.Scene {
     }
 
     lockBall(ball) {
-        if (this.lockedBalls.find(b => b === ball)) return;
+        if (this.lockedBalls.find((b) => b === ball)) return;
         this.lockedBalls.push(ball);
         MatterBody.setPosition(ball.body, { x: -100, y: -100 });
         MatterBody.setVelocity(ball.body, { x: 0, y: 0 });
         if (this.lockedBalls.length >= 2) {
             this.releaseLockedBalls();
         } else {
-            // keep player going with a new ball if none remain
-            if (this.balls.filter(b => b.active !== false && b.body.position.y < 1200).length === 0) {
+            if (this.balls.filter((b) => b.active !== false && b.body.position.y < 1400).length === 0) {
                 this.spawnBall();
             }
         }
     }
 
     releaseLockedBalls() {
-        const releasePoint = { x: 200, y: 400 };
-        this.lockedBalls.forEach(ball => {
+        const releasePoint = { x: this.tableWidth * 0.32, y: this.tableHeight * 0.45 };
+        this.lockedBalls.forEach((ball) => {
             MatterBody.setPosition(ball.body, releasePoint);
             MatterBody.setVelocity(ball.body, { x: Phaser.Math.Between(-8, 8), y: -12 });
         });
@@ -503,7 +591,7 @@ export class MainTable extends Phaser.Scene {
         if (!this.treasures.includes(this.activeMission.treasure)) {
             this.treasures.push(this.activeMission.treasure);
             this.registry.set('treasures', this.treasures);
-            this.addScore(2000);
+            this.addScore(2500);
         }
         this.clueCount = 0;
         this.registry.set('clues', 0);
@@ -513,7 +601,7 @@ export class MainTable extends Phaser.Scene {
     startNextMission() {
         if (this.availableMissions.length === 0) {
             this.activeMission = null;
-            this.registry.set('mission', 'All treasures recovered!');
+            this.registry.set('mission', 'All lab modules cleared!');
             this.registry.set('clueTarget', 0);
             this.registry.set('requiredItems', 'None');
             return;
@@ -533,13 +621,13 @@ export class MainTable extends Phaser.Scene {
     }
 
     triggerKickback(ball) {
-        MatterBody.setVelocity(ball.body, { x: 4, y: -18 });
+        MatterBody.setVelocity(ball.body, { x: 4, y: -16 });
     }
 
     loseLife() {
         const lives = (this.registry.get('lives') || 1) - 1;
         this.registry.set('lives', lives);
-        if (lives < 0) {
+        if (lives <= 0) {
             this.resetGame();
             return;
         }
@@ -566,41 +654,38 @@ export class MainTable extends Phaser.Scene {
     }
 
     update() {
-        // Flippers swing toward target angles
         const leftTarget = this.leftKey.isDown ? this.flippers.left.activeAngle : this.flippers.left.restAngle;
         const rightTarget = this.rightKey.isDown ? this.flippers.right.activeAngle : this.flippers.right.restAngle;
         this.rotateFlipper(this.flippers.left, leftTarget);
         this.rotateFlipper(this.flippers.right, rightTarget);
 
-        // Plunger charge/launch
         const plungerKeyDown = this.spaceKey.isDown || this.enterKey.isDown;
         if (plungerKeyDown) {
-            this.plungerPull = Phaser.Math.Clamp(this.plungerPull + 0.7, 0, 35);
+            this.plungerPull = Phaser.Math.Clamp(this.plungerPull + 0.45, 0, 22);
             MatterBody.setPosition(this.plunger, { x: this.plunger.position.x, y: this.plungerRestY + this.plungerPull });
             if (this.plungerSprite) this.plungerSprite.setPosition(this.plunger.position.x, this.plungerRestY + this.plungerPull);
         } else if (Phaser.Input.Keyboard.JustUp(this.spaceKey) || Phaser.Input.Keyboard.JustUp(this.enterKey)) {
-            const launchBall = this.balls.find(b => b.body && b.body.position.x > this.tableWidth - 120 && b.body.position.y > this.tableHeight - 220);
+            const launchBall = this.balls.find((b) => b.body && b.body.position.x > this.tableWidth - 110 && b.body.position.y > this.tableHeight - 280);
             if (launchBall) {
-                MatterBody.setVelocity(launchBall.body, { x: 0, y: -20 - this.plungerPull * 0.5 });
+                MatterBody.setVelocity(launchBall.body, { x: -0.4, y: -12 - this.plungerPull * 0.62 });
             }
             this.plungerPull = 0;
             MatterBody.setPosition(this.plunger, { x: this.plunger.position.x, y: this.plungerRestY });
             if (this.plungerSprite) this.plungerSprite.setPosition(this.plunger.position.x, this.plungerRestY);
         } else {
-            this.plungerPull = Phaser.Math.Clamp(this.plungerPull - 1, 0, 35);
+            this.plungerPull = Phaser.Math.Clamp(this.plungerPull - 0.6, 0, 22);
             MatterBody.setPosition(this.plunger, { x: this.plunger.position.x, y: this.plungerRestY + this.plungerPull });
             if (this.plungerSprite) this.plungerSprite.setPosition(this.plunger.position.x, this.plungerRestY + this.plungerPull);
         }
 
-        // Keep any stragglers alive
-        this.balls = this.balls.filter(b => b.body);
+        this.balls = this.balls.filter((b) => b.body);
         if (!this.miniTableActive && this.balls.length === 0) {
             this.time.delayedCall(400, () => this.spawnBall());
         }
     }
 
     rotateFlipper(flipper, target) {
-        const step = 0.28;
+        const step = 0.32;
         const newAngle = Phaser.Math.Angle.RotateTo(flipper.angle, target, step);
         MatterBody.setAngle(flipper, newAngle);
         MatterBody.setAngularVelocity(flipper, 0);

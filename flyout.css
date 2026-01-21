@@ -65,6 +65,11 @@
   pointer-events: auto;
   transform: translateX(0);
 }
+.flyout-nav.is-open .flyout-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
 
 @media (pointer: coarse) {
   .flyout-nav {

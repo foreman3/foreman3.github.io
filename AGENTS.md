@@ -11,8 +11,8 @@ This repository contains a collection of small arcade games. All ambiguous instr
 
 ## UX Overhaul Status
 - Goal: Desktop uses a flyout arcade menu (no fixed sidebar) and maximized playfields; mobile hides all menus and uses translucent thumb controls.
-- Completed (first 6): `arkanoid/`, `asteroids/`, `drop-game/`, `burger/`, `flappy/`, `missile-command/`.
-- Remaining: all other game folders still need the same desktop flyout + mobile thumb controls treatment.
+- Completed: `arkanoid/`, `asteroids/`, `drop-game/`, `burger/`, `flappy/`, `missile-command/`, `space-invaders-command/`, `neon-flight/`, `qbert/`, `space-invaders/`, `tanks/`, `tetris/`, `balance/`, `excitebike/`, `joust/`, `number-munchers/`, `pacman/`, `pinball/`, `pitfall/`, `pole/`, `trap-the-mouse/`, `ultra-tanks/`, `video-poker/`.
+- Remaining: `boxing/` and `scorched-earth/` are intentionally held for a separate overhaul.
 
 ## UI Standards
 - Games with instructions should show a session-scoped modal the first time the game loads; gameplay starts only after dismiss.

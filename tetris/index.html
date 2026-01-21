@@ -67,14 +67,250 @@
       font-size: 24px;
       color: #ffeb3b;
     }
+    html,
+    body {
+      height: 100%;
+    }
+    body {
+      justify-content: center;
+      overflow: hidden;
+    }
+    #sidebar-placeholder {
+      display: none;
+    }
+    #game-container {
+      position: relative;
+      width: min(1200px, 100%);
+      max-width: calc(100vw - 32px);
+      height: 100vh;
+      padding: 24px;
+      gap: 0;
+    }
+    h1 {
+      display: none;
+    }
+    canvas {
+      border-radius: 18px;
+      border: 2px solid rgba(0, 174, 255, 0.4);
+    }
+    #gameCanvas {
+      width: 100%;
+      height: 100%;
+      max-height: calc(100vh - 32px);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.45);
+    }
+    #info {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(12, 18, 46, 0.65);
+      box-shadow: 0 0 18px rgba(120, 190, 255, 0.35);
+      z-index: 3;
+    }
+    #next {
+      position: absolute;
+      top: 64px;
+      right: 16px;
+      margin: 0;
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(12, 18, 46, 0.65);
+      box-shadow: 0 0 18px rgba(120, 190, 255, 0.35);
+      text-align: center;
+      font-size: 14px;
+      z-index: 3;
+    }
+    #nextCanvas {
+      margin-top: 6px;
+      border-radius: 12px;
+    }
+    #message {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      margin: 0;
+      font-size: 20px;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 10px 18px;
+      border-radius: 999px;
+      min-height: 28px;
+      z-index: 3;
+    }
+    #touch-controls {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 22px 20px;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .control-cluster {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .control-row {
+      display: flex;
+      gap: 12px;
+      pointer-events: none;
+    }
+    .control-button {
+      width: clamp(58px, 16vw, 86px);
+      height: clamp(58px, 16vw, 86px);
+      border-radius: 999px;
+      border: 2px solid rgba(0, 174, 255, 0.5);
+      background: rgba(4, 20, 68, 0.55);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(1.2rem, 4.5vw, 1.8rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      touch-action: none;
+      backdrop-filter: blur(6px);
+      transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .control-button.pressed,
+    .control-button:active {
+      background: rgba(0, 174, 255, 0.25);
+      border-color: rgba(140, 220, 255, 0.9);
+      box-shadow: 0 0 24px rgba(0, 174, 255, 0.45);
+    }
+    body.touch-device #touch-controls {
+      display: flex;
+    }
+    #help-button {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 174, 255, 0.55);
+      background: rgba(4, 20, 68, 0.45);
+      color: rgba(255, 255, 255, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1001;
+      backdrop-filter: blur(6px);
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    #help-button:hover,
+    #help-button:focus-visible {
+      border-color: rgba(140, 220, 255, 0.9);
+      background: rgba(0, 174, 255, 0.25);
+    }
+    #instruction-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 6, 23, 0.78);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 1000;
+      padding: 24px;
+      text-align: left;
+    }
+    #instruction-modal.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #instruction-card {
+      max-width: 540px;
+      width: 100%;
+      background: rgba(4, 20, 68, 0.95);
+      border: 1px solid rgba(0, 174, 255, 0.35);
+      border-radius: 18px;
+      padding: 20px 22px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+    #instruction-card h2 {
+      margin: 0 0 12px;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #7ad9ff;
+    }
+    #instruction-card p {
+      margin: 8px 0;
+      color: #d2efff;
+      line-height: 1.5;
+    }
+    #instruction-close {
+      margin-top: 14px;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(0, 174, 255, 0.9);
+      color: #021c33;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    @media (pointer: fine) {
+      #help-button {
+        display: flex;
+      }
+    }
   </style>
   <link rel="stylesheet" href="../sidebar.css" />
+  <link rel="stylesheet" href="../flyout.css" />
+  <script src="../flyout.js" defer></script>
 </head>
 <body>
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+  <button id="help-button" type="button" aria-label="How to play">?</button>
+  <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
+    <div id="instruction-card">
+      <h2>How to Play</h2>
+      <p>Move with Left/Right. Rotate with Up. Soft drop with Down. Space hard drops.</p>
+      <p>Clear lines to raise your score and survive as long as you can.</p>
+      <button id="instruction-close" type="button">Start</button>
+    </div>
+  </div>
   <div id="sidebar-placeholder"></div>
   <div id="game-container">
     <h1>Tetris</h1>
     <canvas id="gameCanvas" width="300" height="600"></canvas>
+    <div id="touch-controls" aria-hidden="true">
+      <div class="control-cluster">
+        <div class="control-row">
+          <button type="button" class="control-button" data-action="left" aria-label="Move Left">L</button>
+          <button type="button" class="control-button" data-action="right" aria-label="Move Right">R</button>
+        </div>
+        <div class="control-row">
+          <button type="button" class="control-button" data-action="down" aria-label="Soft Drop">D</button>
+        </div>
+      </div>
+      <div class="control-cluster">
+        <button type="button" class="control-button" data-action="rotate" aria-label="Rotate">Rot</button>
+        <button type="button" class="control-button" data-action="drop" aria-label="Hard Drop">Drop</button>
+      </div>
+    </div>
     <div id="info">Score: 0 | Lines: 0</div>
     <div id="next">Next:<br><canvas id="nextCanvas" width="120" height="120"></canvas></div>
     <div id="message"></div>
@@ -84,9 +320,15 @@
     const ctx = canvas.getContext('2d');
     const nextCanvas = document.getElementById('nextCanvas');
     const nextCtx = nextCanvas.getContext('2d');
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    const controlButtons = document.querySelectorAll('.control-button');
+    if (isTouchDevice) {
+      document.body.classList.add('touch-device');
+    }
     const COLS = 10;
     const ROWS = 20;
-    const BLOCK = 30;
+    let BLOCK = 30;
+    let PREVIEW_BLOCK = 18;
     const COLORS = ['cyan','blue','orange','yellow','green','purple','red'];
     const SHAPES = [
       [ // I
@@ -142,6 +384,8 @@
     let gameOver = false;
     let clearingRows = [];
     let clearTimer = 0;
+    let gamePaused = true;
+    let gameStarted = false;
 
     function resetBoard() {
       board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
@@ -240,11 +484,12 @@
     }
 
     function drawNextPiece() {
+      if (nextType === undefined) return;
       nextCtx.fillStyle = '#111';
       nextCtx.fillRect(0,0,nextCanvas.width,nextCanvas.height);
       SHAPES[nextType][0].forEach(([x,y]) => {
         nextCtx.fillStyle = COLORS[nextType];
-        nextCtx.fillRect(x*BLOCK, y*BLOCK, BLOCK-1, BLOCK-1);
+        nextCtx.fillRect(x*PREVIEW_BLOCK, y*PREVIEW_BLOCK, PREVIEW_BLOCK-1, PREVIEW_BLOCK-1);
       });
     }
 
@@ -270,7 +515,15 @@
     }
 
     function update(time=0) {
-      if (gameOver) return;
+      if (gamePaused) {
+        requestAnimationFrame(update);
+        return;
+      }
+      if (gameOver) {
+        draw();
+        requestAnimationFrame(update);
+        return;
+      }
       const delta = time - lastTime;
       if (clearingRows.length) {
         animateLineClear(delta);
@@ -286,6 +539,7 @@
     }
 
     document.addEventListener('keydown', e => {
+      if (!gameStarted || gamePaused) return;
       if (e.key === 'ArrowLeft') move(-1);
       else if (e.key === 'ArrowRight') move(1);
       else if (e.key === 'ArrowDown') drop();
@@ -298,11 +552,32 @@
       score = 0;
       lines = 0;
       gameOver = false;
+      clearingRows = [];
+      clearTimer = 0;
       resetBoard();
       nextType = Math.floor(Math.random()*SHAPES.length);
       newPiece();
       lastTime = 0;
       update();
+    }
+
+    function resizeCanvas() {
+      const padding = 24;
+      const maxWidth = Math.max(240, window.innerWidth - padding * 2);
+      const maxHeight = Math.max(320, window.innerHeight - 140);
+      const blockFromWidth = Math.floor(maxWidth / COLS);
+      const blockFromHeight = Math.floor(maxHeight / ROWS);
+      BLOCK = Math.max(12, Math.min(blockFromWidth, blockFromHeight));
+      canvas.width = COLS * BLOCK;
+      canvas.height = ROWS * BLOCK;
+      canvas.style.width = `${canvas.width}px`;
+      canvas.style.height = `${canvas.height}px`;
+      PREVIEW_BLOCK = Math.max(10, Math.floor(BLOCK * 0.7));
+      nextCanvas.width = PREVIEW_BLOCK * 4;
+      nextCanvas.height = PREVIEW_BLOCK * 4;
+      nextCanvas.style.width = `${nextCanvas.width}px`;
+      nextCanvas.style.height = `${nextCanvas.height}px`;
+      drawNextPiece();
     }
 
     // --- Tetris theme music ---
@@ -362,15 +637,87 @@
     }
 
     initMusic();
-    resetGame();
-  </script>
-  <script>
-    fetch('../sidebar.html')
-      .then(r => r.text())
-      .then(html => {
-        const placeholder = document.getElementById('sidebar-placeholder');
-        if (placeholder) placeholder.outerHTML = html;
+    const instructionModal = document.getElementById('instruction-modal');
+    const instructionClose = document.getElementById('instruction-close');
+    const helpButton = document.getElementById('help-button');
+    const instructionKey = 'vibecade-instructions-tetris';
+    const hasSeenInstructions = sessionStorage.getItem(instructionKey) === '1';
+
+    function startGame() {
+      if (gameStarted) return;
+      gameStarted = true;
+      gamePaused = false;
+      resizeCanvas();
+      resetGame();
+    }
+
+    function showInstructions() {
+      gamePaused = true;
+      if (instructionModal) instructionModal.classList.add('is-visible');
+    }
+
+    function hideInstructions() {
+      if (instructionModal) instructionModal.classList.remove('is-visible');
+      if (!gameStarted) {
+        startGame();
+      } else {
+        gamePaused = false;
+      }
+      sessionStorage.setItem(instructionKey, '1');
+    }
+
+    if (instructionClose) {
+      instructionClose.addEventListener('click', hideInstructions);
+    }
+    if (instructionModal) {
+      instructionModal.addEventListener('click', (event) => {
+        if (event.target === instructionModal) {
+          hideInstructions();
+        }
       });
+    }
+    if (helpButton) {
+      helpButton.addEventListener('click', showInstructions);
+    }
+
+    if (controlButtons.length && isTouchDevice) {
+      controlButtons.forEach((button) => {
+        const action = button.dataset.action;
+        const press = () => {
+          if (!gameStarted || gamePaused) return;
+          button.classList.add('pressed');
+          if (action === 'left') move(-1);
+          if (action === 'right') move(1);
+          if (action === 'down') drop();
+          if (action === 'rotate') rotate();
+          if (action === 'drop') hardDrop();
+        };
+        const release = () => {
+          button.classList.remove('pressed');
+        };
+        button.addEventListener('touchstart', (event) => {
+          event.preventDefault();
+          press();
+        }, { passive: false });
+        button.addEventListener('touchend', (event) => {
+          event.preventDefault();
+          release();
+        }, { passive: false });
+        button.addEventListener('touchcancel', release);
+        button.addEventListener('mousedown', press);
+        button.addEventListener('mouseup', release);
+        button.addEventListener('mouseleave', release);
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      window.requestAnimationFrame(resizeCanvas);
+    });
+
+    if (hasSeenInstructions) {
+      if (instructionModal) instructionModal.classList.remove('is-visible');
+      startGame();
+    }
   </script>
 </body>
 </html>
