@@ -162,6 +162,38 @@
       gap: 12px;
       pointer-events: none;
     }
+    .dpad {
+      position: relative;
+      width: clamp(120px, 32vw, 170px);
+      height: clamp(120px, 32vw, 170px);
+      pointer-events: none;
+    }
+    .dpad .control-button {
+      position: absolute;
+      width: clamp(52px, 14vw, 74px);
+      height: clamp(52px, 14vw, 74px);
+      border-radius: 16px;
+    }
+    .dpad .up {
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .dpad .down {
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .dpad .left {
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .dpad .right {
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
     .control-row {
       display: flex;
       gap: 12px;
@@ -320,13 +352,11 @@
     <canvas id="gameCanvas" width="960" height="540"></canvas>
     <div id="touch-controls" aria-hidden="true">
       <div class="control-cluster">
-        <div class="control-row">
-          <button type="button" class="control-button" data-key="ArrowLeft" data-code="ArrowLeft" aria-label="Move Left">L</button>
-          <button type="button" class="control-button" data-key="ArrowRight" data-code="ArrowRight" aria-label="Move Right">R</button>
-        </div>
-        <div class="control-row">
-          <button type="button" class="control-button" data-key="ArrowUp" data-code="ArrowUp" aria-label="Climb Up">U</button>
-          <button type="button" class="control-button" data-key="ArrowDown" data-code="ArrowDown" aria-label="Climb Down">D</button>
+        <div class="dpad" aria-hidden="true">
+          <button type="button" class="control-button up" data-key="ArrowUp" data-code="ArrowUp" aria-label="Climb Up">U</button>
+          <button type="button" class="control-button left" data-key="ArrowLeft" data-code="ArrowLeft" aria-label="Move Left">L</button>
+          <button type="button" class="control-button right" data-key="ArrowRight" data-code="ArrowRight" aria-label="Move Right">R</button>
+          <button type="button" class="control-button down" data-key="ArrowDown" data-code="ArrowDown" aria-label="Climb Down">D</button>
         </div>
       </div>
       <div class="control-cluster">
@@ -1874,6 +1904,16 @@
       const infoText = `Screen ${state.screenIndex + 1}/100  |  Score ${Math.floor(state.score)}  |  Lives ${state.lives}  |  Treasures ${state.treasures}  |  Idols ${state.specials}/4`;
       document.getElementById('info').innerText = infoText;
       const messageEl = document.getElementById('message');
+      const jumpButton = document.querySelector('.control-button[data-code="Space"]');
+      if (jumpButton) {
+        if (state.game === 'start' || state.game === 'gameover') {
+          jumpButton.textContent = 'Start';
+        } else if (state.game === 'win') {
+          jumpButton.textContent = 'Restart';
+        } else {
+          jumpButton.textContent = 'Jump';
+        }
+      }
       if (state.game === 'start') {
         messageEl.innerText = 'Press Space to Begin';
       } else if (state.game === 'gameover') {
@@ -1986,7 +2026,12 @@
     }
 
     if (instructionClose) {
-      instructionClose.addEventListener('click', hideInstructions);
+      instructionClose.addEventListener('click', () => {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+        hideInstructions();
+      });
     }
     if (instructionModal) {
       instructionModal.addEventListener('click', (event) => {
