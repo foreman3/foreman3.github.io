@@ -763,6 +763,9 @@
         if (i >= 50 && rng() < 0.5) {
           scorpionCount += 1;
         }
+        if (i === 72) {
+          scorpionCount = 2;
+        }
         const scorpions = Array.from({ length: scorpionCount }, (_, s) => ({
           x: 120 + s * 260 + Math.floor(rng() * 120),
           dir: rng() < 0.5 ? -1 : 1,
