@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="1120" viewBox="0 0 980 1120">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f1830"/>
+      <stop offset="55%" stop-color="#0b1122"/>
+      <stop offset="100%" stop-color="#060911"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4bf4ff"/>
+      <stop offset="45%" stop-color="#356cff"/>
+      <stop offset="100%" stop-color="#ff6db9"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d9e6ff"/>
+      <stop offset="50%" stop-color="#7e8fb8"/>
+      <stop offset="100%" stop-color="#394865"/>
+    </linearGradient>
+    <linearGradient id="apron" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2438"/>
+      <stop offset="100%" stop-color="#0b111d"/>
+    </linearGradient>
+    <radialGradient id="reactorGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#9fffff" stop-opacity="0.95"/>
+      <stop offset="35%" stop-color="#34ddff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#34ddff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="portalGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe38a" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffe38a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="laneLeft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffcf73"/>
+      <stop offset="100%" stop-color="#ff7c4b"/>
+    </linearGradient>
+    <linearGradient id="laneRight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8fffff"/>
+      <stop offset="100%" stop-color="#45a9ff"/>
+    </linearGradient>
+    <linearGradient id="laneCenter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#baff8f"/>
+      <stop offset="100%" stop-color="#58d17b"/>
+    </linearGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <pattern id="microGrid" width="34" height="34" patternUnits="userSpaceOnUse">
+      <path d="M 34 0 L 0 0 0 34" fill="none" stroke="#78cfff" stroke-opacity="0.08" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="980" height="1120" fill="url(#bg)"/>
+  <rect x="42" y="42" width="896" height="1036" rx="38" fill="#08101d" stroke="url(#frame)" stroke-width="6"/>
+  <rect x="62" y="62" width="856" height="996" rx="28" fill="#0a1120"/>
+  <rect x="72" y="72" width="836" height="976" rx="24" fill="url(#microGrid)" opacity="0.8"/>
+
+  <g opacity="0.65">
+    <path d="M118 1040 L118 126 L176 126 L176 996" fill="none" stroke="#202c46" stroke-width="34" stroke-linejoin="round"/>
+    <path d="M862 1040 L862 126 L804 126 L804 996" fill="none" stroke="#202c46" stroke-width="34" stroke-linejoin="round"/>
+    <path d="M176 126 Q286 92 386 108" fill="none" stroke="#2b3752" stroke-width="22" stroke-linecap="round"/>
+    <path d="M804 126 Q694 92 594 108" fill="none" stroke="#2b3752" stroke-width="22" stroke-linecap="round"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <path d="M166 790 C170 676 194 610 250 556 C286 522 326 492 382 462" fill="none" stroke="url(#laneLeft)" stroke-width="20" stroke-linecap="round"/>
+    <path d="M814 778 C806 662 780 598 724 548 C688 516 646 484 600 450" fill="none" stroke="url(#laneRight)" stroke-width="20" stroke-linecap="round"/>
+    <path d="M490 670 C490 592 490 500 490 408" fill="none" stroke="url(#laneCenter)" stroke-width="20" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.24" filter="url(#softGlow)">
+    <ellipse cx="250" cy="712" rx="110" ry="210" fill="#ff9e57"/>
+    <ellipse cx="730" cy="706" rx="110" ry="226" fill="#5cd8ff"/>
+    <ellipse cx="490" cy="440" rx="208" ry="112" fill="#48e6ff"/>
+  </g>
+
+  <g>
+    <ellipse cx="490" cy="406" rx="174" ry="80" fill="#13243b" stroke="#60deff" stroke-opacity="0.35" stroke-width="4"/>
+    <ellipse cx="490" cy="406" rx="116" ry="26" fill="#1f3552" opacity="0.75"/>
+    <circle cx="490" cy="402" r="104" fill="url(#reactorGlow)"/>
+    <circle cx="490" cy="402" r="42" fill="#12263b" stroke="#dcfdff" stroke-width="4"/>
+    <circle cx="490" cy="402" r="20" fill="#0a1424" stroke="#70ecff" stroke-width="3"/>
+    <path d="M490 332 L490 544" stroke="#8ff7ff" stroke-opacity="0.55" stroke-width="7"/>
+    <path d="M458 538 L490 504 L522 538" fill="none" stroke="#9fff83" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <circle cx="378" cy="420" r="34" fill="#1a3140" stroke="#ffb34e" stroke-width="10"/>
+    <circle cx="602" cy="420" r="34" fill="#163540" stroke="#66ffcc" stroke-width="10"/>
+    <circle cx="490" cy="396" r="38" fill="#1d3d52" stroke="#c8f6ff" stroke-width="10"/>
+    <circle cx="464" cy="342" r="28" fill="#183554" stroke="#31d7ff" stroke-width="10"/>
+  </g>
+
+  <g opacity="0.86">
+    <rect x="205" y="486" width="54" height="168" rx="12" fill="#402120" stroke="#ffb39f" stroke-opacity="0.55" stroke-width="3"/>
+    <rect x="216" y="516" width="32" height="44" rx="8" fill="#ff7f58"/>
+    <rect x="216" y="564" width="32" height="44" rx="8" fill="#ff7f58"/>
+    <rect x="216" y="612" width="32" height="30" rx="8" fill="#ff7f58"/>
+  </g>
+
+  <g opacity="0.85">
+    <ellipse cx="176" cy="404" rx="34" ry="34" fill="#284f60" stroke="#8ceaff" stroke-width="4"/>
+    <ellipse cx="176" cy="404" rx="74" ry="74" fill="none" stroke="#7ce9ff" stroke-opacity="0.16" stroke-width="4"/>
+  </g>
+
+  <g opacity="0.74">
+    <ellipse cx="646" cy="440" rx="84" ry="48" fill="#251f1c"/>
+    <ellipse cx="646" cy="440" rx="96" ry="56" fill="url(#portalGlow)"/>
+    <text x="602" y="455" font-size="42" font-family="Trebuchet MS, sans-serif" fill="#ffd777" fill-opacity="0.72">PORTAL</text>
+  </g>
+
+  <g opacity="0.9">
+    <rect x="752" y="528" width="68" height="252" rx="14" fill="#1a2130" stroke="#7ee8ff" stroke-opacity="0.25" stroke-width="3"/>
+    <rect x="848" y="642" width="36" height="106" rx="8" fill="#3e341a" stroke="#ffe56f" stroke-opacity="0.4" stroke-width="3"/>
+    <text x="765" y="260" transform="rotate(55 765 260)" font-size="34" font-family="Trebuchet MS, sans-serif" fill="#ffd85d" fill-opacity="0.28">REACTOR LANE</text>
+  </g>
+
+  <g opacity="0.92" filter="url(#shadow)">
+    <path d="M204 810 L262 744 L306 756 L230 842 Z" fill="#3b2d20" stroke="#b88a59" stroke-width="4"/>
+    <path d="M776 810 L718 744 L674 756 L750 842 Z" fill="#233244" stroke="#7cbcf2" stroke-width="4"/>
+    <path d="M182 860 L128 816" stroke="#4c3472" stroke-width="24" stroke-linecap="round"/>
+    <path d="M798 860 L852 816" stroke="#4c3472" stroke-width="24" stroke-linecap="round"/>
+    <path d="M396 776 L430 846" stroke="#31245e" stroke-width="22" stroke-linecap="round"/>
+    <path d="M584 776 L550 846" stroke="#31245e" stroke-width="22" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.65">
+    <path d="M210 770 C240 720 272 700 308 690" fill="none" stroke="#ffb766" stroke-width="4"/>
+    <path d="M770 760 C740 710 708 690 672 678" fill="none" stroke="#72ddff" stroke-width="4"/>
+    <path d="M490 540 C490 492 490 454 490 408" fill="none" stroke="#98ff8f" stroke-width="4"/>
+  </g>
+
+  <g opacity="0.9">
+    <path d="M324 980 L442 930" stroke="#ff8e4f" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="440" cy="930" r="10" fill="#ffd7b2"/>
+    <path d="M656 980 L558 1022" stroke="#73bdff" stroke-width="18" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.88">
+    <circle cx="186" cy="840" r="10" fill="#dff7ff"/>
+    <circle cx="286" cy="858" r="10" fill="#dff7ff"/>
+    <circle cx="694" cy="858" r="10" fill="#dff7ff"/>
+    <circle cx="794" cy="840" r="10" fill="#dff7ff"/>
+  </g>
+
+  <g opacity="0.72">
+    <text x="130" y="305" transform="rotate(-58 130 305)" font-size="36" font-family="Trebuchet MS, sans-serif" fill="#7ceeff" fill-opacity="0.42">LEFT ORBIT</text>
+    <text x="170" y="640" transform="rotate(-14 170 640)" font-size="44" font-family="Trebuchet MS, sans-serif" fill="#84f0ff" fill-opacity="0.34">LOCK</text>
+  </g>
+
+  <g opacity="0.75">
+    <rect x="166" y="980" width="648" height="100" rx="24" fill="url(#apron)" stroke="#6be8ff" stroke-opacity="0.14" stroke-width="3"/>
+    <text x="490" y="1022" text-anchor="middle" font-size="54" font-family="Trebuchet MS, sans-serif" fill="#d9f4ff" font-weight="700">DOCTOR DUDE LAB</text>
+    <text x="490" y="1060" text-anchor="middle" font-size="24" font-family="Trebuchet MS, sans-serif" fill="#84ecff">Stabilize the reactor. Stack combos. Trigger core surge multiball.</text>
+  </g>
+</svg>

@@ -11,21 +11,21 @@ export class MiniTable extends Phaser.Scene {
     }
 
     create() {
-        this.matter.world.setBounds(0, 0, 600, 800);
-        this.matter.world.setGravity(0, 1.1);
+        this.width = this.scale.gameSize.width;
+        this.height = this.scale.gameSize.height;
+        this.matter.world.setBounds(0, 0, this.width, this.height);
+        this.matter.world.setGravity(0, 1.0);
 
-        const colors = {
-            shock: 0x0c2036,
-            toxin: 0x18301a,
-            signal: 0x102633,
-            orbit: 0x1b2240,
-            zen: 0x15122e
-        };
-        this.cameras.main.setBackgroundColor(colors[this.theme] || 0x0b1022);
-        this.add.rectangle(300, 400, 520, 740, 0x0b1426, 0.9).setStrokeStyle(4, 0x5ce1ff, 0.25);
+        this.themeConfig = {
+            shock: { bg: 0x0b1a2c, accent: 0x5ce1ff, accent2: 0xa6f3ff, label: 'Shock Circuit' },
+            toxin: { bg: 0x122414, accent: 0x8fff79, accent2: 0xd1ff9d, label: 'Toxin Flush' },
+            signal: { bg: 0x0e2330, accent: 0x63d9ff, accent2: 0xd5f7ff, label: 'Signal Sweep' },
+            orbit: { bg: 0x171e39, accent: 0xb3beff, accent2: 0xe4eaff, label: 'Orbit Burst' },
+            zen: { bg: 0x17122d, accent: 0xc29bff, accent2: 0xf0e3ff, label: 'Zenith Mode' }
+        }[this.theme] || { bg: 0x0b1a2c, accent: 0x5ce1ff, accent2: 0xa6f3ff, label: 'Lab Drill' };
 
-        this.add.text(300, 48, 'LAB DRILL', { fontSize: '24px', fill: '#e8f6ff' }).setOrigin(0.5);
-        this.add.text(300, 78, 'Clear 2 signals, then hit the core', { fontSize: '14px', fill: '#a6c7ff' }).setOrigin(0.5);
+        this.cameras.main.setBackgroundColor(this.themeConfig.bg);
+        this.drawLayout();
 
         this.taskHits = 0;
         this.requiredTasks = 2;
@@ -39,34 +39,62 @@ export class MiniTable extends Phaser.Scene {
         this.setupCollisions();
     }
 
+    drawLayout() {
+        this.add.rectangle(this.width / 2, this.height / 2, this.width * 0.84, this.height * 0.86, 0x09111d, 0.92)
+            .setStrokeStyle(3, this.themeConfig.accent, 0.24);
+        this.add.rectangle(this.width / 2, this.height / 2, this.width * 0.78, this.height * 0.8, 0x0d1828, 0.66)
+            .setStrokeStyle(1, 0xffffff, 0.08);
+
+        this.add.text(this.width / 2, 52, this.themeConfig.label.toUpperCase(), {
+            fontFamily: 'Space Grotesk',
+            fontSize: '26px',
+            fontStyle: '700',
+            color: '#effcff'
+        }).setOrigin(0.5);
+        this.add.text(this.width / 2, 82, 'Clear the two lit nodes, then hit the core gate.', {
+            fontFamily: 'Space Grotesk',
+            fontSize: '14px',
+            color: '#abd4f6'
+        }).setOrigin(0.5);
+        this.progressText = this.add.text(this.width / 2, 106, 'Nodes cleared: 0 / 2', {
+            fontFamily: 'Space Grotesk',
+            fontSize: '14px',
+            color: '#ffe2a7'
+        }).setOrigin(0.5);
+    }
+
     createWalls() {
-        const wallOptions = { isStatic: true, label: 'wall', restitution: 0.9 };
+        const wallOptions = { isStatic: true, label: 'wall', restitution: 0.92 };
         const addWall = (x, y, w, h, angle = 0) => {
             this.matter.add.rectangle(x, y, w, h, { ...wallOptions, angle });
-            this.add.rectangle(x, y, w, h, 0x122238, 0.9).setRotation(angle);
+            this.add.rectangle(x, y, w, h, 0x17304b, 0.85).setRotation(angle);
         };
-        addWall(18, 400, 26, 780);
-        addWall(582, 400, 26, 780);
-        addWall(300, 16, 560, 26);
-        addWall(190, 580, 120, 14, Math.PI / 5);
-        addWall(410, 580, 120, 14, -Math.PI / 5);
-        this.drain = this.matter.add.rectangle(300, 810, 600, 20, { isStatic: true, isSensor: true, label: 'drain' });
+
+        addWall(this.width * 0.16, this.height * 0.5, 18, this.height * 0.78);
+        addWall(this.width * 0.84, this.height * 0.5, 18, this.height * 0.78);
+        addWall(this.width / 2, this.height * 0.14, this.width * 0.68, 18);
+        addWall(this.width * 0.33, this.height * 0.72, this.width * 0.18, 14, Math.PI / 5.2);
+        addWall(this.width * 0.67, this.height * 0.72, this.width * 0.18, 14, -Math.PI / 5.2);
+        this.drain = this.matter.add.rectangle(this.width / 2, this.height + 10, this.width, 20, { isStatic: true, isSensor: true, label: 'drain' });
     }
 
     createFlippers() {
+        const y = this.height * 0.84;
         this.flippers = {
-            left: this.createFlipper(245, 690, 'left'),
-            right: this.createFlipper(355, 690, 'right')
+            left: this.createFlipper(this.width * 0.43, y, 'left'),
+            right: this.createFlipper(this.width * 0.57, y, 'right')
         };
     }
 
     createFlipper(x, y, side) {
-        const body = this.matter.add.rectangle(x, y, 90, 20, { label: `${side}Flipper`, frictionAir: 0.01 });
-        const pivot = this.matter.add.circle(side === 'left' ? x - 40 : x + 40, y, 4, { isStatic: true });
+        const width = 92;
+        const body = this.matter.add.rectangle(x, y, width, 20, { label: `${side}Flipper`, frictionAir: 0.01, restitution: 0.2 });
+        const pivot = this.matter.add.circle(side === 'left' ? x - 40 : x + 40, y, 5, { isStatic: true });
         this.matter.add.constraint(body, pivot, 0, 1, { pointA: { x: side === 'left' ? -40 : 40, y: 0 } });
         body.restAngle = side === 'left' ? Phaser.Math.DegToRad(18) : Phaser.Math.DegToRad(-18);
         body.activeAngle = side === 'left' ? Phaser.Math.DegToRad(-32) : Phaser.Math.DegToRad(32);
         MatterBody.setAngle(body, body.restAngle);
+        body.sprite = this.add.rectangle(x, y, width, 18, this.themeConfig.accent, 0.95).setOrigin(0.5).setStrokeStyle(2, 0xffffff, 0.24);
         return body;
     }
 
@@ -74,62 +102,57 @@ export class MiniTable extends Phaser.Scene {
         this.objectives = [];
         this.obstacles = [];
 
-        const addObjective = (x, y, w, h, tint = 0xff5b5b) => {
+        const addObjective = (x, y, w, h) => {
             const obj = this.matter.add.rectangle(x, y, w, h, { isStatic: true, isSensor: true, label: 'objective' });
-            obj.sprite = this.add.rectangle(x, y, w, h, tint, 0.7).setStrokeStyle(2, 0xffffff, 0.6);
+            obj.sprite = this.add.rectangle(x, y, w, h, this.themeConfig.accent, 0.72).setStrokeStyle(2, 0xffffff, 0.55);
             this.objectives.push(obj);
+            return obj;
         };
 
         switch (this.theme) {
             case 'toxin':
-                addObjective(200, 320, 52, 26, 0x8bff7a);
-                addObjective(400, 320, 52, 26, 0x8bff7a);
-                this.treasureTarget = this.matter.add.rectangle(300, 210, 70, 24, { isStatic: true, isSensor: true, label: 'treasure' });
-                this.treasureGlow = this.add.rectangle(300, 210, 70, 24, 0xb3ff9a, 0.8).setStrokeStyle(2, 0x2a5c1f);
-                this.obstacles.push(this.matter.add.rectangle(300, 380, 140, 12, { isStatic: true, angle: Phaser.Math.DegToRad(-8), label: 'beam' }));
+                addObjective(this.width * 0.38, this.height * 0.42, 54, 28);
+                addObjective(this.width * 0.62, this.height * 0.42, 54, 28);
+                this.obstacles.push(this.matter.add.rectangle(this.width / 2, this.height * 0.51, this.width * 0.22, 12, { isStatic: true, angle: Phaser.Math.DegToRad(-10), label: 'beam' }));
                 break;
             case 'signal':
-                addObjective(210, 300, 50, 26, 0x5ce1ff);
-                addObjective(390, 300, 50, 26, 0x5ce1ff);
-                this.treasureTarget = this.matter.add.rectangle(300, 210, 70, 24, { isStatic: true, isSensor: true, label: 'treasure' });
-                this.treasureGlow = this.add.rectangle(300, 210, 70, 24, 0x7bdcff, 0.8).setStrokeStyle(2, 0x103b5c);
-                this.obstacles.push(this.matter.add.circle(300, 350, 16, { isStatic: true, restitution: 1.2, label: 'peg' }));
+                addObjective(this.width * 0.36, this.height * 0.4, 52, 26);
+                addObjective(this.width * 0.64, this.height * 0.4, 52, 26);
+                this.obstacles.push(this.matter.add.circle(this.width / 2, this.height * 0.48, 16, { isStatic: true, restitution: 1.25, label: 'peg' }));
                 break;
             case 'orbit':
-                addObjective(220, 290, 48, 26, 0x9bb2ff);
-                addObjective(380, 290, 48, 26, 0x9bb2ff);
-                this.treasureTarget = this.matter.add.circle(300, 210, 22, { isStatic: true, isSensor: true, label: 'treasure' });
-                this.treasureGlow = this.add.circle(300, 210, 26, 0xb8c7ff, 0.8).setStrokeStyle(2, 0x1a4b7a);
-                this.obstacles.push(this.matter.add.circle(250, 360, 12, { isStatic: true, restitution: 1.2, label: 'peg' }));
-                this.obstacles.push(this.matter.add.circle(350, 360, 12, { isStatic: true, restitution: 1.2, label: 'peg' }));
+                addObjective(this.width * 0.38, this.height * 0.38, 48, 26);
+                addObjective(this.width * 0.62, this.height * 0.38, 48, 26);
+                this.obstacles.push(this.matter.add.circle(this.width * 0.42, this.height * 0.5, 13, { isStatic: true, restitution: 1.25, label: 'peg' }));
+                this.obstacles.push(this.matter.add.circle(this.width * 0.58, this.height * 0.5, 13, { isStatic: true, restitution: 1.25, label: 'peg' }));
                 break;
             case 'zen':
-                addObjective(220, 270, 46, 26, 0xb39bff);
-                addObjective(380, 270, 46, 26, 0xb39bff);
-                this.treasureTarget = this.matter.add.circle(300, 210, 24, { isStatic: true, isSensor: true, label: 'treasure' });
-                this.treasureGlow = this.add.circle(300, 210, 28, 0xa78bff, 0.8).setStrokeStyle(2, 0xffffff);
-                this.gravityWell = { x: 300, y: 260 };
+                addObjective(this.width * 0.38, this.height * 0.37, 48, 26);
+                addObjective(this.width * 0.62, this.height * 0.37, 48, 26);
+                this.gravityWell = { x: this.width / 2, y: this.height * 0.34 };
+                this.gravityGlow = this.add.circle(this.gravityWell.x, this.gravityWell.y, 36, this.themeConfig.accent, 0.16).setStrokeStyle(2, this.themeConfig.accent2, 0.55);
                 break;
             case 'shock':
             default:
-                addObjective(210, 300, 50, 26, 0x2fe1ff);
-                addObjective(390, 300, 50, 26, 0x2fe1ff);
-                this.treasureTarget = this.matter.add.rectangle(300, 210, 70, 24, { isStatic: true, isSensor: true, label: 'treasure' });
-                this.treasureGlow = this.add.rectangle(300, 210, 70, 24, 0x7bdcff, 0.8).setStrokeStyle(2, 0x103b5c);
-                this.obstacles.push(this.matter.add.rectangle(300, 360, 120, 12, { isStatic: true, angle: Phaser.Math.DegToRad(6), label: 'beam' }));
+                addObjective(this.width * 0.38, this.height * 0.41, 52, 26);
+                addObjective(this.width * 0.62, this.height * 0.41, 52, 26);
+                this.obstacles.push(this.matter.add.rectangle(this.width / 2, this.height * 0.49, this.width * 0.22, 12, { isStatic: true, angle: Phaser.Math.DegToRad(8), label: 'beam' }));
                 break;
         }
+
+        this.treasureTarget = this.matter.add.circle(this.width / 2, this.height * 0.28, 24, { isStatic: true, isSensor: true, label: 'treasure' });
+        this.treasureGlow = this.add.circle(this.width / 2, this.height * 0.28, 30, this.themeConfig.accent, 0.28).setStrokeStyle(2, this.themeConfig.accent2, 0.8);
+        this.treasureGlow.setAlpha(0.28);
     }
 
     createBall() {
-        this.ball = this.matter.add.image(300, 520, 'ball');
+        this.ball = this.matter.add.image(this.width / 2, this.height * 0.62, 'ball');
         this.ball.setCircle(12);
         this.ball.setFriction(0.002);
         this.ball.setFrictionAir(0.001);
         this.ball.setBounce(0.96);
         this.ball.body.label = 'miniBall';
-        const vx = Phaser.Math.Between(-5, 5);
-        this.ball.setVelocity(vx, -15);
+        this.ball.setVelocity(Phaser.Math.Between(-4, 4), -14);
     }
 
     setupInput() {
@@ -147,9 +170,10 @@ export class MiniTable extends Phaser.Scene {
 
                 if (other.label === 'objective') {
                     other.label = 'clearedObjective';
-                    this.taskHits++;
-                    if (other.sprite) other.sprite.setAlpha(0.2);
-                    this.addFlash(other.position.x, other.position.y, 0x00ff99);
+                    this.taskHits += 1;
+                    if (other.sprite) other.sprite.setAlpha(0.18);
+                    this.progressText.setText(`Nodes cleared: ${this.taskHits} / ${this.requiredTasks}`);
+                    this.addFlash(other.position.x, other.position.y, this.themeConfig.accent);
                     if (this.taskHits >= this.requiredTasks) {
                         this.treasureOpen = true;
                     }
@@ -164,11 +188,12 @@ export class MiniTable extends Phaser.Scene {
     }
 
     addFlash(x, y, color) {
-        const rect = this.add.rectangle(x, y, 60, 60, color, 0.4);
+        const rect = this.add.circle(x, y, 34, color, 0.42);
         this.tweens.add({
             targets: rect,
             alpha: 0,
-            duration: 300,
+            scale: 1.4,
+            duration: 280,
             onComplete: () => rect.destroy()
         });
     }
@@ -179,25 +204,31 @@ export class MiniTable extends Phaser.Scene {
         this.rotateFlipper(this.flippers.left, leftTarget);
         this.rotateFlipper(this.flippers.right, rightTarget);
 
-        if (this.treasureGlow && this.treasureOpen) {
-            const pulse = 0.6 + Math.sin(this.time.now * 0.02) * 0.2;
+        if (this.treasureGlow) {
+            const base = this.treasureOpen ? 0.5 : 0.2;
+            const pulse = base + Math.sin(this.time.now * 0.012) * 0.08;
             this.treasureGlow.setAlpha(pulse);
         }
 
-        if (this.theme === 'zen' && this.gravityWell) {
+        if (this.gravityWell) {
             const dx = this.gravityWell.x - this.ball.x;
             const dy = this.gravityWell.y - this.ball.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 200) {
-                MatterBody.applyForce(this.ball.body, this.ball.body.position, { x: dx * 0.00002, y: dy * 0.00002 });
+            if (dist < 180) {
+                MatterBody.applyForce(this.ball.body, this.ball.body.position, { x: dx * 0.000018, y: dy * 0.000018 });
             }
+            if (this.gravityGlow) this.gravityGlow.setAlpha(0.16 + (Math.sin(this.time.now * 0.018) + 1) * 0.05);
         }
     }
 
     rotateFlipper(flipper, target) {
-        const newAngle = Phaser.Math.Angle.RotateTo(flipper.angle, target, 0.32);
+        const newAngle = Phaser.Math.Angle.RotateTo(flipper.angle, target, 0.34);
         MatterBody.setAngle(flipper, newAngle);
         MatterBody.setAngularVelocity(flipper, 0);
+        if (flipper.sprite) {
+            flipper.sprite.setPosition(flipper.position.x, flipper.position.y);
+            flipper.sprite.setRotation(newAngle);
+        }
     }
 
     winMini() {

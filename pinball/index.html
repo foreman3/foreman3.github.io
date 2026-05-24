@@ -3,13 +3,24 @@
 
 <head>
     <title>Doctor Dude Lab Pinball</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            color-scheme: dark;
+        }
+
         body {
             margin: 0;
-            background: radial-gradient(circle at top, rgba(18, 34, 60, 0.9), #01030a 60%);
+            background:
+                radial-gradient(circle at top, rgba(38, 108, 170, 0.45), transparent 36%),
+                radial-gradient(circle at 20% 20%, rgba(255, 143, 86, 0.16), transparent 28%),
+                linear-gradient(180deg, #08111e 0%, #03050a 100%);
             overflow: hidden;
             display: flex;
             min-height: 100vh;
+            font-family: 'Space Grotesk', sans-serif;
         }
 
         #game-container {
@@ -19,6 +30,8 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         canvas {
@@ -26,8 +39,8 @@
             margin: 0 auto;
             max-width: 100%;
             max-height: 100%;
-            transform: perspective(1000px) rotateX(5deg) scale(1.02);
-            transform-origin: top center;
+            border-radius: 28px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
         }
 
         #touch-controls {
@@ -39,6 +52,15 @@
             padding: 0 18px 20px;
             pointer-events: none;
             z-index: 3;
+        }
+        #launch-control {
+            position: absolute;
+            left: 50%;
+            bottom: 26px;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 3;
+            pointer-events: none;
         }
         .control-button {
             width: clamp(70px, 20vw, 120px);
@@ -65,20 +87,23 @@
         body.touch-device #touch-controls {
             display: flex;
         }
+        body.touch-device #launch-control {
+            display: block;
+        }
         #help-button {
             position: fixed;
             top: 16px;
             right: 16px;
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 999px;
             border: 1px solid rgba(120, 243, 255, 0.55);
-            background: rgba(8, 12, 20, 0.45);
+            background: rgba(8, 12, 20, 0.56);
             color: rgba(255, 255, 255, 0.85);
             display: none;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 19px;
             cursor: pointer;
             z-index: 1001;
             backdrop-filter: blur(6px);
@@ -95,7 +120,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(6, 0, 25, 0.72);
+            background: rgba(4, 6, 18, 0.58);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease;
@@ -110,7 +135,7 @@
         #instruction-card {
             max-width: 580px;
             width: 100%;
-            background: rgba(10, 12, 32, 0.95);
+            background: rgba(10, 14, 34, 0.9);
             border: 1px solid rgba(120, 243, 255, 0.25);
             border-radius: 18px;
             padding: 20px 22px;
@@ -135,15 +160,30 @@
             padding: 10px 12px;
             border-radius: 999px;
             border: none;
-            background: linear-gradient(135deg, #3f0da5, #8625ff);
+            background: linear-gradient(135deg, #1464d8, #6f3bff);
             color: #fff;
             font-weight: 700;
             letter-spacing: 1px;
             cursor: pointer;
         }
+        #instruction-card strong {
+            color: #fff4af;
+        }
         @media (pointer: fine) {
             #help-button {
                 display: flex;
+            }
+            #launch-control {
+                display: block;
+                left: auto;
+                right: 18px;
+                bottom: 18px;
+                transform: none;
+            }
+            #launch-control .control-button {
+                width: 72px;
+                height: 72px;
+                font-size: 1rem;
             }
         }
     </style>
@@ -153,7 +193,7 @@
   <script src="../flyout.js" defer></script>
 </head>
 
-<body>
+<body tabindex="0">
     <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
       <button class="flyout-toggle" type="button" aria-label="Arcade menu">
         <span></span>
@@ -166,8 +206,9 @@
     <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
       <div id="instruction-card">
         <h2>How to Play</h2>
-        <p>Left/Right arrows control the flippers. Hold Space to charge, release to launch.</p>
-        <p>Hit lab lanes, targets, and ramps to unlock the core and enter the mini table.</p>
+        <p><strong>Left/Right</strong> controls the flippers. Hold <strong>Space</strong> or <strong>Enter</strong> to charge the plunger, then release to launch.</p>
+        <p>Open with the reactor lane skill shot, rotate through different shots to build combos, and overfill the reactor for instant multiball.</p>
+        <p>Collect clues, recover mission items from the center lane, then shoot the portal when the tunnel opens.</p>
         <button id="instruction-close" type="button">Start</button>
       </div>
     </div>
@@ -176,6 +217,9 @@
         <button type="button" class="control-button" data-key="ArrowLeft" data-code="ArrowLeft" aria-label="Left Flipper">L</button>
         <button type="button" class="control-button" data-key="ArrowRight" data-code="ArrowRight" aria-label="Right Flipper">R</button>
       </div>
+      <div id="launch-control" aria-hidden="true">
+        <button type="button" class="control-button" data-key="Enter" data-code="Enter" aria-label="Launch Ball">Go</button>
+      </div>
     </div>
     <script type="module" src="game.js"></script>
     <script>
@@ -183,11 +227,30 @@
       const instructionClose = document.getElementById('instruction-close');
       const helpButton = document.getElementById('help-button');
       const instructionKey = 'vibecade-instructions-pinball';
-      const hasSeenInstructions = sessionStorage.getItem(instructionKey) === '1';
+      const urlParams = new URLSearchParams(window.location.search);
+      const autoPlay = urlParams.get('autoplay') === '1';
+      const hasSeenInstructions = autoPlay || sessionStorage.getItem(instructionKey) === '1';
       const controlButtons = document.querySelectorAll('.control-button');
       const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+      const controlState = window.pinballControls || (window.pinballControls = {
+        left: false,
+        right: false,
+        launch: false,
+        launchReleased: false
+      });
       if (isTouchDevice) {
         document.body.classList.add('touch-device');
+      }
+
+      function syncControlState(key, pressed) {
+        if (key === 'ArrowLeft') controlState.left = pressed;
+        if (key === 'ArrowRight') controlState.right = pressed;
+        if (key === 'Enter' || key === 'Space' || key === ' ') {
+          if (!pressed && controlState.launch) {
+            controlState.launchReleased = true;
+          }
+          controlState.launch = pressed;
+        }
       }
 
       function showInstructions() {
@@ -199,6 +262,8 @@
         if (instructionModal) instructionModal.classList.remove('is-visible');
         if (window.resumePinball) window.resumePinball();
         sessionStorage.setItem(instructionKey, '1');
+        document.body.focus?.();
+        window.focus?.();
       }
 
       if (instructionClose) {
@@ -216,11 +281,25 @@
       }
 
       function dispatchKeyEvent(key, code, type) {
+        syncControlState(key, type === 'keydown');
         const event = new KeyboardEvent(type, { key, code, bubbles: true });
         window.dispatchEvent(event);
       }
 
-      if (controlButtons.length && isTouchDevice) {
+      window.addEventListener('keydown', (event) => {
+        syncControlState(event.code || event.key, true);
+      });
+      window.addEventListener('keyup', (event) => {
+        syncControlState(event.code || event.key, false);
+      });
+      window.addEventListener('blur', () => {
+        controlState.left = false;
+        controlState.right = false;
+        controlState.launch = false;
+        controlState.launchReleased = false;
+      });
+
+      if (controlButtons.length) {
         controlButtons.forEach((button) => {
           const key = button.dataset.key;
           const code = button.dataset.code || button.dataset.key;
@@ -250,6 +329,16 @@
       if (hasSeenInstructions) {
         if (instructionModal) instructionModal.classList.remove('is-visible');
         if (window.resumePinball) window.resumePinball();
+      }
+
+      if (autoPlay) {
+        window.setTimeout(() => {
+          controlState.launch = true;
+          window.setTimeout(() => {
+            controlState.launchReleased = true;
+            controlState.launch = false;
+          }, 700);
+        }, 700);
       }
     </script>
 </body>
