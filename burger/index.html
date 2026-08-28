@@ -336,8 +336,8 @@
     <div id="instruction-card">
       <h2>How to Play</h2>
       <p>Assemble towering burgers while dodging mischievous food foes.</p>
-      <p>Use the Arrow Keys to move and climb. Press Space to unleash pepper spray.</p>
-      <p>Collect condiments for bonus points and drop every stack to clear the level.</p>
+      <p>Use the Arrow Keys to move and climb. Ladders gently pull you into position, and you can press sideways near any landing to step off. Press Space to unleash pepper spray.</p>
+      <p>Walk across all three glowing pressure points on an ingredient to drop it. Carry an enemy for one extra floor, collect condiments, and complete every burger stack.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
   </div>
@@ -349,7 +349,7 @@
       <div class="hud-chip" id="hud-pepper"></div>
     </div>
     <div id="gameCanvas-wrapper">
-      <canvas id="gameCanvas" width="960" height="720"></canvas>
+      <canvas id="gameCanvas" width="960" height="720" tabindex="0" aria-label="Burger Time playfield"></canvas>
     </div>
     <div id="touch-controls" aria-hidden="true">
       <div class="control-cluster">
@@ -371,8 +371,9 @@
         Assemble towering gourmet burgers while dodging mischievous food foes. Use the
         <strong>Arrow Keys</strong> to move and climb, and tap <strong>Space</strong>
         to unleash a burst of pepper spray that stuns anything in front of you.
-        Collect neon condiments for bonus points and keep the ingredients dropping to
-        complete each level's mega stack!
+        Ladders magnetize gently when you climb, and a sideways press near a landing
+        steps off cleanly. Walk across all three pressure points on each ingredient,
+        carry enemies for an extra floor, and complete every mega stack!
       </p>
     </section>
   </div>
@@ -441,14 +442,13 @@ const levels = [
     name: 'Sunset Kitchen',
     floors: [3,6,9,12,15,18],
     ladders: [
-      {x:3, top:3, bottom:18},
-      {x:7, top:3, bottom:18},
-      {x:11, top:3, bottom:18},
-      {x:15, top:3, bottom:18},
-      {x:19, top:3, bottom:18},
+      {x:1, top:3, bottom:18},
+      {x:6.25, top:3, bottom:18},
+      {x:11.75, top:3, bottom:18},
+      {x:17.25, top:3, bottom:18},
       {x:22, top:6, bottom:18}
     ],
-    burgerX: [4,9,14,19],
+    burgerX: [3,8.5,14,19.5],
     condiments: [
       {x:6, floor:1, type:'condiment_ketchup', score:250},
       {x:13, floor:2, type:'condiment_cheese', score:350},
@@ -464,14 +464,13 @@ const levels = [
     name: 'Neon Rooftop',
     floors: [2.5,5.5,8.5,11.5,14.5,17.8],
     ladders: [
-      {x:2.5, top:2.5, bottom:17.8},
-      {x:6.5, top:2.5, bottom:17.8},
-      {x:10.5, top:2.5, bottom:17.8},
-      {x:14.5, top:2.5, bottom:17.8},
-      {x:18.5, top:2.5, bottom:17.8},
-      {x:21.5, top:5.5, bottom:17.8}
+      {x:0.75, top:2.5, bottom:17.8},
+      {x:5.75, top:2.5, bottom:17.8},
+      {x:11.25, top:2.5, bottom:17.8},
+      {x:16.75, top:2.5, bottom:17.8},
+      {x:22.25, top:5.5, bottom:17.8}
     ],
-    burgerX: [3.5,8.5,13.5,18.5],
+    burgerX: [2.5,8,13.5,19],
     condiments: [
       {x:5.5, floor:1, type:'condiment_cheese', score:350},
       {x:16.5, floor:3, type:'condiment_ketchup', score:250},
@@ -496,7 +495,12 @@ const player = {
   dir: 1,
   pepper: 4,
   cooldown: 0,
-  invulnerable: 0
+  invulnerable: 0,
+  climbing: false,
+  currentLadder: null,
+  dying: false,
+  deathTimer: 0,
+  respawnTimer: 0
 };
 
 const baseEnemyTypes = {
@@ -508,7 +512,7 @@ const baseEnemyTypes = {
 let enemyTypes = {};
 
 function enemySpeedMultiplierForLevel(index){
-  return 0.5 + index * 0.1;
+  return Math.min(1.35, 0.82 + index * 0.055);
 }
 
 function applyEnemySpeedScaling(index){
@@ -556,7 +560,10 @@ const BASE_FPS = 60;
 const FRAME_TIME = 1000 / BASE_FPS;
 const FIXED_DT = FRAME_TIME / 1000;
 const MAX_CATCHUP_STEPS = 5;
-const LADDER_EXIT_BAND = 0.44;
+const LADDER_EXIT_BAND = 0.58;
+const LADDER_ENTRY_TOLERANCE = 1.05;
+const DEATH_ANIMATION_FRAMES = 72;
+const RESPAWN_COOLDOWN_FRAMES = 78;
 let accumulator = 0;
 let lastTimestamp = null;
 
@@ -676,16 +683,6 @@ function forEachPieceAtX(x, callback){
   return false;
 }
 
-function findSupportingPiece(piece){
-  const below = piece.below;
-  if(!below || below.complete) return null;
-  const gap = (below.y - 1) - piece.y;
-  if(gap <= 0.12){
-    return below;
-  }
-  return null;
-}
-
 function spawnParticles(x, y, color, count = 12){
   if(particles.length >= MAX_PARTICLES) return;
   const available = MAX_PARTICLES - particles.length;
@@ -736,8 +733,7 @@ function loadLevel(index, options = {}){
     collected: false,
     fade: 0
   }));
-  pendingSpawns = level.enemyWaves.map(w => ({...w}));
-  enemies = [];
+  resetEnemyWave();
   player.pepper = 4;
   for(const column of burgerColumns){
     const columnPieces = [];
@@ -747,9 +743,14 @@ function loadLevel(index, options = {}){
         y: floors[i],
         type: burgerLayers[i],
         falling: false,
+        state: 'resting',
+        fallSpeed: 0,
+        dropFloors: 0,
+        deltaY: 0,
+        steps: [false, false, false],
+        stepPulse: 0,
         floorIndex: i,
-        remaining: 0,
-        support: null,
+        blockedBy: null,
         complete: false,
         scored: false,
         column,
@@ -783,14 +784,34 @@ function loadLevel(index, options = {}){
   updateHud();
 }
 
-function resetActors(){
-  player.x = burgerColumns[0] + 0.5;
+function resetActors(options = {}){
+  player.x = 0.6;
   player.y = floors[0];
   player.vx = 0;
   player.vy = 0;
   player.dir = 1;
   player.cooldown = 0;
   player.invulnerable = 60;
+  player.climbing = false;
+  player.currentLadder = null;
+  player.dying = false;
+  player.deathTimer = 0;
+  player.respawnTimer = options.cooldown ?? 0;
+}
+
+function resetEnemyWave(options = {}){
+  const level = levels[levelIndex];
+  enemies = [];
+  pendingSpawns = level.enemyWaves.map(wave => ({...wave}));
+  if(options.spawnImmediate){
+    for(let i = pendingSpawns.length - 1; i >= 0; i--){
+      const spawn = pendingSpawns[i];
+      if(spawn.delay <= 0){
+        spawnEnemy(spawn.type, spawn);
+        pendingSpawns.splice(i, 1);
+      }
+    }
+  }
 }
 
 function spawnEnemy(type, data = {}){
@@ -808,7 +829,14 @@ function spawnEnemy(type, data = {}){
     dir: data.dir ?? -1,
     stunned: 0,
     timer: 0,
-    floatPhase: Math.random() * Math.PI * 2
+    floatPhase: Math.random() * Math.PI * 2,
+    climbing: false,
+    currentLadder: null,
+    targetLadder: null,
+    targetFloorIndex: floorIdx,
+    targetX: data.x ?? 0,
+    decisionTimer: Math.random() * 30,
+    decisionSeed: Math.floor(Math.random() * 1000)
   };
   enemies.push(enemy);
 }
@@ -840,21 +868,47 @@ function pieceUnder(obj){
 }
 
 function enemiesOnPiece(piece){
-  return enemies.filter(e => Math.abs(e.y - (piece.y - 1)) < 0.1 && e.x >= piece.x && e.x <= piece.x + 2).length;
+  return enemies.filter(e => Math.abs(e.y - (piece.y - 1)) < 0.16 && e.x >= piece.x - 0.1 && e.x <= piece.x + 2.1);
 }
 
-function triggerFall(piece){
-  if(piece.falling || piece.complete) return;
+function triggerFall(piece, bonusDrops = 0){
+  if(piece.complete) return;
+  if(piece.falling){
+    return;
+  }
+  const trappedEnemies = enemiesOnPiece(piece);
   piece.falling = true;
-  piece.remaining = 1 + enemiesOnPiece(piece);
-  piece.support = null;
+  piece.state = 'falling';
+  piece.fallSpeed = 0.075;
+  piece.dropFloors = Math.min(3, 1 + bonusDrops + (trappedEnemies.length > 0 ? 1 : 0));
+  piece.blockedBy = null;
+  piece.steps.fill(false);
   combo++;
   comboTimer = 240;
   floatingText.push({ x: piece.x + 1, y: piece.y - 1.4, text: `Combo x${combo}`, life: 70, color: '#9cf6ff' });
   spawnParticles(piece.x + 1, piece.y - 0.5, '#ffcf5d', 8);
+  for(const enemy of trappedEnemies){
+    enemy.stunned = Math.max(enemy.stunned, enemyTypes[enemy.type].stunTime * 1.35);
+    enemy.vx = 0;
+    addScore(500, enemy.x + 0.5, enemy.y - 0.8, '#ffe27a');
+    floatingText.push({ x: enemy.x + 0.5, y: enemy.y - 1.2, text: 'CRUSH!', life: 80, color: '#ff8f70' });
+  }
 }
 
-function ladderAt(x, y, toleranceX = 0.45){
+function pressIngredient(piece){
+  if(piece.falling || piece.complete) return;
+  const relative = Math.max(0, Math.min(1.999, player.x - piece.x));
+  const section = Math.min(2, Math.floor(relative / (2 / 3)));
+  if(!piece.steps[section]){
+    piece.steps[section] = true;
+    piece.stepPulse = 1;
+    addScore(25, piece.x + (section + 0.5) * (2 / 3), piece.y - 1.15, '#fff2b0');
+    spawnParticles(piece.x + (section + 0.5) * (2 / 3), piece.y - 0.9, '#fff2b0', 4);
+  }
+  if(piece.steps.every(Boolean)) triggerFall(piece);
+}
+
+function ladderAt(x, y, toleranceX = 0.65){
   const centerX = x + 0.5;
   return ladders.find(l => {
     const ladderCenter = l.x + 0.5;
@@ -864,12 +918,30 @@ function ladderAt(x, y, toleranceX = 0.45){
   }) || null;
 }
 
-function ridePieces(entity, step){
-  forEachPieceAtX(entity.x, piece => {
-    if(piece.falling && Math.abs(entity.y - (piece.y - 1)) < 0.12){
-      entity.y += 0.1 * step;
+function nearestFloorAt(y, tolerance = LADDER_EXIT_BAND){
+  let match;
+  let bestDistance = tolerance + 0.001;
+  for(const floor of floors){
+    const distance = Math.abs(y - floor);
+    if(distance <= bestDistance){
+      match = floor;
+      bestDistance = distance;
     }
-  });
+  }
+  return match;
+}
+
+function ladderForIntent(entity, direction, tolerance = LADDER_ENTRY_TOLERANCE){
+  const centerX = entity.x + 0.5;
+  return ladders
+    .filter(ladder => {
+      const canTravel = direction < 0
+        ? entity.y > ladder.top + 0.08
+        : entity.y < ladder.bottom - 0.08;
+      return canTravel && entity.y >= ladder.top - 0.75 && entity.y <= ladder.bottom + 0.75;
+    })
+    .sort((a, b) => Math.abs(a.x + 0.5 - centerX) - Math.abs(b.x + 0.5 - centerX))
+    .find(ladder => Math.abs(ladder.x + 0.5 - centerX) <= tolerance) || null;
 }
 
 function climbOntoPiece(entity){
@@ -882,6 +954,7 @@ function climbOntoPiece(entity){
 }
 
 function applyGravity(entity, step){
+  if(entity.climbing) return;
   if(!isOnFloor(entity) && !isOnPiece(entity) && !ladderAt(entity.x, entity.y)){
     entity.y += 0.12 * step;
   }
@@ -891,6 +964,7 @@ function finalizePiece(piece){
   if(piece.complete) return;
   piece.y = ROWS;
   piece.falling = false;
+  piece.state = 'complete';
   piece.complete = true;
   removePieceFromIndex(piece);
   const stack = completedStacks.get(piece.x) ?? [];
@@ -900,97 +974,118 @@ function finalizePiece(piece){
   const bonus = 400 + stackHeight * 120 + combo * 50;
   addScore(bonus, piece.x + 1, ROWS - stackHeight * 0.6, '#ffd65e');
   spawnParticles(piece.x + 1, ROWS - stackHeight * 0.6, '#ff9d2f', 18);
-  if(piece.above && piece.above.support === piece){
-    piece.above.support = null;
+  if(piece.above && piece.above.blockedBy === piece){
+    piece.above.blockedBy = null;
+    piece.above.state = 'falling';
   }
 }
 
 function updatePieces(step){
-  for(const p of pieces){
-    if(!p.falling){
-      if(!p.complete){
-        if(p.support){
-          p.y = p.support.y - 1;
-        } else {
-          const floorY = floors[p.floorIndex];
-          if(floorY !== undefined){
-            p.y = floorY;
-          } else if(p.y > ROWS){
-            p.y = ROWS;
-          }
-        }
+  const ridersByPiece = new Map();
+  const actors = [player, ...enemies];
+  for(const piece of pieces){
+    piece.deltaY = 0;
+    piece.stepPulse = Math.max(0, piece.stepPulse - 0.08 * step);
+    if(!piece.falling || piece.complete) continue;
+    ridersByPiece.set(piece, actors.filter(actor => Math.abs(actor.y - (piece.y - 1)) < 0.2 && actor.x >= piece.x - 0.15 && actor.x <= piece.x + 2.15));
+  }
+
+  const orderedPieces = pieces.slice().sort((a, b) => b.order - a.order);
+  for(const piece of orderedPieces){
+    if(!piece.falling || piece.complete) continue;
+    const oldY = piece.y;
+
+    const nextFloorIndex = piece.floorIndex + 1;
+    const nextFloorY = nextFloorIndex < floors.length ? floors[nextFloorIndex] : ROWS;
+    const belowPiece = piece.below && !piece.below.complete ? piece.below : null;
+
+    if(piece.blockedBy){
+      const blocker = piece.blockedBy;
+      const hasCleared = blocker.complete || blocker.y - piece.y > 1.02;
+      if(hasCleared){
+        piece.blockedBy = null;
+        piece.state = 'falling';
+        piece.fallSpeed = 0.075;
       }
-      continue;
     }
-    let safety = 0;
-    while(p.falling && safety < floors.length + 2){
-      safety++;
-      if(p.support){
-        p.y = p.support.y - 1;
-        if(!p.support.falling){
-          p.floorIndex = p.support.floorIndex;
-          if(p.remaining > 0) p.remaining = Math.max(0, p.remaining - step);
-          if(p.remaining <= 0){
-            p.falling = false;
-            if(p.y >= ROWS) finalizePiece(p);
-          } else {
-            p.support = null;
-          }
+
+    if(!piece.blockedBy){
+      piece.fallSpeed = Math.min(0.34, piece.fallSpeed + 0.012 * step);
+      const contactY = belowPiece ? belowPiece.y - 1 : Infinity;
+      const meetsBelowPiece = belowPiece && contactY <= nextFloorY + 0.001;
+      const targetY = meetsBelowPiece ? Math.max(piece.y, contactY) : nextFloorY;
+      piece.y = Math.min(targetY, piece.y + piece.fallSpeed * step);
+
+      if(meetsBelowPiece && piece.y >= targetY - 0.001){
+        if(!belowPiece.falling) triggerFall(belowPiece);
+        piece.blockedBy = belowPiece;
+        piece.state = 'waiting';
+      } else if(piece.y >= nextFloorY - 0.001){
+        piece.y = nextFloorY;
+        piece.floorIndex = nextFloorIndex;
+        piece.dropFloors = Math.max(0, piece.dropFloors - 1);
+        piece.fallSpeed = 0.075;
+
+        if(nextFloorIndex >= floors.length - 1){
+          finalizePiece(piece);
+        } else if(piece.dropFloors <= 0){
+          piece.falling = false;
+          piece.state = 'resting';
+          piece.steps.fill(false);
         }
-        continue;
       }
+    }
 
-      p.y += 0.22 * step;
-
-      const belowPiece = findSupportingPiece(p);
-      if(belowPiece){
-        const targetY = belowPiece.y - 1;
-        if(p.y > targetY){
-          p.y = targetY;
-        }
-        p.floorIndex = belowPiece.floorIndex;
-        if(p.remaining > 0) p.remaining = Math.max(0, p.remaining - step);
-        p.support = belowPiece;
-        triggerFall(belowPiece);
-        continue;
-      }
-
-      const nextFloor = floors[p.floorIndex + 1];
-      if(nextFloor !== undefined && p.y >= nextFloor){
-        p.y = nextFloor;
-        p.floorIndex++;
-        if(p.remaining > 0) p.remaining = Math.max(0, p.remaining - step);
-        if(p.remaining <= 0){
-          p.falling = false;
-          if(p.y >= ROWS) finalizePiece(p);
-        }
-        continue;
-      }
-
-      if(p.floorIndex >= floors.length - 1 && p.y >= ROWS){
-        finalizePiece(p);
-      }
-      break;
+    piece.deltaY = piece.y - oldY;
+    if(piece.deltaY){
+      for(const rider of ridersByPiece.get(piece) ?? []) rider.y += piece.deltaY;
     }
   }
 }
 
 function playerHit(){
-  if(player.invulnerable > 0 || gameOver || win) return;
+  if(player.invulnerable > 0 || player.dying || player.respawnTimer > 0 || gameOver || win) return;
   lives--;
+  player.dying = true;
+  player.deathTimer = DEATH_ANIMATION_FRAMES;
+  player.vx = 0;
+  player.vy = 0;
+  player.climbing = false;
+  player.currentLadder = null;
+  keys.left = keys.right = keys.up = keys.down = false;
   spawnParticles(player.x + 0.5, player.y - 0.5, '#ff5f6d', 24);
-  messageEl.textContent = lives > 0 ? 'Ouch! Stay saucy!' : 'Game Over';
-  if(lives > 0){
-    resetActors();
-    enemies.forEach(e => e.stunned = enemyTypes[e.type].stunTime / 2);
-    setTimeout(() => {
-      if(!win) messageEl.textContent = '';
-    }, 1500);
-  } else {
-    gameOver = true;
-  }
+  setLevelMessage(lives > 0 ? 'Chef down!' : 'Last chef down!');
   updateHud();
   resetCombo();
+}
+
+function updateRespawnSequence(step){
+  if(player.dying){
+    player.deathTimer = Math.max(0, player.deathTimer - step);
+    if(player.deathTimer <= 0){
+      if(lives <= 0){
+        player.dying = false;
+        gameOver = true;
+        setLevelMessage('Game Over');
+      } else {
+        resetActors({cooldown: RESPAWN_COOLDOWN_FRAMES});
+        resetEnemyWave({spawnImmediate: true});
+        pepperBursts.length = 0;
+        setLevelMessage('Get ready!');
+      }
+    }
+    return true;
+  }
+
+  if(player.respawnTimer > 0){
+    player.respawnTimer = Math.max(0, player.respawnTimer - step);
+    if(player.respawnTimer <= 0){
+      setLevelMessage('');
+    }
+    return true;
+  }
+
+  return false;
 }
 
 function updatePepperBursts(step){
@@ -1065,51 +1160,54 @@ function handlePlayer(step){
   if(player.cooldown > 0) player.cooldown = Math.max(0, player.cooldown - step);
   if(player.invulnerable > 0) player.invulnerable = Math.max(0, player.invulnerable - step);
 
-  const horizontalIntent = keys.left || keys.right;
-  const nearFloorMatch = floors.find(f => Math.abs(player.y - f) < LADDER_EXIT_BAND);
-  const nearFloor = nearFloorMatch !== undefined;
-  const alignedLadder = ladderAt(player.x, player.y);
-  if(isOnFloor(player) || isOnPiece(player) || (alignedLadder && nearFloor)){
-    if(keys.left){
-      player.vx = -0.14;
-      player.dir = -1;
-    } else if(keys.right){
-      player.vx = 0.14;
-      player.dir = 1;
+  const horizontalDirection = keys.left ? -1 : (keys.right ? 1 : 0);
+  const verticalDirection = keys.up ? -1 : (keys.down ? 1 : 0);
+  const nearbyFloor = nearestFloorAt(player.y);
+
+  if(!player.climbing && verticalDirection){
+    const candidate = ladderForIntent(player, verticalDirection);
+    if(candidate){
+      player.climbing = true;
+      player.currentLadder = candidate;
+      player.vx = 0;
+    }
+  }
+
+  if(player.climbing && player.currentLadder){
+    const ladder = player.currentLadder;
+    player.x += (ladder.x - player.x) * Math.min(1, 0.48 * step);
+    player.vx = 0;
+    if(verticalDirection) player.y += verticalDirection * 0.13 * step;
+
+    const exitFloor = nearestFloorAt(player.y);
+    const reachedTop = player.y <= ladder.top;
+    const reachedBottom = player.y >= ladder.bottom;
+    if(horizontalDirection && exitFloor !== undefined){
+      player.y = exitFloor;
+      player.climbing = false;
+      player.currentLadder = null;
+    } else if((verticalDirection < 0 && reachedTop) || (verticalDirection > 0 && reachedBottom)){
+      player.y = verticalDirection < 0 ? ladder.top : ladder.bottom;
+      player.climbing = false;
+      player.currentLadder = null;
+    } else if(!verticalDirection && exitFloor !== undefined){
+      player.y = exitFloor;
+    }
+  }
+
+  if(!player.climbing){
+    const standingFloor = nearestFloorAt(player.y, LADDER_EXIT_BAND);
+    if(standingFloor !== undefined) player.y = standingFloor;
+    if(horizontalDirection && (standingFloor !== undefined || isOnFloor(player) || isOnPiece(player))){
+      player.vx = horizontalDirection * 0.15;
+      player.dir = horizontalDirection;
+    } else if(!horizontalDirection){
+      player.vx = 0;
     } else {
-      player.vx = 0;
+      player.vx *= Math.pow(0.9, step);
     }
-  } else {
-    player.vx *= Math.pow(0.92, step);
-  }
-
-  player.x += player.vx * step;
-  climbOntoPiece(player);
-
-  const verticalIntent = keys.up || keys.down;
-  const wantsToClimb = verticalIntent && !(horizontalIntent && nearFloor);
-  let onLadder = ladderAt(player.x, player.y);
-  if(wantsToClimb){
-    const snapCandidate = onLadder || ladderAt(player.x, player.y - 0.4, 0.7) || ladderAt(player.x, player.y + 0.4, 0.7);
-    if(snapCandidate){
-      onLadder = snapCandidate;
-      player.x = snapCandidate.x;
-      player.vx = 0;
-    }
-  }
-
-  if(onLadder){
-    if(!(horizontalIntent && nearFloor)){
-      if(keys.up) player.y -= 0.12 * step;
-      if(keys.down) player.y += 0.12 * step;
-    }
-
-    if(!wantsToClimb){
-      const snapFloor = floors.find(f => Math.abs(player.y - f) < LADDER_EXIT_BAND);
-      if(snapFloor !== undefined){
-        player.y = snapFloor;
-      }
-    }
+    player.x += player.vx * step;
+    climbOntoPiece(player);
   }
 
   player.x = Math.max(0.2, Math.min(COLS - 1.2, player.x));
@@ -1117,63 +1215,117 @@ function handlePlayer(step){
 
   const piece = pieceUnder(player);
   if(piece){
-    triggerFall(piece);
+    pressIngredient(piece);
   }
 
-  ridePieces(player, step);
   applyGravity(player, step);
+}
+
+function closestFloorIndex(y){
+  let bestIndex = 0;
+  let bestDistance = Infinity;
+  floors.forEach((floor, index) => {
+    const distance = Math.abs(y - floor);
+    if(distance < bestDistance){
+      bestDistance = distance;
+      bestIndex = index;
+    }
+  });
+  return bestIndex;
+}
+
+function chooseEnemyPlan(enemy){
+  const enemyFloor = closestFloorIndex(enemy.y);
+  const playerFloor = closestFloorIndex(player.y);
+  enemy.targetFloorIndex = playerFloor;
+  enemy.decisionSeed++;
+
+  if(enemyFloor !== playerFloor){
+    const projectedPlayerX = player.x + player.vx * (enemy.type === 'hotdog' ? 18 : 8);
+    const candidates = ladders
+      .filter(ladder => floors[enemyFloor] >= ladder.top - 0.2 && floors[enemyFloor] <= ladder.bottom + 0.2 && floors[playerFloor] >= ladder.top - 0.2 && floors[playerFloor] <= ladder.bottom + 0.2)
+      .map(ladder => ({
+        ladder,
+        cost: Math.abs(enemy.x - ladder.x) + Math.abs(projectedPlayerX - ladder.x) * (enemy.type === 'soda' ? 0.18 : 0.35)
+      }))
+      .sort((a, b) => a.cost - b.cost);
+    const routeIndex = enemy.type === 'soda' && candidates.length > 1 && enemy.decisionSeed % 3 === 0 ? 1 : 0;
+    enemy.targetLadder = candidates[routeIndex]?.ladder ?? null;
+    enemy.targetX = enemy.targetLadder?.x ?? player.x;
+  } else {
+    enemy.targetLadder = null;
+    const lead = enemy.type === 'hotdog' ? player.vx * 24 : 0;
+    const flank = enemy.type === 'soda' ? Math.sin(enemy.floatPhase) * 2.2 : 0;
+    enemy.targetX = Math.max(0.3, Math.min(COLS - 1.3, player.x + lead + flank));
+  }
+  enemy.decisionTimer = enemy.type === 'hotdog' ? 22 : (enemy.type === 'soda' ? 34 : 46);
 }
 
 function handleEnemies(step){
   for(const enemy of enemies){
     enemy.timer += step;
+    enemy.decisionTimer -= step;
     if(enemy.stunned > 0){
       enemy.stunned = Math.max(0, enemy.stunned - step);
-      ridePieces(enemy, step);
       applyGravity(enemy, step);
       continue;
     }
 
     const def = enemyTypes[enemy.type];
-    if(isOnFloor(enemy) || isOnPiece(enemy)){
-      if(Math.abs(enemy.x - player.x) > 0.2){
-        enemy.dir = enemy.x < player.x ? 1 : -1;
-        enemy.vx = enemy.dir * def.speed;
-      } else {
+    if(enemy.decisionTimer <= 0) chooseEnemyPlan(enemy);
+
+    if(enemy.climbing && enemy.currentLadder){
+      const targetY = floors[enemy.targetFloorIndex];
+      enemy.x += (enemy.currentLadder.x - enemy.x) * Math.min(1, 0.5 * step);
+      const verticalDirection = targetY < enemy.y ? -1 : 1;
+      enemy.y += verticalDirection * def.climbSpeed * step;
+      enemy.vx = 0;
+      if(Math.abs(enemy.y - targetY) <= Math.max(LADDER_EXIT_BAND, def.climbSpeed * step + 0.08)){
+        enemy.y = targetY;
+        enemy.climbing = false;
+        enemy.currentLadder = null;
+        enemy.targetLadder = null;
+        enemy.decisionTimer = 0;
+      }
+    } else {
+      if(enemy.targetLadder && Math.abs(enemy.x - enemy.targetLadder.x) <= 0.38){
+        enemy.x = enemy.targetLadder.x;
+        enemy.climbing = true;
+        enemy.currentLadder = enemy.targetLadder;
         enemy.vx = 0;
+      } else if(isOnFloor(enemy) || isOnPiece(enemy) || nearestFloorAt(enemy.y) !== undefined){
+        const distance = enemy.targetX - enemy.x;
+        enemy.dir = distance >= 0 ? 1 : -1;
+        enemy.vx = Math.abs(distance) > 0.12 ? enemy.dir * def.speed : 0;
       }
-    }
 
-    if(enemy.type === 'hotdog' && enemy.timer >= def.dashCooldown){
-      enemy.timer -= def.dashCooldown;
-      if(Math.abs(enemy.y - player.y) < 0.8){
-        enemy.vx = (enemy.x < player.x ? 1 : -1) * def.dashSpeed;
-        spawnParticles(enemy.x + 0.5, enemy.y - 0.5, '#ff5f6d', 12);
+      if(enemy.type === 'hotdog' && enemy.timer >= def.dashCooldown){
+        enemy.timer -= def.dashCooldown;
+        if(closestFloorIndex(enemy.y) === closestFloorIndex(player.y) && Math.abs(enemy.x - player.x) > 1.5){
+          enemy.vx = (enemy.x < player.x ? 1 : -1) * def.dashSpeed;
+          spawnParticles(enemy.x + 0.5, enemy.y - 0.5, '#ff5f6d', 12);
+        }
       }
-    }
 
-    if(enemy.type === 'soda'){
-      enemy.floatPhase += def.floatSpeed * step;
-      enemy.vx += Math.sin(enemy.floatPhase) * 0.005 * step;
-    }
+      if(enemy.type === 'soda'){
+        enemy.floatPhase += def.floatSpeed * step;
+        enemy.vx += Math.sin(enemy.floatPhase) * 0.004 * step;
+      }
 
-    enemy.x += enemy.vx * step;
-    climbOntoPiece(enemy);
+      for(const other of enemies){
+        if(other === enemy || other.stunned > 0) continue;
+        if(Math.abs(other.y - enemy.y) < 0.25 && Math.abs(other.x - enemy.x) < 0.72){
+          enemy.vx += enemy.x <= other.x ? -0.012 * step : 0.012 * step;
+        }
+      }
 
-    if(Math.abs(enemy.x - player.x) < 1 && ladderAt(enemy.x, enemy.y)){
-      if(enemy.y < player.y) enemy.y += def.climbSpeed * step;
-      else if(enemy.y > player.y) enemy.y -= def.climbSpeed * 0.85 * step;
+      enemy.x += enemy.vx * step;
+      climbOntoPiece(enemy);
     }
 
     enemy.x = Math.max(0, Math.min(COLS - 1, enemy.x));
     enemy.y = Math.max(0.8, Math.min(ROWS, enemy.y));
 
-    const piece = pieceUnder(enemy);
-    if(piece){
-      triggerFall(piece);
-    }
-
-    ridePieces(enemy, step);
     applyGravity(enemy, step);
 
     if(Math.abs(enemy.x - player.x) < 0.6 && Math.abs(enemy.y - player.y) < 0.7){
@@ -1218,6 +1370,8 @@ function stepGame(dt){
     }
     return;
   }
+
+  if(updateRespawnSequence(step)) return;
 
   if(comboTimer > 0){
     comboTimer = Math.max(0, comboTimer - step);
@@ -1357,6 +1511,22 @@ function drawPieces(){
     const img = assets[`burger_${p.type}`];
     if(!img) continue;
     ctx.drawImage(img, p.x, p.y - 1, 2, 1);
+    if(!p.falling){
+      ctx.save();
+      for(let index = 0; index < 3; index++){
+        const markerX = p.x + (index + 0.5) * (2 / 3);
+        ctx.beginPath();
+        ctx.arc(markerX, p.y - 0.82, p.steps[index] ? 0.085 + p.stepPulse * 0.035 : 0.055, 0, Math.PI * 2);
+        ctx.fillStyle = p.steps[index] ? '#fff2a8' : 'rgba(255,255,255,0.25)';
+        if(p.steps[index]){
+          ctx.shadowColor = '#ffd65e';
+          ctx.shadowBlur = 0.18;
+        }
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      ctx.restore();
+    }
   }
 }
 
@@ -1387,23 +1557,50 @@ function drawPlayer(){
   const sprite = assets.cook;
   if(!sprite) return;
   ctx.save();
-  if(player.dir < 0){
-    ctx.translate(player.x + 0.6, player.y - 1);
-    ctx.scale(-1, 1);
-    ctx.drawImage(sprite, -0.6, 0, 1.2, 1.2);
-    if(player.invulnerable > 0){
-      ctx.globalAlpha = 0.4 + 0.6 * Math.sin(player.invulnerable * 0.3);
-      ctx.drawImage(sprite, -0.6, 0, 1.2, 1.2);
-    }
-  } else {
-    ctx.translate(player.x - 0.4, player.y - 1);
-    ctx.drawImage(sprite, 0, 0, 1.2, 1.2);
-    if(player.invulnerable > 0){
-      ctx.globalAlpha = 0.4 + 0.6 * Math.sin(player.invulnerable * 0.3);
-      ctx.drawImage(sprite, 0, 0, 1.2, 1.2);
-    }
+  ctx.translate(player.x + 0.5, player.y - 0.4);
+
+  if(player.dying){
+    const progress = 1 - player.deathTimer / DEATH_ANIMATION_FRAMES;
+    ctx.translate(0, progress * 0.8);
+    ctx.rotate(progress * Math.PI * 2.4);
+    ctx.scale(1 + progress * 0.2, Math.max(0.28, 1 - progress * 0.65));
+    ctx.globalAlpha = Math.max(0.18, 1 - progress * 0.72);
+  } else if(player.respawnTimer > 0 || player.invulnerable > 0){
+    const pulse = player.respawnTimer > 0 ? player.respawnTimer : player.invulnerable;
+    ctx.globalAlpha = 0.45 + 0.55 * Math.abs(Math.sin(pulse * 0.24));
   }
+
+  ctx.scale(player.dir < 0 ? -1 : 1, 1);
+  ctx.drawImage(sprite, -0.6, -0.6, 1.2, 1.2);
   ctx.restore();
+
+  if(player.dying){
+    const progress = 1 - player.deathTimer / DEATH_ANIMATION_FRAMES;
+    ctx.save();
+    ctx.strokeStyle = `rgba(255, 226, 122, ${Math.max(0, 0.9 - progress)})`;
+    ctx.lineWidth = 0.08;
+    ctx.beginPath();
+    ctx.arc(player.x + 0.5, player.y - 0.45, 0.45 + progress * 0.85, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = '#ffe27a';
+    for(let i = 0; i < 5; i++){
+      const angle = progress * Math.PI * 3 + i * Math.PI * 0.4;
+      const radius = 0.55 + progress * 0.65;
+      ctx.beginPath();
+      ctx.arc(player.x + 0.5 + Math.cos(angle) * radius, player.y - 0.45 + Math.sin(angle) * radius * 0.45, 0.09, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  } else if(player.respawnTimer > 0){
+    ctx.save();
+    const pulse = 0.65 + Math.sin(player.respawnTimer * 0.2) * 0.12;
+    ctx.strokeStyle = 'rgba(156, 246, 255, 0.8)';
+    ctx.lineWidth = 0.06;
+    ctx.beginPath();
+    ctx.arc(player.x + 0.5, player.y - 0.45, pulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 function drawEnemies(){
@@ -1458,6 +1655,16 @@ function drawFloatingText(){
 }
 
 function draw(){
+  canvas.dataset.playerX = player.x.toFixed(2);
+  canvas.dataset.playerY = player.y.toFixed(2);
+  canvas.dataset.climbing = String(player.climbing);
+  canvas.dataset.playerPhase = player.dying ? 'dying' : (player.respawnTimer > 0 ? 'cooldown' : (gameOver ? 'game-over' : 'playing'));
+  canvas.dataset.respawnTimer = String(Math.ceil(player.respawnTimer));
+  canvas.dataset.enemies = String(enemies.length);
+  canvas.dataset.enemyStates = enemies.map(enemy => `${enemy.type}:${enemy.x.toFixed(1)},${enemy.y.toFixed(1)},${enemy.climbing ? 'L' : 'G'}`).join('|');
+  canvas.dataset.fallingPieces = String(pieces.filter(piece => piece.falling).length);
+  canvas.dataset.completedPieces = String(pieces.filter(piece => piece.complete).length);
+  canvas.dataset.pieceStates = pieces.map(piece => `${piece.column}:${piece.order}:${piece.floorIndex}:${piece.y.toFixed(2)}:${piece.state}:${piece.dropFloors}`).join('|');
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   if(backgroundCache.width !== canvas.width || backgroundCache.height !== canvas.height){
     rebuildBackgroundCache();
@@ -1482,6 +1689,7 @@ function draw(){
 
 const keys = {};
 document.addEventListener('keydown', e => {
+  if(e.key.startsWith('Arrow')) e.preventDefault();
   if(e.key === 'ArrowLeft') keys.left = true;
   if(e.key === 'ArrowRight') keys.right = true;
   if(e.key === 'ArrowUp') keys.up = true;
@@ -1505,6 +1713,7 @@ document.addEventListener('keyup', e => {
   if(e.key === 'ArrowUp') keys.up = false;
   if(e.key === 'ArrowDown') keys.down = false;
 });
+window.addEventListener('blur', () => Object.keys(keys).forEach(key => { keys[key] = false; }));
 
 const controlButtons = document.querySelectorAll('.control-button');
 if (controlButtons.length && isTouchDevice) {
@@ -1546,7 +1755,7 @@ window.addEventListener('blur', () => {
 });
 
 function usePepper(){
-  if(player.pepper <= 0 || player.cooldown > 0 || gameOver || win) return;
+  if(player.pepper <= 0 || player.cooldown > 0 || player.dying || player.respawnTimer > 0 || gameOver || win) return;
   player.pepper--;
   player.cooldown = 18;
   const burst = {
@@ -1601,7 +1810,7 @@ let pendingStart = false;
 const instructionModal = document.getElementById('instruction-modal');
 const instructionClose = document.getElementById('instruction-close');
 const helpButton = document.getElementById('help-button');
-const instructionKey = 'vibecade-instructions-burger';
+const instructionKey = 'vibecade-instructions-burger-v2';
 const hasSeenInstructions = sessionStorage.getItem(instructionKey) === '1';
 
 function startGame() {
