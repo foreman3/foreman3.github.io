@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="body"><stop stop-color="#f7ddff"/><stop offset=".35" stop-color="#cb83ff"/><stop offset=".72" stop-color="#7438cf"/><stop offset="1" stop-color="#2a185f" stop-opacity=".2"/></radialGradient>
+    <linearGradient id="tail" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b76eff"/><stop offset="1" stop-color="#54edff" stop-opacity="0"/></linearGradient>
+    <filter id="g" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <g filter="url(#g)">
+    <path fill="url(#tail)" d="M16 35c1 14-5 20-6 27 8-1 13-6 17-14 1 8 4 13 8 16 3-7 6-11 12-18 2 8 5 12 9 14-1-12-4-20-8-27z" opacity=".8"/>
+    <path fill="url(#body)" stroke="#efc8ff" stroke-width="2" d="M9 31C9 16 18 7 32 7s23 9 23 24c0 14-9 22-23 22S9 45 9 31z"/>
+    <path fill="none" stroke="#6df3ff" stroke-width="2" opacity=".8" d="M5 32c7-7 14-10 27-10s21 3 27 10c-8 6-16 9-27 9S13 38 5 32z"/>
+    <ellipse cx="24" cy="30" rx="5" ry="7" fill="#10132e"/><ellipse cx="40" cy="30" rx="5" ry="7" fill="#10132e"/>
+    <circle cx="25" cy="28" r="1.8" fill="#fff"/><circle cx="41" cy="28" r="1.8" fill="#fff"/>
+    <path fill="none" stroke="#25163e" stroke-width="3" stroke-linecap="round" d="M25 43c5-4 10-4 15 0"/>
+    <circle cx="32" cy="31" r="27" fill="none" stroke="#d795ff" stroke-width="1.5" stroke-dasharray="5 7"/>
+  </g>
+</svg>

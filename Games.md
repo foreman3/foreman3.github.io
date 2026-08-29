@@ -19,6 +19,9 @@ This repository hosts simple arcade-style video games.
 - [Trap the Mouse](trap-the-mouse/) - Outsmart the escape route.
 - [Video Poker Lounge](video-poker/) - Hold cards and chase jackpots.
 - [Ultra Tanks](ultra-tanks/) - Bouncing bullets and massive air raids.
+- [Neon River Run](river-run/) - Cross traffic, ride a living river, and claim five shifting home bays.
+- [Deep Core](deep-core/) - Dig tactical tunnels, pressure-pop threats, and weaponize falling boulders.
+- [Mushroom Moon](mushroom-moon/) - Split star-worms and defend a mutating lunar garden.
 - [Audio Assault](https://audio.vibe-cade.com) - Intense music trivia.
 
 ## In Work
