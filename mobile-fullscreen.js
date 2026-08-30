@@ -22,6 +22,7 @@
         });
       }
     });
+    syncJoystickLayout();
   };
 
   const mobileStyles = document.createElement('style');
@@ -102,6 +103,74 @@
     }
     body.touch-device .virtual-joystick.is-active .joystick-knob {
       box-shadow: 0 3px 8px rgba(0, 0, 0, .44), 0 0 15px rgba(115, 225, 255, .5) !important;
+    }
+    body.touch-device.vibecade-joystick-rails .vibecade-joystick-playfield {
+      position: relative !important;
+      box-sizing: border-box !important;
+      width: var(--vibecade-playfield-width) !important;
+      height: var(--vibecade-playfield-height) !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      max-width: var(--vibecade-playfield-width) !important;
+      max-height: var(--vibecade-playfield-height) !important;
+      flex: 0 0 auto !important;
+      margin: auto !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+    }
+    body.touch-device.vibecade-joystick-rails .vibecade-joystick-playfield canvas {
+      box-sizing: border-box !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      max-width: none !important;
+      max-height: none !important;
+      margin: 0 !important;
+    }
+    body.touch-device.vibecade-joystick-rails #touch-controls,
+    body.touch-device.vibecade-joystick-rails .touch-controls {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 38 !important;
+      box-sizing: border-box !important;
+      display: grid !important;
+      width: 100vw !important;
+      height: 100dvh !important;
+      grid-template-columns: var(--vibecade-control-rail) minmax(0, 1fr) var(--vibecade-control-rail) !important;
+      grid-template-rows: 1fr !important;
+      align-items: center !important;
+      justify-items: center !important;
+      padding: 4px 0 !important;
+      pointer-events: none !important;
+    }
+    body.touch-device.vibecade-joystick-rails :is(#touch-controls, .touch-controls) > .virtual-joystick {
+      grid-column: 1 !important;
+      grid-row: 1 !important;
+      align-self: center !important;
+      justify-self: center !important;
+    }
+    body.touch-device.vibecade-joystick-rails :is(#touch-controls, .touch-controls) > :not(.virtual-joystick) {
+      grid-column: 3 !important;
+      grid-row: 1 !important;
+      align-self: center !important;
+      justify-self: center !important;
+    }
+    body.touch-device.vibecade-joystick-rails :is(.control-cluster, .touch-cluster, .actions, .touch-group, #right-controls, .control-row) {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+    }
+    body.touch-device.vibecade-joystick-rails :is(.control-button, .touch-button, .fire, .pulse, .pump) {
+      flex: 0 0 auto !important;
+      margin: 0 !important;
+    }
+    body.touch-device:has(#instruction-modal.is-visible) :is(#touch-controls, .touch-controls),
+    body.touch-device:has(#tutorialOverlay:not(.hidden)) :is(#touch-controls, .touch-controls) {
+      visibility: hidden !important;
+      pointer-events: none !important;
     }
     body.touch-device .flyout-nav,
     body.touch-device .menu-toggle,
@@ -184,6 +253,43 @@
     }
   `;
   document.head.appendChild(mobileStyles);
+
+  const joystickElement = document.querySelector('.virtual-joystick[data-joystick]');
+  const playfieldCanvas = document.querySelector('canvas:not(.crosshair-layer)');
+  const dedicatedPlayfield = playfieldCanvas?.closest('#game-shell, #playfield, #game-stage, #gameCanvas-wrapper, .canvas-wrapper');
+  const playfieldElement = dedicatedPlayfield || playfieldCanvas;
+
+  const syncJoystickLayout = () => {
+    if (!document.body || !joystickElement || !playfieldCanvas || !playfieldElement) return;
+
+    const useRails = touchLayoutEnabled && window.innerWidth >= 600 && window.innerWidth > window.innerHeight;
+    document.body.classList.toggle('vibecade-joystick-rails', useRails);
+    playfieldElement.classList.toggle('vibecade-joystick-playfield', useRails);
+
+    if (!useRails) {
+      document.body.style.removeProperty('--vibecade-control-rail');
+      playfieldElement.style.removeProperty('--vibecade-playfield-width');
+      playfieldElement.style.removeProperty('--vibecade-playfield-height');
+      delete document.body.dataset.vibecadeControlRail;
+      delete playfieldElement.dataset.vibecadePlayfieldFit;
+      return;
+    }
+
+    const railSize = Math.round(Math.max(136, Math.min(150, window.innerWidth * 0.2)));
+    const availableWidth = Math.max(240, window.innerWidth - railSize * 2);
+    const availableHeight = Math.max(180, window.innerHeight - 8);
+    const intrinsicWidth = Number(playfieldCanvas.getAttribute('width')) || playfieldCanvas.width || 16;
+    const intrinsicHeight = Number(playfieldCanvas.getAttribute('height')) || playfieldCanvas.height || 9;
+    const scale = Math.min(availableWidth / intrinsicWidth, availableHeight / intrinsicHeight);
+    const fittedWidth = Math.max(1, Math.floor(intrinsicWidth * scale));
+    const fittedHeight = Math.max(1, Math.floor(intrinsicHeight * scale));
+
+    document.body.style.setProperty('--vibecade-control-rail', `${railSize}px`);
+    playfieldElement.style.setProperty('--vibecade-playfield-width', `${fittedWidth}px`);
+    playfieldElement.style.setProperty('--vibecade-playfield-height', `${fittedHeight}px`);
+    document.body.dataset.vibecadeControlRail = String(railSize);
+    playfieldElement.dataset.vibecadePlayfieldFit = `${fittedWidth}x${fittedHeight}`;
+  };
 
   const restartButton = document.createElement('button');
   restartButton.type = 'button';
