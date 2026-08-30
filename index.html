@@ -82,11 +82,27 @@
     }
 
     .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
       font-size: 1.2rem;
       text-transform: uppercase;
       letter-spacing: 0.2rem;
       color: var(--accent-2);
       margin-bottom: 18px;
+    }
+
+    .section-count {
+      display: none;
+      min-width: 30px;
+      padding: 4px 8px;
+      border: 1px solid rgba(102, 242, 214, 0.28);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      letter-spacing: 0;
+      text-align: center;
     }
 
     .grid {
@@ -120,6 +136,15 @@
       transform: translateY(0) scale(1.01);
     }
 
+    .card:focus-visible,
+    .recent-card:focus-visible,
+    .filter-chip:focus-visible,
+    .shuffle-button:focus-visible,
+    #game-search:focus-visible {
+      outline: 3px solid rgba(102, 242, 214, 0.78);
+      outline-offset: 3px;
+    }
+
     .card-title {
       font-size: 1.05rem;
       font-weight: 600;
@@ -144,6 +169,24 @@
       text-decoration: none;
     }
 
+    .mobile-hub,
+    .recent-section,
+    .empty-state {
+      display: none;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     @keyframes rise {
       to {
         opacity: 1;
@@ -151,13 +194,289 @@
       }
     }
 
+    @media (max-width: 900px) {
+      .mobile-hub {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: grid;
+        gap: 10px;
+        margin: 0 -10px 22px;
+        padding: 10px;
+        border: 1px solid rgba(112, 166, 255, 0.24);
+        border-radius: 18px;
+        background: rgba(7, 14, 27, 0.88);
+        box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(16px);
+      }
+
+      .hub-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
+      .search-shell {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+        min-height: 46px;
+        padding: 0 13px;
+        border: 1px solid rgba(112, 166, 255, 0.34);
+        border-radius: 13px;
+        background: rgba(2, 8, 19, 0.72);
+        color: var(--accent-2);
+      }
+
+      #game-search {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--text);
+        font: 600 1rem/1.2 'Space Grotesk', sans-serif;
+      }
+
+      #game-search::placeholder {
+        color: #8590a1;
+      }
+
+      .shuffle-button {
+        min-height: 46px;
+        padding: 0 14px;
+        border: 1px solid rgba(252, 163, 17, 0.45);
+        border-radius: 13px;
+        background: rgba(252, 163, 17, 0.12);
+        color: #ffd77f;
+        font: 700 0.86rem/1 'Space Grotesk', sans-serif;
+        touch-action: manipulation;
+      }
+
+      .filter-row {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .filter-row::-webkit-scrollbar {
+        display: none;
+      }
+
+      .filter-chip {
+        flex: 0 0 auto;
+        min-height: 36px;
+        padding: 0 13px;
+        border: 1px solid rgba(112, 166, 255, 0.28);
+        border-radius: 999px;
+        background: rgba(13, 25, 44, 0.78);
+        color: var(--muted);
+        font: 700 0.78rem/1 'Space Grotesk', sans-serif;
+        touch-action: manipulation;
+      }
+
+      .filter-chip[aria-pressed="true"] {
+        border-color: rgba(102, 242, 214, 0.65);
+        background: rgba(102, 242, 214, 0.16);
+        color: var(--text);
+      }
+
+      .result-count {
+        margin-left: auto;
+        color: #93a0b3;
+        font-size: 0.76rem;
+        white-space: nowrap;
+      }
+
+      .recent-section:not([hidden]) {
+        display: block;
+      }
+
+      .recent-card {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        min-height: 78px;
+        padding: 11px 13px;
+        border: 1px solid rgba(252, 163, 17, 0.4);
+        border-radius: 15px;
+        background: linear-gradient(120deg, rgba(252, 163, 17, 0.14), rgba(9, 19, 34, 0.9));
+        box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+        color: var(--text);
+        text-decoration: none;
+        touch-action: manipulation;
+      }
+
+      .recent-thumb,
+      .card::before {
+        display: grid;
+        place-items: center;
+        width: 54px;
+        height: 54px;
+        border: 1px solid hsla(var(--thumb-hue, 170), 80%, 72%, 0.32);
+        border-radius: 13px;
+        background: linear-gradient(145deg, hsla(var(--thumb-hue, 170), 72%, 52%, 0.28), rgba(3, 9, 20, 0.82));
+        box-shadow: inset 0 0 20px hsla(var(--thumb-hue, 170), 80%, 62%, 0.1);
+        font-size: 1.55rem;
+      }
+
+      .recent-copy {
+        min-width: 0;
+      }
+
+      .recent-label {
+        display: block;
+        color: #ffd77f;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08rem;
+        text-transform: uppercase;
+      }
+
+      .recent-title {
+        display: block;
+        margin-top: 3px;
+        overflow: hidden;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .recent-arrow {
+        color: var(--accent-2);
+        font-size: 1.5rem;
+      }
+
+      .section-count {
+        display: inline-block;
+      }
+
+      .grid {
+        gap: 11px;
+      }
+
+      .card {
+        display: grid;
+        grid-template-columns: 54px minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        align-content: center;
+        column-gap: 12px;
+        row-gap: 4px;
+        min-height: 84px;
+        padding: 11px 13px;
+        border-radius: 15px;
+        animation-duration: 0.24s;
+        animation-delay: 0s;
+        touch-action: manipulation;
+      }
+
+      .card::before {
+        content: attr(data-icon);
+        grid-column: 1;
+        grid-row: 1 / span 2;
+      }
+
+      .card[data-status="work"]::after {
+        content: 'Testing';
+        position: absolute;
+        top: 9px;
+        right: 10px;
+        padding: 3px 6px;
+        border: 1px solid rgba(252, 163, 17, 0.35);
+        border-radius: 999px;
+        background: rgba(252, 163, 17, 0.1);
+        color: #ffd77f;
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.04rem;
+        text-transform: uppercase;
+      }
+
+      .card-title,
+      .card-meta {
+        grid-column: 2;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .card[data-status="work"] .card-title {
+        padding-right: 54px;
+      }
+
+      .card:active,
+      .recent-card:active,
+      .shuffle-button:active,
+      .filter-chip:active {
+        transform: scale(0.975);
+      }
+
+      .empty-state:not([hidden]) {
+        display: grid;
+        place-items: center;
+        min-height: 180px;
+        padding: 24px;
+        border: 1px dashed rgba(112, 166, 255, 0.3);
+        border-radius: 16px;
+        color: var(--muted);
+        text-align: center;
+      }
+    }
+
     @media (max-width: 600px) {
       .wrapper {
-        padding: 36px 18px 48px;
+        padding: 26px 16px 44px;
+      }
+
+      header {
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+
+      .logo {
+        font-size: 1.45rem;
+      }
+
+      .tagline {
+        font-size: 0.96rem;
+        line-height: 1.5;
+      }
+
+      .section {
+        margin-top: 24px;
       }
 
       .section-title {
+        margin-bottom: 12px;
+        font-size: 1rem;
         letter-spacing: 0.12rem;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .shuffle-button {
+        width: 48px;
+        padding: 0;
+        font-size: 1.1rem;
+      }
+
+      .shuffle-label {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card {
+        animation: none;
+        opacity: 1;
+        transform: none;
       }
     }
   </style>
@@ -171,142 +490,280 @@
       </div>
     </header>
 
-    <section class="section">
-      <div class="section-title">Ready to Play</div>
+    <div class="mobile-hub" aria-label="Find a game">
+      <div class="hub-row">
+        <label class="search-shell" for="game-search">
+          <span aria-hidden="true">⌕</span>
+          <span class="visually-hidden">Search games</span>
+          <input id="game-search" type="search" placeholder="Search games…" autocomplete="off" />
+        </label>
+        <button class="shuffle-button" id="shuffle-game" type="button" aria-label="Play a random ready game">
+          <span aria-hidden="true">⚄</span><span class="shuffle-label"> Surprise</span>
+        </button>
+      </div>
+      <div class="filter-row" role="group" aria-label="Filter games by status">
+        <button class="filter-chip" data-filter="all" aria-pressed="true" type="button">All</button>
+        <button class="filter-chip" data-filter="ready" aria-pressed="false" type="button">Ready</button>
+        <button class="filter-chip" data-filter="work" aria-pressed="false" type="button">In Work</button>
+        <span class="result-count" id="result-count" aria-live="polite"></span>
+      </div>
+    </div>
+
+    <section class="section recent-section" id="recent-section" hidden>
+      <div class="section-title"><span>Continue Playing</span></div>
+      <a class="recent-card" id="recent-card" href="#">
+        <span class="recent-thumb" id="recent-thumb" aria-hidden="true"></span>
+        <span class="recent-copy">
+          <span class="recent-label">Last cabinet</span>
+          <span class="recent-title" id="recent-title"></span>
+        </span>
+        <span class="recent-arrow" aria-hidden="true">›</span>
+      </a>
+    </section>
+
+    <section class="section game-section" data-status="ready">
+      <div class="section-title"><span>Ready to Play</span><span class="section-count" data-section-count>21</span></div>
       <div class="grid">
-        <a class="card" style="--delay: 0.05s" href="arkanoid/">
+        <a class="card" data-icon="🧱" style="--delay: 0.05s" href="arkanoid/">
           <div class="card-title">Arkanoid Redux</div>
           <div class="card-meta">Brick-busting with extra polish.</div>
         </a>
-        <a class="card" style="--delay: 0.1s" href="asteroids/">
+        <a class="card" data-icon="☄️" style="--delay: 0.1s" href="asteroids/">
           <div class="card-title">Asteroids</div>
           <div class="card-meta">Drift, blast, and survive the belt.</div>
         </a>
-        <a class="card" style="--delay: 0.15s" href="drop-game/">
+        <a class="card" data-icon="🍎" style="--delay: 0.15s" href="drop-game/">
           <div class="card-title">Drop Game</div>
           <div class="card-meta">Catch fruit before it hits the ground.</div>
         </a>
-        <a class="card" style="--delay: 0.2s" href="burger/">
+        <a class="card" data-icon="🍔" style="--delay: 0.2s" href="burger/">
           <div class="card-title">Burger Time</div>
           <div class="card-meta">Stack towering burgers under pressure.</div>
         </a>
-        <a class="card" style="--delay: 0.25s" href="flappy/">
+        <a class="card" data-icon="🐦" style="--delay: 0.25s" href="flappy/">
           <div class="card-title">Flappy</div>
           <div class="card-meta">Threads the gaps, grab coins.</div>
         </a>
-        <a class="card" style="--delay: 0.3s" href="missile-command/">
+        <a class="card" data-icon="🚀" style="--delay: 0.3s" href="missile-command/">
           <div class="card-title">Missile Command</div>
           <div class="card-meta">Defend the skyline with precise detonations.</div>
         </a>
-        <a class="card" style="--delay: 0.35s" href="space-invaders-command/">
+        <a class="card" data-icon="💥" style="--delay: 0.35s" href="space-invaders-command/">
           <div class="card-title">Space Invaders Command</div>
           <div class="card-meta">Invaders meet cascading explosions.</div>
         </a>
-        <a class="card" style="--delay: 0.4s" href="neon-flight/">
+        <a class="card" data-icon="✈️" style="--delay: 0.4s" href="neon-flight/">
           <div class="card-title">Neon Flight</div>
           <div class="card-meta">Weave through a glowing skyline.</div>
         </a>
-        <a class="card" style="--delay: 0.45s" href="qbert/">
+        <a class="card" data-icon="🔶" style="--delay: 0.45s" href="qbert/">
           <div class="card-title">Qbert Clone</div>
           <div class="card-meta">Hop the pyramid and dodge foes.</div>
         </a>
-        <a class="card" style="--delay: 0.5s" href="space-invaders/">
+        <a class="card" data-icon="👾" style="--delay: 0.5s" href="space-invaders/">
           <div class="card-title">Space Invaders</div>
           <div class="card-meta">Classic wave shooter, tuned up.</div>
         </a>
-        <a class="card" style="--delay: 0.55s" href="tanks/">
+        <a class="card" data-icon="🛡️" style="--delay: 0.55s" href="tanks/">
           <div class="card-title">Tanks</div>
           <div class="card-meta">Top-down armor duels.</div>
         </a>
-        <a class="card" style="--delay: 0.58s" href="pacman/">
+        <a class="card" data-icon="🟡" style="--delay: 0.58s" href="pacman/">
           <div class="card-title">Pac-Man</div>
           <div class="card-meta">Nom pellets, dodge ghosts.</div>
         </a>
-        <a class="card" style="--delay: 0.6s" href="tetris/">
+        <a class="card" data-icon="🧩" style="--delay: 0.6s" href="tetris/">
           <div class="card-title">Tetris</div>
           <div class="card-meta">Stack, rotate, clear.</div>
         </a>
-        <a class="card" style="--delay: 0.65s" href="trap-the-mouse/">
+        <a class="card" data-icon="🐭" style="--delay: 0.65s" href="trap-the-mouse/">
           <div class="card-title">Trap the Mouse</div>
           <div class="card-meta">Outsmart the escape route.</div>
         </a>
-        <a class="card" style="--delay: 0.7s" href="video-poker/">
+        <a class="card" data-icon="♠️" style="--delay: 0.7s" href="video-poker/">
           <div class="card-title">Video Poker Lounge</div>
           <div class="card-meta">Deal, hold, and chase jackpots.</div>
         </a>
-        <a class="card" style="--delay: 0.75s" href="ultra-tanks/">
+        <a class="card" data-icon="💣" style="--delay: 0.75s" href="ultra-tanks/">
           <div class="card-title">Ultra Tanks</div>
           <div class="card-meta">Bouncing bullets and big raids.</div>
         </a>
-        <a class="card" style="--delay: 0.8s" href="pitfall/">
+        <a class="card" data-icon="🌴" style="--delay: 0.8s" href="pitfall/">
           <div class="card-title">Pitfall</div>
           <div class="card-meta">Run, jump, and dodge pits.</div>
         </a>
-        <a class="card" style="--delay: 0.85s" href="river-run/">
+        <a class="card" data-icon="🚗" style="--delay: 0.85s" href="river-run/">
           <div class="card-title">Neon River Run</div>
           <div class="card-meta">Cross traffic and ride a living neon river.</div>
         </a>
-        <a class="card" style="--delay: 0.9s" href="deep-core/">
+        <a class="card" data-icon="⛏️" style="--delay: 0.9s" href="deep-core/">
           <div class="card-title">Deep Core</div>
           <div class="card-meta">Dig tactical tunnels beneath a hostile moon.</div>
         </a>
-        <a class="card" style="--delay: 0.95s" href="mushroom-moon/">
+        <a class="card" data-icon="🍄" style="--delay: 0.95s" href="mushroom-moon/">
           <div class="card-title">Mushroom Moon</div>
           <div class="card-meta">Split star-worms in a mutating lunar garden.</div>
         </a>
-        <a class="card" style="--delay: 1s" href="https://audio.vibe-cade.com">
+        <a class="card" data-icon="🎵" style="--delay: 1s" href="https://audio.vibe-cade.com">
           <div class="card-title">Audio Assault</div>
           <div class="card-meta">Intense music trivia</div>
         </a>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-title">In Work</div>
+    <section class="section game-section" data-status="work">
+      <div class="section-title"><span>In Work</span><span class="section-count" data-section-count>9</span></div>
       <div class="grid">
-        <a class="card" style="--delay: 0.05s" href="boxing/">
+        <a class="card" data-icon="🥊" style="--delay: 0.05s" href="boxing/">
           <div class="card-title">Boxing</div>
           <div class="card-meta">Dodge, weave, land combos.</div>
         </a>
-        <a class="card" style="--delay: 0.1s" href="balance/">
+        <a class="card" data-icon="⚖️" style="--delay: 0.1s" href="balance/">
           <div class="card-title">Block Balance</div>
           <div class="card-meta">Keep the tower steady.</div>
         </a>
-        <a class="card" style="--delay: 0.15s" href="excitebike/">
+        <a class="card" data-icon="🏍️" style="--delay: 0.15s" href="excitebike/">
           <div class="card-title">Excitebike</div>
           <div class="card-meta">Race the ramps and clear hazards.</div>
         </a>
-        <a class="card" style="--delay: 0.2s" href="joust/">
+        <a class="card" data-icon="🏇" style="--delay: 0.2s" href="joust/">
           <div class="card-title">Joust</div>
           <div class="card-meta">Air duels with lances drawn.</div>
         </a>
-        <a class="card" style="--delay: 0.3s" href="pinball/">
+        <a class="card" data-icon="🎱" style="--delay: 0.3s" href="pinball/">
           <div class="card-title">Pinball</div>
           <div class="card-meta">Treasure hunt on a full table.</div>
         </a>
-        <a class="card" style="--delay: 0.4s" href="pole/">
+        <a class="card" data-icon="🏁" style="--delay: 0.4s" href="pole/">
           <div class="card-title">Pole Position</div>
           <div class="card-meta">Thread the track and rival racers.</div>
         </a>
-        <a class="card" style="--delay: 0.45s" href="scorched-earth/">
+        <a class="card" data-icon="💥" style="--delay: 0.45s" href="scorched-earth/">
           <div class="card-title">Scorched Skies</div>
           <div class="card-meta">Artillery duels in the clouds.</div>
         </a>
-        <a class="card" style="--delay: 0.5s" href="number-munchers/">
+        <a class="card" data-icon="🔢" style="--delay: 0.5s" href="number-munchers/">
           <div class="card-title">Number Munchers</div>
           <div class="card-meta">Snack on the right answers.</div>
         </a>
-        <a class="card" style="--delay: 0.55s" href="soda-shift/">
+        <a class="card" data-icon="🥤" style="--delay: 0.55s" href="soda-shift/">
           <div class="card-title">Soda Shift</div>
           <div class="card-meta">Serve the rush and catch every empty.</div>
         </a>
       </div>
     </section>
 
+    <div class="empty-state" id="empty-state" hidden>No cabinets match that search.</div>
+
     <footer>
       <div>Quick access to the full list in <a href="Games.md">Games.md</a>.</div>
       <div>Use each game sidebar to jump around the arcade.</div>
     </footer>
   </div>
+  <script>
+    (() => {
+      'use strict';
+
+      const storageKey = 'vibecade-last-game-v1';
+      const searchInput = document.getElementById('game-search');
+      const filterButtons = [...document.querySelectorAll('[data-filter]')];
+      const gameSections = [...document.querySelectorAll('.game-section')];
+      const cards = [...document.querySelectorAll('.game-section .card')];
+      const resultCount = document.getElementById('result-count');
+      const emptyState = document.getElementById('empty-state');
+      const recentSection = document.getElementById('recent-section');
+      const recentCard = document.getElementById('recent-card');
+      const recentThumb = document.getElementById('recent-thumb');
+      const recentTitle = document.getElementById('recent-title');
+      const shuffleButton = document.getElementById('shuffle-game');
+      let activeFilter = 'all';
+
+      const cardRecord = (card) => ({
+        href: card.getAttribute('href'),
+        title: card.querySelector('.card-title').textContent.trim(),
+        icon: card.dataset.icon || '🕹️',
+        hue: card.style.getPropertyValue('--thumb-hue') || '170'
+      });
+
+      const remember = (card) => {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(cardRecord(card)));
+        } catch (_) {
+          // Browsing with storage disabled should never block play.
+        }
+      };
+
+      const renderRecent = () => {
+        let record;
+        try {
+          record = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        } catch (_) {
+          return;
+        }
+
+        if (!record || !record.href || !record.title) return;
+        recentCard.href = record.href;
+        recentTitle.textContent = record.title;
+        recentThumb.textContent = record.icon || '🕹️';
+        recentCard.style.setProperty('--thumb-hue', record.hue || '170');
+        recentSection.hidden = false;
+      };
+
+      const updateResults = () => {
+        const query = searchInput.value.trim().toLowerCase();
+        let visible = 0;
+
+        cards.forEach((card) => {
+          const matchesFilter = activeFilter === 'all' || card.dataset.status === activeFilter;
+          const matchesSearch = !query || card.dataset.search.includes(query);
+          card.hidden = !(matchesFilter && matchesSearch);
+          if (!card.hidden) visible += 1;
+        });
+
+        gameSections.forEach((section) => {
+          const sectionVisible = [...section.querySelectorAll('.card')].filter((card) => !card.hidden).length;
+          section.hidden = sectionVisible === 0;
+          section.querySelector('[data-section-count]').textContent = sectionVisible;
+        });
+
+        resultCount.textContent = `${visible} ${visible === 1 ? 'game' : 'games'}`;
+        emptyState.hidden = visible !== 0;
+        recentSection.hidden = activeFilter !== 'all' || query !== '' || !recentTitle.textContent;
+      };
+
+      cards.forEach((card, index) => {
+        const section = card.closest('.game-section');
+        const title = card.querySelector('.card-title').textContent.trim();
+        const meta = card.querySelector('.card-meta').textContent.trim();
+        card.dataset.status = section.dataset.status;
+        card.dataset.search = `${title} ${meta}`.toLowerCase();
+        card.style.setProperty('--thumb-hue', String((index * 47 + 155) % 360));
+        card.addEventListener('click', () => remember(card));
+      });
+
+      searchInput.addEventListener('input', updateResults);
+      filterButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          activeFilter = button.dataset.filter;
+          filterButtons.forEach((candidate) => {
+            candidate.setAttribute('aria-pressed', String(candidate === button));
+          });
+          updateResults();
+        });
+      });
+
+      shuffleButton.addEventListener('click', () => {
+        let pool = cards.filter((card) => card.dataset.status === 'ready' && !card.hidden);
+        if (!pool.length) pool = cards.filter((card) => card.dataset.status === 'ready');
+        const card = pool[Math.floor(Math.random() * pool.length)];
+        if (!card) return;
+        remember(card);
+        window.location.assign(card.href);
+      });
+
+      renderRecent();
+      updateResults();
+    })();
+  </script>
 </body>
 </html>
