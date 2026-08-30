@@ -1,0 +1,4 @@
+interface:
+  display_name: "VibeCade Game Builder"
+  short_description: "Build and release one polished VibeCade game"
+  default_prompt: "Use $vibecade-game-builder to create and release one new VibeCade arcade game."

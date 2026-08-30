@@ -1,24 +1,34 @@
 # Repository Guidance for Agents
-This repository contains a collection of small arcade games. All ambiguous instructions should be interpreted as referring to these games and the arcade overall.
 
-## Structure Overview
-- `index.html` is the main arcade menu page.
-- Each game lives in its own folder at the repo root, using `/<game-slug>/index.html`.
-- Shared navigation is stored in `sidebar.html` and loaded by game pages.
-- Shared art assets live in `images/`.
-- Pinball assets (Phaser entry + scenes) live under `pinball/` alongside the pinball page.
-- The canonical list of games and links is maintained in `Games.md`.
+This repository is the VibeCade collection of small browser arcade games. Interpret ambiguous repository requests as referring to the games and arcade unless the user says otherwise.
 
-## UX Overhaul Status
-- Goal: Desktop uses a flyout arcade menu (no fixed sidebar) and maximized playfields; mobile hides all menus and uses translucent thumb controls.
-- Completed: `arkanoid/`, `asteroids/`, `drop-game/`, `burger/`, `flappy/`, `missile-command/`, `space-invaders-command/`, `neon-flight/`, `qbert/`, `space-invaders/`, `tanks/`, `tetris/`, `balance/`, `excitebike/`, `joust/`, `number-munchers/`, `pacman/`, `pinball/`, `pitfall/`, `pole/`, `trap-the-mouse/`, `ultra-tanks/`, `video-poker/`.
-- Remaining: `boxing/` and `scorched-earth/` are intentionally held for a separate overhaul.
+## Required References
 
-## UI Standards
-- Games with instructions should show a session-scoped modal the first time the game loads; gameplay starts only after dismiss.
-- Desktop-only translucent `?` button pauses gameplay and reopens the instructions modal.
+- For any work that creates a game or changes arcade gameplay, controls, layout, registration, testing, or release behavior, read [`docs/GAME_STANDARDS.md`](docs/GAME_STANDARDS.md) completely before editing.
+- For end-to-end creation of a new game, use the `vibecade-game-builder` skill when it is available. Its version-controlled source is [`skills/vibecade-game-builder/SKILL.md`](skills/vibecade-game-builder/SKILL.md).
+- `Games.md` is the canonical game list. `index.html` is the main arcade page.
 
-## Non-game Pages
-- Standalone demos (such as `embedding.html` and `simple.html`) remain at the repo root and are not part of the arcade menu.
+## Repository Structure
 
+- Each game lives at `/<game-slug>/index.html`; local assets stay inside that game directory.
+- Shared navigation is in `sidebar.html`, `sidebar.css`, `flyout.js`, and `flyout.css`.
+- Shared mobile behavior is in `mobile-fullscreen.js`.
+- Shared arcade artwork is in `images/`.
+- Pinball keeps its Phaser entry, scenes, and assets under `pinball/`.
+- Root files such as `embedding.html` and `simple.html` are standalone demos, not arcade games.
+
+## Guardrails
+
+- Preserve unrelated user changes and never discard or overwrite work merely to simplify a task.
+- Do not change an existing game's files while creating a new game unless the user explicitly expands the scope.
+- Outside a new game directory, game-creation work may change only the canonical registration files required by the task.
+- `boxing/` and `scorched-earth/` are intentionally held for separate overhaul work.
+- Do not force-push, rewrite shared history, or commit unrelated files.
+
+## Current UX Direction
+
+- Desktop uses the flyout arcade menu and maximized playfields rather than a fixed sidebar.
+- Mobile hides arcade navigation and desktop help controls, enters fullscreen from a user gesture when supported, and provides touch-native controls that do not require a keyboard.
+- Instructions are session-scoped. Gameplay must not begin until the first-load instructions are dismissed.
+- A translucent desktop-only `?` button pauses gameplay and reopens instructions.
 
