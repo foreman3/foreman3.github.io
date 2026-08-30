@@ -61,9 +61,9 @@
     body.touch-device .virtual-joystick {
       position: relative !important;
       box-sizing: border-box !important;
-      width: 84px !important;
-      height: 84px !important;
-      flex: 0 0 84px !important;
+      width: 126px !important;
+      height: 126px !important;
+      flex: 0 0 126px !important;
       pointer-events: auto !important;
       border: 1px solid rgba(190, 240, 255, .38) !important;
       border-radius: 50% !important;
@@ -78,21 +78,21 @@
     body.touch-device .joystick-mark {
       position: absolute !important;
       color: rgba(220, 248, 255, .62) !important;
-      font: 900 8px/1 system-ui, sans-serif !important;
+      font: 900 11px/1 system-ui, sans-serif !important;
       pointer-events: none !important;
     }
-    body.touch-device .joystick-mark.up { left: 50% !important; top: 4px !important; transform: translateX(-50%) !important; }
-    body.touch-device .joystick-mark.right { right: 5px !important; top: 50% !important; transform: translateY(-50%) !important; }
-    body.touch-device .joystick-mark.down { left: 50% !important; bottom: 4px !important; transform: translateX(-50%) !important; }
-    body.touch-device .joystick-mark.left { left: 5px !important; top: 50% !important; transform: translateY(-50%) !important; }
+    body.touch-device .joystick-mark.up { left: 50% !important; top: 7px !important; transform: translateX(-50%) !important; }
+    body.touch-device .joystick-mark.right { right: 8px !important; top: 50% !important; transform: translateY(-50%) !important; }
+    body.touch-device .joystick-mark.down { left: 50% !important; bottom: 7px !important; transform: translateX(-50%) !important; }
+    body.touch-device .joystick-mark.left { left: 8px !important; top: 50% !important; transform: translateY(-50%) !important; }
     body.touch-device .virtual-joystick[data-axis="horizontal"] .joystick-mark.up,
     body.touch-device .virtual-joystick[data-axis="horizontal"] .joystick-mark.down { display: none !important; }
     body.touch-device .joystick-knob {
       position: absolute !important;
       left: 50% !important;
       top: 50% !important;
-      width: 31px !important;
-      height: 31px !important;
+      width: 47px !important;
+      height: 47px !important;
       border: 1px solid rgba(225, 250, 255, .78) !important;
       border-radius: 50% !important;
       background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .48), rgba(64, 116, 151, .8)) !important;
@@ -201,10 +201,12 @@
     const mode = options.mode === 'cardinal' || options.mode === 'horizontal'
       ? options.mode
       : 'analog';
-    const deadZone = Number.isFinite(options.deadZone) ? options.deadZone : 0.16;
+    const requestedDeadZone = Number.isFinite(options.deadZone) ? options.deadZone : 0.16;
+    const deadZone = Math.max(0.24, Math.min(0.42, requestedDeadZone));
     const onChange = typeof options.onChange === 'function' ? options.onChange : () => {};
     let pointerId = null;
     let lastVector = '';
+    element.dataset.joystickDeadZone = deadZone.toFixed(2);
 
     const directionName = (x, y) => {
       if (Math.hypot(x, y) < 0.01) return 'idle';

@@ -98,6 +98,8 @@
   let started = false;
   let paused = true;
   let lastTime = performance.now();
+  let lastVisualTime = 0;
+  let renderVisuals = true;
   let accumulator = 0;
   let bannerToken = 0;
   let coachToken = 0;
@@ -112,6 +114,10 @@
   const requestedStartPhase = Number.isFinite(requestedPhase) ? Math.max(0, requestedPhase - 1) : 0;
   const requestedTestQuota = Number.parseInt(launchParams.get('testQuota') || '0', 10);
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const mobileQuality = window.matchMedia('(max-width: 900px)').matches;
+  document.body.classList.toggle('mobile-quality', mobileQuality);
+  gameSvg.dataset.quality = mobileQuality ? 'mobile' : 'full';
+  gameSvg.dataset.visualHz = mobileQuality ? '30' : 'display';
 
   function createIdleState() {
     return {
@@ -630,6 +636,7 @@
   }
 
   function updatePatronVisual(patron) {
+    if (!renderVisuals) return;
     const type = PATRON_TYPES[patron.type];
     const bob = !prefersReducedMotion && patron.status === 'incoming' ? Math.sin(patron.phase) * (patron.type === 'dancer' ? 4.5 : 1.5) : 0;
     const lean = prefersReducedMotion ? 0 : patron.status === 'leaving' ? -4 : patron.type === 'dancer' ? Math.sin(patron.phase * 0.7) * 3 : 0;
@@ -639,23 +646,26 @@
   }
 
   function updateDrinkVisual(drink) {
+    if (!renderVisuals) return;
     const tilt = prefersReducedMotion ? 0 : Math.sin(drink.rotation * Math.PI / 180) * 4;
     drink.el.setAttribute('transform', `translate(${drink.x.toFixed(2)} ${drink.y}) rotate(${tilt}) scale(.72)`);
   }
 
   function updateEmptyVisual(empty) {
+    if (!renderVisuals) return;
     const waitingBob = !prefersReducedMotion && empty.wait > 0 ? Math.sin(performance.now() * 0.012) * 2 : 0;
     const tilt = prefersReducedMotion ? 0 : Math.sin(empty.rotation * Math.PI / 180) * 6;
     empty.el.setAttribute('transform', `translate(${empty.x.toFixed(2)} ${(empty.y + waitingBob).toFixed(2)}) rotate(${tilt}) scale(.68)`);
   }
 
   function syncPlayer() {
+    if (!renderVisuals) return;
     const bounce = !prefersReducedMotion && started && !paused && state.mode === 'playing' ? Math.sin(performance.now() * 0.008) * 1.2 : 0;
     playerSprite.setAttribute('transform', `translate(246 ${(player.visualY + bounce).toFixed(2)}) scale(.78)`);
   }
 
   function burst(x, y, color, count = 12, force = 150) {
-    const particleCount = prefersReducedMotion ? Math.min(4, count) : count;
+    const particleCount = prefersReducedMotion ? Math.min(4, count) : mobileQuality ? Math.min(6, Math.ceil(count * 0.5)) : count;
     for (let index = 0; index < particleCount; index += 1) {
       const angle = Math.random() * Math.PI * 2;
       const speed = force * (0.25 + Math.random() * 0.75);
@@ -706,19 +716,24 @@
         effect.y += effect.vy * dt;
         effect.vy += 170 * dt;
         effect.vx *= 0.985;
-        effect.el.setAttribute('cx', effect.x.toFixed(2));
-        effect.el.setAttribute('cy', effect.y.toFixed(2));
+        if (renderVisuals) {
+          effect.el.setAttribute('cx', effect.x.toFixed(2));
+          effect.el.setAttribute('cy', effect.y.toFixed(2));
+        }
       } else {
         effect.y -= 34 * dt;
-        effect.el.setAttribute('x', effect.x.toFixed(2));
-        effect.el.setAttribute('y', effect.y.toFixed(2));
+        if (renderVisuals) {
+          effect.el.setAttribute('x', effect.x.toFixed(2));
+          effect.el.setAttribute('y', effect.y.toFixed(2));
+        }
       }
-      effect.el.setAttribute('opacity', Math.min(1, effect.life / effect.maxLife).toFixed(2));
+      if (renderVisuals) effect.el.setAttribute('opacity', Math.min(1, effect.life / effect.maxLife).toFixed(2));
     }
     effects = effects.filter((effect) => !effect.dead);
   }
 
   function updateHud() {
+    if (!renderVisuals) return;
     const config = phaseConfig();
     scoreEl.textContent = Math.floor(state.score).toLocaleString();
     livesEl.textContent = state.lives > 0 ? Array(state.lives).fill('●').join(' ') : '—';
@@ -729,6 +744,7 @@
   }
 
   function updateDiagnostics() {
+    if (!renderVisuals) return;
     gameSvg.dataset.mode = state.mode;
     gameSvg.dataset.phase = String(state.phaseIndex + 1);
     gameSvg.dataset.difficulty = phaseConfig().name;
@@ -876,14 +892,19 @@
     lastTime = now;
     if (started && !paused) {
       accumulator += elapsed;
+      const visualDue = !mobileQuality || now - lastVisualTime >= 1000 / 30;
+      const availableSteps = Math.min(7, Math.floor(accumulator / FIXED_STEP));
       let guard = 0;
       while (accumulator >= FIXED_STEP && guard < 7) {
+        renderVisuals = !mobileQuality || (visualDue && guard === Math.max(0, availableSteps - 1));
         update(FIXED_STEP);
         accumulator -= FIXED_STEP;
         guard += 1;
       }
+      if (visualDue && guard > 0) lastVisualTime = now;
     } else {
       accumulator = 0;
+      renderVisuals = true;
       syncPlayer();
       updateDiagnostics();
     }

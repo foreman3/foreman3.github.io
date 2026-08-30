@@ -71,6 +71,26 @@ button {
   outline: none;
 }
 
+body.mobile-quality #server-sprite,
+body.mobile-quality #patron-regular,
+body.mobile-quality #patron-greaser,
+body.mobile-quality #patron-tourist,
+body.mobile-quality #patron-dancer,
+body.mobile-quality #full-glass,
+body.mobile-quality #empty-glass,
+body.mobile-quality .actor.is-drinking {
+  filter: none !important;
+}
+
+body.mobile-quality .lane-glow {
+  display: none;
+}
+
+body.mobile-quality .hud-card,
+body.mobile-quality .touch-button {
+  backdrop-filter: none;
+}
+
 .svg-sign-small {
   fill: #57251f;
   font-size: 15px;
