@@ -2,23 +2,37 @@
   'use strict';
 
   const root = document.documentElement;
-  const coarsePointer = window.matchMedia('(pointer: coarse)');
   const narrowViewport = window.matchMedia('(max-width: 900px)');
-  const touchCapable = () => coarsePointer.matches
-    || navigator.maxTouchPoints > 0
-    || narrowViewport.matches;
-  let touchLayoutEnabled = touchCapable();
+  let touchLayoutEnabled = narrowViewport.matches;
+  const suppressTouchCallout = (event) => {
+    if (touchLayoutEnabled) event.preventDefault();
+  };
 
   const syncTouchLayout = () => {
-    if (touchCapable()) touchLayoutEnabled = true;
+    touchLayoutEnabled = narrowViewport.matches;
+    root.dataset.vibecadeTouchUi = touchLayoutEnabled ? 'active' : 'inactive';
     document.body?.classList.toggle('touch-device', touchLayoutEnabled);
     document.querySelectorAll('#touch-controls, .touch-controls').forEach((controls) => {
       controls.setAttribute('aria-hidden', String(!touchLayoutEnabled));
+      if (!controls.dataset.vibecadeTouchGuard) {
+        controls.dataset.vibecadeTouchGuard = 'true';
+        controls.addEventListener('contextmenu', suppressTouchCallout);
+        controls.querySelectorAll('button').forEach((button) => {
+          button.draggable = false;
+        });
+      }
     });
   };
 
   const mobileStyles = document.createElement('style');
   mobileStyles.textContent = `
+    html[data-vibecade-touch-ui="inactive"] body #touch-controls,
+    html[data-vibecade-touch-ui="inactive"] body .touch-controls,
+    html[data-vibecade-touch-ui="inactive"] body .vibecade-mobile-restart {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
     body.touch-device [role="dialog"],
     body.touch-device .modal,
     body.touch-device #instruction-modal {
@@ -35,9 +49,20 @@
       -webkit-overflow-scrolling: touch;
     }
     body.touch-device button,
-    body.touch-device canvas {
+    body.touch-device canvas,
+    body.touch-device #touch-controls,
+    body.touch-device .touch-controls {
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    body.touch-device .virtual-joystick {
+      touch-action: none !important;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
     body.touch-device .flyout-nav,
     body.touch-device .menu-toggle,
@@ -130,13 +155,113 @@
   restartButton.addEventListener('click', () => window.location.reload());
   document.body.appendChild(restartButton);
 
+  window.VibeCadeJoystick = function bindVibeCadeJoystick(element, options = {}) {
+    if (!element) return () => {};
+
+    const knob = element.querySelector('.joystick-knob');
+    const mode = options.mode === 'cardinal' ? 'cardinal' : 'analog';
+    const deadZone = Number.isFinite(options.deadZone) ? options.deadZone : 0.16;
+    const onChange = typeof options.onChange === 'function' ? options.onChange : () => {};
+    let pointerId = null;
+    let lastVector = '';
+
+    const directionName = (x, y) => {
+      if (Math.hypot(x, y) < 0.01) return 'idle';
+      const vertical = y < -0.3 ? 'up' : y > 0.3 ? 'down' : '';
+      const horizontal = x < -0.3 ? 'left' : x > 0.3 ? 'right' : '';
+      return [vertical, horizontal].filter(Boolean).join('-') || 'idle';
+    };
+
+    const emit = (x, y) => {
+      const key = `${x.toFixed(3)},${y.toFixed(3)}`;
+      if (key === lastVector) return;
+      lastVector = key;
+      element.dataset.joystickVector = key;
+      element.dataset.joystickDirection = directionName(x, y);
+      onChange(x, y);
+    };
+
+    const centerKnob = () => {
+      element.classList.remove('is-active');
+      if (knob) knob.style.transform = 'translate(-50%, -50%)';
+      emit(0, 0);
+    };
+
+    const update = (event) => {
+      if (event.pointerId !== pointerId) return;
+      event.preventDefault();
+      const rect = element.getBoundingClientRect();
+      const radius = Math.min(rect.width, rect.height) / 2;
+      const dx = event.clientX - (rect.left + rect.width / 2);
+      const dy = event.clientY - (rect.top + rect.height / 2);
+      const distance = Math.hypot(dx, dy);
+      const maxTravel = Math.max(1, radius * 0.48);
+      const visualScale = distance > maxTravel ? maxTravel / distance : 1;
+
+      if (knob) {
+        knob.style.transform = `translate(calc(-50% + ${dx * visualScale}px), calc(-50% + ${dy * visualScale}px))`;
+      }
+
+      if (distance <= radius * deadZone) {
+        emit(0, 0);
+        return;
+      }
+
+      if (mode === 'cardinal') {
+        if (Math.abs(dx) >= Math.abs(dy)) emit(Math.sign(dx), 0);
+        else emit(0, Math.sign(dy));
+        return;
+      }
+
+      const strength = Math.min(1, (distance - radius * deadZone) / (radius * (0.78 - deadZone)));
+      emit(dx / distance * strength, dy / distance * strength);
+    };
+
+    const start = (event) => {
+      if (pointerId !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
+      event.preventDefault();
+      pointerId = event.pointerId;
+      element.classList.add('is-active');
+      try { element.setPointerCapture(pointerId); } catch (_) {}
+      update(event);
+    };
+
+    const finish = (event) => {
+      if (pointerId === null || (event.pointerId !== undefined && event.pointerId !== pointerId)) return;
+      const capturedPointer = pointerId;
+      pointerId = null;
+      try {
+        if (element.hasPointerCapture(capturedPointer)) element.releasePointerCapture(capturedPointer);
+      } catch (_) {}
+      centerKnob();
+    };
+
+    element.addEventListener('pointerdown', start);
+    element.addEventListener('pointermove', update);
+    element.addEventListener('pointerup', finish);
+    element.addEventListener('pointercancel', finish);
+    element.addEventListener('lostpointercapture', finish);
+    element.addEventListener('contextmenu', suppressTouchCallout);
+    window.addEventListener('blur', centerKnob);
+    centerKnob();
+
+    return () => {
+      element.removeEventListener('pointerdown', start);
+      element.removeEventListener('pointermove', update);
+      element.removeEventListener('pointerup', finish);
+      element.removeEventListener('pointercancel', finish);
+      element.removeEventListener('lostpointercapture', finish);
+      element.removeEventListener('contextmenu', suppressTouchCallout);
+      window.removeEventListener('blur', centerKnob);
+      centerKnob();
+    };
+  };
+
   syncTouchLayout();
   window.addEventListener('resize', syncTouchLayout, { passive: true });
-  if (coarsePointer.addEventListener) {
-    coarsePointer.addEventListener('change', syncTouchLayout);
+  if (narrowViewport.addEventListener) {
     narrowViewport.addEventListener('change', syncTouchLayout);
   } else {
-    coarsePointer.addListener(syncTouchLayout);
     narrowViewport.addListener(syncTouchLayout);
   }
 

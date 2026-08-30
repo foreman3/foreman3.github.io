@@ -41,4 +41,4 @@
 
 // Mobile browsers only allow fullscreen entry during a user gesture. Loading the
 // shared helper here gives every flyout-enabled game the same first-tap behavior.
-  import('./mobile-fullscreen.js?v=3').catch(() => {});
+  import('./mobile-fullscreen.js?v=4').catch(() => {});
