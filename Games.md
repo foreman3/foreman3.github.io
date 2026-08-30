@@ -36,3 +36,4 @@ This repository hosts simple arcade-style video games.
 - [Pole Position](pole/) - Steer and dodge rival racers.
 - [Scorched Skies](scorched-earth/) - Artillery duels in the clouds.
 - [Number Munchers](number-munchers/) - Devour correct answers while dodging Troggles.
+- [Soda Shift](soda-shift/) - Serve packed counters, catch empties, and survive the supper rush.

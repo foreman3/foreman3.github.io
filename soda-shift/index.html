@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#2b1b18">
+  <title>Soda Shift | VibeCade</title>
+  <link rel="stylesheet" href="../sidebar.css">
+  <link rel="stylesheet" href="../flyout.css">
+  <link rel="stylesheet" href="style.css?v=4">
+  <script src="../flyout.js" defer></script>
+</head>
+<body>
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+
+  <button id="help-button" type="button" aria-label="How to play">?</button>
+
+  <main id="game-shell" tabindex="-1" aria-label="Soda Shift game cabinet">
+    <div class="hud" aria-label="Game status">
+      <div class="hud-card"><span>Score</span><strong id="score">0</strong></div>
+      <div class="hud-card"><span>Glasses</span><strong id="lives">● ● ●</strong></div>
+      <div class="hud-card hud-center"><span id="phase-label">Phase 1</span><strong id="shift-name">Warm-Up</strong></div>
+      <div class="hud-card"><span>Guests</span><strong id="quota">0 / 8</strong></div>
+      <div class="hud-card hud-streak"><span>Streak</span><strong id="streak">×1</strong></div>
+    </div>
+
+    <svg id="game-svg" viewBox="0 0 1280 720" role="img" aria-label="A busy mid-century soda fountain with four serving counters" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="wall-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f5dfb8"/>
+          <stop offset="0.62" stop-color="#deb87f"/>
+          <stop offset="1" stop-color="#9f6841"/>
+        </linearGradient>
+        <linearGradient id="wood-gradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#8c3e29"/>
+          <stop offset="0.32" stop-color="#5e261e"/>
+          <stop offset="0.6" stop-color="#a34a2d"/>
+          <stop offset="1" stop-color="#431915"/>
+        </linearGradient>
+        <linearGradient id="chrome-gradient" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#7d8b8b"/>
+          <stop offset="0.28" stop-color="#f7f1dd"/>
+          <stop offset="0.48" stop-color="#9eb5b2"/>
+          <stop offset="0.72" stop-color="#fff9e8"/>
+          <stop offset="1" stop-color="#6d7b7b"/>
+        </linearGradient>
+        <radialGradient id="lamp-glow">
+          <stop offset="0" stop-color="#fff6bd" stop-opacity="0.92"/>
+          <stop offset="0.5" stop-color="#ffd568" stop-opacity="0.28"/>
+          <stop offset="1" stop-color="#ffd568" stop-opacity="0"/>
+        </radialGradient>
+        <pattern id="floor-tiles" width="64" height="64" patternUnits="userSpaceOnUse" patternTransform="skewX(-12)">
+          <rect width="64" height="64" fill="#eee0c5"/>
+          <rect width="32" height="32" fill="#2b7771"/>
+          <rect x="32" y="32" width="32" height="32" fill="#2b7771"/>
+          <path d="M0 0H64V64H0Z" fill="none" stroke="#7c4f38" stroke-opacity="0.18" stroke-width="3"/>
+        </pattern>
+        <filter id="soft-shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#2b1510" flood-opacity="0.42"/>
+        </filter>
+        <filter id="tiny-shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#28120d" flood-opacity="0.55"/>
+        </filter>
+        <clipPath id="playfield-clip"><rect x="180" y="150" width="1035" height="520" rx="20"/></clipPath>
+
+        <g id="server-sprite" filter="url(#soft-shadow)">
+          <ellipse cx="0" cy="39" rx="31" ry="10" fill="#321a16" opacity="0.28"/>
+          <path d="M-22 25L-15 63H-1L0 28Z" fill="#202f39"/>
+          <path d="M22 25L15 63H1L0 28Z" fill="#263946"/>
+          <path d="M-30 -22Q0 -43 30 -22L25 29Q0 43 -25 29Z" fill="#f5efe0" stroke="#5a2a21" stroke-width="3"/>
+          <path d="M-25 -5Q0 10 25 -5V29Q0 43 -25 29Z" fill="#bd3f34"/>
+          <path d="M-10 -31Q0 -39 10 -31V6L0 15L-10 6Z" fill="#f3c292"/>
+          <circle cx="0" cy="-49" r="22" fill="#efbd8b" stroke="#5a2a21" stroke-width="3"/>
+          <path d="M-22 -52Q-13 -79 15 -70Q27 -63 20 -42Q14 -58 -8 -56Q-15 -47 -22 -52Z" fill="#3e231d"/>
+          <circle cx="-7" cy="-50" r="2.2" fill="#2b1713"/><circle cx="8" cy="-50" r="2.2" fill="#2b1713"/>
+          <path d="M-7 -39Q0 -34 8 -39" fill="none" stroke="#8c4135" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M-31 -20Q-47 -1 -42 17" fill="none" stroke="#efbd8b" stroke-width="11" stroke-linecap="round"/>
+          <path d="M31 -20Q46 -4 43 12" fill="none" stroke="#efbd8b" stroke-width="11" stroke-linecap="round"/>
+          <path d="M-46 8Q-34 13 -28 29" fill="none" stroke="#f7f0de" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="43" cy="15" r="7" fill="#efbd8b"/>
+          <path d="M-18 -18H18" stroke="#2e766d" stroke-width="6"/>
+          <circle cx="0" cy="-17" r="4" fill="#f0cb55"/>
+        </g>
+
+        <g id="patron-regular" filter="url(#tiny-shadow)">
+          <ellipse cx="0" cy="35" rx="29" ry="8" fill="#28140f" opacity="0.3"/>
+          <path d="M-28 -9Q0 -28 28 -9L24 34H-24Z" fill="#397c75" stroke="#522a20" stroke-width="3"/>
+          <path d="M-22 -7L0 18L22 -7" fill="#f5e4bd"/>
+          <circle cx="0" cy="-35" r="21" fill="#c9865d" stroke="#522a20" stroke-width="3"/>
+          <path d="M-20 -42Q-5 -63 20 -45L17 -55Q-7 -72 -23 -48Z" fill="#5a2c22"/>
+          <circle cx="-7" cy="-37" r="2" fill="#25110d"/><circle cx="7" cy="-37" r="2" fill="#25110d"/>
+          <path d="M-7 -27Q0 -22 8 -27" fill="none" stroke="#71382d" stroke-width="2.5"/>
+          <path d="M-28 1L-42 18" stroke="#c9865d" stroke-width="10" stroke-linecap="round"/>
+        </g>
+
+        <g id="patron-greaser" filter="url(#tiny-shadow)">
+          <ellipse cx="0" cy="36" rx="31" ry="8" fill="#28140f" opacity="0.3"/>
+          <path d="M-30 -8Q0 -30 30 -8L27 35H-27Z" fill="#2c2c33" stroke="#351a16" stroke-width="3"/>
+          <path d="M-23 -5L-7 7L0 -3L8 7L23 -5" fill="#d7d9d1"/>
+          <path d="M-7 4H7L14 33H-14Z" fill="#bd3f34"/>
+          <circle cx="0" cy="-35" r="22" fill="#d49a70" stroke="#351a16" stroke-width="3"/>
+          <path d="M-22 -40Q-11 -68 14 -59Q26 -55 25 -39Q5 -50 -7 -45Q-16 -39 -22 -40Z" fill="#211b1b"/>
+          <path d="M-21 -48L-35 -41L-18 -35" fill="#211b1b"/>
+          <path d="M-10 -38H-2M3 -38H11" stroke="#20191a" stroke-width="4" stroke-linecap="round"/>
+          <path d="M-7 -26Q0 -30 8 -26" fill="none" stroke="#7d4636" stroke-width="2"/>
+          <path d="M-30 1L-45 15" stroke="#d49a70" stroke-width="10" stroke-linecap="round"/>
+        </g>
+
+        <g id="patron-tourist" filter="url(#tiny-shadow)">
+          <ellipse cx="0" cy="37" rx="32" ry="8" fill="#28140f" opacity="0.3"/>
+          <path d="M-31 -7Q0 -28 31 -7L28 36H-28Z" fill="#d9a43b" stroke="#5b3024" stroke-width="3"/>
+          <path d="M-25 3Q0 -7 25 3M-24 15Q0 5 24 15M-22 27Q0 17 22 27" fill="none" stroke="#f4e3bd" stroke-width="5"/>
+          <circle cx="0" cy="-35" r="23" fill="#efb880" stroke="#5b3024" stroke-width="3"/>
+          <path d="M-26 -41Q0 -65 27 -41L21 -57Q0 -74 -23 -56Z" fill="#efe2bb" stroke="#5b3024" stroke-width="3"/>
+          <path d="M-13 -38H-3M4 -38H14" stroke="#3d504f" stroke-width="6" stroke-linecap="round"/>
+          <path d="M-3 -38H4" stroke="#3d504f" stroke-width="2"/>
+          <path d="M-8 -25Q0 -19 9 -25" fill="none" stroke="#9a5140" stroke-width="2.5"/>
+          <rect x="16" y="5" width="15" height="19" rx="3" fill="#486f7b" stroke="#f0d798" stroke-width="2"/>
+          <circle cx="23.5" cy="14" r="4" fill="#b9d8d2"/>
+        </g>
+
+        <g id="patron-dancer" filter="url(#tiny-shadow)">
+          <ellipse cx="0" cy="37" rx="29" ry="8" fill="#28140f" opacity="0.3"/>
+          <path d="M-26 -8Q0 -29 26 -8L22 35H-22Z" fill="#9d3f56" stroke="#51251f" stroke-width="3"/>
+          <circle cx="0" cy="-36" r="21" fill="#9a6048" stroke="#51251f" stroke-width="3"/>
+          <path d="M-22 -40Q-18 -67 7 -64Q29 -61 23 -35Q17 -50 4 -48Q-8 -59 -22 -40Z" fill="#2f1a18"/>
+          <path d="M18 -47Q36 -40 25 -21" fill="none" stroke="#2f1a18" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="-7" cy="-38" r="2" fill="#1c1010"/><circle cx="7" cy="-38" r="2" fill="#1c1010"/>
+          <path d="M-7 -27Q0 -20 8 -27" fill="none" stroke="#71382f" stroke-width="2.5"/>
+          <path d="M-26 -1L-43 -19M25 0L43 18" stroke="#9a6048" stroke-width="10" stroke-linecap="round"/>
+          <path d="M-18 4L0 19L18 4" fill="#f0d8b3"/>
+          <circle cx="0" cy="16" r="4" fill="#e6b84d"/>
+        </g>
+
+        <g id="full-glass" filter="url(#tiny-shadow)">
+          <path d="M-13 -23H13L10 21Q0 27 -10 21Z" fill="#eef4e8" fill-opacity="0.9" stroke="#435d58" stroke-width="2.5"/>
+          <path d="M-10 -10H10L8 18Q0 22 -8 18Z" fill="#c86b2c"/>
+          <path d="M-8 -8H8" stroke="#f6df8c" stroke-width="3"/>
+          <path d="M13 -14Q26 -14 24 -2Q23 10 11 9" fill="none" stroke="#e8f0e7" stroke-width="5"/>
+          <path d="M-7 -27Q0 -34 8 -27" fill="#f8f1d9" stroke="#f8f1d9" stroke-width="5" stroke-linecap="round"/>
+        </g>
+
+        <g id="empty-glass" filter="url(#tiny-shadow)">
+          <path d="M-12 -21H12L9 20Q0 25 -9 20Z" fill="#edf6ef" fill-opacity="0.62" stroke="#526c67" stroke-width="2.5"/>
+          <path d="M12 -12Q24 -12 22 -1Q21 9 10 8" fill="none" stroke="#e8f0e7" stroke-width="4.5"/>
+          <path d="M-7 14H7" stroke="#b5c9c2" stroke-width="2"/>
+        </g>
+      </defs>
+
+      <rect width="1280" height="720" rx="28" fill="url(#wall-gradient)"/>
+      <path d="M0 0H1280V116Q1120 86 960 116T640 116T320 116T0 116Z" fill="#772f28"/>
+      <path d="M0 0H1280V82Q1120 52 960 82T640 82T320 82T0 82Z" fill="#2b7771"/>
+      <path d="M0 113Q160 83 320 113T640 113T960 113T1280 113" fill="none" stroke="#f3cb62" stroke-width="8"/>
+      <rect y="632" width="1280" height="88" fill="url(#floor-tiles)"/>
+      <path d="M0 632H1280" stroke="#4f241d" stroke-width="10"/>
+
+      <g class="diner-decor" aria-hidden="true">
+        <g transform="translate(105 56)">
+          <path d="M-73 13Q0 -38 73 13L57 47H-57Z" fill="#f0c95f" stroke="#48231d" stroke-width="5"/>
+          <text x="0" y="19" text-anchor="middle" class="svg-sign-small">SODA SHIFT</text>
+          <path d="M-52 37H52" stroke="#a34132" stroke-width="5" stroke-linecap="round"/>
+        </g>
+        <g transform="translate(1138 62)">
+          <circle r="38" fill="#f8efd9" stroke="#50261f" stroke-width="7"/>
+          <circle r="4" fill="#50261f"/>
+          <path d="M0 0L-2 -24M0 0L18 9" stroke="#50261f" stroke-width="4" stroke-linecap="round"/>
+          <circle r="30" fill="none" stroke="#2b7771" stroke-width="3" stroke-dasharray="2 11"/>
+        </g>
+        <g transform="translate(835 38)">
+          <rect width="214" height="74" rx="10" fill="#203d39" stroke="#e5c36b" stroke-width="5"/>
+          <text x="107" y="24" text-anchor="middle" class="chalk-title">TODAY'S SPECIAL</text>
+          <text x="107" y="50" text-anchor="middle" class="chalk-copy">ROOT BEER • 5¢</text>
+        </g>
+        <g transform="translate(403 42)">
+          <rect width="246" height="61" rx="8" fill="#f1e5c7" stroke="#5b2b23" stroke-width="5"/>
+          <path d="M16 17H230M16 44H230" stroke="#c44b3d" stroke-width="8"/>
+          <text x="123" y="39" text-anchor="middle" class="counter-copy">FAST • FRESH • FROSTY</text>
+        </g>
+      </g>
+
+      <g id="lane-bases" clip-path="url(#playfield-clip)" aria-hidden="true">
+        <g class="lane-base" data-lane="0">
+          <ellipse class="lane-glow" cx="690" cy="207" rx="520" ry="70" fill="url(#lamp-glow)"/>
+          <path d="M196 223H1168L1205 251H218Z" fill="url(#wood-gradient)" stroke="#361712" stroke-width="5"/>
+          <path d="M202 220H1170" stroke="url(#chrome-gradient)" stroke-width="12"/>
+          <path d="M245 252H1176" stroke="#d6aa5c" stroke-opacity="0.46" stroke-width="3" stroke-dasharray="70 22"/>
+          <circle class="lane-light" id="lane-light-0" cx="193" cy="205" r="13"/>
+          <text x="194" y="211" text-anchor="middle" class="lane-number">1</text>
+        </g>
+        <g class="lane-base" data-lane="1">
+          <ellipse class="lane-glow" cx="690" cy="323" rx="520" ry="70" fill="url(#lamp-glow)"/>
+          <path d="M196 339H1168L1205 367H218Z" fill="url(#wood-gradient)" stroke="#361712" stroke-width="5"/>
+          <path d="M202 336H1170" stroke="url(#chrome-gradient)" stroke-width="12"/>
+          <path d="M245 368H1176" stroke="#d6aa5c" stroke-opacity="0.46" stroke-width="3" stroke-dasharray="70 22"/>
+          <circle class="lane-light" id="lane-light-1" cx="193" cy="321" r="13"/>
+          <text x="194" y="327" text-anchor="middle" class="lane-number">2</text>
+        </g>
+        <g class="lane-base" data-lane="2">
+          <ellipse class="lane-glow" cx="690" cy="439" rx="520" ry="70" fill="url(#lamp-glow)"/>
+          <path d="M196 455H1168L1205 483H218Z" fill="url(#wood-gradient)" stroke="#361712" stroke-width="5"/>
+          <path d="M202 452H1170" stroke="url(#chrome-gradient)" stroke-width="12"/>
+          <path d="M245 484H1176" stroke="#d6aa5c" stroke-opacity="0.46" stroke-width="3" stroke-dasharray="70 22"/>
+          <circle class="lane-light" id="lane-light-2" cx="193" cy="437" r="13"/>
+          <text x="194" y="443" text-anchor="middle" class="lane-number">3</text>
+        </g>
+        <g class="lane-base" data-lane="3">
+          <ellipse class="lane-glow" cx="690" cy="555" rx="520" ry="70" fill="url(#lamp-glow)"/>
+          <path d="M196 571H1168L1205 599H218Z" fill="url(#wood-gradient)" stroke="#361712" stroke-width="5"/>
+          <path d="M202 568H1170" stroke="url(#chrome-gradient)" stroke-width="12"/>
+          <path d="M245 600H1176" stroke="#d6aa5c" stroke-opacity="0.46" stroke-width="3" stroke-dasharray="70 22"/>
+          <circle class="lane-light" id="lane-light-3" cx="193" cy="553" r="13"/>
+          <text x="194" y="559" text-anchor="middle" class="lane-number">4</text>
+        </g>
+      </g>
+
+      <g aria-hidden="true">
+        <path d="M84 145H179V628H84Q52 389 84 145Z" fill="#742e27" stroke="#321712" stroke-width="7"/>
+        <path d="M109 173H158V602H109Z" fill="#e7d7b7" stroke="#352018" stroke-width="5"/>
+        <g transform="translate(134 211)">
+          <path d="M-15 -30H15L20 -9H-20Z" fill="#ced7ce" stroke="#3f5450" stroke-width="3"/>
+          <path d="M0 -9V20M-9 20H9" stroke="url(#chrome-gradient)" stroke-width="8" stroke-linecap="round"/>
+          <circle cy="31" r="13" fill="#bd3f34" stroke="#54251f" stroke-width="3"/>
+        </g>
+        <g transform="translate(134 328)"><use href="#full-glass" transform="scale(.72)"/></g>
+        <g transform="translate(134 444)"><use href="#full-glass" transform="scale(.72)"/></g>
+        <g transform="translate(134 560)"><use href="#full-glass" transform="scale(.72)"/></g>
+        <path d="M65 618H181" stroke="url(#chrome-gradient)" stroke-width="14" stroke-linecap="round"/>
+      </g>
+
+      <g id="actors-layer" clip-path="url(#playfield-clip)"></g>
+      <g id="effects-layer" clip-path="url(#playfield-clip)" aria-hidden="true"></g>
+      <g id="player-layer" clip-path="url(#playfield-clip)">
+        <use id="player-sprite" href="#server-sprite" transform="translate(246 321) scale(.78)"/>
+      </g>
+
+      <path d="M180 146H1218V673H180Z" fill="none" stroke="#f2d58a" stroke-opacity="0.48" stroke-width="4"/>
+      <path d="M184 150H1214" stroke="#fff5d5" stroke-opacity="0.72" stroke-width="3"/>
+    </svg>
+
+    <div id="banner" class="banner" aria-hidden="true">
+      <strong id="banner-title">Phase 1</strong>
+      <span id="banner-subtitle">Lunch Warm-Up</span>
+    </div>
+    <div id="coach" class="coach" aria-hidden="true">Choose a lane, then send a soda.</div>
+    <div id="end-panel" class="end-panel" role="dialog" aria-modal="true" aria-labelledby="end-title">
+      <div class="end-card">
+        <span class="eyebrow">Shift Complete</span>
+        <h2 id="end-title">Last glass down!</h2>
+        <p id="end-summary">The supper rush got away from you.</p>
+        <div class="end-stats"><span>Score <strong id="final-score">0</strong></span><span>Best <strong id="best-score">0</strong></span></div>
+        <button id="restart-button" type="button">Clock In Again</button>
+      </div>
+    </div>
+    <div id="live-region" class="sr-only" aria-live="polite"></div>
+  </main>
+
+  <div id="touch-controls" aria-label="Touch controls">
+    <div class="lane-controls">
+      <button class="touch-button lane-up" type="button" data-action="up" aria-label="Move up one counter">▲</button>
+      <button class="touch-button lane-down" type="button" data-action="down" aria-label="Move down one counter">▼</button>
+    </div>
+    <button class="touch-button serve-button" type="button" data-action="serve" aria-label="Send a soda"><span>SERVE</span><small>●</small></button>
+  </div>
+
+  <div id="instruction-modal" class="instruction-modal is-visible" role="dialog" aria-modal="true" aria-labelledby="instruction-title">
+    <div class="instruction-card">
+      <div class="modal-art" aria-hidden="true">
+        <svg viewBox="0 0 360 120">
+          <path d="M12 93Q62 46 112 93T212 93T312 93" fill="none" stroke="#2b7771" stroke-width="18" stroke-linecap="round"/>
+          <path d="M20 91H340" stroke="#6b2b23" stroke-width="13" stroke-linecap="round"/>
+          <use href="#full-glass" transform="translate(180 66) scale(1.2)"/>
+          <circle cx="104" cy="25" r="10" fill="#e1b84f"/><circle cx="256" cy="29" r="7" fill="#bd3f34"/>
+          <path d="M60 30L84 46M299 26L277 45" stroke="#9a4a34" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="eyebrow">VibeCade presents</span>
+      <h1 id="instruction-title">Soda Shift</h1>
+      <p class="lede">Run all four counters in a bustling roadside fountain. Send cold sodas to advancing guests, then be in the right lane to catch every empty glass.</p>
+      <div class="instruction-grid">
+        <strong>↑ ↓ or W S</strong><span>Move between counters</span>
+        <strong>Space / Enter</strong><span>Send a soda down your lane</span>
+        <strong>R / M</strong><span>Restart the shift / toggle sound</span>
+        <strong class="touch-only">Touch buttons</strong><span class="touch-only">Choose a counter and hold SERVE to pour</span>
+      </div>
+      <div class="rules-row">
+        <span><b>Serve</b> guests before they reach the taps.</span>
+        <span><b>Catch</b> returning empties in the matching lane.</span>
+        <span><b>Do not</b> send a drink past an empty counter.</span>
+      </div>
+      <p class="difficulty-note">The first lunch is friendly. By phases 3 and 4, tourists need refills, dancers sprint, and all four counters erupt at once.</p>
+      <button id="instruction-close" type="button">Open the Fountain</button>
+      <small class="landscape-note">On a phone, landscape gives you the clearest view.</small>
+    </div>
+  </div>
+
+  <div id="rotate-hint" class="rotate-hint" role="status" aria-label="Rotate your phone to landscape to play">
+    <div class="rotate-card">
+      <span class="rotate-phone" aria-hidden="true">▯</span>
+      <strong>Turn the counter sideways</strong>
+      <span>Rotate to landscape for a full view of the rush.</span>
+    </div>
+  </div>
+
+  <script src="game.js?v=4"></script>
+</body>
+</html>
