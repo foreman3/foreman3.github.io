@@ -308,7 +308,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Move with Arrow keys or WASD. Your next turn is remembered, so choose routes early.</p>
+      <p>Move with the drag joystick, Arrow keys, or WASD. Your next turn is remembered, so choose routes early.</p>
       <p>Clear every signal pellet, collect bonus fruit, and use power cores to turn the hunt around. Press M to mute.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -318,11 +318,10 @@
     <h1>Pac-Man Deluxe</h1>
     <canvas id="gameCanvas" width="640" height="544" tabindex="0" aria-label="Neon maze chase playfield"></canvas>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster directional-diamond">
-        <button type="button" class="control-button pad-up" data-key="ArrowUp" data-code="ArrowUp" aria-label="Move Up">↑</button>
-        <button type="button" class="control-button pad-left" data-key="ArrowLeft" data-code="ArrowLeft" aria-label="Move Left">←</button>
-        <button type="button" class="control-button pad-right" data-key="ArrowRight" data-code="ArrowRight" aria-label="Move Right">→</button>
-        <button type="button" class="control-button pad-down" data-key="ArrowDown" data-code="ArrowDown" aria-label="Move Down">↓</button>
+      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to move and turn">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
     </div>
     <div id="info-panel">
@@ -1791,6 +1790,24 @@ if (instructionModal) {
 if (helpButton) {
   helpButton.addEventListener('click', showInstructions);
 }
+
+function bindMovementJoystick() {
+  if (!window.VibeCadeJoystick) return;
+  const joystick = document.querySelector('[data-joystick]');
+  window.VibeCadeJoystick(joystick, {
+    mode: 'cardinal',
+    deadZone: 0.14,
+    onChange(x, y) {
+      if (gamePaused) return;
+      const key = Math.abs(x) > 0.5
+        ? (x < 0 ? 'ArrowLeft' : 'ArrowRight')
+        : Math.abs(y) > 0.5 ? (y < 0 ? 'ArrowUp' : 'ArrowDown') : '';
+      if (key) dispatchKeyEvent(key, key, 'keydown');
+    }
+  });
+}
+if (window.VibeCadeJoystick) bindMovementJoystick();
+else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
 
 function dispatchKeyEvent(key, code, type) {
   const event = new KeyboardEvent(type, { key, code, bubbles: true });

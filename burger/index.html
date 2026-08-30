@@ -336,7 +336,7 @@
     <div id="instruction-card">
       <h2>How to Play</h2>
       <p>Assemble towering burgers while dodging mischievous food foes.</p>
-      <p>Use the Arrow Keys to move and climb. Ladders gently pull you into position, and you can press sideways near any landing to step off. Press Space to unleash pepper spray.</p>
+      <p>Drag the joystick to move and climb. Ladders gently pull you into position; slide sideways near a landing to step off. Tap PEP to unleash pepper spray.</p>
       <p>Walk across all three glowing pressure points on an ingredient to drop it. Carry an enemy for one extra floor, collect condiments, and complete every burger stack.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -352,11 +352,10 @@
       <canvas id="gameCanvas" width="960" height="720" tabindex="0" aria-label="Burger Time playfield"></canvas>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster directional-diamond">
-        <button type="button" class="control-button pad-up" data-action="up" aria-label="Move Up">↑</button>
-        <button type="button" class="control-button pad-left" data-action="left" aria-label="Move Left">←</button>
-        <button type="button" class="control-button pad-right" data-action="right" aria-label="Move Right">→</button>
-        <button type="button" class="control-button pad-down" data-action="down" aria-label="Move Down">↓</button>
+      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to run and climb">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="pepper" aria-label="Throw Pepper">PEP</button>
@@ -367,8 +366,8 @@
       <h2>How to Play</h2>
       <p>
         Assemble towering gourmet burgers while dodging mischievous food foes. Use the
-        <strong>Arrow Keys</strong> to move and climb, and tap <strong>Space</strong>
-        to unleash a burst of pepper spray that stuns anything in front of you.
+        <strong>drag joystick</strong> or Arrow Keys to move and climb, and tap <strong>PEP</strong>
+        or Space to unleash a burst of pepper spray that stuns anything in front of you.
         Ladders magnetize gently when you climb, and a sideways press near a landing
         steps off cleanly. Walk across all three pressure points on each ingredient,
         carry enemies for an extra floor, and complete every mega stack!
@@ -1714,23 +1713,29 @@ document.addEventListener('keyup', e => {
 window.addEventListener('blur', () => Object.keys(keys).forEach(key => { keys[key] = false; }));
 
 const controlButtons = document.querySelectorAll('.control-button');
+const bindMovementJoystick = () => {
+  if (!window.VibeCadeJoystick) return;
+  window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+    mode: 'cardinal', deadZone: 0.12,
+    onChange: (x, y) => {
+      const next = Math.abs(x) > 0.5 ? (x < 0 ? 'left' : 'right')
+        : Math.abs(y) > 0.5 ? (y < 0 ? 'up' : 'down') : '';
+      ['left', 'right', 'up', 'down'].forEach(direction => { keys[direction] = direction === next; });
+    }
+  });
+};
+if (window.VibeCadeJoystick) bindMovementJoystick();
+else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
+
 if (controlButtons.length && isTouchDevice) {
   controlButtons.forEach((button) => {
     const action = button.dataset.action;
     const press = () => {
       button.classList.add('pressed');
-      if (action === 'left') keys.left = true;
-      if (action === 'right') keys.right = true;
-      if (action === 'up') keys.up = true;
-      if (action === 'down') keys.down = true;
       if (action === 'pepper') usePepper();
     };
     const release = () => {
       button.classList.remove('pressed');
-      if (action === 'left') keys.left = false;
-      if (action === 'right') keys.right = false;
-      if (action === 'up') keys.up = false;
-      if (action === 'down') keys.down = false;
     };
 
     button.addEventListener('touchstart', (event) => {

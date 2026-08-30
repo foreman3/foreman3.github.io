@@ -384,7 +384,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Rotate with A/D or Left/Right. Thrust with W/Up. Fire with Space.</p>
+      <p>Drag the joystick sideways to rotate and upward to thrust. Tap ⦿ to fire; keyboard controls also work.</p>
       <p>Avoid asteroid collisions and clear the belt to score.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -401,14 +401,10 @@
       <div id="info">Score: 0 | Lives: 3</div>
       <div id="message"></div>
       <div id="touch-controls" aria-hidden="true">
-        <div id="left-controls" class="control-cluster">
-          <div class="control-row">
-            <button type="button" class="control-button" data-action="thrust" aria-label="Thrust">▲</button>
-          </div>
-          <div class="control-row">
-            <button type="button" class="control-button" data-action="left" aria-label="Turn Left">◀</button>
-            <button type="button" class="control-button" data-action="right" aria-label="Turn Right">▶</button>
-          </div>
+        <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to turn and thrust">
+          <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+          <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+          <span class="joystick-knob"></span>
         </div>
         <div id="right-controls" class="control-cluster">
           <div class="control-row">
@@ -589,6 +585,18 @@
       });
     }
 
+    function setupMovementJoystick() {
+      if (!window.VibeCadeJoystick) return;
+      window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+        mode: 'analog', deadZone: 0.1,
+        onChange: (x, y) => {
+          KEY.left = x < -0.16;
+          KEY.right = x > 0.16;
+          KEY.up = y < -0.16;
+        }
+      });
+    }
+
     function updateOrientationClass() {
       if (!isTouchDevice) return;
       const isPortrait = window.matchMedia('(orientation: portrait)').matches;
@@ -628,6 +636,8 @@
     }
 
     setupMobileExperience();
+    if (window.VibeCadeJoystick) setupMovementJoystick();
+    else window.addEventListener('vibecade-controls-ready', setupMovementJoystick, { once: true });
 
     function resizeCanvasDesktop() {
       if (isTouchDevice) return;

@@ -110,7 +110,7 @@
       <h2>Neon Apex Championship</h2>
       <p>Fight from the back of a twelve-car grid across three laps and four changing districts. Hit every checkpoint before the clock expires.</p>
       <div class="control-grid">
-        <span><strong>← → / A D</strong> Steer</span><span><strong>↑ / W</strong> Accelerate</span>
+        <span><strong>Joystick / ← → / A D</strong> Steer</span><span><strong>▲ / ↑ / W</strong> Accelerate</span>
         <span><strong>↓ / S</strong> Brake</span><span><strong>Space</strong> Ignite boost</span>
         <span><strong>R</strong> Restart race</span><span><strong>M</strong> Toggle sound</span>
       </div>
@@ -137,9 +137,10 @@
       <div id="boost-wrap"><span>BOOST</span><div id="boost-track"><div id="boost-fill"></div></div></div>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="touch-group">
-        <button class="control-button" data-action="left" aria-label="Steer left">←</button>
-        <button class="control-button" data-action="right" aria-label="Steer right">→</button>
+      <div class="virtual-joystick" data-joystick data-axis="horizontal" role="group" aria-label="Drag joystick to steer">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="touch-group pedals">
         <button class="control-button" data-action="brake" aria-label="Brake">▼</button>
@@ -439,6 +440,8 @@
     });
     window.addEventListener('blur',()=>Object.keys(controls).forEach(key=>controls[key]=false));
     const isTouchDevice=window.matchMedia('(pointer:coarse)').matches;if(isTouchDevice)document.body.classList.add('touch-device');
+    const bindMovementJoystick=()=>{if(!window.VibeCadeJoystick)return;window.VibeCadeJoystick(document.querySelector('[data-joystick]'),{mode:'horizontal',deadZone:.12,onChange:x=>{setControl('left',x<-.18);setControl('right',x>.18);}});};
+    if(window.VibeCadeJoystick)bindMovementJoystick();else window.addEventListener('vibecade-controls-ready',bindMovementJoystick,{once:true});
     document.querySelectorAll('.control-button').forEach(button=>{
       const action=button.dataset.action,press=event=>{event.preventDefault();button.classList.add('pressed');setControl(action,true);},
         release=event=>{event?.preventDefault();button.classList.remove('pressed');setControl(action,false);};

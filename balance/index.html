@@ -268,7 +268,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Move the platform with Left/Right to keep the tower balanced.</p>
+      <p>Drag the joystick left or right to move the platform and keep the tower balanced.</p>
       <p>Stack blocks as long as you can without letting them fall.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -278,8 +278,11 @@
     <h1>Block Balance</h1>
     <canvas id="world" width="800" height="600"></canvas>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster"><button type="button" class="control-button" data-action="left" aria-label="Lean Left">←</button></div>
-      <div class="control-cluster"><button type="button" class="control-button" data-action="right" aria-label="Lean Right">→</button></div>
+      <div class="virtual-joystick" data-joystick data-axis="horizontal" role="group" aria-label="Drag joystick to balance">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
+      </div>
     </div>
     <div id="score">Blocks: 0</div>
     <div id="message"></div>
@@ -727,6 +730,18 @@
     if (isTouchDevice) {
       document.body.classList.add('touch-device');
     }
+    const bindMovementJoystick = () => {
+      if (!window.VibeCadeJoystick) return;
+      window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+        mode: 'horizontal', deadZone: 0.12,
+        onChange: x => {
+          moveLeft = !gamePaused && x < -0.18;
+          moveRight = !gamePaused && x > 0.18;
+        }
+      });
+    };
+    if (window.VibeCadeJoystick) bindMovementJoystick();
+    else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
 
     function startGame() {
       if (gameStarted) return;

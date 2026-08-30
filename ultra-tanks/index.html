@@ -286,10 +286,10 @@
         <p>Roll out with your tank and defeat every enemy. Here's what you need to know before the battle begins:</p>
         <h3>Controls</h3>
         <ul>
-          <li><strong>Move:</strong> Arrow Keys or WASD</li>
-          <li><strong>Shoot:</strong> Space Bar</li>
-          <li><strong>Switch Special Weapon:</strong> Mouse Wheel</li>
-          <li><strong>Use Special Weapon:</strong> Left Click</li>
+          <li><strong>Move:</strong> Drag joystick, Arrow Keys, or WASD</li>
+          <li><strong>Shoot:</strong> Fire button or Space Bar</li>
+          <li><strong>Switch Special Weapon:</strong> Next button or Mouse Wheel</li>
+          <li><strong>Use Special Weapon:</strong> Spec button or Left Click</li>
           <li><strong>Guide Missiles:</strong> Move the mouse to steer them</li>
         </ul>
         <h3>Special Weapons</h3>
@@ -305,11 +305,10 @@
     <h1>Ultra Tanks</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster directional-diamond">
-        <button type="button" class="control-button pad-up" data-action="up" aria-label="Move Forward">↑</button>
-        <button type="button" class="control-button pad-left" data-action="left" aria-label="Rotate Left">↶</button>
-        <button type="button" class="control-button pad-right" data-action="right" aria-label="Rotate Right">↷</button>
-        <button type="button" class="control-button pad-down" data-action="down" aria-label="Reverse">↓</button>
+      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to drive and turn">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="fire" aria-label="Fire">Fire</button>
@@ -1064,26 +1063,33 @@
         });
       }
 
+      const bindMovementJoystick = () => {
+        if (!window.VibeCadeJoystick) return;
+        window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+          mode: 'analog', deadZone: 0.1,
+          onChange: (x, y) => {
+            keys['ArrowLeft'] = x < -0.16;
+            keys['ArrowRight'] = x > 0.16;
+            keys['ArrowUp'] = y < -0.16;
+            keys['ArrowDown'] = y > 0.16;
+          }
+        });
+      };
+      if (window.VibeCadeJoystick) bindMovementJoystick();
+      else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
+
       if (controlButtons.length && isTouchDevice) {
         controlButtons.forEach((button) => {
           const action = button.dataset.action;
           const press = () => {
             if (gamePaused) return;
             button.classList.add('pressed');
-            if (action === 'left') keys['ArrowLeft'] = true;
-            if (action === 'right') keys['ArrowRight'] = true;
-            if (action === 'up') keys['ArrowUp'] = true;
-            if (action === 'down') keys['ArrowDown'] = true;
             if (action === 'fire') fireWeapon();
             if (action === 'special') useSpecialWeapon();
             if (action === 'switch') cycleSpecialWeapon(1);
           };
           const release = () => {
             button.classList.remove('pressed');
-            if (action === 'left') keys['ArrowLeft'] = false;
-            if (action === 'right') keys['ArrowRight'] = false;
-            if (action === 'up') keys['ArrowUp'] = false;
-            if (action === 'down') keys['ArrowDown'] = false;
           };
           button.addEventListener('touchstart', (event) => {
             event.preventDefault();

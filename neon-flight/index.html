@@ -344,7 +344,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Steer with Arrow keys or WASD. Space boosts, Shift slows.</p>
+      <p>Drag the joystick to bank and climb. Tap ⚡ to boost or ■ to slow; Arrow keys and WASD work on desktop.</p>
       <p>Weave through rings and avoid obstacles to keep flying.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -354,11 +354,10 @@
     <h1>Neon Flight</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster directional-diamond">
-        <button type="button" class="control-button pad-up" data-action="up" aria-label="Climb">↑</button>
-        <button type="button" class="control-button pad-left" data-action="left" aria-label="Bank Left">←</button>
-        <button type="button" class="control-button pad-right" data-action="right" aria-label="Bank Right">→</button>
-        <button type="button" class="control-button pad-down" data-action="down" aria-label="Dive">↓</button>
+      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to bank and climb">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="boost" aria-label="Boost">⚡</button>
@@ -1169,13 +1168,18 @@
     return codes.some(code => keyState.has(code));
   }
 
+  const touchJoystick = { x: 0, y: 0, active: false };
+
   function readInputAxes(){
     const now = performance.now();
     const tiltFresh = isMobile && tiltState.active && now - tiltState.lastUpdate < 1000;
     let lateral = 0;
     let vertical = 0;
     let throttle = 0;
-    if(tiltFresh){
+    if(touchJoystick.active){
+      lateral = touchJoystick.x;
+      vertical = -touchJoystick.y;
+    } else if(tiltFresh){
       lateral = tiltState.lateral;
       vertical = tiltState.vertical;
     } else {
@@ -2055,6 +2059,20 @@
     const instructionKey = 'vibecade-instructions-neon-flight';
     const hasSeenInstructions = sessionStorage.getItem(instructionKey) === '1';
 
+    const bindMovementJoystick = () => {
+      if (!window.VibeCadeJoystick) return;
+      window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+        mode: 'analog', deadZone: 0.1,
+        onChange: (x, y) => {
+          touchJoystick.x = x;
+          touchJoystick.y = y;
+          touchJoystick.active = Math.hypot(x, y) > 0.01;
+        }
+      });
+    };
+    if (window.VibeCadeJoystick) bindMovementJoystick();
+    else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
+
     function startGame() {
       if (gameStarted) return;
       gameStarted = true;
@@ -2099,19 +2117,11 @@
         const action = button.dataset.action;
         const press = () => {
           button.classList.add('pressed');
-          if (action === 'left') keyState.add('ArrowLeft');
-          if (action === 'right') keyState.add('ArrowRight');
-          if (action === 'up') keyState.add('ArrowUp');
-          if (action === 'down') keyState.add('ArrowDown');
           if (action === 'boost') keyState.add('Space');
           if (action === 'slow') keyState.add('ShiftLeft');
         };
         const release = () => {
           button.classList.remove('pressed');
-          if (action === 'left') keyState.delete('ArrowLeft');
-          if (action === 'right') keyState.delete('ArrowRight');
-          if (action === 'up') keyState.delete('ArrowUp');
-          if (action === 'down') keyState.delete('ArrowDown');
           if (action === 'boost') keyState.delete('Space');
           if (action === 'slow') keyState.delete('ShiftLeft');
         };

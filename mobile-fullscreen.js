@@ -59,10 +59,49 @@
       user-select: none;
     }
     body.touch-device .virtual-joystick {
+      position: relative !important;
+      box-sizing: border-box !important;
+      width: 84px !important;
+      height: 84px !important;
+      flex: 0 0 84px !important;
+      pointer-events: auto !important;
+      border: 1px solid rgba(190, 240, 255, .38) !important;
+      border-radius: 50% !important;
+      background: radial-gradient(circle, rgba(175, 235, 255, .12) 0 31%, rgba(8, 13, 29, .62) 32% 100%) !important;
+      box-shadow: inset 0 0 15px rgba(120, 220, 255, .1), 0 5px 18px rgba(0, 0, 0, .22) !important;
+      backdrop-filter: blur(8px);
       touch-action: none !important;
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
+    }
+    body.touch-device .joystick-mark {
+      position: absolute !important;
+      color: rgba(220, 248, 255, .62) !important;
+      font: 900 8px/1 system-ui, sans-serif !important;
+      pointer-events: none !important;
+    }
+    body.touch-device .joystick-mark.up { left: 50% !important; top: 4px !important; transform: translateX(-50%) !important; }
+    body.touch-device .joystick-mark.right { right: 5px !important; top: 50% !important; transform: translateY(-50%) !important; }
+    body.touch-device .joystick-mark.down { left: 50% !important; bottom: 4px !important; transform: translateX(-50%) !important; }
+    body.touch-device .joystick-mark.left { left: 5px !important; top: 50% !important; transform: translateY(-50%) !important; }
+    body.touch-device .virtual-joystick[data-axis="horizontal"] .joystick-mark.up,
+    body.touch-device .virtual-joystick[data-axis="horizontal"] .joystick-mark.down { display: none !important; }
+    body.touch-device .joystick-knob {
+      position: absolute !important;
+      left: 50% !important;
+      top: 50% !important;
+      width: 31px !important;
+      height: 31px !important;
+      border: 1px solid rgba(225, 250, 255, .78) !important;
+      border-radius: 50% !important;
+      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .48), rgba(64, 116, 151, .8)) !important;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, .4), 0 0 10px rgba(115, 225, 255, .24) !important;
+      transform: translate(-50%, -50%);
+      pointer-events: none !important;
+    }
+    body.touch-device .virtual-joystick.is-active .joystick-knob {
+      box-shadow: 0 3px 8px rgba(0, 0, 0, .44), 0 0 15px rgba(115, 225, 255, .5) !important;
     }
     body.touch-device .flyout-nav,
     body.touch-device .menu-toggle,
@@ -159,7 +198,9 @@
     if (!element) return () => {};
 
     const knob = element.querySelector('.joystick-knob');
-    const mode = options.mode === 'cardinal' ? 'cardinal' : 'analog';
+    const mode = options.mode === 'cardinal' || options.mode === 'horizontal'
+      ? options.mode
+      : 'analog';
     const deadZone = Number.isFinite(options.deadZone) ? options.deadZone : 0.16;
     const onChange = typeof options.onChange === 'function' ? options.onChange : () => {};
     let pointerId = null;
@@ -193,7 +234,8 @@
       const rect = element.getBoundingClientRect();
       const radius = Math.min(rect.width, rect.height) / 2;
       const dx = event.clientX - (rect.left + rect.width / 2);
-      const dy = event.clientY - (rect.top + rect.height / 2);
+      const rawDy = event.clientY - (rect.top + rect.height / 2);
+      const dy = mode === 'horizontal' ? 0 : rawDy;
       const distance = Math.hypot(dx, dy);
       const maxTravel = Math.max(1, radius * 0.48);
       const visualScale = distance > maxTravel ? maxTravel / distance : 1;
@@ -210,6 +252,12 @@
       if (mode === 'cardinal') {
         if (Math.abs(dx) >= Math.abs(dy)) emit(Math.sign(dx), 0);
         else emit(0, Math.sign(dy));
+        return;
+      }
+
+      if (mode === 'horizontal') {
+        const strength = Math.min(1, (Math.abs(dx) - radius * deadZone) / (radius * (0.78 - deadZone)));
+        emit(Math.sign(dx) * strength, 0);
         return;
       }
 
@@ -256,6 +304,8 @@
       centerKnob();
     };
   };
+
+  window.dispatchEvent(new Event('vibecade-controls-ready'));
 
   syncTouchLayout();
   window.addEventListener('resize', syncTouchLayout, { passive: true });

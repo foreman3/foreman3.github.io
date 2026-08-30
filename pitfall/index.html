@@ -348,7 +348,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Run left or right, jump pits, and grab swinging vines to cross ponds.</p>
+      <p>Drag the joystick to run or climb, tap Jump to clear pits, and grab swinging vines to cross ponds.</p>
       <p>Use ladders to enter underground tunnels. Each tunnel screen jumps you 3-4 screens ahead.</p>
       <p>Watch for rolling rocks, snapping crocodiles, pulsing ponds/quicksand, and scorpions below.</p>
       <p>Score for every screen crossed. Every 7 screens holds treasure. Find 4 special treasures to win.</p>
@@ -361,13 +361,10 @@
     <h1>Pitfall</h1>
     <canvas id="gameCanvas" width="960" height="540"></canvas>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster">
-        <div class="dpad">
-          <button type="button" class="control-button up" data-key="ArrowUp" data-code="ArrowUp" aria-label="Climb Up">↑</button>
-          <button type="button" class="control-button left" data-key="ArrowLeft" data-code="ArrowLeft" aria-label="Move Left">←</button>
-          <button type="button" class="control-button right" data-key="ArrowRight" data-code="ArrowRight" aria-label="Move Right">→</button>
-          <button type="button" class="control-button down" data-key="ArrowDown" data-code="ArrowDown" aria-label="Climb Down">↓</button>
-        </div>
+      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to run and climb">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-key=" " data-code="Space" aria-label="Jump or Grab">Jump</button>
@@ -2066,6 +2063,20 @@
         pressed.delete(code);
       }
     }
+
+    const bindMovementJoystick = () => {
+      if (!window.VibeCadeJoystick) return;
+      window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+        mode: 'cardinal', deadZone: 0.12,
+        onChange: (x, y) => {
+          const next = Math.abs(x) > 0.5 ? (x < 0 ? 'ArrowLeft' : 'ArrowRight')
+            : Math.abs(y) > 0.5 ? (y < 0 ? 'ArrowUp' : 'ArrowDown') : '';
+          ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].forEach(code => setKeyState(code, code === next));
+        }
+      });
+    };
+    if (window.VibeCadeJoystick) bindMovementJoystick();
+    else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
 
     if (controlButtons.length && isTouchDevice) {
       controlButtons.forEach((button) => {

@@ -289,7 +289,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Move left and right to catch fruit. Shoot to pop hazards.</p>
+      <p>Drag the joystick left and right to catch fruit. Tap FIRE to pop hazards.</p>
       <p>Missing fruit costs lives. Watch for bonus waves.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -303,11 +303,10 @@
       </div>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster">
-        <div class="control-row">
-          <button type="button" class="control-button" data-action="left" aria-label="Move Left">←</button>
-          <button type="button" class="control-button" data-action="right" aria-label="Move Right">→</button>
-        </div>
+      <div class="virtual-joystick" data-joystick data-axis="horizontal" role="group" aria-label="Drag joystick to move">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="fire" aria-label="Shoot">FIRE</button>
@@ -356,19 +355,27 @@
       });
 
       const controlButtons = document.querySelectorAll('.control-button');
+      const bindMovementJoystick = () => {
+        if (!window.VibeCadeJoystick) return;
+        window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+          mode: 'horizontal', deadZone: 0.12,
+          onChange: x => {
+            leftPressed = x < -0.18;
+            rightPressed = x > 0.18;
+          }
+        });
+      };
+      if (window.VibeCadeJoystick) bindMovementJoystick();
+      else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
       if (controlButtons.length && isTouchDevice) {
         controlButtons.forEach((button) => {
           const action = button.dataset.action;
           const press = () => {
             button.classList.add('pressed');
-            if (action === 'left') leftPressed = true;
-            if (action === 'right') rightPressed = true;
             if (action === 'fire') shoot();
           };
           const release = () => {
             button.classList.remove('pressed');
-            if (action === 'left') leftPressed = false;
-            if (action === 'right') rightPressed = false;
           };
 
           button.addEventListener('touchstart', (event) => {

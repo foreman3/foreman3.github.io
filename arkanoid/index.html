@@ -396,7 +396,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Move with the arrow keys, A/D, or the mouse. Position the paddle, then press <strong>Space</strong> or click to serve. Paddle movement and edge hits steer the ball.</p>
+      <p>Move with the drag joystick, arrow keys, A/D, or the mouse. Position the paddle, then tap FIRE, press <strong>Space</strong>, or click to serve.</p>
       <p>Build airborne combos, break every destructible brick, and catch colored powerups. Space fires plasma cannons or releases a caught ball.</p>
       <p>Armor takes multiple hits, red bricks explode, steel cannot break, green bricks move, and violet bricks phase in and out. Survive all ten sectors and destroy the Reactor Core.</p>
       <button id="instruction-close" type="button">Start</button>
@@ -421,11 +421,10 @@
       <div id="powerups"></div>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster">
-        <div class="control-row">
-          <button type="button" class="control-button" data-action="left" aria-label="Move Left">◀</button>
-          <button type="button" class="control-button" data-action="right" aria-label="Move Right">▶</button>
-        </div>
+      <div class="virtual-joystick" data-joystick data-axis="horizontal" role="group" aria-label="Drag joystick to move the paddle">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="fire" aria-label="Fire">⦿</button>
@@ -733,6 +732,19 @@
       balls.push(createBall(paddle.x + paddle.width / 2, paddle.y - 12, -Math.PI / 2, true));
       showMessage('POSITION THE PADDLE — PRESS SPACE TO SERVE', Infinity);
     }
+
+    const bindMovementJoystick = () => {
+      if (!window.VibeCadeJoystick) return;
+      window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+        mode: 'horizontal', deadZone: 0.1,
+        onChange: x => {
+          setControlState('left', x < -0.14);
+          setControlState('right', x > 0.14);
+        }
+      });
+    };
+    if (window.VibeCadeJoystick) bindMovementJoystick();
+    else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
 
     function createBall(x, y, angle = -Math.PI / 2 + 0.2, stuck = false) {
       const speed = Math.min(6 + levelIndex * 0.14, 7.25);

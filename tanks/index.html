@@ -274,7 +274,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Rotate with Left/Right arrows. Move forward/back with Up/Down. Space fires. Press M to drop a mine.</p>
+      <p>Drag the joystick to drive and turn—even diagonally. Tap Fire to shoot and Mine to deploy a mine.</p>
       <p>Eliminate all enemy tanks to advance to the next level.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -290,11 +290,10 @@
     <div id="message"></div>
     <button id="restartBtn">Restart</button>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster directional-diamond">
-        <button type="button" class="control-button pad-up" data-action="up" aria-label="Move Forward">↑</button>
-        <button type="button" class="control-button pad-left" data-action="left" aria-label="Rotate Left">↶</button>
-        <button type="button" class="control-button pad-right" data-action="right" aria-label="Rotate Right">↷</button>
-        <button type="button" class="control-button pad-down" data-action="down" aria-label="Reverse">↓</button>
+      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to drive and turn">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="fire" aria-label="Fire">Fire</button>
@@ -808,24 +807,31 @@
       helpButton.addEventListener('click', showInstructions);
     }
 
+    const bindMovementJoystick = () => {
+      if (!window.VibeCadeJoystick) return;
+      window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+        mode: 'analog', deadZone: 0.1,
+        onChange: (x, y) => {
+          keys['ArrowLeft'] = x < -0.16;
+          keys['ArrowRight'] = x > 0.16;
+          keys['ArrowUp'] = y < -0.16;
+          keys['ArrowDown'] = y > 0.16;
+        }
+      });
+    };
+    if (window.VibeCadeJoystick) bindMovementJoystick();
+    else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
+
     if (controlButtons.length && isTouchDevice) {
       controlButtons.forEach((button) => {
         const action = button.dataset.action;
         const press = () => {
           button.classList.add('pressed');
-          if (action === 'left') keys['ArrowLeft'] = true;
-          if (action === 'right') keys['ArrowRight'] = true;
-          if (action === 'up') keys['ArrowUp'] = true;
-          if (action === 'down') keys['ArrowDown'] = true;
           if (action === 'fire') shoot(player);
           if (action === 'mine') placeMine();
         };
         const release = () => {
           button.classList.remove('pressed');
-          if (action === 'left') keys['ArrowLeft'] = false;
-          if (action === 'right') keys['ArrowRight'] = false;
-          if (action === 'up') keys['ArrowUp'] = false;
-          if (action === 'down') keys['ArrowDown'] = false;
         };
         button.addEventListener('touchstart', (event) => {
           event.preventDefault();

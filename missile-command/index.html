@@ -381,7 +381,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Move the crosshair with your mouse and click to fire. Hold to fire rapidly.</p>
+      <p>Drag the joystick to aim and hold FIRE to launch rapidly. Mouse aiming and clicking work on desktop.</p>
       <p>Protect your cities from incoming missiles and survive each wave.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -392,11 +392,10 @@
       <canvas id="overlayCanvas" class="crosshair-layer" width="900" height="650"></canvas>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster directional-diamond">
-        <button type="button" class="control-button pad-up" data-action="up" aria-label="Aim Up">↑</button>
-        <button type="button" class="control-button pad-left" data-action="left" aria-label="Aim Left">←</button>
-        <button type="button" class="control-button pad-right" data-action="right" aria-label="Aim Right">→</button>
-        <button type="button" class="control-button pad-down" data-action="down" aria-label="Aim Down">↓</button>
+      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to aim">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="fire" aria-label="Launch Missile">FIRE</button>
@@ -552,6 +551,22 @@
         aimTimer = null;
       }
     }
+
+    const bindAimJoystick = () => {
+      if (!window.VibeCadeJoystick) return;
+      window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+        mode: 'analog', deadZone: 0.1,
+        onChange: (x, y) => {
+          if (Math.hypot(x, y) > 0.01) startAim(x, y);
+          else {
+            stopAim('x');
+            stopAim('y');
+          }
+        }
+      });
+    };
+    if (window.VibeCadeJoystick) bindAimJoystick();
+    else window.addEventListener('vibecade-controls-ready', bindAimJoystick, { once: true });
 
     const stars = Array.from({ length: 120 }, () => ({
       x: Math.random() * canvas.width,
@@ -735,16 +750,10 @@
         const action = button.dataset.action;
         const press = () => {
           button.classList.add('pressed');
-          if (action === 'left') startAim(-1, 0);
-          if (action === 'right') startAim(1, 0);
-          if (action === 'up') startAim(0, -1);
-          if (action === 'down') startAim(0, 1);
           if (action === 'fire') beginFiringAt(pointer.x, pointer.y);
         };
         const release = () => {
           button.classList.remove('pressed');
-          if (action === 'left' || action === 'right') stopAim('x');
-          if (action === 'up' || action === 'down') stopAim('y');
           if (action === 'fire') stopFiring();
         };
 
