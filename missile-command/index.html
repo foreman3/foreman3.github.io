@@ -392,16 +392,14 @@
       <canvas id="overlayCanvas" class="crosshair-layer" width="900" height="650"></canvas>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster">
-        <button type="button" class="control-button" data-action="up" aria-label="Aim Up">U</button>
-        <div class="control-row">
-          <button type="button" class="control-button" data-action="left" aria-label="Aim Left">L</button>
-          <button type="button" class="control-button" data-action="right" aria-label="Aim Right">R</button>
-        </div>
-        <button type="button" class="control-button" data-action="down" aria-label="Aim Down">D</button>
+      <div class="control-cluster directional-diamond">
+        <button type="button" class="control-button pad-up" data-action="up" aria-label="Aim Up">↑</button>
+        <button type="button" class="control-button pad-left" data-action="left" aria-label="Aim Left">←</button>
+        <button type="button" class="control-button pad-right" data-action="right" aria-label="Aim Right">→</button>
+        <button type="button" class="control-button pad-down" data-action="down" aria-label="Aim Down">↓</button>
       </div>
       <div class="control-cluster">
-        <button type="button" class="control-button" data-action="fire" aria-label="Fire">F</button>
+        <button type="button" class="control-button" data-action="fire" aria-label="Launch Missile">FIRE</button>
       </div>
     </div>
     <div id="hud">Score: 0 | Cities: 8 | Wave: 1 | EMPs: 3</div>

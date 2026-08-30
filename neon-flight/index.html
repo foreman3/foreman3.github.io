@@ -354,17 +354,15 @@
     <h1>Neon Flight</h1>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster">
-        <button type="button" class="control-button" data-action="up" aria-label="Up">U</button>
-        <div class="control-row">
-          <button type="button" class="control-button" data-action="left" aria-label="Left">L</button>
-          <button type="button" class="control-button" data-action="right" aria-label="Right">R</button>
-        </div>
-        <button type="button" class="control-button" data-action="down" aria-label="Down">D</button>
+      <div class="control-cluster directional-diamond">
+        <button type="button" class="control-button pad-up" data-action="up" aria-label="Climb">↑</button>
+        <button type="button" class="control-button pad-left" data-action="left" aria-label="Bank Left">←</button>
+        <button type="button" class="control-button pad-right" data-action="right" aria-label="Bank Right">→</button>
+        <button type="button" class="control-button pad-down" data-action="down" aria-label="Dive">↓</button>
       </div>
       <div class="control-cluster">
-        <button type="button" class="control-button" data-action="boost" aria-label="Boost">B</button>
-        <button type="button" class="control-button" data-action="slow" aria-label="Slow">S</button>
+        <button type="button" class="control-button" data-action="boost" aria-label="Boost">⚡</button>
+        <button type="button" class="control-button" data-action="slow" aria-label="Air Brake">■</button>
       </div>
     </div>
     <div id="info">Distance: 0 | Score: 0</div>

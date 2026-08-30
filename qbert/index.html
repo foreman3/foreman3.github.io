@@ -305,13 +305,11 @@
     <h1>Hyper Qbert</h1>
     <canvas id="gameCanvas" width="640" height="640"></canvas>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster">
-        <button type="button" class="control-button" data-action="up" aria-label="Up">U</button>
-        <div class="control-row">
-          <button type="button" class="control-button" data-action="left" aria-label="Left">L</button>
-          <button type="button" class="control-button" data-action="right" aria-label="Right">R</button>
-        </div>
-        <button type="button" class="control-button" data-action="down" aria-label="Down">D</button>
+      <div class="control-cluster qbert-diagonals">
+        <button type="button" class="control-button" data-action="up" aria-label="Hop up-left">↖</button>
+        <button type="button" class="control-button" data-action="right" aria-label="Hop up-right">↗</button>
+        <button type="button" class="control-button" data-action="left" aria-label="Hop down-left">↙</button>
+        <button type="button" class="control-button" data-action="down" aria-label="Hop down-right">↘</button>
       </div>
     </div>
     <div id="info"></div>

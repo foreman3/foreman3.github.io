@@ -290,15 +290,11 @@
     <div id="message"></div>
     <button id="restartBtn">Restart</button>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster">
-        <div class="control-row">
-          <button type="button" class="control-button" data-action="left" aria-label="Rotate Left">L</button>
-          <button type="button" class="control-button" data-action="right" aria-label="Rotate Right">R</button>
-        </div>
-        <div class="control-row">
-          <button type="button" class="control-button" data-action="up" aria-label="Move Forward">F</button>
-          <button type="button" class="control-button" data-action="down" aria-label="Move Backward">B</button>
-        </div>
+      <div class="control-cluster directional-diamond">
+        <button type="button" class="control-button pad-up" data-action="up" aria-label="Move Forward">↑</button>
+        <button type="button" class="control-button pad-left" data-action="left" aria-label="Rotate Left">↶</button>
+        <button type="button" class="control-button pad-right" data-action="right" aria-label="Rotate Right">↷</button>
+        <button type="button" class="control-button pad-down" data-action="down" aria-label="Reverse">↓</button>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="fire" aria-label="Fire">Fire</button>

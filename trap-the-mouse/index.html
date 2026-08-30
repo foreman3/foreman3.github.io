@@ -450,7 +450,7 @@
       canvas.style.width = `${size}px`;
       canvas.style.height = `${size}px`;
       computeHexGeometry();
-      drawBoard();
+      if (grid.length === gridSize) drawBoard();
     }
 
     function drawBoard() {

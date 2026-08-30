@@ -352,16 +352,14 @@
       <canvas id="gameCanvas" width="960" height="720" tabindex="0" aria-label="Burger Time playfield"></canvas>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster">
-        <button type="button" class="control-button" data-action="up" aria-label="Move Up">U</button>
-        <div class="control-row">
-          <button type="button" class="control-button" data-action="left" aria-label="Move Left">L</button>
-          <button type="button" class="control-button" data-action="right" aria-label="Move Right">R</button>
-        </div>
-        <button type="button" class="control-button" data-action="down" aria-label="Move Down">D</button>
+      <div class="control-cluster directional-diamond">
+        <button type="button" class="control-button pad-up" data-action="up" aria-label="Move Up">↑</button>
+        <button type="button" class="control-button pad-left" data-action="left" aria-label="Move Left">←</button>
+        <button type="button" class="control-button pad-right" data-action="right" aria-label="Move Right">→</button>
+        <button type="button" class="control-button pad-down" data-action="down" aria-label="Move Down">↓</button>
       </div>
       <div class="control-cluster">
-        <button type="button" class="control-button" data-action="pepper" aria-label="Pepper">P</button>
+        <button type="button" class="control-button" data-action="pepper" aria-label="Throw Pepper">PEP</button>
       </div>
     </div>
     <div id="message"></div>

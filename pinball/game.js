@@ -117,7 +117,7 @@ function launchBall(){
 }
 function drainBall(){
   if(!ball.active)return;ball.active=false;if(state.ballSave>0){state.ballSave=0;say('BALL SAVED!',1.4);tone(420,.18,.05,280);setTimeout(()=>{if(!state.gameOver)resetBall();},500);return;}state.lives--;state.shake=10;tone(190,.35,.055,-120);
-  if(state.lives<=0){state.gameOver=true;localStorage.setItem('neon-nova-high',String(state.high));say('GAME OVER — PRESS R',99);}
+  if(state.lives<=0){state.gameOver=true;localStorage.setItem('neon-nova-high',String(state.high));say('GAME OVER — PRESS R OR TAP ↻',99);}
   else{say(`BALL ${4-state.lives} READY`,1.4);setTimeout(()=>{if(!state.gameOver)resetBall();},900);}
 }
 function closestPoint(px,py,ax,ay,bx,by){

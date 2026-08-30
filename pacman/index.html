@@ -318,15 +318,11 @@
     <h1>Pac-Man Deluxe</h1>
     <canvas id="gameCanvas" width="640" height="544" tabindex="0" aria-label="Neon maze chase playfield"></canvas>
     <div id="touch-controls" aria-hidden="true">
-      <div class="control-cluster">
-        <div class="control-row">
-          <button type="button" class="control-button" data-key="ArrowLeft" data-code="ArrowLeft" aria-label="Move Left">←</button>
-          <button type="button" class="control-button" data-key="ArrowRight" data-code="ArrowRight" aria-label="Move Right">→</button>
-        </div>
-        <div class="control-row">
-          <button type="button" class="control-button" data-key="ArrowUp" data-code="ArrowUp" aria-label="Move Up">↑</button>
-          <button type="button" class="control-button" data-key="ArrowDown" data-code="ArrowDown" aria-label="Move Down">↓</button>
-        </div>
+      <div class="control-cluster directional-diamond">
+        <button type="button" class="control-button pad-up" data-key="ArrowUp" data-code="ArrowUp" aria-label="Move Up">↑</button>
+        <button type="button" class="control-button pad-left" data-key="ArrowLeft" data-code="ArrowLeft" aria-label="Move Left">←</button>
+        <button type="button" class="control-button pad-right" data-key="ArrowRight" data-code="ArrowRight" aria-label="Move Right">→</button>
+        <button type="button" class="control-button pad-down" data-key="ArrowDown" data-code="ArrowDown" aria-label="Move Down">↓</button>
       </div>
     </div>
     <div id="info-panel">
