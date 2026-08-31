@@ -252,6 +252,20 @@
       letter-spacing: 1px;
       cursor: pointer;
     }
+    body.touch-device.vibecade-joystick-rails #options {
+      position: fixed;
+      top: max(52px, calc(env(safe-area-inset-top) + 52px));
+      right: max(6px, env(safe-area-inset-right));
+      width: calc(var(--vibecade-control-rail) - 12px);
+      margin: 0;
+      padding: 6px 8px;
+      font-size: clamp(0.58rem, 1.5vw, 0.72rem);
+      line-height: 1.35;
+      text-align: center;
+      white-space: normal;
+      z-index: 40;
+      pointer-events: none;
+    }
     @media (pointer: fine) {
       #help-button {
         display: flex;

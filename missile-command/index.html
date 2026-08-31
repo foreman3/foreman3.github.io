@@ -333,6 +333,23 @@
       cursor: pointer;
     }
 
+    body.touch-device.vibecade-joystick-rails #hud {
+      position: fixed;
+      top: max(6px, env(safe-area-inset-top));
+      left: max(6px, env(safe-area-inset-left));
+      right: auto;
+      width: calc(var(--vibecade-control-rail) - 12px);
+      display: block;
+      margin: 0;
+      padding: 6px 7px;
+      font-size: clamp(0.54rem, 1.4vw, 0.7rem);
+      line-height: 1.4;
+      letter-spacing: 0.04em;
+      text-align: center;
+      white-space: normal;
+      z-index: 40;
+      pointer-events: none;
+    }
     @media (pointer: fine) {
       #help-button {
         display: flex;

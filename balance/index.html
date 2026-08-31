@@ -755,6 +755,30 @@
       resizeCanvas();
     }
 
+    function restartGame() {
+      if (spawnInterval) clearInterval(spawnInterval);
+      blocks.forEach(block => World.remove(world, block));
+      blocks.length = 0;
+      blocksOnPlatform.clear();
+      blockContacts.clear();
+      Body.setPosition(platform, { x: 400, y: 560 });
+      Body.setAngle(platform, 0);
+      Body.setVelocity(platform, { x: 0, y: 0 });
+      Body.setAngularVelocity(platform, 0);
+      lastPlatformX = platform.position.x;
+      lastDx = 0;
+      score = 0;
+      gameOver = false;
+      gamePaused = false;
+      moveLeft = false;
+      moveRight = false;
+      document.getElementById('score').textContent = 'Blocks: 0';
+      document.getElementById('message').textContent = '';
+      spawnInterval = setInterval(() => {
+        if (!gameOver && !gamePaused) spawnBlock();
+      }, 4000);
+    }
+
     function showInstructions() {
       gamePaused = true;
       if (instructionModal) instructionModal.classList.add('is-visible');

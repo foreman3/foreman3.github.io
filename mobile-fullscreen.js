@@ -3,13 +3,16 @@
 
   const root = document.documentElement;
   const narrowViewport = window.matchMedia('(max-width: 900px)');
-  let touchLayoutEnabled = narrowViewport.matches;
+  const coarsePointer = window.matchMedia('(pointer: coarse)');
+  let mobileSession = narrowViewport.matches || coarsePointer.matches;
+  let touchLayoutEnabled = mobileSession;
   const suppressTouchCallout = (event) => {
     if (touchLayoutEnabled) event.preventDefault();
   };
 
   const syncTouchLayout = () => {
-    touchLayoutEnabled = narrowViewport.matches;
+    if (narrowViewport.matches || coarsePointer.matches) mobileSession = true;
+    touchLayoutEnabled = mobileSession;
     root.dataset.vibecadeTouchUi = touchLayoutEnabled ? 'active' : 'inactive';
     document.body?.classList.toggle('touch-device', touchLayoutEnabled);
     document.querySelectorAll('#touch-controls, .touch-controls').forEach((controls) => {
@@ -251,6 +254,79 @@
     body.touch-device .vibecade-mobile-restart {
       display: grid;
     }
+    .vibecade-mobile-ready,
+    .vibecade-mobile-settling {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483646;
+      display: none;
+      place-items: center;
+      box-sizing: border-box;
+      padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      background: rgba(3, 7, 18, .78);
+      color: #fff;
+      text-align: center;
+      backdrop-filter: blur(12px);
+    }
+    body.touch-device .vibecade-mobile-ready,
+    body.touch-device .vibecade-mobile-settling {
+      display: grid;
+    }
+    .vibecade-mobile-ready-card {
+      width: min(360px, 92vw);
+      box-sizing: border-box;
+      padding: 24px;
+      border: 1px solid rgba(150, 226, 255, .42);
+      border-radius: 22px;
+      background: linear-gradient(155deg, rgba(22, 35, 61, .97), rgba(5, 10, 24, .98));
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .5);
+    }
+    .vibecade-mobile-ready h2 {
+      margin: 0 0 8px;
+      font: 800 clamp(1.45rem, 6vw, 2rem)/1.05 system-ui, sans-serif;
+      letter-spacing: -.02em;
+    }
+    .vibecade-mobile-ready p {
+      margin: 0 auto 20px;
+      max-width: 30ch;
+      color: rgba(235, 246, 255, .78);
+      font: 500 .96rem/1.45 system-ui, sans-serif;
+    }
+    .vibecade-mobile-ready button {
+      display: block;
+      width: 100%;
+      min-height: 50px;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 999px;
+      color: #fff;
+      font: 800 .92rem/1 system-ui, sans-serif;
+      letter-spacing: .04em;
+    }
+    .vibecade-mobile-play {
+      background: linear-gradient(135deg, #1777c8, #12a6a6);
+      box-shadow: 0 8px 24px rgba(19, 151, 184, .3);
+    }
+    .vibecade-mobile-instructions {
+      margin-top: 10px;
+      background: rgba(255, 255, 255, .08);
+    }
+    .vibecade-mobile-settling {
+      font: 800 1rem/1.3 system-ui, sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .vibecade-mobile-settling::before {
+      content: '';
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      margin-top: -76px;
+      border: 4px solid rgba(255, 255, 255, .2);
+      border-top-color: #7de7ff;
+      border-radius: 50%;
+      animation: vibecade-spin .7s linear infinite;
+    }
+    @keyframes vibecade-spin { to { transform: rotate(360deg); } }
   `;
   document.head.appendChild(mobileStyles);
 
@@ -295,9 +371,8 @@
   restartButton.type = 'button';
   restartButton.className = 'vibecade-mobile-restart';
   restartButton.setAttribute('aria-label', 'Restart game');
-  restartButton.title = 'Restart game';
+  restartButton.title = 'Restart game without reloading';
   restartButton.textContent = '↻';
-  restartButton.addEventListener('click', () => window.location.reload());
   document.body.appendChild(restartButton);
 
   window.VibeCadeJoystick = function bindVibeCadeJoystick(element, options = {}) {
@@ -429,33 +504,24 @@
   const request = root.requestFullscreen
     || root.webkitRequestFullscreen
     || root.msRequestFullscreen;
-
-  if (!request) {
-    root.dataset.mobileFullscreen = 'unsupported';
-    return;
-  }
-
-  root.dataset.mobileFullscreen = fullscreenElement() ? 'entered' : 'ready';
+  root.dataset.mobileFullscreen = request
+    ? (fullscreenElement() ? 'entered' : 'ready')
+    : 'unsupported';
   let requestInFlight = false;
-
-  const removeGestureListeners = () => {
-    document.removeEventListener('pointerup', attemptFullscreen, true);
-    document.removeEventListener('touchend', attemptFullscreen, true);
-    document.removeEventListener('click', attemptFullscreen, true);
-  };
 
   const onFullscreenChange = () => {
     if (fullscreenElement()) {
       root.dataset.mobileFullscreen = 'entered';
-      removeGestureListeners();
     } else if (touchLayoutEnabled) {
-      root.dataset.mobileFullscreen = 'ready';
-      addGestureListeners();
+      root.dataset.mobileFullscreen = request ? 'ready' : 'unsupported';
     }
+    requestInFlight = false;
   };
 
-  function attemptFullscreen(event) {
-    if (!touchLayoutEnabled || fullscreenElement() || requestInFlight) return;
+  function attemptFullscreen() {
+    if (!request || !touchLayoutEnabled || fullscreenElement() || requestInFlight) {
+      return Promise.resolve(Boolean(fullscreenElement()));
+    }
 
     requestInFlight = true;
     root.dataset.mobileFullscreenAttempted = 'true';
@@ -464,29 +530,192 @@
     try {
       const result = request.call(root);
       if (result && typeof result.then === 'function') {
-        result
+        return result
           .then(() => onFullscreenChange())
           .catch(() => {
             requestInFlight = false;
             root.dataset.mobileFullscreen = 'ready';
+            return false;
           });
-      } else {
-        requestInFlight = false;
-        onFullscreenChange();
       }
+      requestInFlight = false;
+      onFullscreenChange();
     } catch (_) {
       requestInFlight = false;
       root.dataset.mobileFullscreen = 'ready';
     }
+    return Promise.resolve(Boolean(fullscreenElement()));
   }
 
-  function addGestureListeners() {
-    document.addEventListener('pointerup', attemptFullscreen, { capture: true, passive: true });
-    document.addEventListener('touchend', attemptFullscreen, { capture: true, passive: true });
-    document.addEventListener('click', attemptFullscreen, { capture: true, passive: true });
-  }
+  const waitForStableViewport = () => new Promise((resolve) => {
+    let lastWidth = window.innerWidth;
+    let lastHeight = window.innerHeight;
+    let stableSince = performance.now();
+    const startedAt = stableSince;
 
+    const check = () => {
+      const now = performance.now();
+      if (window.innerWidth !== lastWidth || window.innerHeight !== lastHeight) {
+        lastWidth = window.innerWidth;
+        lastHeight = window.innerHeight;
+        stableSince = now;
+      }
+      if (now - stableSince >= 360 || now - startedAt >= 1400) {
+        resolve();
+        return;
+      }
+      window.requestAnimationFrame(check);
+    };
+    window.requestAnimationFrame(check);
+  });
+
+  const launchButtons = '#instruction-close, #startGameBtn, #start-button';
+  const bypassLaunchGate = new WeakSet();
+  let launchInFlight = false;
+  let readyScreen = null;
+  let settlingScreen = null;
+
+  const showSettlingScreen = () => {
+    settlingScreen = document.createElement('div');
+    settlingScreen.className = 'vibecade-mobile-settling';
+    settlingScreen.setAttribute('role', 'status');
+    settlingScreen.setAttribute('aria-live', 'polite');
+    settlingScreen.textContent = 'Fitting the playfield';
+    document.body.appendChild(settlingScreen);
+  };
+
+  const beginLaunch = async (launchButton) => {
+    if (!touchLayoutEnabled || launchInFlight || !launchButton) return;
+    launchInFlight = true;
+    root.dataset.vibecadeLaunch = 'preparing';
+    readyScreen?.remove();
+    readyScreen = null;
+    showSettlingScreen();
+
+    await Promise.race([
+      attemptFullscreen(),
+      new Promise((resolve) => window.setTimeout(resolve, 900))
+    ]);
+    await waitForStableViewport();
+    syncTouchLayout();
+
+    settlingScreen?.remove();
+    settlingScreen = null;
+    root.dataset.vibecadeLaunch = 'playing';
+    bypassLaunchGate.add(launchButton);
+    launchButton.click();
+    launchInFlight = false;
+  };
+
+  document.addEventListener('click', (event) => {
+    const instructionSurface = event.target.closest?.('#instruction-modal, #tutorialOverlay');
+    const launchButton = event.target.closest?.(launchButtons)
+      || (event.target === instructionSurface ? instructionSurface.querySelector(launchButtons) : null);
+    if (!touchLayoutEnabled || !launchButton) return;
+    if (bypassLaunchGate.has(launchButton)) {
+      bypassLaunchGate.delete(launchButton);
+      return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    beginLaunch(launchButton);
+  }, true);
+
+  const isInstructionSurfaceVisible = (surface) => {
+    if (!surface) return false;
+    if (surface.classList.contains('hidden')) return false;
+    if (surface.id === 'instruction-modal' && !surface.classList.contains('is-visible')) return false;
+    const style = window.getComputedStyle(surface);
+    return style.display !== 'none' && style.visibility !== 'hidden' && style.pointerEvents !== 'none';
+  };
+
+  const createReturningLaunchGate = (launchButton, instructionSurface) => {
+    readyScreen = document.createElement('div');
+    readyScreen.className = 'vibecade-mobile-ready';
+    readyScreen.setAttribute('role', 'dialog');
+    readyScreen.setAttribute('aria-modal', 'true');
+    readyScreen.innerHTML = `
+      <div class="vibecade-mobile-ready-card">
+        <h2>Ready when you are</h2>
+        <p>The game is paused. Play will begin after fullscreen and the playfield finishes resizing.</p>
+        <button class="vibecade-mobile-play" type="button">Play fullscreen</button>
+        <button class="vibecade-mobile-instructions" type="button">Review controls</button>
+      </div>`;
+    readyScreen.querySelector('.vibecade-mobile-play').addEventListener('click', () => beginLaunch(launchButton));
+    readyScreen.querySelector('.vibecade-mobile-instructions').addEventListener('click', () => {
+      readyScreen?.remove();
+      readyScreen = null;
+      instructionSurface?.querySelector(launchButtons)?.focus({ preventScroll: true });
+    });
+    document.body.appendChild(readyScreen);
+    readyScreen.querySelector('.vibecade-mobile-play').focus({ preventScroll: true });
+    root.dataset.vibecadeLaunch = 'ready';
+  };
+
+  const setupMobileLaunch = () => {
+    if (!touchLayoutEnabled || /\/scorched-earth\//.test(window.location.pathname)) return;
+    const instructionSurface = document.querySelector('#instruction-modal, #tutorialOverlay');
+    const launchButton = instructionSurface?.querySelector(launchButtons) || document.querySelector(launchButtons);
+    if (!instructionSurface || !launchButton) return;
+
+    if (isInstructionSurfaceVisible(instructionSurface)) {
+      root.dataset.vibecadeLaunch = 'instructions';
+      return;
+    }
+
+    const helpButton = document.getElementById('help-button');
+    helpButton?.click();
+    if (isInstructionSurfaceVisible(instructionSurface)) {
+      createReturningLaunchGate(launchButton, instructionSurface);
+    }
+  };
+
+  const isVisible = (element) => {
+    if (!element) return false;
+    const style = window.getComputedStyle(element);
+    return style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length > 0;
+  };
+
+  const restartInPlace = () => {
+    const nativeRestart = [...document.querySelectorAll('#restartBtn, #restartButton, #restart-button, #resetGame, #reset-button, [data-action="restart"]')]
+      .find(isVisible);
+    if (nativeRestart) {
+      nativeRestart.click();
+    } else {
+      const restartEvent = new CustomEvent('vibecade:restart', { cancelable: true });
+      window.dispatchEvent(restartEvent);
+      if (!restartEvent.defaultPrevented) {
+        const restartFunction = ['restartGame', 'resetGame', 'resetCampaign', 'resetRace', 'startLevel']
+          .map((name) => window[name])
+          .find((candidate) => typeof candidate === 'function' && candidate.length === 0);
+        if (restartFunction) {
+          restartFunction();
+        } else {
+          document.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'r',
+            code: 'KeyR',
+            bubbles: true,
+            cancelable: true
+          }));
+          document.dispatchEvent(new KeyboardEvent('keyup', {
+            key: 'r',
+            code: 'KeyR',
+            bubbles: true,
+            cancelable: true
+          }));
+        }
+      }
+    }
+    root.dataset.vibecadeRestart = String(Date.now());
+    restartButton.animate?.([
+      { transform: 'rotate(0deg)' },
+      { transform: 'rotate(360deg)' }
+    ], { duration: 280, easing: 'ease-out' });
+  };
+
+  restartButton.addEventListener('click', restartInPlace);
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onFullscreenChange);
-  addGestureListeners();
+  if (document.readyState === 'complete') window.setTimeout(setupMobileLaunch, 0);
+  else window.addEventListener('load', () => window.setTimeout(setupMobileLaunch, 0), { once: true });
 })();

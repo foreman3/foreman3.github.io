@@ -300,6 +300,36 @@
       letter-spacing: 1px;
       cursor: pointer;
     }
+    body.touch-device.vibecade-joystick-rails #info {
+      position: fixed;
+      top: max(6px, env(safe-area-inset-top));
+      left: max(6px, env(safe-area-inset-left));
+      width: calc(var(--vibecade-control-rail) - 12px);
+      margin: 0;
+      padding: 6px 8px;
+      transform: none;
+      font-size: clamp(0.58rem, 1.5vw, 0.74rem);
+      line-height: 1.4;
+      letter-spacing: 0.04em;
+      text-align: center;
+      white-space: normal;
+      z-index: 40;
+      pointer-events: none;
+    }
+    body.touch-device.vibecade-joystick-rails #message {
+      position: fixed;
+      left: max(6px, env(safe-area-inset-left));
+      bottom: max(6px, env(safe-area-inset-bottom));
+      width: calc(var(--vibecade-control-rail) - 12px);
+      margin: 0;
+      padding: 6px 7px;
+      transform: none;
+      font-size: clamp(0.54rem, 1.4vw, 0.7rem);
+      line-height: 1.35;
+      text-align: center;
+      z-index: 40;
+      pointer-events: none;
+    }
     @media (pointer: fine) {
       #help-button {
         display: flex;

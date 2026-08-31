@@ -273,6 +273,29 @@
       letter-spacing: 1px;
       cursor: pointer;
     }
+    @media (min-width: 600px) and (orientation: landscape) {
+      body.touch-device #goal {
+        top: max(56px, calc(env(safe-area-inset-top) + 56px));
+        right: max(8px, env(safe-area-inset-right));
+        width: min(180px, calc(100vw - 560px));
+        max-width: 180px;
+        padding: 7px 9px;
+        font-size: clamp(0.66rem, 1.7vw, 0.78rem);
+        line-height: 1.35;
+        text-align: center;
+        pointer-events: none;
+      }
+    }
+    @media (max-width: 599px) and (orientation: portrait) {
+      body.touch-device #goal {
+        top: 94px;
+        left: 16px;
+        right: 16px;
+        width: auto;
+        max-width: none;
+        text-align: center;
+      }
+    }
     @media (pointer: fine) {
       #help-button {
         display: flex;
@@ -796,6 +819,9 @@
       if(goalEl){
         goalEl.textContent = `Goal: ${rule.description}`;
       }
+      canvas.dataset.qbertRow = String(qbert.row);
+      canvas.dataset.qbertColumn = String(qbert.col);
+      canvas.dataset.qbertPhase = falling ? 'falling' : (qbertJump ? 'jumping' : 'ready');
     }
 
     function checkWin(){
@@ -1193,6 +1219,11 @@
       startLevel();
     }
 
+    window.addEventListener('vibecade:restart', (event) => {
+      event.preventDefault();
+      startLevel();
+    });
+
     function showInstructions() {
       started = false;
       if (instructionModal) instructionModal.classList.add('is-visible');
@@ -1221,31 +1252,32 @@
     }
 
     if (controlButtons.length) {
+      const actionMoves = {
+        up: [-1, -1],
+        right: [-1, 0],
+        left: [1, 0],
+        down: [1, 1]
+      };
+
       controlButtons.forEach((button) => {
         const action = button.dataset.action;
-        const press = () => {
+        const movement = actionMoves[action];
+        const press = (event) => {
+          if (event.pointerType === 'mouse' && event.button !== 0) return;
+          event.preventDefault();
           if (!started) return;
           button.classList.add('pressed');
-          if (action === 'left') move(0, -1);
-          if (action === 'right') move(1, 0);
-          if (action === 'up') move(-1, 0);
-          if (action === 'down') move(1, 1);
+          try { button.setPointerCapture(event.pointerId); } catch (_) {}
+          if (movement) move(movement[0], movement[1]);
         };
-        const release = () => {
+        const release = (event) => {
+          if (event?.cancelable) event.preventDefault();
           button.classList.remove('pressed');
         };
-        button.addEventListener('touchstart', (event) => {
-          event.preventDefault();
-          press();
-        }, { passive: false });
-        button.addEventListener('touchend', (event) => {
-          event.preventDefault();
-          release();
-        }, { passive: false });
-        button.addEventListener('touchcancel', release);
-        button.addEventListener('mousedown', press);
-        button.addEventListener('mouseup', release);
-        button.addEventListener('mouseleave', release);
+        button.addEventListener('pointerdown', press);
+        button.addEventListener('pointerup', release);
+        button.addEventListener('pointercancel', release);
+        button.addEventListener('lostpointercapture', release);
       });
     }
 

@@ -394,6 +394,200 @@
       letter-spacing: 1px;
       cursor: pointer;
     }
+    @media (max-width: 900px) and (orientation: landscape) {
+      body.touch-device #game-container {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        padding: 6px 146px 6px 210px;
+        gap: 0;
+        justify-content: center;
+      }
+      body.touch-device #board {
+        width: min(calc(100dvh - 12px), calc(100vw - 356px));
+        height: min(calc(100dvh - 12px), calc(100vw - 356px));
+        max-width: none;
+        max-height: none;
+        flex: 0 0 auto;
+      }
+      body.touch-device #touch-controls {
+        display: grid;
+        grid-template-columns: 210px minmax(0, 1fr) 146px;
+        align-items: center;
+        padding: 0;
+      }
+      body.touch-device #touch-controls .directional-diamond {
+        grid-column: 1;
+        justify-self: center;
+      }
+      body.touch-device #rule-banner,
+      body.touch-device #mode-panel,
+      body.touch-device #hud,
+      body.touch-device #message {
+        position: fixed;
+        left: auto;
+        right: max(6px, env(safe-area-inset-right));
+        width: 134px;
+        max-width: 134px;
+        margin: 0;
+        transform: none;
+        box-sizing: border-box;
+        z-index: 40;
+      }
+      body.touch-device #rule-banner {
+        top: max(6px, env(safe-area-inset-top));
+        padding: 6px 7px;
+        border-radius: 10px;
+      }
+      body.touch-device #rule-label {
+        font-size: 0.7rem;
+        line-height: 1.25;
+      }
+      body.touch-device #mode-description {
+        display: none;
+      }
+      body.touch-device #mode-panel {
+        top: 54px;
+        bottom: 90px;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: 3px;
+        overflow-y: auto;
+        padding: 0 2px;
+      }
+      body.touch-device :is(.mode-button, #challengeToggle, #resetGame) {
+        flex: 0 0 auto;
+        min-height: 25px;
+        padding: 4px 6px;
+        border-radius: 8px;
+        font-size: 0.62rem;
+        line-height: 1.15;
+      }
+      body.touch-device #hud {
+        bottom: 44px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 3px;
+      }
+      body.touch-device #hud span {
+        min-width: 0;
+        padding: 3px 4px;
+        font-size: 0.58rem;
+        line-height: 1.2;
+        text-align: center;
+      }
+      body.touch-device #message {
+        bottom: 6px;
+        min-height: 34px;
+        padding: 4px 6px;
+        border-radius: 9px;
+        font-size: 0.6rem;
+        line-height: 1.2;
+        display: grid;
+        place-items: center;
+        text-align: center;
+      }
+    }
+    @media (max-width: 599px) and (orientation: portrait) {
+      body.touch-device #game-container {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        padding: 124px 10px 300px;
+        gap: 0;
+        justify-content: center;
+      }
+      body.touch-device #board {
+        width: min(calc(100vw - 20px), calc(100dvh - 424px));
+        height: min(calc(100vw - 20px), calc(100dvh - 424px));
+        max-width: none;
+        max-height: none;
+        flex: 0 0 auto;
+      }
+      body.touch-device #rule-banner {
+        position: fixed;
+        top: max(6px, env(safe-area-inset-top));
+        left: max(8px, env(safe-area-inset-left));
+        right: max(8px, env(safe-area-inset-right));
+        width: auto;
+        max-width: none;
+        margin: 0;
+        padding: 7px 9px;
+        border-radius: 11px;
+        z-index: 40;
+      }
+      body.touch-device #rule-label {
+        font-size: 0.78rem;
+        line-height: 1.3;
+      }
+      body.touch-device #mode-description {
+        display: none;
+      }
+      body.touch-device #mode-panel {
+        position: fixed;
+        top: 72px;
+        left: 8px;
+        right: 8px;
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: 4px;
+        overflow-x: auto;
+        padding: 0 0 5px;
+        z-index: 40;
+      }
+      body.touch-device :is(.mode-button, #challengeToggle, #resetGame) {
+        flex: 0 0 auto;
+        min-height: 34px;
+        padding: 5px 9px;
+        font-size: 0.67rem;
+      }
+      body.touch-device #hud {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        bottom: 258px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        margin: 0;
+        z-index: 40;
+      }
+      body.touch-device #hud span {
+        min-width: 0;
+        padding: 5px 3px;
+        font-size: 0.63rem;
+        text-align: center;
+      }
+      body.touch-device #message {
+        position: fixed;
+        left: 18px;
+        right: 18px;
+        bottom: 214px;
+        min-height: 34px;
+        margin: 0;
+        padding: 5px 8px;
+        transform: none;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        line-height: 1.3;
+        display: grid;
+        place-items: center;
+        z-index: 40;
+      }
+      body.touch-device #touch-controls {
+        display: grid;
+        align-items: end;
+        justify-items: center;
+        padding: 0 0 max(6px, env(safe-area-inset-bottom));
+      }
+      body.touch-device #touch-controls .directional-diamond {
+        align-self: end;
+        justify-self: center;
+      }
+    }
     @media (pointer: fine) {
       #help-button {
         display: flex;

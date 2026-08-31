@@ -267,6 +267,19 @@
       cursor: pointer;
     }
 
+    body.touch-device.vibecade-joystick-rails #hud-overlay {
+      position: fixed;
+      top: max(6px, env(safe-area-inset-top));
+      left: max(6px, env(safe-area-inset-left));
+      width: calc(var(--vibecade-control-rail) - 12px);
+      margin: 0;
+      padding: 6px 8px;
+      font-size: clamp(0.62rem, 1.6vw, 0.78rem);
+      line-height: 1.4;
+      text-align: center;
+      z-index: 40;
+      pointer-events: none;
+    }
     @media (pointer: fine) {
       #help-button {
         display: flex;
@@ -769,6 +782,23 @@
       gamePaused = false;
       draw();
       stepTimer = setInterval(step, FRAME_TIME);
+    }
+
+    function resetGame() {
+      items.length = 0;
+      bullets.length = 0;
+      score = 0;
+      lives = 3;
+      speedMultiplier = 2;
+      cherryWaveTriggered = false;
+      grapeWaveTriggered = false;
+      gameOver = false;
+      gamePaused = false;
+      basketX = (canvas.width - basketWidth) / 2;
+      if (scoreValue) scoreValue.textContent = score;
+      if (livesValue) livesValue.textContent = lives;
+      document.getElementById('message').textContent = '';
+      draw();
     }
 
     function showInstructions() {
