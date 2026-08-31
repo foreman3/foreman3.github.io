@@ -112,14 +112,17 @@
       height: 100vh;
       padding: 24px;
       gap: 0;
+      justify-content: center;
     }
     h1 {
       display: none;
     }
     canvas {
       width: 100%;
-      height: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
       max-height: calc(100vh - 32px);
+      object-fit: contain;
       image-rendering: pixelated;
     }
     #info {
@@ -380,6 +383,14 @@
     ctx.imageSmoothingEnabled = false;
 
     const WORLD = { w: canvas.width, h: canvas.height };
+    const useMobileRenderer = window.matchMedia('(pointer: coarse)').matches
+      || window.innerWidth <= 900;
+    canvas.dataset.renderer = useMobileRenderer ? 'mobile' : 'full';
+    const jungleBackdrop = document.createElement('canvas');
+    jungleBackdrop.width = WORLD.w;
+    jungleBackdrop.height = WORLD.h;
+    const jungleCtx = jungleBackdrop.getContext('2d');
+    let jungleBackdropReady = false;
     const SURFACE_Y = 300;
     const GROUND_DEPTH = 36;
     const TUNNEL_TOP = SURFACE_Y + 10;
@@ -1538,88 +1549,162 @@
       }
     }
 
+    function buildJungleBackdrop() {
+      const sky = jungleCtx.createLinearGradient(0, 0, 0, SURFACE_Y + 20);
+      sky.addColorStop(0, '#081526');
+      sky.addColorStop(0.48, '#123b45');
+      sky.addColorStop(1, '#b87848');
+      jungleCtx.fillStyle = sky;
+      jungleCtx.fillRect(0, 0, WORLD.w, WORLD.h);
+
+      const dawn = jungleCtx.createRadialGradient(760, 72, 8, 760, 72, 300);
+      dawn.addColorStop(0, 'rgba(255, 221, 139, 0.72)');
+      dawn.addColorStop(0.34, 'rgba(226, 129, 75, 0.24)');
+      dawn.addColorStop(1, 'rgba(16, 49, 55, 0)');
+      jungleCtx.fillStyle = dawn;
+      jungleCtx.fillRect(420, 0, 540, SURFACE_Y);
+
+      if (!useMobileRenderer) {
+        jungleCtx.fillStyle = 'rgba(255, 227, 165, 0.055)';
+        jungleCtx.beginPath();
+        jungleCtx.moveTo(650, 0);
+        jungleCtx.lineTo(790, 0);
+        jungleCtx.lineTo(585, SURFACE_Y);
+        jungleCtx.lineTo(410, SURFACE_Y);
+        jungleCtx.closePath();
+        jungleCtx.fill();
+        jungleCtx.beginPath();
+        jungleCtx.moveTo(840, 0);
+        jungleCtx.lineTo(900, 0);
+        jungleCtx.lineTo(790, SURFACE_Y);
+        jungleCtx.lineTo(690, SURFACE_Y);
+        jungleCtx.closePath();
+        jungleCtx.fill();
+      }
+
+      const ridgeColors = ['#0c2c2b', '#104037', '#16533f'];
+      ridgeColors.forEach((color, layer) => {
+        const baseY = 160 + layer * 42;
+        jungleCtx.fillStyle = color;
+        jungleCtx.beginPath();
+        jungleCtx.moveTo(0, SURFACE_Y);
+        jungleCtx.lineTo(0, baseY);
+        for (let x = 0; x <= WORLD.w; x += 64) {
+          const rise = 18 + ((x / 64 + layer * 2) % 4) * 9;
+          jungleCtx.lineTo(x + 32, baseY - rise);
+          jungleCtx.lineTo(x + 64, baseY + 8 - (layer % 2) * 5);
+        }
+        jungleCtx.lineTo(WORLD.w, SURFACE_Y);
+        jungleCtx.closePath();
+        jungleCtx.fill();
+      });
+
+      const trunkCount = useMobileRenderer ? 10 : 15;
+      for (let i = 0; i < trunkCount; i++) {
+        const x = i * (WORLD.w / (trunkCount - 1)) - 22 + (i % 3) * 12;
+        const width = 26 + (i % 4) * 5;
+        const top = -32 - (i % 3) * 26;
+        jungleCtx.fillStyle = i % 2 ? '#112b24' : '#0b241f';
+        jungleCtx.beginPath();
+        jungleCtx.moveTo(x, top);
+        jungleCtx.lineTo(x + width, top);
+        jungleCtx.lineTo(x + width + 11, SURFACE_Y);
+        jungleCtx.lineTo(x - 9, SURFACE_Y);
+        jungleCtx.closePath();
+        jungleCtx.fill();
+        jungleCtx.fillStyle = 'rgba(105, 145, 88, 0.14)';
+        jungleCtx.fillRect(x + width * 0.62, top, Math.max(3, width * 0.13), SURFACE_Y - top);
+        jungleCtx.strokeStyle = 'rgba(180, 202, 123, 0.13)';
+        jungleCtx.lineWidth = 2;
+        jungleCtx.beginPath();
+        jungleCtx.moveTo(x + width * 0.75, 0);
+        jungleCtx.bezierCurveTo(x + width + 24, 80, x - 16, 142, x + width * 0.55, 226);
+        jungleCtx.stroke();
+      }
+
+      const leafCount = useMobileRenderer ? 26 : 42;
+      for (let i = 0; i < leafCount; i++) {
+        const x = (i * 83) % (WORLD.w + 100) - 50;
+        const y = 40 + ((i * 47) % 155);
+        const radius = 28 + (i % 4) * 8;
+        jungleCtx.fillStyle = i % 3 === 0 ? '#176044' : (i % 3 === 1 ? '#1d704b' : '#12513c');
+        jungleCtx.beginPath();
+        jungleCtx.ellipse(x, y, radius * 1.35, radius, (i % 2 ? -1 : 1) * 0.24, 0, Math.PI * 2);
+        jungleCtx.fill();
+        if (!useMobileRenderer && i % 2 === 0) {
+          jungleCtx.strokeStyle = 'rgba(118, 183, 99, 0.17)';
+          jungleCtx.lineWidth = 2;
+          jungleCtx.beginPath();
+          jungleCtx.moveTo(x - radius * 0.6, y + 4);
+          jungleCtx.lineTo(x + radius * 0.65, y - 3);
+          jungleCtx.stroke();
+        }
+      }
+
+      jungleCtx.fillStyle = '#1f7048';
+      jungleCtx.beginPath();
+      jungleCtx.moveTo(0, SURFACE_Y);
+      jungleCtx.lineTo(0, 236);
+      for (let x = 0; x <= WORLD.w; x += 36) {
+        jungleCtx.lineTo(x + 12, 210 - ((x / 36) % 3) * 13);
+        jungleCtx.lineTo(x + 22, 246);
+        jungleCtx.lineTo(x + 36, 224 - ((x / 36) % 2) * 10);
+      }
+      jungleCtx.lineTo(WORLD.w, SURFACE_Y);
+      jungleCtx.closePath();
+      jungleCtx.fill();
+
+      const mist = jungleCtx.createLinearGradient(0, 210, 0, SURFACE_Y);
+      mist.addColorStop(0, 'rgba(224, 215, 156, 0)');
+      mist.addColorStop(1, 'rgba(224, 215, 156, 0.16)');
+      jungleCtx.fillStyle = mist;
+      jungleCtx.fillRect(0, 200, WORLD.w, SURFACE_Y - 200);
+      jungleBackdropReady = true;
+    }
+
+    function drawGroundSegment(left, width) {
+      if (width <= 0) return;
+      const soil = ctx.createLinearGradient(0, SURFACE_Y, 0, WORLD.h);
+      soil.addColorStop(0, '#7d5430');
+      soil.addColorStop(0.16, '#583820');
+      soil.addColorStop(1, '#271a16');
+      ctx.fillStyle = soil;
+      ctx.fillRect(left, SURFACE_Y, width, WORLD.h - SURFACE_Y);
+      ctx.fillStyle = '#244e2e';
+      ctx.fillRect(left, SURFACE_Y - 7, width, 8);
+      ctx.fillStyle = '#4f8c46';
+      ctx.fillRect(left, SURFACE_Y - 7, width, 3);
+      ctx.fillStyle = 'rgba(214, 160, 91, 0.18)';
+      const detailCount = useMobileRenderer ? 8 : 15;
+      for (let i = 0; i < detailCount; i++) {
+        const x = left + 16 + ((i * 67 + Math.floor(left)) % Math.max(20, width - 24));
+        const y = SURFACE_Y + 24 + (i * 37) % 180;
+        ctx.fillRect(x, y, 10 + (i % 3) * 5, 3);
+      }
+      ctx.strokeStyle = 'rgba(38, 23, 15, 0.52)';
+      ctx.lineWidth = 3;
+      const rootCount = useMobileRenderer ? 3 : 6;
+      for (let i = 0; i < rootCount; i++) {
+        const rootX = left + 30 + ((i * 113) % Math.max(24, width - 42));
+        ctx.beginPath();
+        ctx.moveTo(rootX, SURFACE_Y + 2);
+        ctx.bezierCurveTo(rootX - 8, SURFACE_Y + 25, rootX + 18, SURFACE_Y + 43, rootX + 4, SURFACE_Y + 68);
+        ctx.stroke();
+      }
+    }
+
     function drawBackground() {
       const data = screenData();
-      const grad = ctx.createLinearGradient(0, 0, 0, WORLD.h);
-      grad.addColorStop(0, COLORS.skyTop);
-      grad.addColorStop(0.5, COLORS.skyBottom);
-      grad.addColorStop(1, '#0a0d16');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, WORLD.w, WORLD.h);
-
-      ctx.fillStyle = '#081f13';
-      for (let i = 0; i < 14; i++) {
-        const x = i * 78 - 40;
-        const height = 180 + (i % 4) * 24;
-        ctx.fillRect(x, SURFACE_Y - 160 - height, 28, height);
-      }
-      ctx.fillStyle = '#102a1c';
-      for (let i = 0; i < 12; i++) {
-        const x = i * 90 + 10;
-        const height = 200 + (i % 3) * 28;
-        ctx.fillRect(x, SURFACE_Y - 170 - height, 36, height);
-      }
-      ctx.fillStyle = '#154c32';
-      for (let i = 0; i < 18; i++) {
-        const x = i * 60 - 20;
-        const radius = 48 + (i % 3) * 8;
-        ctx.beginPath();
-        ctx.arc(x + 30, SURFACE_Y - 145, radius, Math.PI, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#c7a56a';
-      ctx.fillRect(0, SURFACE_Y - 120, WORLD.w, 50);
-      ctx.fillStyle = '#2b7a4f';
-      ctx.beginPath();
-      ctx.moveTo(0, SURFACE_Y - 150);
-      for (let x = 0; x <= WORLD.w; x += 45) {
-        const y = SURFACE_Y - 150 - (x % 90 === 0 ? 26 : 10);
-        ctx.lineTo(x + 22, y);
-        ctx.lineTo(x + 45, SURFACE_Y - 150);
-      }
-      ctx.lineTo(WORLD.w, SURFACE_Y - 40);
-      ctx.lineTo(0, SURFACE_Y - 40);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#3a8a5e';
-      for (let i = 0; i < 10; i++) {
-        const x = i * 110 + 20;
-        ctx.beginPath();
-        ctx.arc(x, SURFACE_Y - 120, 32, Math.PI, Math.PI * 2);
-        ctx.arc(x + 30, SURFACE_Y - 120, 38, Math.PI, Math.PI * 2);
-        ctx.arc(x + 60, SURFACE_Y - 120, 28, Math.PI, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#2f7a52';
-      ctx.beginPath();
-      ctx.moveTo(0, SURFACE_Y - 70);
-      for (let x = 0; x <= WORLD.w; x += 55) {
-        const y = SURFACE_Y - 70 - (x % 110 === 0 ? 14 : 6);
-        ctx.lineTo(x + 28, y);
-        ctx.lineTo(x + 55, SURFACE_Y - 70);
-      }
-      ctx.lineTo(WORLD.w, SURFACE_Y - 40);
-      ctx.lineTo(0, SURFACE_Y - 40);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#2b6f4c';
-      ctx.fillRect(0, SURFACE_Y - 58, WORLD.w, 18);
+      if (!jungleBackdropReady) buildJungleBackdrop();
+      ctx.drawImage(jungleBackdrop, 0, 0);
 
       const gap = getGapForObstacle(data);
       const hasGap = gap && gap.width > 4;
-      ctx.fillStyle = COLORS.groundTop;
       if (hasGap) {
-        ctx.fillRect(0, SURFACE_Y, gap.left, GROUND_DEPTH);
-        ctx.fillRect(gap.right, SURFACE_Y, WORLD.w - gap.right, GROUND_DEPTH);
+        drawGroundSegment(0, gap.left);
+        drawGroundSegment(gap.right, WORLD.w - gap.right);
       } else {
-        ctx.fillRect(0, SURFACE_Y, WORLD.w, GROUND_DEPTH);
-      }
-      ctx.fillStyle = COLORS.groundBottom;
-      if (hasGap) {
-        ctx.fillRect(0, SURFACE_Y + GROUND_DEPTH, gap.left, WORLD.h - SURFACE_Y - GROUND_DEPTH);
-        ctx.fillRect(gap.right, SURFACE_Y + GROUND_DEPTH, WORLD.w - gap.right, WORLD.h - SURFACE_Y - GROUND_DEPTH);
-      } else {
-        ctx.fillRect(0, SURFACE_Y + GROUND_DEPTH, WORLD.w, WORLD.h - SURFACE_Y - GROUND_DEPTH);
+        drawGroundSegment(0, WORLD.w);
       }
       if (player.underground) {
         ctx.fillStyle = COLORS.tunnel;
@@ -1628,59 +1713,117 @@
     }
 
     function drawTunnel() {
-      ctx.fillStyle = COLORS.tunnel;
+      const cave = ctx.createLinearGradient(0, TUNNEL_TOP, 0, WORLD.h);
+      cave.addColorStop(0, '#080b0d');
+      cave.addColorStop(0.55, '#17171a');
+      cave.addColorStop(1, '#25170f');
+      ctx.fillStyle = cave;
       ctx.fillRect(0, TUNNEL_TOP, WORLD.w, WORLD.h - TUNNEL_TOP);
-      ctx.fillStyle = '#2b1e16';
-      ctx.fillRect(0, TUNNEL_FLOOR, WORLD.w, WORLD.h - TUNNEL_FLOOR);
-      ctx.fillStyle = '#141414';
+      ctx.strokeStyle = 'rgba(126, 92, 59, 0.18)';
+      ctx.lineWidth = 5;
+      const strataCount = useMobileRenderer ? 3 : 5;
+      for (let i = 0; i < strataCount; i++) {
+        const y = TUNNEL_TOP + 28 + i * 36;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        for (let x = 0; x <= WORLD.w; x += 120) {
+          ctx.lineTo(x + 60, y + ((x / 120 + i) % 2 ? 8 : -6));
+          ctx.lineTo(x + 120, y + 2);
+        }
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#101012';
       for (let i = 0; i < 12; i++) {
-        const x = i * 90 + 20;
+        const x = i * 86 - 12;
         ctx.beginPath();
         ctx.moveTo(x, TUNNEL_TOP);
-        ctx.lineTo(x + 18, TUNNEL_TOP + 24 + (i % 3) * 6);
-        ctx.lineTo(x + 36, TUNNEL_TOP);
+        ctx.lineTo(x + 17, TUNNEL_TOP + 23 + (i % 4) * 8);
+        ctx.lineTo(x + 34, TUNNEL_TOP);
         ctx.closePath();
         ctx.fill();
       }
-      ctx.fillStyle = '#1f1f1f';
-      for (let i = 0; i < 10; i++) {
-        const x = i * 110 + 10;
+      const floor = ctx.createLinearGradient(0, TUNNEL_FLOOR - 22, 0, WORLD.h);
+      floor.addColorStop(0, '#59402b');
+      floor.addColorStop(1, '#20130e');
+      ctx.fillStyle = floor;
+      ctx.fillRect(0, TUNNEL_FLOOR - 8, WORLD.w, WORLD.h - TUNNEL_FLOOR + 8);
+      ctx.fillStyle = '#171315';
+      for (let i = 0; i < 11; i++) {
+        const x = i * 94 + 8;
         ctx.beginPath();
         ctx.moveTo(x, TUNNEL_FLOOR);
-        ctx.lineTo(x + 22, TUNNEL_FLOOR - 26 - (i % 2) * 6);
-        ctx.lineTo(x + 44, TUNNEL_FLOOR);
+        ctx.lineTo(x + 18, TUNNEL_FLOOR - 19 - (i % 3) * 7);
+        ctx.lineTo(x + 40, TUNNEL_FLOOR);
         ctx.closePath();
         ctx.fill();
       }
-      ctx.fillStyle = 'rgba(80, 80, 80, 0.35)';
-      for (let i = 0; i < 16; i++) {
-        const x = i * 60 + 10;
-        ctx.fillRect(x, TUNNEL_TOP + 10 + (i % 4) * 18, 18, 6);
+      if (state.idolLight || !useMobileRenderer) {
+        const lightRadius = state.idolLight ? 290 : 165;
+        const light = ctx.createRadialGradient(player.x + player.w / 2, player.y + player.h / 2, 10, player.x + player.w / 2, player.y + player.h / 2, lightRadius);
+        light.addColorStop(0, state.idolLight ? 'rgba(244, 190, 91, 0.22)' : 'rgba(209, 154, 82, 0.09)');
+        light.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = light;
+        ctx.fillRect(Math.max(0, player.x - lightRadius), TUNNEL_TOP, lightRadius * 2, WORLD.h - TUNNEL_TOP);
       }
     }
 
     function drawPit(data) {
-      ctx.fillStyle = COLORS.tunnel;
-      ctx.fillRect(data.pitX, SURFACE_Y, data.pitWidth, 90);
-      ctx.fillStyle = '#0b111a';
-      ctx.fillRect(data.pitX, SURFACE_Y + 90, data.pitWidth, WORLD.h - SURFACE_Y - 90);
+      const pit = ctx.createLinearGradient(0, SURFACE_Y, 0, WORLD.h);
+      pit.addColorStop(0, '#111419');
+      pit.addColorStop(0.34, '#07090c');
+      pit.addColorStop(1, '#020304');
+      ctx.fillStyle = pit;
+      ctx.fillRect(data.pitX, SURFACE_Y, data.pitWidth, WORLD.h - SURFACE_Y);
+      ctx.fillStyle = '#99714a';
+      ctx.fillRect(data.pitX - 5, SURFACE_Y - 3, 8, 7);
+      ctx.fillRect(data.pitX + data.pitWidth - 3, SURFACE_Y - 3, 8, 7);
+      ctx.strokeStyle = 'rgba(184, 127, 73, 0.35)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(data.pitX + 5, SURFACE_Y + 9, Math.max(0, data.pitWidth - 10), 50);
     }
 
     function drawPond(gap) {
       if (!gap || gap.width <= 4) return;
       const height = player.underground ? (TUNNEL_TOP - SURFACE_Y) : (WORLD.h - SURFACE_Y);
-      ctx.fillStyle = COLORS.water;
+      const water = ctx.createLinearGradient(0, SURFACE_Y, 0, SURFACE_Y + height);
+      water.addColorStop(0, '#3f9cad');
+      water.addColorStop(0.14, '#19667b');
+      water.addColorStop(1, '#082b42');
+      ctx.fillStyle = water;
       ctx.fillRect(gap.left, SURFACE_Y, gap.width, height);
+      ctx.strokeStyle = 'rgba(182, 236, 222, 0.55)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        const y = SURFACE_Y + 8 + i * 13;
+        ctx.beginPath();
+        ctx.moveTo(gap.left + 10 + i * 12, y);
+        ctx.quadraticCurveTo(gap.left + gap.width / 2, y + (i % 2 ? 5 : -4), gap.right - 10 - i * 8, y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#315f37';
+      for (const edge of [gap.left - 5, gap.right + 3]) {
+        ctx.fillRect(edge, SURFACE_Y - 16, 4, 17);
+        ctx.fillRect(edge + 7, SURFACE_Y - 10, 3, 11);
+      }
     }
 
     function drawQuicksand(gap) {
       if (!gap || gap.width <= 4) return;
       const height = player.underground ? (TUNNEL_TOP - SURFACE_Y) : (WORLD.h - SURFACE_Y);
       const t = performance.now() / 1000;
-      ctx.fillStyle = COLORS.sand;
+      const sand = ctx.createLinearGradient(0, SURFACE_Y, 0, SURFACE_Y + height);
+      sand.addColorStop(0, '#d5aa4d');
+      sand.addColorStop(0.2, '#9d7429');
+      sand.addColorStop(1, '#493519');
+      ctx.fillStyle = sand;
       ctx.fillRect(gap.left, SURFACE_Y, gap.width, height);
-      ctx.fillStyle = `rgba(255,255,255,${0.06 + Math.sin(t * 3) * 0.04})`;
-      ctx.fillRect(gap.left + 6, SURFACE_Y + 6, Math.max(0, gap.width - 12), 12);
+      ctx.strokeStyle = `rgba(255,235,166,${0.28 + Math.sin(t * 3) * 0.08})`;
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.ellipse(gap.left + gap.width * (0.25 + i * 0.25), SURFACE_Y + 11 + i * 9, 25 + i * 6, 5, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     }
 
     function drawObstacles() {
@@ -1840,21 +1983,39 @@
         sprite = frame === 0 ? assets.harryRun1 : assets.harryRun2;
       }
 
+      if (!player.onVine) {
+        ctx.save();
+        ctx.fillStyle = player.underground ? 'rgba(0, 0, 0, 0.62)' : 'rgba(8, 24, 16, 0.42)';
+        ctx.beginPath();
+        ctx.ellipse(player.x + player.w / 2, player.y + player.h + 2, player.w * 0.62, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const visualScale = useMobileRenderer ? 1.38 : 1.22;
+      const visualW = player.w * visualScale;
+      const visualH = player.h * visualScale;
+      const visualX = player.x - (visualW - player.w) / 2;
+      const visualY = player.y - (visualH - player.h);
       ctx.save();
       const dimInCave = player.underground && !state.idolLight;
       if (dimInCave) {
         ctx.filter = 'grayscale(1) brightness(0.45)';
       }
+      if (!useMobileRenderer && !dimInCave) {
+        ctx.shadowColor = 'rgba(5, 12, 8, 0.55)';
+        ctx.shadowBlur = 5;
+      }
       if (state.game === 'dead') {
         ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
         ctx.rotate(player.deadAngle);
-        ctx.drawImage(sprite, -player.w / 2, -player.h / 2, player.w, player.h);
+        ctx.drawImage(sprite, -visualW / 2, -visualH / 2, visualW, visualH);
       } else if (player.facing === -1) {
-        ctx.translate(player.x + player.w, 0);
+        ctx.translate(visualX + visualW, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(sprite, 0, player.y, player.w, player.h);
+        ctx.drawImage(sprite, 0, visualY, visualW, visualH);
       } else {
-        ctx.drawImage(sprite, player.x, player.y, player.w, player.h);
+        ctx.drawImage(sprite, visualX, visualY, visualW, visualH);
       }
       if (dimInCave) {
         ctx.filter = 'none';
