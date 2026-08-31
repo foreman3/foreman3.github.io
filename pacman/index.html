@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Pac-Man Deluxe</title>
   <style>
     :root {
@@ -281,6 +282,20 @@
       font-weight: 700;
       letter-spacing: 1px;
       cursor: pointer;
+    }
+    body.touch-device.vibecade-joystick-rails #game-container {
+      padding: 0;
+      gap: 4px;
+    }
+    body.touch-device.vibecade-joystick-rails #gameCanvas.vibecade-joystick-playfield {
+      --pacman-mobile-board-height: calc(100dvh - 56px);
+      width: min(var(--vibecade-playfield-width), calc(var(--pacman-mobile-board-height) * 1.17647)) !important;
+      height: min(var(--vibecade-playfield-height), var(--pacman-mobile-board-height)) !important;
+      max-width: min(var(--vibecade-playfield-width), calc(var(--pacman-mobile-board-height) * 1.17647)) !important;
+      max-height: min(var(--vibecade-playfield-height), var(--pacman-mobile-board-height)) !important;
+    }
+    body.touch-device.vibecade-joystick-rails #info-panel {
+      width: min(var(--vibecade-playfield-width), calc((100dvh - 56px) * 1.17647));
     }
     @media (pointer: fine) {
       #info-panel {
