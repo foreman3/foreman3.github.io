@@ -62,6 +62,7 @@
       text-shadow: 0 0 22px rgba(0, 255, 198, 0.6);
     }
     canvas {
+      box-sizing: border-box;
       background: transparent;
       border: 2px solid rgba(0, 174, 255, 0.5);
       border-radius: 16px;
@@ -100,6 +101,7 @@
     }
     #game-container {
       justify-content: center;
+      box-sizing: border-box;
       width: min(1200px, 100%);
       max-width: calc(100vw - 32px);
       height: 100vh;
@@ -108,9 +110,11 @@
       display: none;
     }
     canvas {
-      width: 100%;
-      height: 100%;
-      max-height: calc(100vh - 160px);
+      display: block;
+      width: min(calc(100vw - 32px), calc((100dvh - 24px) * 4 / 3));
+      height: auto;
+      aspect-ratio: 4 / 3;
+      max-height: calc(100dvh - 24px);
     }
     #info {
       position: absolute;
@@ -263,6 +267,37 @@
         display: flex;
       }
     }
+    @media (max-width: 900px), (pointer: coarse) {
+      #game-container {
+        width: 100vw;
+        max-width: none;
+        height: 100dvh;
+        padding: 0;
+      }
+      #game-container::before {
+        filter: none;
+      }
+      canvas {
+        width: min(100vw, calc(100dvh * 4 / 3));
+        max-height: 100dvh;
+        border-radius: 8px;
+        box-shadow: 0 0 14px rgba(0, 174, 255, 0.28);
+      }
+      #info,
+      .control-button {
+        backdrop-filter: none;
+      }
+    }
+    @media (max-width: 599px) and (orientation: portrait) {
+      #game-container {
+        justify-content: flex-start;
+        padding-top: max(70px, calc(env(safe-area-inset-top) + 58px));
+      }
+      canvas {
+        width: 100vw;
+        max-height: calc(100dvh - 250px);
+      }
+    }
   </style>
   <link rel="stylesheet" href="../sidebar.css" />
   <link rel="stylesheet" href="../flyout.css" />
@@ -305,12 +340,22 @@
   </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
     const messageElement = document.getElementById('message');
     const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    const useMobileRenderer = isTouchDevice || window.matchMedia('(max-width: 900px)').matches;
+    const GAME_WIDTH = 800;
+    const GAME_HEIGHT = 600;
+    const renderScale = useMobileRenderer ? 0.72 : 1;
+    canvas.width = Math.round(GAME_WIDTH * renderScale);
+    canvas.height = Math.round(GAME_HEIGHT * renderScale);
+    canvas.dataset.renderScale = renderScale.toFixed(2);
+    canvas.dataset.renderer = useMobileRenderer ? 'mobile' : 'full';
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = useMobileRenderer ? 'medium' : 'high';
     const controlButtons = document.querySelectorAll('.control-button');
 
-    const player = { x: canvas.width/2, y: canvas.height - 38, w: 54, h: 32, pulse: 0 };
+    const player = { x: GAME_WIDTH/2, y: GAME_HEIGHT - 38, w: 54, h: 32, pulse: 0 };
     const playerImg = new Image();
     playerImg.src = '../images/player_ship.svg';
     let bullet = null;
@@ -327,27 +372,44 @@
       img.src = src;
       return img;
     });
+    const alienSpriteCache = alienSprites.map((img, row) => {
+      const spriteCanvas = document.createElement('canvas');
+      spriteCanvas.width = 96;
+      spriteCanvas.height = 72;
+      const spriteContext = spriteCanvas.getContext('2d');
+      const renderSprite = () => {
+        spriteContext.clearRect(0, 0, spriteCanvas.width, spriteCanvas.height);
+        spriteContext.save();
+        spriteContext.shadowBlur = 12;
+        spriteContext.shadowColor = `hsla(${180 + row*18}, 100%, 60%, 0.8)`;
+        spriteContext.drawImage(img, 16, 14, 64, 44);
+        spriteContext.restore();
+      };
+      if (img.complete) renderSprite();
+      else img.addEventListener('load', renderSprite, { once: true });
+      return spriteCanvas;
+    });
     const bombs = [];
     const explosions = [];
     const sparks = [];
-    const starfield = Array.from({length: 160}, () => ({
-      x: Math.random()*canvas.width,
-      y: Math.random()*canvas.height,
+    const starfield = Array.from({length: useMobileRenderer ? 72 : 160}, () => ({
+      x: Math.random()*GAME_WIDTH,
+      y: Math.random()*GAME_HEIGHT,
       speed: Math.random()*25 + 20,
       size: Math.random()*1.8 + 0.4,
       twinkle: Math.random()*Math.PI*2,
       trail: Math.random() < 0.1
     }));
     const auroras = Array.from({length: 3}, () => ({
-      x: Math.random()*canvas.width,
-      y: Math.random()*canvas.height*0.5,
+      x: Math.random()*GAME_WIDTH,
+      y: Math.random()*GAME_HEIGHT*0.5,
       r: Math.random()*220 + 120,
       hue: Math.random()*120 + 160,
       alpha: Math.random()*0.25 + 0.1
     }));
     const parallaxClouds = Array.from({length: 4}, () => ({
-      x: Math.random()*canvas.width,
-      y: Math.random()*canvas.height*0.7,
+      x: Math.random()*GAME_WIDTH,
+      y: Math.random()*GAME_HEIGHT*0.7,
       r: Math.random()*240 + 240,
       hue: Math.random()*80 + 180,
       alpha: Math.random()*0.25 + 0.15,
@@ -355,15 +417,15 @@
     }));
     const constellations = Array.from({length: 6}, () => ({
       points: Array.from({length: 5 + Math.floor(Math.random()*4)}, () => ({
-        x: Math.random()*canvas.width,
-        y: Math.random()*canvas.height*0.55,
+        x: Math.random()*GAME_WIDTH,
+        y: Math.random()*GAME_HEIGHT*0.55,
       })).sort((a,b) => a.x - b.x),
       glow: Math.random()*0.4 + 0.4
     }));
     const horizonGlow = { hue: 205, alpha: 0.35 };
     const planet = {
-      x: canvas.width*0.18,
-      y: canvas.height*0.32,
+      x: GAME_WIDTH*0.18,
+      y: GAME_HEIGHT*0.32,
       r: 180,
       ringTilt: -0.35
     };
@@ -371,7 +433,7 @@
     let score = 0;
     let lives = 3;
     let alienDir = 1; // 1=right, -1=left
-    let moveCounter = 0;
+    let alienStepTimer = 0;
     let startingSpeed = 5;
     let level = 1;
     let alienSpeed = startingSpeed;
@@ -407,7 +469,7 @@
         const bricks = [];
         for(let r=0;r<3;r++){
           for(let c=0;c<6;c++){
-            bricks.push({x: startX + s*170 + c*10, y: canvas.height-120 + r*10, alive: true});
+            bricks.push({x: startX + s*170 + c*10, y: GAME_HEIGHT-120 + r*10, alive: true});
           }
         }
         shields.push(bricks);
@@ -416,7 +478,8 @@
 
     function createExplosion(x, y, color = 'rgba(0, 255, 198, 1)'){
       explosions.push({x, y, r: 0, alpha: 1, color});
-      for(let i=0;i<10;i++){
+      const sparkCount = useMobileRenderer ? 6 : 10;
+      for(let i=0;i<sparkCount;i++){
         const angle = Math.random()*Math.PI*2;
         sparks.push({
           x,
@@ -447,8 +510,9 @@
         s.x += s.vx*dt;
         s.y += s.vy*dt;
         s.life -= dt;
-        s.vx *= 0.98;
-        s.vy *= 0.98;
+        const damping = Math.pow(0.98, dt * 60);
+        s.vx *= damping;
+        s.vy *= damping;
         if(s.life <= 0) sparks.splice(i,1);
       }
     }
@@ -457,33 +521,35 @@
       for(const star of starfield){
         star.y += star.speed*dt;
         star.twinkle += dt*4;
-        if(star.y > canvas.height){
+        if(star.y > GAME_HEIGHT){
           star.y = -5;
-          star.x = Math.random()*canvas.width;
+          star.x = Math.random()*GAME_WIDTH;
           star.speed = Math.random()*25 + 20;
           star.size = Math.random()*1.8 + 0.4;
           star.trail = Math.random() < 0.12;
         }
       }
-      for(const cloud of parallaxClouds){
-        cloud.x += cloud.speed*dt;
-        if(cloud.x - cloud.r > canvas.width + 80){
-          cloud.x = -cloud.r - 80;
-          cloud.y = Math.random()*canvas.height*0.7;
-          cloud.hue = Math.random()*80 + 180;
-          cloud.alpha = Math.random()*0.25 + 0.15;
-          cloud.speed = Math.random()*12 + 6;
+      if(!useMobileRenderer){
+        for(const cloud of parallaxClouds){
+          cloud.x += cloud.speed*dt;
+          if(cloud.x - cloud.r > GAME_WIDTH + 80){
+            cloud.x = -cloud.r - 80;
+            cloud.y = Math.random()*GAME_HEIGHT*0.7;
+            cloud.hue = Math.random()*80 + 180;
+            cloud.alpha = Math.random()*0.25 + 0.15;
+            cloud.speed = Math.random()*12 + 6;
+          }
         }
+        for(const aurora of auroras){
+          aurora.hue += dt*8;
+        }
+        horizonGlow.alpha = 0.28 + Math.sin(performance.now()/1200)*0.08;
       }
-      for(const aurora of auroras){
-        aurora.hue += dt*8;
-      }
-      horizonGlow.alpha = 0.28 + Math.sin(performance.now()/1200)*0.08;
     }
 
     function resetGame(){
       alienDir = 1;
-      moveCounter = 0;
+      alienStepTimer = 0;
       alienSpeed = startingSpeed;
       gameOver = false;
       nextLevel = false;
@@ -502,6 +568,11 @@
       level = 1;
       resetGame();
     }
+
+    window.addEventListener('vibecade:restart', (event) => {
+      event.preventDefault();
+      startNewGame();
+    });
 
     function startNextLevel(){
       startingSpeed *= 2;
@@ -529,8 +600,8 @@
       }
       if(keys['ArrowLeft']) player.x -= playerSpeed*dt;
       if(keys['ArrowRight']) player.x += playerSpeed*dt;
-      player.x = Math.max(player.w/2, Math.min(canvas.width-player.w/2, player.x));
-      player.pulse += 0.08;
+      player.x = Math.max(player.w/2, Math.min(GAME_WIDTH-player.w/2, player.x));
+      player.pulse += dt * 4.8;
 
       if(bullet){
         bullet.y -= 480*dt;
@@ -543,8 +614,10 @@
       updateStars(dt);
 
       // Alien movement
-      moveCounter++;
-      if(moveCounter % 30 === 0){
+      alienStepTimer += dt;
+      const alienStepInterval = Math.max(0.16, 0.5 - (level - 1) * 0.025);
+      while(alienStepTimer >= alienStepInterval){
+        alienStepTimer -= alienStepInterval;
         let left = Infinity, right = -Infinity;
         for(const a of aliens){
           if(a.alive){
@@ -553,7 +626,7 @@
             right = Math.max(right, a.x + a.w/2);
           }
         }
-        if(left < 20 || right > canvas.width - 20){
+        if(left < 20 || right > GAME_WIDTH - 20){
           alienDir *= -1;
           for(const a of aliens){
             if(a.alive){
@@ -580,7 +653,7 @@
       }
 
       // Alien shooting
-      if(Math.random() < 0.02){
+      if(Math.random() < 1 - Math.exp(-1.21 * dt)){
         const shooters = aliens.filter(a => a.alive);
         if(shooters.length){
           const a = shooters[Math.floor(Math.random()*shooters.length)];
@@ -622,7 +695,7 @@
       bombLoop:
       for(let i=bombs.length-1;i>=0;i--){
         const b = bombs[i];
-        if(b.y > canvas.height){
+        if(b.y > GAME_HEIGHT){
           bombs.splice(i,1);
           continue;
         }
@@ -671,6 +744,7 @@
     }
 
     function draw(){
+      ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
       drawBackground();
       drawPlayer();
 
@@ -696,14 +770,19 @@
           const wobble = Math.sin(time/540 + a.x*0.03 + a.wobble)*6;
           const breathe = 1 + Math.sin(time/820 + a.wobble)*0.08;
           const sprite = alienSprites[a.row % alienSprites.length];
+          const cachedSprite = alienSpriteCache[a.row % alienSpriteCache.length];
           ctx.save();
           ctx.translate(a.x, a.y + wobble);
-          ctx.shadowBlur = 20;
-          ctx.shadowColor = `hsla(${180 + a.row*18}, 100%, 60%, 0.9)`;
+          if(!useMobileRenderer){
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = `hsla(${180 + a.row*18}, 100%, 60%, 0.9)`;
+          }
           ctx.globalAlpha = 0.92;
           const drawW = a.w * breathe;
           const drawH = a.h * breathe;
-          if(sprite && sprite.complete){
+          if(useMobileRenderer && cachedSprite){
+            ctx.drawImage(cachedSprite, -drawW/2 - 14, -drawH/2 - 14, drawW + 28, drawH + 28);
+          } else if(sprite && sprite.complete){
             ctx.drawImage(sprite, -drawW/2 - 12, -drawH/2 - 12, drawW + 24, drawH + 24);
           } else {
             const gradient = ctx.createLinearGradient(0, -drawH/2, 0, drawH/2);
@@ -740,10 +819,14 @@
       for(const bricks of shields){
         for(const brick of bricks){
           if(brick.alive){
-            const gradient = ctx.createLinearGradient(brick.x-5, brick.y-5, brick.x+5, brick.y+5);
-            gradient.addColorStop(0,'rgba(0, 174, 255, 0.9)');
-            gradient.addColorStop(1,'rgba(0, 255, 198, 0.8)');
-            ctx.fillStyle = gradient;
+            if(useMobileRenderer){
+              ctx.fillStyle = 'rgba(0, 220, 220, 0.86)';
+            } else {
+              const gradient = ctx.createLinearGradient(brick.x-5, brick.y-5, brick.x+5, brick.y+5);
+              gradient.addColorStop(0,'rgba(0, 174, 255, 0.9)');
+              gradient.addColorStop(1,'rgba(0, 255, 198, 0.8)');
+              ctx.fillStyle = gradient;
+            }
             ctx.fillRect(brick.x-5, brick.y-5, 10, 10);
             ctx.strokeStyle = 'rgba(255,255,255,0.2)';
             ctx.strokeRect(brick.x-5, brick.y-5, 10, 10);
@@ -770,18 +853,18 @@
     }
 
     function drawBackground(){
-      const gradient = ctx.createLinearGradient(0,0,0,canvas.height);
+      const gradient = ctx.createLinearGradient(0,0,0,GAME_HEIGHT);
       gradient.addColorStop(0,'rgba(2, 8, 30, 1)');
       gradient.addColorStop(0.55,'rgba(4, 14, 44, 1)');
       gradient.addColorStop(1,'rgba(8, 10, 22, 1)');
       ctx.fillStyle = gradient;
-      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillRect(0,0,GAME_WIDTH,GAME_HEIGHT);
 
-      const horizon = ctx.createLinearGradient(0, canvas.height*0.55, 0, canvas.height);
+      const horizon = ctx.createLinearGradient(0, GAME_HEIGHT*0.55, 0, GAME_HEIGHT);
       horizon.addColorStop(0, `rgba(0, 180, 255, ${horizonGlow.alpha})`);
       horizon.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = horizon;
-      ctx.fillRect(0, canvas.height*0.45, canvas.width, canvas.height*0.55);
+      ctx.fillRect(0, GAME_HEIGHT*0.45, GAME_WIDTH, GAME_HEIGHT*0.55);
 
       ctx.save();
       ctx.translate(planet.x, planet.y);
@@ -807,7 +890,7 @@
       ctx.stroke();
       ctx.restore();
 
-      for(const cloud of parallaxClouds){
+      if(!useMobileRenderer) for(const cloud of parallaxClouds){
         const g = ctx.createRadialGradient(cloud.x, cloud.y, cloud.r*0.2, cloud.x, cloud.y, cloud.r);
         g.addColorStop(0, `hsla(${cloud.hue}, 85%, 62%, ${cloud.alpha})`);
         g.addColorStop(1, 'rgba(0,0,0,0)');
@@ -817,7 +900,7 @@
         ctx.fill();
       }
 
-      for(const aurora of auroras){
+      if(!useMobileRenderer) for(const aurora of auroras){
         const g = ctx.createRadialGradient(aurora.x, aurora.y, aurora.r*0.2, aurora.x, aurora.y, aurora.r*1.2);
         g.addColorStop(0, `hsla(${aurora.hue % 360}, 90%, 65%, ${aurora.alpha})`);
         g.addColorStop(1, 'rgba(0,0,0,0)');
@@ -829,7 +912,7 @@
 
       ctx.lineWidth = 0.8;
       ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-      for(const constellation of constellations){
+      if(!useMobileRenderer) for(const constellation of constellations){
         ctx.beginPath();
         constellation.points.forEach((p, idx) => {
           if(idx === 0){
@@ -857,12 +940,17 @@
         ctx.arc(star.x, star.y, star.size + sparkle*0.7, 0, Math.PI*2);
         ctx.fill();
         if(star.trail){
-          const tail = ctx.createLinearGradient(star.x, star.y-12, star.x, star.y+18);
-          tail.addColorStop(0,'rgba(255,255,255,0)');
-          tail.addColorStop(0.5,'rgba(0,255,198,0.5)');
-          tail.addColorStop(1,'rgba(0,119,255,0)');
-          ctx.fillStyle = tail;
-          ctx.fillRect(star.x-1, star.y-12, 2, 24);
+          if(useMobileRenderer){
+            ctx.fillStyle = 'rgba(0, 255, 198, 0.32)';
+            ctx.fillRect(star.x, star.y-8, 1.5, 16);
+          } else {
+            const tail = ctx.createLinearGradient(star.x, star.y-12, star.x, star.y+18);
+            tail.addColorStop(0,'rgba(255,255,255,0)');
+            tail.addColorStop(0.5,'rgba(0,255,198,0.5)');
+            tail.addColorStop(1,'rgba(0,119,255,0)');
+            ctx.fillStyle = tail;
+            ctx.fillRect(star.x-1, star.y-12, 2, 24);
+          }
         }
       }
     }
@@ -873,8 +961,10 @@
       ctx.translate(player.x, player.y - 6);
       const hover = Math.sin(player.pulse*1.2) * 4;
       ctx.translate(0, hover);
-      ctx.shadowBlur = 24;
-      ctx.shadowColor = 'rgba(0, 255, 198, 0.85)';
+      if(!useMobileRenderer){
+        ctx.shadowBlur = 24;
+        ctx.shadowColor = 'rgba(0, 255, 198, 0.85)';
+      }
 
       // engine trail
       const flameLength = 26 + pulse*20;
@@ -893,13 +983,15 @@
       ctx.fill();
 
       // ship body
-      const shipGlow = ctx.createRadialGradient(0, -player.h*0.2, player.w*0.1, 0, 0, player.w*0.9);
-      shipGlow.addColorStop(0,'rgba(255,255,255,0.6)');
-      shipGlow.addColorStop(1,'rgba(0, 200, 255, 0.18)');
-      ctx.fillStyle = shipGlow;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, player.w*0.72, player.h*0.68, 0, 0, Math.PI*2);
-      ctx.fill();
+      if(!useMobileRenderer){
+        const shipGlow = ctx.createRadialGradient(0, -player.h*0.2, player.w*0.1, 0, 0, player.w*0.9);
+        shipGlow.addColorStop(0,'rgba(255,255,255,0.6)');
+        shipGlow.addColorStop(1,'rgba(0, 200, 255, 0.18)');
+        ctx.fillStyle = shipGlow;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, player.w*0.72, player.h*0.68, 0, 0, Math.PI*2);
+        ctx.fill();
+      }
 
       ctx.shadowBlur = 0;
       if(playerImg.complete){
@@ -913,18 +1005,25 @@
       for(const s of sparks){
         ctx.save();
         ctx.globalAlpha = Math.max(s.life,0);
-        const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size*4);
-        g.addColorStop(0, s.color);
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.size*4, 0, Math.PI*2);
-        ctx.fill();
+        if(useMobileRenderer){
+          ctx.fillStyle = s.color;
+          ctx.fillRect(s.x - s.size, s.y - s.size, s.size * 2, s.size * 2);
+        } else {
+          const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size*4);
+          g.addColorStop(0, s.color);
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size*4, 0, Math.PI*2);
+          ctx.fill();
+        }
         ctx.restore();
       }
     }
 
     let last = performance.now();
+    let renderFrames = 0;
+    let renderStatsStarted = performance.now();
     let gamePaused = true;
     let gameStarted = false;
     function loop(){
@@ -937,6 +1036,15 @@
       last = now;
       update(dt);
       draw();
+      renderFrames++;
+      if(now - renderStatsStarted >= 1000){
+        const elapsed = now - renderStatsStarted;
+        canvas.dataset.renderFps = String(Math.round(renderFrames * 1000 / elapsed));
+        canvas.dataset.alienCount = String(aliens.filter(a => a.alive).length);
+        canvas.dataset.leadAlienX = String(Math.round(aliens.find(a => a.alive)?.x || 0));
+        renderFrames = 0;
+        renderStatsStarted = now;
+      }
       requestAnimationFrame(loop);
     }
 
@@ -958,20 +1066,10 @@
     });
 
     function resizeCanvas() {
-      const padding = 32;
-      const maxWidth = Math.max(320, window.innerWidth - padding * 2);
-      const maxHeight = Math.max(320, window.innerHeight - 160);
-      const aspect = 800 / 600;
-      let width = maxWidth;
-      let height = width / aspect;
-      if (height > maxHeight) {
-        height = maxHeight;
-        width = height * aspect;
-      }
-      canvas.width = Math.floor(width);
-      canvas.height = Math.floor(height);
-      player.y = canvas.height - 38;
-      player.x = Math.min(Math.max(player.x, player.w / 2), canvas.width - player.w / 2);
+      const rect = canvas.getBoundingClientRect();
+      canvas.dataset.displaySize = `${Math.round(rect.width)}x${Math.round(rect.height)}`;
+      player.y = GAME_HEIGHT - 38;
+      player.x = Math.min(Math.max(player.x, player.w / 2), GAME_WIDTH - player.w / 2);
     }
 
     const instructionModal = document.getElementById('instruction-modal');
