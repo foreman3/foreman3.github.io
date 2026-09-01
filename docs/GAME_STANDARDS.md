@@ -9,7 +9,7 @@ Create polished, recognizable arcade experiences that are immediately understand
 A new game should:
 
 - teach through its opening play rather than several slow tutorial levels;
-- become meaningfully demanding by level, wave, stage, or phase 3 or 4;
+- build challenge across five meaningful levels, waves, stages, or phases, with the first mastery-grade test at 5;
 - reward mastery through scoring, timing, positioning, routes, combos, resources, or risk;
 - provide clear feedback for success, danger, damage, scoring, transitions, and game over;
 - restart quickly without requiring a page reload unless the game architecture genuinely needs one.
@@ -162,7 +162,14 @@ Do not assume SVG is slow merely because it is SVG. The expensive cases are usua
 
 ## 8. Gameplay Quality
 
-The first segment should be easy enough to learn controls through play, but it must still contain meaningful decisions. Increase challenge quickly through enemy behavior, speed, density, timing windows, resource pressure, terrain, or combined mechanics.
+The first segment should be easy enough to learn controls through play, but it must still contain meaningful decisions. Use a five-step mastery curve instead of front-loading the difficulty spike:
+
+- Level 1 is a forgiving introduction with enough room to learn through mistakes.
+- Levels 2 and 3 add challenge progressively while remaining reasonably accomplishable for a developing player.
+- Level 4 is demanding and should reward strong play, but a skilled player must be able to clear it without near-perfect execution.
+- Level 5 is the first mastery or perfection benchmark. Challenge may continue escalating after it.
+
+Distribute increases in enemy behavior, speed, density, timing windows, resource pressure, terrain, and combined mechanics across that curve. Avoid stacking several major pressure jumps into levels 2 or 3. When converting an older three- or four-step curve, move its former level-3 peak to approximately level 5 and insert gentler intermediate steps.
 
 Before release, tune:
 
@@ -197,13 +204,15 @@ At minimum:
 2. Serve the repository locally rather than opening files directly.
 3. Verify the first-load modal and that gameplay remains paused behind it.
 4. Play the opening segment and confirm controls teach themselves.
-5. Reach or jump to phase 3 or 4 and verify the intended challenge ramp.
-6. Test keyboard controls, mobile controls, restart, pause/help, and sound behavior.
-7. For joysticks, test hold, slide, diagonal input when applicable, return-to-neutral, release, and context-menu suppression.
-8. Inspect desktop and required mobile viewport sizes.
-9. Confirm mobile controls do not overlap the playfield and multi-action controls stack vertically.
-10. Confirm the game and arcade link load without browser console errors.
-11. Capture a clear active-gameplay screenshot for the completion report.
+5. Reach or jump to levels 2 and 3 and verify they progress without an abrupt difficulty wall.
+6. Reach or jump to level 4 and verify a strong player has meaningful miss or recovery margin rather than needing near-perfect execution.
+7. Reach or jump to level 5 and verify it delivers the intended mastery-grade challenge.
+8. Test keyboard controls, mobile controls, restart, pause/help, and sound behavior.
+9. For joysticks, test hold, slide, diagonal input when applicable, return-to-neutral, release, and context-menu suppression.
+10. Inspect desktop and required mobile viewport sizes.
+11. Confirm mobile controls do not overlap the playfield and multi-action controls stack vertically.
+12. Confirm the game and arcade link load without browser console errors.
+13. Capture a clear active-gameplay screenshot for the completion report.
 
 ## 11. Registration and Release
 
@@ -229,7 +238,7 @@ At minimum:
 - Mobile play needs no keyboard.
 - Touch controls appear only on mobile and never cover the playfield.
 - Fullscreen attempt is graceful.
-- Early play is approachable; phase 3 or 4 is challenging.
+- The five-step challenge curve is verified: an approachable level 1, attainable growth through 2 and 3, a demanding but forgiving level 4, and a mastery-grade level 5.
 - Scoring, collisions, restart, audio, and feedback are tuned.
 - Mobile performance profile is appropriate to the renderer.
 - Desktop and mobile browser checks pass without console errors.

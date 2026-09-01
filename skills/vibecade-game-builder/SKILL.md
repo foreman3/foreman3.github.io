@@ -37,7 +37,7 @@ If the current workspace is not the VibeCade repository or the standards file is
 
 ## Build and Improve
 
-Implement a complete playable loop, not a visual prototype. Make the opening teach through play and raise difficulty quickly enough that stage or phase 3 or 4 is genuinely challenging.
+Implement a complete playable loop, not a visual prototype. Make the opening teach through play and tune a five-step mastery curve: level 1 is a forgiving introduction; levels 2 and 3 become progressively harder but remain reasonably accomplishable; level 4 is demanding but clearable by a strong player without near-perfect execution; and level 5 is the first mastery or perfection benchmark. Do not stack several major speed, density, precision, or mechanic jumps into levels 2 or 3. Challenge may continue escalating after level 5.
 
 Follow `docs/GAME_STANDARDS.md` for:
 
@@ -58,7 +58,9 @@ Before publishing, confirm:
 - instructions gate gameplay;
 - keyboard and touch controls, pause/help, restart, and progression work;
 - mobile controls do not overlap the playfield or require a keyboard;
-- phase 3 or 4 reaches the intended challenge;
+- levels 2 and 3 rise progressively without an abrupt difficulty wall;
+- level 4 leaves a strong player meaningful miss or recovery margin;
+- level 5 reaches the intended mastery-grade challenge;
 - an active-gameplay screenshot is saved for the report.
 
 Fetch and compare the remote before committing. If synchronization is safe and publishing was requested, stage only the new directory and registration files, commit descriptively, and push without rewriting history. If it is unsafe, stop with the exact blocker.

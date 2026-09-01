@@ -23,6 +23,13 @@
   const H = 540;
   const HORIZON = 132;
   const PLAYER_Y = 447;
+  const ROUTE_DIFFICULTY = [
+    { quota: 6, routeTime: 32, worldSpeed: 156, targetEvery: 3.08, obstacleEvery: 2, dogChance: 0, doubleChance: 0, dogWeave: .16 },
+    { quota: 7, routeTime: 34, worldSpeed: 164, targetEvery: 3, obstacleEvery: 1.85, dogChance: 0, doubleChance: 0, dogWeave: .17 },
+    { quota: 7, routeTime: 36, worldSpeed: 172, targetEvery: 2.9, obstacleEvery: 1.7, dogChance: .06, doubleChance: 0, dogWeave: .19 },
+    { quota: 8, routeTime: 38, worldSpeed: 184, targetEvery: 2.75, obstacleEvery: 1.52, dogChance: .16, doubleChance: 0, dogWeave: .22 },
+    { quota: 9, routeTime: 36, worldSpeed: 196, targetEvery: 2.63, obstacleEvery: 1.31, dogChance: .28, doubleChance: 0, dogWeave: .255 }
+  ];
   const params = new URLSearchParams(location.search);
   const initialPhase = Math.max(1, Math.min(8, Number(params.get('phase')) || 1));
   const testScenario = params.get('scenario') || '';
@@ -58,7 +65,12 @@
     misses: 0,
     routeTotal: 32,
     routeRemaining: 32,
-    worldSpeed: 150,
+    worldSpeed: ROUTE_DIFFICULTY[0].worldSpeed,
+    targetEvery: ROUTE_DIFFICULTY[0].targetEvery,
+    obstacleEvery: ROUTE_DIFFICULTY[0].obstacleEvery,
+    dogChance: ROUTE_DIFFICULTY[0].dogChance,
+    doubleChance: ROUTE_DIFFICULTY[0].doubleChance,
+    dogWeave: ROUTE_DIFFICULTY[0].dogWeave,
     worldScroll: 0,
     obstacleTimer: 1.3,
     targetTimer: .8,
@@ -84,6 +96,21 @@
     return randomSeed / 4294967296;
   };
   const randomRange = (min, max) => min + (max - min) * random();
+
+  function routeDifficulty(phase) {
+    if (phase <= ROUTE_DIFFICULTY.length) return ROUTE_DIFFICULTY[Math.max(1, phase) - 1];
+    const extra = phase - ROUTE_DIFFICULTY.length;
+    return {
+      quota: 9 + Math.min(4, Math.ceil(extra / 2)),
+      routeTime: 36 + Math.min(4, extra),
+      worldSpeed: 196 + Math.min(6, extra) * 12,
+      targetEvery: Math.max(1.85, 2.63 - extra * .12),
+      obstacleEvery: Math.max(.74, 1.31 - extra * .11),
+      dogChance: Math.min(.42, .28 + extra * .025),
+      doubleChance: Math.min(.3, extra * .06),
+      dogWeave: Math.min(.38, .255 + extra * .02)
+    };
+  }
 
   function roadHalf(y) {
     const depth = clamp((y - HORIZON) / (H - HORIZON), 0, 1);
@@ -155,6 +182,12 @@
     shell.dataset.phase = String(state.phase);
     shell.dataset.playerX = player.x.toFixed(1);
     shell.dataset.routeRemaining = state.routeRemaining.toFixed(2);
+    shell.dataset.quota = String(state.quota);
+    shell.dataset.worldSpeed = String(state.worldSpeed);
+    shell.dataset.targetEvery = String(state.targetEvery);
+    shell.dataset.obstacleEvery = String(state.obstacleEvery);
+    shell.dataset.dogChance = String(state.dogChance);
+    shell.dataset.doubleChance = String(state.doubleChance);
     shell.dataset.targetCount = String(targets.length);
     shell.dataset.hazardCount = String(hazards.length);
     const nextTarget = targets.filter(target => !target.dead && !target.delivered).sort((a, b) => b.y - a.y)[0];
@@ -176,14 +209,20 @@
 
   function startPhase(phase) {
     state.phase = Math.max(1, phase);
-    state.quota = 6 + Math.min(state.phase, 6);
+    const difficulty = routeDifficulty(state.phase);
+    state.quota = difficulty.quota;
     state.delivered = 0;
     state.misses = 0;
     state.combo = 0;
     state.papers = 8;
-    state.routeTotal = 30 + Math.min(state.phase, 5) * 2;
+    state.routeTotal = difficulty.routeTime;
     state.routeRemaining = state.routeTotal;
-    state.worldSpeed = 142 + Math.min(state.phase, 7) * 18;
+    state.worldSpeed = difficulty.worldSpeed;
+    state.targetEvery = difficulty.targetEvery;
+    state.obstacleEvery = difficulty.obstacleEvery;
+    state.dogChance = difficulty.dogChance;
+    state.doubleChance = difficulty.doubleChance;
+    state.dogWeave = difficulty.dogWeave;
     state.obstacleTimer = 1.25;
     state.targetTimer = .7;
     state.bundleTimer = 8;
@@ -211,7 +250,14 @@
       state.delivered = state.quota;
       state.routeRemaining = .35;
     }
-    showMessage(state.phase === 1 ? 'EASY STREET · LEARN THE CURBS' : `ROUTE ${state.phase} · ${state.phase >= 4 ? 'RUSH HOUR' : 'PICK UP THE PACE'}`, 2.2);
+    const routeCallout = state.phase === 1
+      ? 'EASY STREET · LEARN THE CURBS'
+      : state.phase >= 5
+        ? `ROUTE ${state.phase} · MASTERY RUN`
+        : state.phase === 4
+          ? 'ROUTE 4 · PEAK TRAFFIC'
+          : `ROUTE ${state.phase} · PICK UP THE PACE`;
+    showMessage(routeCallout, 2.2);
     announce(`Route ${state.phase}. Deliver ${state.quota} papers.`);
     updateHud();
   }
@@ -245,7 +291,7 @@
     const roll = random();
     let type = forcedType;
     if (!type) {
-      if (state.phase >= 3 && roll < .28) type = 'dog';
+      if (roll < state.dogChance) type = 'dog';
       else if (roll < .56) type = 'car';
       else if (roll < .8) type = 'puddle';
       else type = 'cones';
@@ -426,14 +472,14 @@
     state.targetTimer -= dt;
     if (state.targetTimer <= 0 && state.routeRemaining > 3.5) {
       spawnTarget();
-      state.targetTimer = Math.max(1.85, 3.35 - state.phase * .24) + randomRange(-.2, .35);
+      state.targetTimer = state.targetEvery + randomRange(-.2, .35);
     }
 
     state.obstacleTimer -= dt;
     if (state.obstacleTimer <= 0 && state.routeRemaining > 2) {
       spawnHazard();
-      if (state.phase >= 4 && random() < .24) spawnHazard(random() < .45 ? 'cones' : 'puddle');
-      state.obstacleTimer = Math.max(.74, 2.12 - state.phase * .27) + randomRange(-.12, .26);
+      if (random() < state.doubleChance) spawnHazard(random() < .45 ? 'cones' : 'puddle');
+      state.obstacleTimer = state.obstacleEvery + randomRange(-.12, .26);
     }
 
     state.bundleTimer -= dt;
@@ -461,7 +507,7 @@
       const depth = clamp((hazard.y - HORIZON) / (H - HORIZON), 0, 1);
       hazard.y += state.worldSpeed * dt * (.5 + depth * .68) * (hazard.type === 'dog' ? 1.06 : 1);
       if (hazard.type === 'dog') {
-        const weave = Math.sin(state.worldScroll * .022 + hazard.phase) * (.18 + Math.min(state.phase, 5) * .025);
+        const weave = Math.sin(state.worldScroll * .022 + hazard.phase) * state.dogWeave;
         hazard.lane = clamp(hazard.baseLane + weave, -.88, .88);
       }
       hazard.x = roadX(hazard.lane, hazard.y);
@@ -1167,6 +1213,12 @@
       delivered: state.delivered,
       quota: state.quota,
       routeRemaining: Number(state.routeRemaining.toFixed(2)),
+      routeTotal: state.routeTotal,
+      worldSpeed: state.worldSpeed,
+      targetEvery: state.targetEvery,
+      obstacleEvery: state.obstacleEvery,
+      dogChance: state.dogChance,
+      doubleChance: state.doubleChance,
       targets: targets.length,
       hazards: hazards.length,
       joystick: input.joystick

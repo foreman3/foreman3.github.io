@@ -25,35 +25,46 @@
     {
       name: 'After-School Crowd',
       active: [0, 1, 2],
-      quota: 10,
-      speed: 64,
-      spawnEvery: 1.35,
+      quota: 8,
+      speed: 54,
+      spawnEvery: 1.78,
       maxPerLane: 2,
-      emptySpeed: 340,
-      types: ['regular', 'regular', 'greaser', 'greaser'],
-      callout: 'Three counters. Greasers move fast.'
+      emptySpeed: 305,
+      types: ['regular', 'regular', 'regular', 'greaser'],
+      callout: 'A third counter opens. Greasers join the crowd.'
+    },
+    {
+      name: 'Dinner Build-Up',
+      active: [0, 1, 2],
+      quota: 10,
+      speed: 62,
+      spawnEvery: 1.48,
+      maxPerLane: 2,
+      emptySpeed: 335,
+      types: ['regular', 'regular', 'regular', 'greaser', 'greaser'],
+      callout: 'Three steady counters. Keep the empties organized.'
     },
     {
       name: 'Supper Rush',
       active: [0, 1, 2, 3],
-      quota: 14,
-      speed: 82,
-      spawnEvery: 0.82,
-      maxPerLane: 3,
-      emptySpeed: 410,
-      types: ['regular', 'greaser', 'tourist', 'dancer', 'greaser'],
-      callout: 'All counters live. Tourists need two sodas.'
+      quota: 12,
+      speed: 72,
+      spawnEvery: 1.12,
+      maxPerLane: 2,
+      emptySpeed: 370,
+      types: ['regular', 'regular', 'regular', 'greaser', 'tourist'],
+      callout: 'All counters are live. Tourists need two sodas.'
     },
     {
       name: 'Saturday Stampede',
       active: [0, 1, 2, 3],
-      quota: 18,
-      speed: 105,
-      spawnEvery: 0.55,
-      maxPerLane: 4,
-      emptySpeed: 485,
-      types: ['greaser', 'tourist', 'dancer', 'dancer', 'regular'],
-      callout: 'No quiet counters. No slow glasses.'
+      quota: 14,
+      speed: 82,
+      spawnEvery: 0.86,
+      maxPerLane: 3,
+      emptySpeed: 410,
+      types: ['regular', 'greaser', 'tourist', 'dancer', 'greaser'],
+      callout: 'Mastery shift: every guest type, every counter.'
     }
   ];
 
@@ -180,11 +191,11 @@
       config = {
         name: `Overtime ${extra}`,
         active: [0, 1, 2, 3],
-        quota: 18 + extra * 2,
-        speed: 105 + extra * 8,
-        spawnEvery: Math.max(0.38, 0.55 - extra * 0.025),
-        maxPerLane: 4,
-        emptySpeed: 485 + extra * 24,
+        quota: 14 + extra * 2,
+        speed: 82 + extra * 8,
+        spawnEvery: Math.max(0.5, 0.86 - extra * 0.045),
+        maxPerLane: extra >= 3 ? 4 : 3,
+        emptySpeed: 410 + extra * 22,
         types: ['greaser', 'tourist', 'dancer', 'dancer', 'tourist'],
         callout: 'Overtime: the fountain only gets faster.'
       };
@@ -748,6 +759,9 @@
     gameSvg.dataset.mode = state.mode;
     gameSvg.dataset.phase = String(state.phaseIndex + 1);
     gameSvg.dataset.difficulty = phaseConfig().name;
+    gameSvg.dataset.patronSpeed = String(phaseConfig().speed);
+    gameSvg.dataset.spawnEvery = String(phaseConfig().spawnEvery);
+    gameSvg.dataset.maxPerLane = String(phaseConfig().maxPerLane);
     gameSvg.dataset.served = String(state.served);
     gameSvg.dataset.quota = String(phaseConfig().quota);
     gameSvg.dataset.spawned = String(state.spawned);
@@ -1029,6 +1043,9 @@
       quota: phaseConfig().quota,
       playerLane: player.lane + 1,
       activeLanes: phaseConfig().active.map((lane) => lane + 1),
+      patronSpeed: phaseConfig().speed,
+      spawnEvery: phaseConfig().spawnEvery,
+      maxPerLane: phaseConfig().maxPerLane,
       patrons: patrons.length,
       drinks: drinks.length,
       empties: empties.length,
