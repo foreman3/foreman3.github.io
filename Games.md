@@ -37,3 +37,4 @@ This repository hosts simple arcade-style video games.
 - [Scorched Skies](scorched-earth/) - Artillery duels in the clouds.
 - [Number Munchers](number-munchers/) - Devour correct answers while dodging Troggles.
 - [Soda Shift](soda-shift/) - Serve packed counters, catch empties, and survive the supper rush.
+- [Paper Route Rush](paper-route-rush/) - Dodge morning hazards and land newspapers at marked mailboxes.

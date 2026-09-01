@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#2d6173">
+  <title>Paper Route Rush | VibeCade</title>
+  <link rel="stylesheet" href="../sidebar.css">
+  <link rel="stylesheet" href="../flyout.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="../flyout.js" defer></script>
+</head>
+<body>
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+
+  <button id="help-button" type="button" aria-label="How to play Paper Route Rush">?</button>
+
+  <main id="game-shell" tabindex="0" aria-label="Paper Route Rush. Steer the bicycle and throw newspapers to marked mailboxes.">
+    <canvas id="game" width="960" height="540" aria-label="Paper Route Rush playfield"></canvas>
+    <div id="hud" aria-label="Game status">
+      <div class="hud-card"><span class="hud-label">Score</span><strong id="score">000000</strong></div>
+      <div class="hud-card"><span class="hud-label">Route</span><strong id="phase">1</strong></div>
+      <div class="hud-card wide"><span class="hud-label">Delivered</span><strong><span id="delivered">0</span>/<span id="quota">7</span></strong></div>
+      <div class="hud-card"><span class="hud-label">Papers</span><strong id="papers">8</strong></div>
+      <div class="hud-card"><span class="hud-label">Lives</span><strong id="lives">♥♥♥</strong></div>
+    </div>
+    <div id="route-meter" aria-hidden="true"><span id="route-fill"></span></div>
+    <div id="sound-status" aria-live="polite">SOUND ON · M</div>
+  </main>
+
+  <div id="portrait-note" aria-hidden="true">Rotate for the widest route</div>
+
+  <div id="touch-controls" class="touch-controls" aria-label="Touch controls" aria-hidden="true">
+    <div class="virtual-joystick" data-joystick data-axis="horizontal" role="group" aria-label="Drag left or right to steer">
+      <span class="joystick-mark up">▲</span>
+      <span class="joystick-mark right">▶</span>
+      <span class="joystick-mark down">▼</span>
+      <span class="joystick-mark left">◀</span>
+      <span class="joystick-knob"></span>
+    </div>
+    <div class="actions">
+      <button class="control-button throw-button" type="button" data-action="throw" aria-label="Throw newspaper">
+        <span aria-hidden="true">🗞</span><small>THROW</small>
+      </button>
+    </div>
+  </div>
+
+  <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true" aria-labelledby="instruction-title">
+    <div class="instruction-card">
+      <p class="kicker">Morning edition</p>
+      <h1 id="instruction-title">Paper Route Rush</h1>
+      <p>Steer down the street, dodge neighborhood hazards, and toss papers to the <strong>striped mailboxes</strong>. Ride close to a curb before throwing to choose that side.</p>
+      <div class="instruction-grid">
+        <div><span class="key">← →</span><span class="key">A D</span><b>Steer</b></div>
+        <div><span class="key wide-key">SPACE</span><span class="key">F</span><b>Throw</b></div>
+        <div><span class="key">R</span><b>Restart route</b></div>
+        <div><span class="key">M</span><b>Sound on/off</b></div>
+      </div>
+      <p class="tip"><b>Route tip:</b> bundles refill your bag. Consecutive deliveries build a score multiplier, but route four adds traffic and darting dogs.</p>
+      <button id="instruction-close" type="button">Start the route</button>
+    </div>
+  </div>
+
+  <div id="live-region" class="sr-only" aria-live="polite"></div>
+
+  <script src="game.js" defer></script>
+</body>
+</html>
