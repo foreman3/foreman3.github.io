@@ -812,40 +812,108 @@
     ctx.save();
     ctx.translate(player.x, PLAYER_Y);
     ctx.rotate(player.tilt);
+
+    // Rear-view silhouette: every major bike part converges toward the road's
+    // vanishing point, so the rider reads as traveling away from the camera.
     ctx.fillStyle = 'rgba(23, 42, 50, .28)';
     ctx.beginPath();
-    ctx.ellipse(0, 39, 42, 11, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 40, 31, 9, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    // Narrow, foreshortened wheels: the smaller front tire sits farther up-road.
     ctx.strokeStyle = '#172a32';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.arc(-24, 22, 17, 0, Math.PI * 2);
-    ctx.arc(24, 22, 17, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.strokeStyle = '#ee6b3b';
     ctx.lineWidth = 5;
     ctx.beginPath();
-    ctx.moveTo(-24, 22);
-    ctx.lineTo(0, -2);
-    ctx.lineTo(24, 22);
-    ctx.lineTo(-8, 20);
+    ctx.ellipse(0, -17, 6, 17, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.ellipse(0, 22, 10, 24, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Rear fender and tapered frame rails point straight toward the horizon.
+    ctx.strokeStyle = '#ee6b3b';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 22, 15, Math.PI * 1.12, Math.PI * 1.88);
+    ctx.stroke();
+    ctx.lineWidth = 5;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-6, 22);
+    ctx.lineTo(-9, -5);
+    ctx.lineTo(0, -21);
+    ctx.lineTo(9, -5);
+    ctx.lineTo(6, 22);
     ctx.closePath();
     ctx.stroke();
+
+    // Fork, seat, handlebars, crank, and pedals remain symmetrical from behind.
     ctx.strokeStyle = '#172a32';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(-2, -34); ctx.stroke();
-    ctx.fillStyle = '#f1b07a';
-    ctx.beginPath(); ctx.arc(-2, -52, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#315f79';
-    ctx.beginPath(); ctx.arc(-5, -57, 14, Math.PI, Math.PI * 2); ctx.lineTo(12, -57); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, -22); ctx.lineTo(0, -32);
+    ctx.moveTo(-17, -30); ctx.lineTo(17, -30);
+    ctx.moveTo(-8, -8); ctx.lineTo(8, -8);
+    ctx.moveTo(0, 4); ctx.lineTo(-17, 10);
+    ctx.moveTo(0, 4); ctx.lineTo(17, 10);
+    ctx.stroke();
+
+    // Newspaper satchel rides beside the rear rack instead of defining the bike axis.
     ctx.fillStyle = '#f4c95d';
     ctx.strokeStyle = '#172a32';
     ctx.lineWidth = 4;
-    roundedRect(-38, -24, 27, 30, 4);
-    ctx.fill(); ctx.stroke();
+    roundedRect(-37, -18, 25, 32, 4);
+    ctx.fill();
+    ctx.stroke();
     ctx.fillStyle = '#172a32';
-    ctx.font = '900 9px Arial';
+    ctx.font = '900 8px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('NEWS', -24, -7);
+    ctx.fillText('NEWS', -24.5, 1);
+
+    // Legs straddle the centered frame and lead naturally to the pedals.
+    ctx.strokeStyle = '#315f79';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(-7, -13); ctx.lineTo(-13, 8); ctx.lineTo(-17, 10);
+    ctx.moveTo(7, -13); ctx.lineTo(13, 8); ctx.lineTo(17, 10);
+    ctx.stroke();
+
+    // Back, shoulders, and arms taper toward the handlebars.
+    ctx.fillStyle = '#ee6b3b';
+    ctx.strokeStyle = '#172a32';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-13, -43);
+    ctx.quadraticCurveTo(0, -49, 13, -43);
+    ctx.lineTo(10, -14);
+    ctx.quadraticCurveTo(0, -9, -10, -14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = '#f1b07a';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(-12, -39); ctx.lineTo(-18, -29);
+    ctx.moveTo(12, -39); ctx.lineTo(18, -29);
+    ctx.stroke();
+
+    // Rear of the rider's head and cap complete the away-facing pose.
+    ctx.fillStyle = '#f1b07a';
+    ctx.strokeStyle = '#172a32';
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(0, -55, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#315f79';
+    ctx.beginPath();
+    ctx.arc(0, -58, 13, Math.PI, Math.PI * 2);
+    ctx.lineTo(14, -58);
+    ctx.lineTo(8, -54);
+    ctx.lineTo(-12, -54);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
     ctx.restore();
   }
 
