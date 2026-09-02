@@ -412,7 +412,7 @@
     <div id="instruction-card">
       <h2>How to Play</h2>
       <p>Assemble towering burgers while dodging mischievous food foes.</p>
-      <p>Touch anywhere in the left control rail, then drag to move and climb. Angle diagonally to climb while leaning toward a landing, or make a short turn without lifting. The joystick appears under your thumb and follows long drags. Tap PEP to unleash pepper spray.</p>
+      <p>Touch anywhere in the left control rail, then drag to move and climb. Angle diagonally to climb while leaning toward a landing. Backtrack slightly to release either axis to neutral; keep dragging to reverse it. The joystick appears under your thumb and follows long drags. Tap PEP to unleash pepper spray.</p>
       <p>Walk across all three glowing pressure points on an ingredient to drop it. Carry an enemy for one extra floor, collect condiments, and complete every burger stack.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -1821,6 +1821,7 @@ const bindBurgerDirectionalDrag = () => {
   if (!zone || !joystick || zone.dataset.bound === 'true') return;
 
   const START_THRESHOLD = 14;
+  const AXIS_NEUTRAL_THRESHOLD = 12;
   const DIAGONAL_THRESHOLD = 16;
   const DIAGONAL_RATIO = 0.45;
   const TURN_THRESHOLD = 22;
@@ -1857,9 +1858,10 @@ const bindBurgerDirectionalDrag = () => {
 
   const setDirection = (next, x, y) => {
     if (next === direction) return;
-    if (direction && next) directionChanges += 1;
+    const isGestureTransition = pointerId !== null;
+    if (isGestureTransition && gestureSequence.length) directionChanges += 1;
     direction = next;
-    if (next) gestureSequence.push(next);
+    if (isGestureTransition) gestureSequence.push(next || 'neutral');
     turnAnchor = { x, y };
     zone.dataset.direction = next || 'idle';
     zone.dataset.directionChanges = String(directionChanges);
@@ -1928,6 +1930,21 @@ const bindBurgerDirectionalDrag = () => {
       const dy = y - turnAnchor.y;
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
+      const reverseHorizontal = horizontalDirection === 'right' ? -dx : dx;
+      const reverseVertical = verticalDirection === 'down' ? -dy : dy;
+
+      if (reverseHorizontal >= AXIS_NEUTRAL_THRESHOLD && reverseVertical >= AXIS_NEUTRAL_THRESHOLD) {
+        setDirection('', x, y);
+        return;
+      }
+      if (reverseHorizontal >= AXIS_NEUTRAL_THRESHOLD) {
+        setDirection(verticalDirection, x, y);
+        return;
+      }
+      if (reverseVertical >= AXIS_NEUTRAL_THRESHOLD) {
+        setDirection(horizontalDirection, x, y);
+        return;
+      }
       if (Math.max(absX, absY) < TURN_THRESHOLD) return;
 
       const alongHorizontal = horizontalDirection === 'right' ? dx : -dx;
@@ -1947,10 +1964,10 @@ const bindBurgerDirectionalDrag = () => {
     if (horizontalDirection) {
       const verticalTravel = y - turnAnchor.y;
       const reverseTravel = horizontalDirection === 'right' ? turnAnchor.x - x : x - turnAnchor.x;
-      if (Math.abs(verticalTravel) >= DIAGONAL_THRESHOLD && Math.abs(verticalTravel) >= reverseTravel) {
+      if (reverseTravel >= AXIS_NEUTRAL_THRESHOLD) {
+        setDirection(Math.abs(verticalTravel) >= DIAGONAL_THRESHOLD ? (verticalTravel < 0 ? 'up' : 'down') : '', x, y);
+      } else if (Math.abs(verticalTravel) >= DIAGONAL_THRESHOLD) {
         setDirection(`${horizontalDirection}-${verticalTravel < 0 ? 'up' : 'down'}`, x, y);
-      } else if (reverseTravel >= TURN_THRESHOLD) {
-        setDirection(horizontalDirection === 'right' ? 'left' : 'right', x, y);
       } else if ((horizontalDirection === 'right' && x > turnAnchor.x) || (horizontalDirection === 'left' && x < turnAnchor.x)) {
         turnAnchor.x = x;
       }
@@ -1959,10 +1976,10 @@ const bindBurgerDirectionalDrag = () => {
 
     const horizontalTravel = x - turnAnchor.x;
     const reverseTravel = verticalDirection === 'down' ? turnAnchor.y - y : y - turnAnchor.y;
-    if (Math.abs(horizontalTravel) >= DIAGONAL_THRESHOLD && Math.abs(horizontalTravel) >= reverseTravel) {
+    if (reverseTravel >= AXIS_NEUTRAL_THRESHOLD) {
+      setDirection(Math.abs(horizontalTravel) >= DIAGONAL_THRESHOLD ? (horizontalTravel < 0 ? 'left' : 'right') : '', x, y);
+    } else if (Math.abs(horizontalTravel) >= DIAGONAL_THRESHOLD) {
       setDirection(`${horizontalTravel < 0 ? 'left' : 'right'}-${verticalDirection}`, x, y);
-    } else if (reverseTravel >= TURN_THRESHOLD) {
-      setDirection(verticalDirection === 'down' ? 'up' : 'down', x, y);
     } else if ((verticalDirection === 'down' && y > turnAnchor.y) || (verticalDirection === 'up' && y < turnAnchor.y)) {
       turnAnchor.y = y;
     }
