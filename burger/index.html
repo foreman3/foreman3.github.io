@@ -164,10 +164,10 @@
       opacity: 1;
     }
 
-    .burger-drag-zone[data-direction="up"] .joystick-mark.up,
-    .burger-drag-zone[data-direction="right"] .joystick-mark.right,
-    .burger-drag-zone[data-direction="down"] .joystick-mark.down,
-    .burger-drag-zone[data-direction="left"] .joystick-mark.left {
+    .burger-drag-zone[data-direction*="up"] .joystick-mark.up,
+    .burger-drag-zone[data-direction*="right"] .joystick-mark.right,
+    .burger-drag-zone[data-direction*="down"] .joystick-mark.down,
+    .burger-drag-zone[data-direction*="left"] .joystick-mark.left {
       color: #fff !important;
       text-shadow: 0 0 8px #9cf6ff, 0 0 15px #9cf6ff !important;
     }
@@ -412,7 +412,7 @@
     <div id="instruction-card">
       <h2>How to Play</h2>
       <p>Assemble towering burgers while dodging mischievous food foes.</p>
-      <p>Touch anywhere in the left control rail, then drag to move and climb. The joystick appears under your thumb and follows long drags; a short turn changes direction without lifting. Tap PEP to unleash pepper spray.</p>
+      <p>Touch anywhere in the left control rail, then drag to move and climb. Angle diagonally to climb while leaning toward a landing, or make a short turn without lifting. The joystick appears under your thumb and follows long drags. Tap PEP to unleash pepper spray.</p>
       <p>Walk across all three glowing pressure points on an ingredient to drop it. Carry an enemy for one extra floor, collect condiments, and complete every burger stack.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -428,7 +428,7 @@
       <canvas id="gameCanvas" width="960" height="720" tabindex="0" aria-label="Burger Time playfield"></canvas>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="burger-drag-zone" data-cardinal-drag data-direction="idle" role="group" aria-label="Touch anywhere in this area and drag to run or climb">
+      <div class="burger-drag-zone" data-directional-drag data-direction="idle" role="group" aria-label="Touch anywhere in this area and drag to run, climb, or angle diagonally onto a landing">
         <div class="virtual-joystick" data-joystick aria-hidden="true">
           <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
           <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
@@ -573,6 +573,8 @@ const player = {
   invulnerable: 0,
   climbing: false,
   currentLadder: null,
+  ladderEntryFloor: null,
+  ladderExitLock: null,
   dying: false,
   deathTimer: 0,
   respawnTimer: 0
@@ -869,6 +871,8 @@ function resetActors(options = {}){
   player.invulnerable = 60;
   player.climbing = false;
   player.currentLadder = null;
+  player.ladderEntryFloor = null;
+  player.ladderExitLock = null;
   player.dying = false;
   player.deathTimer = 0;
   player.respawnTimer = options.cooldown ?? 0;
@@ -1127,6 +1131,8 @@ function playerHit(){
   player.vy = 0;
   player.climbing = false;
   player.currentLadder = null;
+  player.ladderEntryFloor = null;
+  player.ladderExitLock = null;
   keys.left = keys.right = keys.up = keys.down = false;
   spawnParticles(player.x + 0.5, player.y - 0.5, '#ff5f6d', 24);
   setLevelMessage(lives > 0 ? 'Chef down!' : 'Last chef down!');
@@ -1239,11 +1245,21 @@ function handlePlayer(step){
   const verticalDirection = keys.up ? -1 : (keys.down ? 1 : 0);
   const nearbyFloor = nearestFloorAt(player.y);
 
+  if(player.ladderExitLock){
+    const playerCenter = player.x + 0.5;
+    const lockedLadderCenter = player.ladderExitLock.x + 0.5;
+    if(!verticalDirection || Math.abs(playerCenter - lockedLadderCenter) > LADDER_ENTRY_TOLERANCE + 0.2){
+      player.ladderExitLock = null;
+    }
+  }
+
   if(!player.climbing && verticalDirection){
     const candidate = ladderForIntent(player, verticalDirection);
-    if(candidate){
+    if(candidate && candidate !== player.ladderExitLock){
       player.climbing = true;
       player.currentLadder = candidate;
+      player.ladderEntryFloor = nearbyFloor ?? null;
+      player.ladderExitLock = null;
       player.vx = 0;
     }
   }
@@ -1257,14 +1273,21 @@ function handlePlayer(step){
     const exitFloor = nearestFloorAt(player.y);
     const reachedTop = player.y <= ladder.top;
     const reachedBottom = player.y >= ladder.bottom;
-    if(horizontalDirection && exitFloor !== undefined){
+    const stillOnEntryFloor = exitFloor !== undefined && player.ladderEntryFloor !== null &&
+      Math.abs(exitFloor - player.ladderEntryFloor) < 0.01;
+    const canExitDiagonally = !stillOnEntryFloor || !verticalDirection;
+    if(horizontalDirection && exitFloor !== undefined && canExitDiagonally){
       player.y = exitFloor;
       player.climbing = false;
       player.currentLadder = null;
+      player.ladderEntryFloor = null;
+      player.ladderExitLock = ladder;
     } else if((verticalDirection < 0 && reachedTop) || (verticalDirection > 0 && reachedBottom)){
       player.y = verticalDirection < 0 ? ladder.top : ladder.bottom;
       player.climbing = false;
       player.currentLadder = null;
+      player.ladderEntryFloor = null;
+      player.ladderExitLock = null;
     } else if(!verticalDirection && exitFloor !== undefined){
       player.y = exitFloor;
     }
@@ -1791,13 +1814,15 @@ document.addEventListener('keyup', e => {
 window.addEventListener('blur', () => Object.keys(keys).forEach(key => { keys[key] = false; }));
 
 const controlButtons = document.querySelectorAll('.control-button');
-const bindBurgerCardinalDrag = () => {
-  const zone = document.querySelector('[data-cardinal-drag]');
+const bindBurgerDirectionalDrag = () => {
+  const zone = document.querySelector('[data-directional-drag]');
   const joystick = zone?.querySelector('[data-joystick]');
   const knob = joystick?.querySelector('.joystick-knob');
   if (!zone || !joystick || zone.dataset.bound === 'true') return;
 
   const START_THRESHOLD = 14;
+  const DIAGONAL_THRESHOLD = 16;
+  const DIAGONAL_RATIO = 0.45;
   const TURN_THRESHOLD = 22;
   const FOLLOW_RADIUS = 48;
   const KNOB_TRAVEL = 29;
@@ -1810,24 +1835,24 @@ const bindBurgerCardinalDrag = () => {
   let gestureSequence = [];
 
   zone.dataset.bound = 'true';
-  zone.dataset.mode = 'floating-follow-cardinal';
+  zone.dataset.mode = 'floating-follow-eight-way';
   zone.dataset.dragActive = 'false';
   zone.dataset.directionChanges = '0';
 
   const setMovement = (next) => {
-    directions.forEach(name => { keys[name] = name === next; });
+    const activeDirections = new Set(next ? next.split('-') : []);
+    directions.forEach(name => { keys[name] = activeDirections.has(name); });
   };
 
   const moveKnob = (next) => {
     if (!knob) return;
-    const offset = {
-      left: [-KNOB_TRAVEL, 0],
-      right: [KNOB_TRAVEL, 0],
-      up: [0, -KNOB_TRAVEL],
-      down: [0, KNOB_TRAVEL],
-      idle: [0, 0]
-    }[next || 'idle'];
-    knob.style.transform = `translate(calc(-50% + ${offset[0]}px), calc(-50% + ${offset[1]}px))`;
+    const activeDirections = new Set(next ? next.split('-') : []);
+    const x = Number(activeDirections.has('right')) - Number(activeDirections.has('left'));
+    const y = Number(activeDirections.has('down')) - Number(activeDirections.has('up'));
+    const magnitude = Math.hypot(x, y) || 1;
+    const offsetX = x / magnitude * KNOB_TRAVEL;
+    const offsetY = y / magnitude * KNOB_TRAVEL;
+    knob.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
   };
 
   const setDirection = (next, x, y) => {
@@ -1876,8 +1901,14 @@ const bindBurgerCardinalDrag = () => {
   };
 
   const chooseInitialDirection = (dx, dy) => {
-    if (Math.abs(dx) >= Math.abs(dy)) return dx < 0 ? 'left' : 'right';
-    return dy < 0 ? 'up' : 'down';
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+    const horizontal = dx < 0 ? 'left' : 'right';
+    const vertical = dy < 0 ? 'up' : 'down';
+    if (Math.min(absX, absY) >= START_THRESHOLD * 0.6 && Math.min(absX, absY) / Math.max(absX, absY) >= DIAGONAL_RATIO) {
+      return `${horizontal}-${vertical}`;
+    }
+    return absX >= absY ? horizontal : vertical;
   };
 
   const updateDirection = (x, y) => {
@@ -1888,26 +1919,51 @@ const bindBurgerCardinalDrag = () => {
       return;
     }
 
-    if (direction === 'left' || direction === 'right') {
+    const activeDirections = direction.split('-');
+    const horizontalDirection = activeDirections.find(name => name === 'left' || name === 'right');
+    const verticalDirection = activeDirections.find(name => name === 'up' || name === 'down');
+
+    if (horizontalDirection && verticalDirection) {
+      const dx = x - turnAnchor.x;
+      const dy = y - turnAnchor.y;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      if (Math.max(absX, absY) < TURN_THRESHOLD) return;
+
+      const alongHorizontal = horizontalDirection === 'right' ? dx : -dx;
+      const alongVertical = verticalDirection === 'down' ? dy : -dy;
+      const continuesDiagonally = alongHorizontal > 0 && alongVertical > 0 &&
+        Math.min(absX, absY) >= Math.max(absX, absY) * DIAGONAL_RATIO;
+      if (continuesDiagonally) {
+        turnAnchor = { x, y };
+      } else if (absX >= absY) {
+        setDirection(dx < 0 ? 'left' : 'right', x, y);
+      } else {
+        setDirection(dy < 0 ? 'up' : 'down', x, y);
+      }
+      return;
+    }
+
+    if (horizontalDirection) {
       const verticalTravel = y - turnAnchor.y;
-      const reverseTravel = direction === 'right' ? turnAnchor.x - x : x - turnAnchor.x;
-      if (Math.abs(verticalTravel) >= TURN_THRESHOLD && Math.abs(verticalTravel) >= reverseTravel) {
-        setDirection(verticalTravel < 0 ? 'up' : 'down', x, y);
+      const reverseTravel = horizontalDirection === 'right' ? turnAnchor.x - x : x - turnAnchor.x;
+      if (Math.abs(verticalTravel) >= DIAGONAL_THRESHOLD && Math.abs(verticalTravel) >= reverseTravel) {
+        setDirection(`${horizontalDirection}-${verticalTravel < 0 ? 'up' : 'down'}`, x, y);
       } else if (reverseTravel >= TURN_THRESHOLD) {
-        setDirection(direction === 'right' ? 'left' : 'right', x, y);
-      } else if ((direction === 'right' && x > turnAnchor.x) || (direction === 'left' && x < turnAnchor.x)) {
+        setDirection(horizontalDirection === 'right' ? 'left' : 'right', x, y);
+      } else if ((horizontalDirection === 'right' && x > turnAnchor.x) || (horizontalDirection === 'left' && x < turnAnchor.x)) {
         turnAnchor.x = x;
       }
       return;
     }
 
     const horizontalTravel = x - turnAnchor.x;
-    const reverseTravel = direction === 'down' ? turnAnchor.y - y : y - turnAnchor.y;
-    if (Math.abs(horizontalTravel) >= TURN_THRESHOLD && Math.abs(horizontalTravel) >= reverseTravel) {
-      setDirection(horizontalTravel < 0 ? 'left' : 'right', x, y);
+    const reverseTravel = verticalDirection === 'down' ? turnAnchor.y - y : y - turnAnchor.y;
+    if (Math.abs(horizontalTravel) >= DIAGONAL_THRESHOLD && Math.abs(horizontalTravel) >= reverseTravel) {
+      setDirection(`${horizontalTravel < 0 ? 'left' : 'right'}-${verticalDirection}`, x, y);
     } else if (reverseTravel >= TURN_THRESHOLD) {
-      setDirection(direction === 'down' ? 'up' : 'down', x, y);
-    } else if ((direction === 'down' && y > turnAnchor.y) || (direction === 'up' && y < turnAnchor.y)) {
+      setDirection(verticalDirection === 'down' ? 'up' : 'down', x, y);
+    } else if ((verticalDirection === 'down' && y > turnAnchor.y) || (verticalDirection === 'up' && y < turnAnchor.y)) {
       turnAnchor.y = y;
     }
   };
@@ -1971,7 +2027,7 @@ const bindBurgerCardinalDrag = () => {
   resetControl();
   requestAnimationFrame(centerIdleJoystick);
 };
-bindBurgerCardinalDrag();
+bindBurgerDirectionalDrag();
 
 if (controlButtons.length && isTouchDevice) {
   controlButtons.forEach((button) => {
