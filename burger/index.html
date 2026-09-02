@@ -138,6 +138,40 @@
       z-index: 4;
     }
 
+    .burger-drag-zone {
+      position: relative;
+      width: 126px;
+      height: 126px;
+      flex: 0 0 126px;
+      pointer-events: auto;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .burger-drag-zone .virtual-joystick {
+      position: absolute !important;
+      left: 50%;
+      top: 50%;
+      margin: 0 !important;
+      opacity: 0.42;
+      transform: translate(-50%, -50%);
+      transition: opacity 120ms ease;
+    }
+
+    .burger-drag-zone .virtual-joystick.is-active {
+      opacity: 1;
+    }
+
+    .burger-drag-zone[data-direction="up"] .joystick-mark.up,
+    .burger-drag-zone[data-direction="right"] .joystick-mark.right,
+    .burger-drag-zone[data-direction="down"] .joystick-mark.down,
+    .burger-drag-zone[data-direction="left"] .joystick-mark.left {
+      color: #fff !important;
+      text-shadow: 0 0 8px #9cf6ff, 0 0 15px #9cf6ff !important;
+    }
+
     .control-cluster {
       display: flex;
       flex-direction: column;
@@ -340,6 +374,20 @@
       width: 11px;
       height: 11px;
     }
+    body.touch-device.vibecade-joystick-rails #touch-controls > .burger-drag-zone.burger-drag-zone {
+      position: relative !important;
+      grid-column: 1 !important;
+      grid-row: 1 !important;
+      align-self: stretch !important;
+      justify-self: stretch !important;
+      width: var(--vibecade-control-rail) !important;
+      height: 100dvh !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+    }
+    body.touch-device.vibecade-joystick-rails .burger-drag-zone .virtual-joystick {
+      position: absolute !important;
+    }
     @media (pointer: fine) {
       #help-button {
         display: flex;
@@ -364,7 +412,7 @@
     <div id="instruction-card">
       <h2>How to Play</h2>
       <p>Assemble towering burgers while dodging mischievous food foes.</p>
-      <p>Drag the joystick to move and climb. Ladders gently pull you into position; slide sideways near a landing to step off. Tap PEP to unleash pepper spray.</p>
+      <p>Touch anywhere in the left control rail, then drag to move and climb. The joystick appears under your thumb and follows long drags; a short turn changes direction without lifting. Tap PEP to unleash pepper spray.</p>
       <p>Walk across all three glowing pressure points on an ingredient to drop it. Carry an enemy for one extra floor, collect condiments, and complete every burger stack.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -380,10 +428,12 @@
       <canvas id="gameCanvas" width="960" height="720" tabindex="0" aria-label="Burger Time playfield"></canvas>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to run and climb">
-        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
-        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
-        <span class="joystick-knob"></span>
+      <div class="burger-drag-zone" data-cardinal-drag data-direction="idle" role="group" aria-label="Touch anywhere in this area and drag to run or climb">
+        <div class="virtual-joystick" data-joystick aria-hidden="true">
+          <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+          <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+          <span class="joystick-knob"></span>
+        </div>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="pepper" aria-label="Throw Pepper">PEP</button>
@@ -394,7 +444,7 @@
       <h2>How to Play</h2>
       <p>
         Assemble towering gourmet burgers while dodging mischievous food foes. Use the
-        <strong>drag joystick</strong> or Arrow Keys to move and climb, and tap <strong>PEP</strong>
+        <strong>floating drag control</strong> or Arrow Keys to move and climb, and tap <strong>PEP</strong>
         or Space to unleash a burst of pepper spray that stuns anything in front of you.
         Ladders magnetize gently when you climb, and a sideways press near a landing
         steps off cleanly. Walk across all three pressure points on each ingredient,
@@ -1741,19 +1791,187 @@ document.addEventListener('keyup', e => {
 window.addEventListener('blur', () => Object.keys(keys).forEach(key => { keys[key] = false; }));
 
 const controlButtons = document.querySelectorAll('.control-button');
-const bindMovementJoystick = () => {
-  if (!window.VibeCadeJoystick) return;
-  window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-    mode: 'cardinal', deadZone: 0.12,
-    onChange: (x, y) => {
-      const next = Math.abs(x) > 0.5 ? (x < 0 ? 'left' : 'right')
-        : Math.abs(y) > 0.5 ? (y < 0 ? 'up' : 'down') : '';
-      ['left', 'right', 'up', 'down'].forEach(direction => { keys[direction] = direction === next; });
+const bindBurgerCardinalDrag = () => {
+  const zone = document.querySelector('[data-cardinal-drag]');
+  const joystick = zone?.querySelector('[data-joystick]');
+  const knob = joystick?.querySelector('.joystick-knob');
+  if (!zone || !joystick || zone.dataset.bound === 'true') return;
+
+  const START_THRESHOLD = 14;
+  const TURN_THRESHOLD = 22;
+  const FOLLOW_RADIUS = 48;
+  const KNOB_TRAVEL = 29;
+  const directions = ['left', 'right', 'up', 'down'];
+  let pointerId = null;
+  let direction = '';
+  let gestureCenter = { x: 0, y: 0 };
+  let turnAnchor = { x: 0, y: 0 };
+  let directionChanges = 0;
+  let gestureSequence = [];
+
+  zone.dataset.bound = 'true';
+  zone.dataset.mode = 'floating-follow-cardinal';
+  zone.dataset.dragActive = 'false';
+  zone.dataset.directionChanges = '0';
+
+  const setMovement = (next) => {
+    directions.forEach(name => { keys[name] = name === next; });
+  };
+
+  const moveKnob = (next) => {
+    if (!knob) return;
+    const offset = {
+      left: [-KNOB_TRAVEL, 0],
+      right: [KNOB_TRAVEL, 0],
+      up: [0, -KNOB_TRAVEL],
+      down: [0, KNOB_TRAVEL],
+      idle: [0, 0]
+    }[next || 'idle'];
+    knob.style.transform = `translate(calc(-50% + ${offset[0]}px), calc(-50% + ${offset[1]}px))`;
+  };
+
+  const setDirection = (next, x, y) => {
+    if (next === direction) return;
+    if (direction && next) directionChanges += 1;
+    direction = next;
+    if (next) gestureSequence.push(next);
+    turnAnchor = { x, y };
+    zone.dataset.direction = next || 'idle';
+    zone.dataset.directionChanges = String(directionChanges);
+    zone.dataset.gestureSequence = gestureSequence.join('>');
+    setMovement(next);
+    moveKnob(next);
+  };
+
+  const placeJoystick = () => {
+    const rect = zone.getBoundingClientRect();
+    const radius = 63;
+    const localX = Math.max(Math.min(radius, rect.width / 2), Math.min(rect.width - Math.min(radius, rect.width / 2), gestureCenter.x - rect.left));
+    const localY = Math.max(Math.min(radius, rect.height / 2), Math.min(rect.height - Math.min(radius, rect.height / 2), gestureCenter.y - rect.top));
+    joystick.style.left = `${localX}px`;
+    joystick.style.top = `${localY}px`;
+    zone.dataset.joystickCenter = `${Math.round(localX)},${Math.round(localY)}`;
+  };
+
+  const resetControl = () => {
+    if (pointerId !== null) {
+      zone.dataset.lastDirectionChanges = String(directionChanges);
+      zone.dataset.lastGestureSequence = gestureSequence.join('>');
     }
-  });
+    pointerId = null;
+    directionChanges = 0;
+    zone.dataset.dragActive = 'false';
+    joystick.classList.remove('is-active');
+    const rect = zone.getBoundingClientRect();
+    gestureCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    placeJoystick();
+    setDirection('', gestureCenter.x, gestureCenter.y);
+  };
+
+  const centerIdleJoystick = () => {
+    if (pointerId !== null) return;
+    const rect = zone.getBoundingClientRect();
+    gestureCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    placeJoystick();
+  };
+
+  const chooseInitialDirection = (dx, dy) => {
+    if (Math.abs(dx) >= Math.abs(dy)) return dx < 0 ? 'left' : 'right';
+    return dy < 0 ? 'up' : 'down';
+  };
+
+  const updateDirection = (x, y) => {
+    if (!direction) {
+      const dx = x - turnAnchor.x;
+      const dy = y - turnAnchor.y;
+      if (Math.hypot(dx, dy) >= START_THRESHOLD) setDirection(chooseInitialDirection(dx, dy), x, y);
+      return;
+    }
+
+    if (direction === 'left' || direction === 'right') {
+      const verticalTravel = y - turnAnchor.y;
+      const reverseTravel = direction === 'right' ? turnAnchor.x - x : x - turnAnchor.x;
+      if (Math.abs(verticalTravel) >= TURN_THRESHOLD && Math.abs(verticalTravel) >= reverseTravel) {
+        setDirection(verticalTravel < 0 ? 'up' : 'down', x, y);
+      } else if (reverseTravel >= TURN_THRESHOLD) {
+        setDirection(direction === 'right' ? 'left' : 'right', x, y);
+      } else if ((direction === 'right' && x > turnAnchor.x) || (direction === 'left' && x < turnAnchor.x)) {
+        turnAnchor.x = x;
+      }
+      return;
+    }
+
+    const horizontalTravel = x - turnAnchor.x;
+    const reverseTravel = direction === 'down' ? turnAnchor.y - y : y - turnAnchor.y;
+    if (Math.abs(horizontalTravel) >= TURN_THRESHOLD && Math.abs(horizontalTravel) >= reverseTravel) {
+      setDirection(horizontalTravel < 0 ? 'left' : 'right', x, y);
+    } else if (reverseTravel >= TURN_THRESHOLD) {
+      setDirection(direction === 'down' ? 'up' : 'down', x, y);
+    } else if ((direction === 'down' && y > turnAnchor.y) || (direction === 'up' && y < turnAnchor.y)) {
+      turnAnchor.y = y;
+    }
+  };
+
+  const updateFollow = (x, y) => {
+    const dx = x - gestureCenter.x;
+    const dy = y - gestureCenter.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance <= FOLLOW_RADIUS) return;
+    const excess = distance - FOLLOW_RADIUS;
+    gestureCenter.x += dx / distance * excess;
+    gestureCenter.y += dy / distance * excess;
+    placeJoystick();
+  };
+
+  const start = (event) => {
+    if (pointerId !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    event.preventDefault();
+    pointerId = event.pointerId;
+    directionChanges = 0;
+    gestureSequence = [];
+    gestureCenter = { x: event.clientX, y: event.clientY };
+    turnAnchor = { ...gestureCenter };
+    zone.dataset.dragActive = 'true';
+    zone.dataset.directionChanges = '0';
+    zone.dataset.gestureSequence = '';
+    zone.dataset.lastStart = `${Math.round(event.clientX)},${Math.round(event.clientY)}`;
+    joystick.classList.add('is-active');
+    setDirection('', event.clientX, event.clientY);
+    placeJoystick();
+    try { zone.setPointerCapture(pointerId); } catch (_) {}
+  };
+
+  const update = (event) => {
+    if (event.pointerId !== pointerId) return;
+    event.preventDefault();
+    updateDirection(event.clientX, event.clientY);
+    updateFollow(event.clientX, event.clientY);
+  };
+
+  const finish = (event) => {
+    if (pointerId === null || (event?.pointerId !== undefined && event.pointerId !== pointerId)) return;
+    const capturedPointer = pointerId;
+    try {
+      if (zone.hasPointerCapture(capturedPointer)) zone.releasePointerCapture(capturedPointer);
+    } catch (_) {}
+    resetControl();
+  };
+
+  zone.addEventListener('pointerdown', start);
+  zone.addEventListener('pointerup', finish);
+  zone.addEventListener('pointercancel', finish);
+  zone.addEventListener('lostpointercapture', finish);
+  zone.addEventListener('contextmenu', event => event.preventDefault());
+  window.addEventListener('pointermove', update, { passive: false });
+  window.addEventListener('pointerup', finish);
+  window.addEventListener('pointercancel', finish);
+  window.addEventListener('blur', resetControl);
+  window.addEventListener('resize', centerIdleJoystick);
+  if ('ResizeObserver' in window) new ResizeObserver(centerIdleJoystick).observe(zone);
+  resetControl();
+  requestAnimationFrame(centerIdleJoystick);
 };
-if (window.VibeCadeJoystick) bindMovementJoystick();
-else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
+bindBurgerCardinalDrag();
 
 if (controlButtons.length && isTouchDevice) {
   controlButtons.forEach((button) => {
