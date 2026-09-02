@@ -171,36 +171,6 @@
       pointer-events: none;
       z-index: 3;
     }
-    .pacman-drag-zone {
-      position: relative;
-      width: 126px;
-      height: 126px;
-      flex: 0 0 126px;
-      pointer-events: auto;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-    .pacman-drag-zone .virtual-joystick {
-      position: absolute !important;
-      left: 50%;
-      top: 50%;
-      margin: 0 !important;
-      opacity: 0.42;
-      transform: translate(-50%, -50%);
-      transition: opacity 120ms ease;
-    }
-    .pacman-drag-zone .virtual-joystick.is-active {
-      opacity: 1;
-    }
-    .pacman-drag-zone[data-direction="up"] .joystick-mark.up,
-    .pacman-drag-zone[data-direction="right"] .joystick-mark.right,
-    .pacman-drag-zone[data-direction="down"] .joystick-mark.down,
-    .pacman-drag-zone[data-direction="left"] .joystick-mark.left {
-      color: #fff !important;
-      text-shadow: 0 0 8px #7eeeff, 0 0 15px #7eeeff !important;
-    }
     .control-cluster {
       display: flex;
       flex-direction: column;
@@ -327,20 +297,6 @@
     body.touch-device.vibecade-joystick-rails #info-panel {
       width: min(var(--vibecade-playfield-width), calc((100dvh - 56px) * 1.17647));
     }
-    body.touch-device.vibecade-joystick-rails #touch-controls > .pacman-drag-zone.pacman-drag-zone {
-      position: relative !important;
-      grid-column: 1 !important;
-      grid-row: 1 !important;
-      align-self: stretch !important;
-      justify-self: stretch !important;
-      width: var(--vibecade-control-rail) !important;
-      height: auto !important;
-      min-width: 0 !important;
-      min-height: 0 !important;
-    }
-    body.touch-device.vibecade-joystick-rails .pacman-drag-zone .virtual-joystick {
-      position: absolute !important;
-    }
     @media (pointer: fine) {
       #info-panel {
         padding-inline: 72px;
@@ -367,7 +323,7 @@
   <div id="instruction-modal" class="is-visible" role="dialog" aria-modal="true">
     <div id="instruction-card">
       <h2>How to Play</h2>
-      <p>Touch anywhere in the left rail and drag to steer, or use Arrow keys or WASD. The floating joystick follows long drags. Backtrack slightly to return to neutral; keep dragging to reverse. Your next turn is remembered, so choose routes early.</p>
+      <p>Move with the drag joystick, Arrow keys, or WASD. Your next turn is remembered, so choose routes early.</p>
       <p>Clear every signal pellet, collect bonus fruit, and use power cores to turn the hunt around. Press M to mute.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -377,12 +333,10 @@
     <h1>Pac-Man Deluxe</h1>
     <canvas id="gameCanvas" width="640" height="544" tabindex="0" aria-label="Neon maze chase playfield"></canvas>
     <div id="touch-controls" aria-hidden="true">
-      <div class="pacman-drag-zone" data-directional-drag data-direction="idle" role="group" aria-label="Touch anywhere in this area and drag to steer Pac-Man">
-        <div class="virtual-joystick" data-joystick aria-hidden="true">
-          <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
-          <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
-          <span class="joystick-knob"></span>
-        </div>
+      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to move and turn">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
     </div>
     <div id="info-panel">
@@ -1852,203 +1806,23 @@ if (helpButton) {
   helpButton.addEventListener('click', showInstructions);
 }
 
-function bindPacmanDirectionalDrag() {
-  const zone = document.querySelector('[data-directional-drag]');
-  const joystick = zone?.querySelector('[data-joystick]');
-  const knob = joystick?.querySelector('.joystick-knob');
-  if (!zone || !joystick || zone.dataset.bound === 'true') return;
-
-  const START_THRESHOLD = 14;
-  const AXIS_NEUTRAL_THRESHOLD = 12;
-  const TURN_THRESHOLD = 16;
-  const FOLLOW_RADIUS = 48;
-  const KNOB_TRAVEL = 29;
-  const directionVectors = {
-    left: { x: -1, y: 0 },
-    right: { x: 1, y: 0 },
-    up: { x: 0, y: -1 },
-    down: { x: 0, y: 1 }
-  };
-  let pointerId = null;
-  let direction = '';
-  let gestureCenter = { x: 0, y: 0 };
-  let turnAnchor = { x: 0, y: 0 };
-  let directionChanges = 0;
-  let gestureSequence = [];
-
-  zone.dataset.bound = 'true';
-  zone.dataset.mode = 'floating-follow-cardinal-neutral';
-  zone.dataset.dragActive = 'false';
-  zone.dataset.directionChanges = '0';
-
-  const applyDirection = (next) => {
-    if (gamePaused) return;
-    if (next) {
-      queueDirection(directionVectors[next]);
-      ensureAudio();
-    } else {
-      pacman.nextDir = { ...pacman.dir };
-      pacman.bufferTimer = 0;
+function bindMovementJoystick() {
+  if (!window.VibeCadeJoystick) return;
+  const joystick = document.querySelector('[data-joystick]');
+  window.VibeCadeJoystick(joystick, {
+    mode: 'cardinal',
+    deadZone: 0.14,
+    onChange(x, y) {
+      if (gamePaused) return;
+      const key = Math.abs(x) > 0.5
+        ? (x < 0 ? 'ArrowLeft' : 'ArrowRight')
+        : Math.abs(y) > 0.5 ? (y < 0 ? 'ArrowUp' : 'ArrowDown') : '';
+      if (key) dispatchKeyEvent(key, key, 'keydown');
     }
-  };
-
-  const moveKnob = (next) => {
-    if (!knob) return;
-    const offset = {
-      left: [-KNOB_TRAVEL, 0],
-      right: [KNOB_TRAVEL, 0],
-      up: [0, -KNOB_TRAVEL],
-      down: [0, KNOB_TRAVEL],
-      idle: [0, 0]
-    }[next || 'idle'];
-    knob.style.transform = `translate(calc(-50% + ${offset[0]}px), calc(-50% + ${offset[1]}px))`;
-  };
-
-  const setDirection = (next, x, y) => {
-    if (next === direction) return;
-    const isGestureTransition = pointerId !== null;
-    if (isGestureTransition && gestureSequence.length) directionChanges += 1;
-    direction = next;
-    if (isGestureTransition) gestureSequence.push(next || 'neutral');
-    turnAnchor = { x, y };
-    zone.dataset.direction = next || 'idle';
-    zone.dataset.directionChanges = String(directionChanges);
-    zone.dataset.gestureSequence = gestureSequence.join('>');
-    moveKnob(next);
-    if (isGestureTransition) applyDirection(next);
-  };
-
-  const placeJoystick = () => {
-    const rect = zone.getBoundingClientRect();
-    const radius = 63;
-    const horizontalInset = Math.min(radius, rect.width / 2);
-    const verticalInset = Math.min(radius, rect.height / 2);
-    const localX = Math.max(horizontalInset, Math.min(rect.width - horizontalInset, gestureCenter.x - rect.left));
-    const localY = Math.max(verticalInset, Math.min(rect.height - verticalInset, gestureCenter.y - rect.top));
-    joystick.style.left = `${localX}px`;
-    joystick.style.top = `${localY}px`;
-    zone.dataset.joystickCenter = `${Math.round(localX)},${Math.round(localY)}`;
-  };
-
-  const resetControl = () => {
-    if (pointerId !== null) {
-      zone.dataset.lastDirectionChanges = String(directionChanges);
-      zone.dataset.lastGestureSequence = gestureSequence.join('>');
-    }
-    pointerId = null;
-    directionChanges = 0;
-    zone.dataset.dragActive = 'false';
-    joystick.classList.remove('is-active');
-    const rect = zone.getBoundingClientRect();
-    gestureCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    placeJoystick();
-    setDirection('', gestureCenter.x, gestureCenter.y);
-  };
-
-  const centerIdleJoystick = () => {
-    if (pointerId !== null) return;
-    const rect = zone.getBoundingClientRect();
-    gestureCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    placeJoystick();
-  };
-
-  const chooseDirection = (dx, dy) => {
-    if (Math.abs(dx) >= Math.abs(dy)) return dx < 0 ? 'left' : 'right';
-    return dy < 0 ? 'up' : 'down';
-  };
-
-  const updateDirection = (x, y) => {
-    if (!direction) {
-      const dx = x - turnAnchor.x;
-      const dy = y - turnAnchor.y;
-      if (Math.hypot(dx, dy) >= START_THRESHOLD) setDirection(chooseDirection(dx, dy), x, y);
-      return;
-    }
-
-    if (direction === 'left' || direction === 'right') {
-      const verticalTravel = y - turnAnchor.y;
-      const reverseTravel = direction === 'right' ? turnAnchor.x - x : x - turnAnchor.x;
-      if (Math.abs(verticalTravel) >= TURN_THRESHOLD && Math.abs(verticalTravel) > reverseTravel) {
-        setDirection(verticalTravel < 0 ? 'up' : 'down', x, y);
-      } else if (reverseTravel >= AXIS_NEUTRAL_THRESHOLD) {
-        setDirection('', x, y);
-      } else if ((direction === 'right' && x > turnAnchor.x) || (direction === 'left' && x < turnAnchor.x)) {
-        turnAnchor.x = x;
-      }
-      return;
-    }
-
-    const horizontalTravel = x - turnAnchor.x;
-    const reverseTravel = direction === 'down' ? turnAnchor.y - y : y - turnAnchor.y;
-    if (Math.abs(horizontalTravel) >= TURN_THRESHOLD && Math.abs(horizontalTravel) > reverseTravel) {
-      setDirection(horizontalTravel < 0 ? 'left' : 'right', x, y);
-    } else if (reverseTravel >= AXIS_NEUTRAL_THRESHOLD) {
-      setDirection('', x, y);
-    } else if ((direction === 'down' && y > turnAnchor.y) || (direction === 'up' && y < turnAnchor.y)) {
-      turnAnchor.y = y;
-    }
-  };
-
-  const updateFollow = (x, y) => {
-    const dx = x - gestureCenter.x;
-    const dy = y - gestureCenter.y;
-    const distance = Math.hypot(dx, dy);
-    if (distance <= FOLLOW_RADIUS) return;
-    const excess = distance - FOLLOW_RADIUS;
-    gestureCenter.x += dx / distance * excess;
-    gestureCenter.y += dy / distance * excess;
-    placeJoystick();
-  };
-
-  const start = (event) => {
-    if (pointerId !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
-    event.preventDefault();
-    pointerId = event.pointerId;
-    directionChanges = 0;
-    gestureSequence = [];
-    gestureCenter = { x: event.clientX, y: event.clientY };
-    turnAnchor = { ...gestureCenter };
-    zone.dataset.dragActive = 'true';
-    zone.dataset.directionChanges = '0';
-    zone.dataset.gestureSequence = '';
-    zone.dataset.lastStart = `${Math.round(event.clientX)},${Math.round(event.clientY)}`;
-    joystick.classList.add('is-active');
-    setDirection('', event.clientX, event.clientY);
-    placeJoystick();
-    try { zone.setPointerCapture(pointerId); } catch (_) {}
-  };
-
-  const update = (event) => {
-    if (event.pointerId !== pointerId) return;
-    event.preventDefault();
-    updateDirection(event.clientX, event.clientY);
-    updateFollow(event.clientX, event.clientY);
-  };
-
-  const finish = (event) => {
-    if (pointerId === null || (event?.pointerId !== undefined && event.pointerId !== pointerId)) return;
-    const capturedPointer = pointerId;
-    try {
-      if (zone.hasPointerCapture(capturedPointer)) zone.releasePointerCapture(capturedPointer);
-    } catch (_) {}
-    resetControl();
-  };
-
-  zone.addEventListener('pointerdown', start);
-  zone.addEventListener('pointerup', finish);
-  zone.addEventListener('pointercancel', finish);
-  zone.addEventListener('lostpointercapture', finish);
-  zone.addEventListener('contextmenu', event => event.preventDefault());
-  window.addEventListener('pointermove', update, { passive: false });
-  window.addEventListener('pointerup', finish);
-  window.addEventListener('pointercancel', finish);
-  window.addEventListener('blur', resetControl);
-  window.addEventListener('resize', centerIdleJoystick);
-  if ('ResizeObserver' in window) new ResizeObserver(centerIdleJoystick).observe(zone);
-  resetControl();
-  requestAnimationFrame(centerIdleJoystick);
+  });
 }
-bindPacmanDirectionalDrag();
+if (window.VibeCadeJoystick) bindMovementJoystick();
+else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
 
 function dispatchKeyEvent(key, code, type) {
   const event = new KeyboardEvent(type, { key, code, bubbles: true });

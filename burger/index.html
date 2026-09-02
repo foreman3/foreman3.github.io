@@ -138,40 +138,6 @@
       z-index: 4;
     }
 
-    .burger-drag-zone {
-      position: relative;
-      width: 126px;
-      height: 126px;
-      flex: 0 0 126px;
-      pointer-events: auto;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-
-    .burger-drag-zone .virtual-joystick {
-      position: absolute !important;
-      left: 50%;
-      top: 50%;
-      margin: 0 !important;
-      opacity: 0.42;
-      transform: translate(-50%, -50%);
-      transition: opacity 120ms ease;
-    }
-
-    .burger-drag-zone .virtual-joystick.is-active {
-      opacity: 1;
-    }
-
-    .burger-drag-zone[data-direction*="up"] .joystick-mark.up,
-    .burger-drag-zone[data-direction*="right"] .joystick-mark.right,
-    .burger-drag-zone[data-direction*="down"] .joystick-mark.down,
-    .burger-drag-zone[data-direction*="left"] .joystick-mark.left {
-      color: #fff !important;
-      text-shadow: 0 0 8px #9cf6ff, 0 0 15px #9cf6ff !important;
-    }
-
     .control-cluster {
       display: flex;
       flex-direction: column;
@@ -374,20 +340,6 @@
       width: 11px;
       height: 11px;
     }
-    body.touch-device.vibecade-joystick-rails #touch-controls > .burger-drag-zone.burger-drag-zone {
-      position: relative !important;
-      grid-column: 1 !important;
-      grid-row: 1 !important;
-      align-self: stretch !important;
-      justify-self: stretch !important;
-      width: var(--vibecade-control-rail) !important;
-      height: 100dvh !important;
-      min-width: 0 !important;
-      min-height: 0 !important;
-    }
-    body.touch-device.vibecade-joystick-rails .burger-drag-zone .virtual-joystick {
-      position: absolute !important;
-    }
     @media (pointer: fine) {
       #help-button {
         display: flex;
@@ -412,7 +364,7 @@
     <div id="instruction-card">
       <h2>How to Play</h2>
       <p>Assemble towering burgers while dodging mischievous food foes.</p>
-      <p>Touch anywhere in the left control rail, then drag to move and climb. Angle diagonally to climb while leaning toward a landing. Backtrack slightly to release either axis to neutral; keep dragging to reverse it. The joystick appears under your thumb and follows long drags. Tap PEP to unleash pepper spray.</p>
+      <p>Drag the joystick to move and climb. Ladders gently pull you into position; slide sideways near a landing to step off. Tap PEP to unleash pepper spray.</p>
       <p>Walk across all three glowing pressure points on an ingredient to drop it. Carry an enemy for one extra floor, collect condiments, and complete every burger stack.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -428,12 +380,10 @@
       <canvas id="gameCanvas" width="960" height="720" tabindex="0" aria-label="Burger Time playfield"></canvas>
     </div>
     <div id="touch-controls" aria-hidden="true">
-      <div class="burger-drag-zone" data-directional-drag data-direction="idle" role="group" aria-label="Touch anywhere in this area and drag to run, climb, or angle diagonally onto a landing">
-        <div class="virtual-joystick" data-joystick aria-hidden="true">
-          <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
-          <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
-          <span class="joystick-knob"></span>
-        </div>
+      <div class="virtual-joystick" data-joystick role="group" aria-label="Drag joystick to run and climb">
+        <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+        <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+        <span class="joystick-knob"></span>
       </div>
       <div class="control-cluster">
         <button type="button" class="control-button" data-action="pepper" aria-label="Throw Pepper">PEP</button>
@@ -444,7 +394,7 @@
       <h2>How to Play</h2>
       <p>
         Assemble towering gourmet burgers while dodging mischievous food foes. Use the
-        <strong>floating drag control</strong> or Arrow Keys to move and climb, and tap <strong>PEP</strong>
+        <strong>drag joystick</strong> or Arrow Keys to move and climb, and tap <strong>PEP</strong>
         or Space to unleash a burst of pepper spray that stuns anything in front of you.
         Ladders magnetize gently when you climb, and a sideways press near a landing
         steps off cleanly. Walk across all three pressure points on each ingredient,
@@ -573,8 +523,6 @@ const player = {
   invulnerable: 0,
   climbing: false,
   currentLadder: null,
-  ladderEntryFloor: null,
-  ladderExitLock: null,
   dying: false,
   deathTimer: 0,
   respawnTimer: 0
@@ -871,8 +819,6 @@ function resetActors(options = {}){
   player.invulnerable = 60;
   player.climbing = false;
   player.currentLadder = null;
-  player.ladderEntryFloor = null;
-  player.ladderExitLock = null;
   player.dying = false;
   player.deathTimer = 0;
   player.respawnTimer = options.cooldown ?? 0;
@@ -1131,8 +1077,6 @@ function playerHit(){
   player.vy = 0;
   player.climbing = false;
   player.currentLadder = null;
-  player.ladderEntryFloor = null;
-  player.ladderExitLock = null;
   keys.left = keys.right = keys.up = keys.down = false;
   spawnParticles(player.x + 0.5, player.y - 0.5, '#ff5f6d', 24);
   setLevelMessage(lives > 0 ? 'Chef down!' : 'Last chef down!');
@@ -1245,21 +1189,11 @@ function handlePlayer(step){
   const verticalDirection = keys.up ? -1 : (keys.down ? 1 : 0);
   const nearbyFloor = nearestFloorAt(player.y);
 
-  if(player.ladderExitLock){
-    const playerCenter = player.x + 0.5;
-    const lockedLadderCenter = player.ladderExitLock.x + 0.5;
-    if(!verticalDirection || Math.abs(playerCenter - lockedLadderCenter) > LADDER_ENTRY_TOLERANCE + 0.2){
-      player.ladderExitLock = null;
-    }
-  }
-
   if(!player.climbing && verticalDirection){
     const candidate = ladderForIntent(player, verticalDirection);
-    if(candidate && candidate !== player.ladderExitLock){
+    if(candidate){
       player.climbing = true;
       player.currentLadder = candidate;
-      player.ladderEntryFloor = nearbyFloor ?? null;
-      player.ladderExitLock = null;
       player.vx = 0;
     }
   }
@@ -1273,21 +1207,14 @@ function handlePlayer(step){
     const exitFloor = nearestFloorAt(player.y);
     const reachedTop = player.y <= ladder.top;
     const reachedBottom = player.y >= ladder.bottom;
-    const stillOnEntryFloor = exitFloor !== undefined && player.ladderEntryFloor !== null &&
-      Math.abs(exitFloor - player.ladderEntryFloor) < 0.01;
-    const canExitDiagonally = !stillOnEntryFloor || !verticalDirection;
-    if(horizontalDirection && exitFloor !== undefined && canExitDiagonally){
+    if(horizontalDirection && exitFloor !== undefined){
       player.y = exitFloor;
       player.climbing = false;
       player.currentLadder = null;
-      player.ladderEntryFloor = null;
-      player.ladderExitLock = ladder;
     } else if((verticalDirection < 0 && reachedTop) || (verticalDirection > 0 && reachedBottom)){
       player.y = verticalDirection < 0 ? ladder.top : ladder.bottom;
       player.climbing = false;
       player.currentLadder = null;
-      player.ladderEntryFloor = null;
-      player.ladderExitLock = null;
     } else if(!verticalDirection && exitFloor !== undefined){
       player.y = exitFloor;
     }
@@ -1814,237 +1741,19 @@ document.addEventListener('keyup', e => {
 window.addEventListener('blur', () => Object.keys(keys).forEach(key => { keys[key] = false; }));
 
 const controlButtons = document.querySelectorAll('.control-button');
-const bindBurgerDirectionalDrag = () => {
-  const zone = document.querySelector('[data-directional-drag]');
-  const joystick = zone?.querySelector('[data-joystick]');
-  const knob = joystick?.querySelector('.joystick-knob');
-  if (!zone || !joystick || zone.dataset.bound === 'true') return;
-
-  const START_THRESHOLD = 14;
-  const AXIS_NEUTRAL_THRESHOLD = 12;
-  const DIAGONAL_THRESHOLD = 16;
-  const DIAGONAL_RATIO = 0.45;
-  const TURN_THRESHOLD = 22;
-  const FOLLOW_RADIUS = 48;
-  const KNOB_TRAVEL = 29;
-  const directions = ['left', 'right', 'up', 'down'];
-  let pointerId = null;
-  let direction = '';
-  let gestureCenter = { x: 0, y: 0 };
-  let turnAnchor = { x: 0, y: 0 };
-  let directionChanges = 0;
-  let gestureSequence = [];
-
-  zone.dataset.bound = 'true';
-  zone.dataset.mode = 'floating-follow-eight-way';
-  zone.dataset.dragActive = 'false';
-  zone.dataset.directionChanges = '0';
-
-  const setMovement = (next) => {
-    const activeDirections = new Set(next ? next.split('-') : []);
-    directions.forEach(name => { keys[name] = activeDirections.has(name); });
-  };
-
-  const moveKnob = (next) => {
-    if (!knob) return;
-    const activeDirections = new Set(next ? next.split('-') : []);
-    const x = Number(activeDirections.has('right')) - Number(activeDirections.has('left'));
-    const y = Number(activeDirections.has('down')) - Number(activeDirections.has('up'));
-    const magnitude = Math.hypot(x, y) || 1;
-    const offsetX = x / magnitude * KNOB_TRAVEL;
-    const offsetY = y / magnitude * KNOB_TRAVEL;
-    knob.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
-  };
-
-  const setDirection = (next, x, y) => {
-    if (next === direction) return;
-    const isGestureTransition = pointerId !== null;
-    if (isGestureTransition && gestureSequence.length) directionChanges += 1;
-    direction = next;
-    if (isGestureTransition) gestureSequence.push(next || 'neutral');
-    turnAnchor = { x, y };
-    zone.dataset.direction = next || 'idle';
-    zone.dataset.directionChanges = String(directionChanges);
-    zone.dataset.gestureSequence = gestureSequence.join('>');
-    setMovement(next);
-    moveKnob(next);
-  };
-
-  const placeJoystick = () => {
-    const rect = zone.getBoundingClientRect();
-    const radius = 63;
-    const localX = Math.max(Math.min(radius, rect.width / 2), Math.min(rect.width - Math.min(radius, rect.width / 2), gestureCenter.x - rect.left));
-    const localY = Math.max(Math.min(radius, rect.height / 2), Math.min(rect.height - Math.min(radius, rect.height / 2), gestureCenter.y - rect.top));
-    joystick.style.left = `${localX}px`;
-    joystick.style.top = `${localY}px`;
-    zone.dataset.joystickCenter = `${Math.round(localX)},${Math.round(localY)}`;
-  };
-
-  const resetControl = () => {
-    if (pointerId !== null) {
-      zone.dataset.lastDirectionChanges = String(directionChanges);
-      zone.dataset.lastGestureSequence = gestureSequence.join('>');
+const bindMovementJoystick = () => {
+  if (!window.VibeCadeJoystick) return;
+  window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+    mode: 'cardinal', deadZone: 0.12,
+    onChange: (x, y) => {
+      const next = Math.abs(x) > 0.5 ? (x < 0 ? 'left' : 'right')
+        : Math.abs(y) > 0.5 ? (y < 0 ? 'up' : 'down') : '';
+      ['left', 'right', 'up', 'down'].forEach(direction => { keys[direction] = direction === next; });
     }
-    pointerId = null;
-    directionChanges = 0;
-    zone.dataset.dragActive = 'false';
-    joystick.classList.remove('is-active');
-    const rect = zone.getBoundingClientRect();
-    gestureCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    placeJoystick();
-    setDirection('', gestureCenter.x, gestureCenter.y);
-  };
-
-  const centerIdleJoystick = () => {
-    if (pointerId !== null) return;
-    const rect = zone.getBoundingClientRect();
-    gestureCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    placeJoystick();
-  };
-
-  const chooseInitialDirection = (dx, dy) => {
-    const absX = Math.abs(dx);
-    const absY = Math.abs(dy);
-    const horizontal = dx < 0 ? 'left' : 'right';
-    const vertical = dy < 0 ? 'up' : 'down';
-    if (Math.min(absX, absY) >= START_THRESHOLD * 0.6 && Math.min(absX, absY) / Math.max(absX, absY) >= DIAGONAL_RATIO) {
-      return `${horizontal}-${vertical}`;
-    }
-    return absX >= absY ? horizontal : vertical;
-  };
-
-  const updateDirection = (x, y) => {
-    if (!direction) {
-      const dx = x - turnAnchor.x;
-      const dy = y - turnAnchor.y;
-      if (Math.hypot(dx, dy) >= START_THRESHOLD) setDirection(chooseInitialDirection(dx, dy), x, y);
-      return;
-    }
-
-    const activeDirections = direction.split('-');
-    const horizontalDirection = activeDirections.find(name => name === 'left' || name === 'right');
-    const verticalDirection = activeDirections.find(name => name === 'up' || name === 'down');
-
-    if (horizontalDirection && verticalDirection) {
-      const dx = x - turnAnchor.x;
-      const dy = y - turnAnchor.y;
-      const absX = Math.abs(dx);
-      const absY = Math.abs(dy);
-      const reverseHorizontal = horizontalDirection === 'right' ? -dx : dx;
-      const reverseVertical = verticalDirection === 'down' ? -dy : dy;
-
-      if (reverseHorizontal >= AXIS_NEUTRAL_THRESHOLD && reverseVertical >= AXIS_NEUTRAL_THRESHOLD) {
-        setDirection('', x, y);
-        return;
-      }
-      if (reverseHorizontal >= AXIS_NEUTRAL_THRESHOLD) {
-        setDirection(verticalDirection, x, y);
-        return;
-      }
-      if (reverseVertical >= AXIS_NEUTRAL_THRESHOLD) {
-        setDirection(horizontalDirection, x, y);
-        return;
-      }
-      if (Math.max(absX, absY) < TURN_THRESHOLD) return;
-
-      const alongHorizontal = horizontalDirection === 'right' ? dx : -dx;
-      const alongVertical = verticalDirection === 'down' ? dy : -dy;
-      const continuesDiagonally = alongHorizontal > 0 && alongVertical > 0 &&
-        Math.min(absX, absY) >= Math.max(absX, absY) * DIAGONAL_RATIO;
-      if (continuesDiagonally) {
-        turnAnchor = { x, y };
-      } else if (absX >= absY) {
-        setDirection(dx < 0 ? 'left' : 'right', x, y);
-      } else {
-        setDirection(dy < 0 ? 'up' : 'down', x, y);
-      }
-      return;
-    }
-
-    if (horizontalDirection) {
-      const verticalTravel = y - turnAnchor.y;
-      const reverseTravel = horizontalDirection === 'right' ? turnAnchor.x - x : x - turnAnchor.x;
-      if (reverseTravel >= AXIS_NEUTRAL_THRESHOLD) {
-        setDirection(Math.abs(verticalTravel) >= DIAGONAL_THRESHOLD ? (verticalTravel < 0 ? 'up' : 'down') : '', x, y);
-      } else if (Math.abs(verticalTravel) >= DIAGONAL_THRESHOLD) {
-        setDirection(`${horizontalDirection}-${verticalTravel < 0 ? 'up' : 'down'}`, x, y);
-      } else if ((horizontalDirection === 'right' && x > turnAnchor.x) || (horizontalDirection === 'left' && x < turnAnchor.x)) {
-        turnAnchor.x = x;
-      }
-      return;
-    }
-
-    const horizontalTravel = x - turnAnchor.x;
-    const reverseTravel = verticalDirection === 'down' ? turnAnchor.y - y : y - turnAnchor.y;
-    if (reverseTravel >= AXIS_NEUTRAL_THRESHOLD) {
-      setDirection(Math.abs(horizontalTravel) >= DIAGONAL_THRESHOLD ? (horizontalTravel < 0 ? 'left' : 'right') : '', x, y);
-    } else if (Math.abs(horizontalTravel) >= DIAGONAL_THRESHOLD) {
-      setDirection(`${horizontalTravel < 0 ? 'left' : 'right'}-${verticalDirection}`, x, y);
-    } else if ((verticalDirection === 'down' && y > turnAnchor.y) || (verticalDirection === 'up' && y < turnAnchor.y)) {
-      turnAnchor.y = y;
-    }
-  };
-
-  const updateFollow = (x, y) => {
-    const dx = x - gestureCenter.x;
-    const dy = y - gestureCenter.y;
-    const distance = Math.hypot(dx, dy);
-    if (distance <= FOLLOW_RADIUS) return;
-    const excess = distance - FOLLOW_RADIUS;
-    gestureCenter.x += dx / distance * excess;
-    gestureCenter.y += dy / distance * excess;
-    placeJoystick();
-  };
-
-  const start = (event) => {
-    if (pointerId !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
-    event.preventDefault();
-    pointerId = event.pointerId;
-    directionChanges = 0;
-    gestureSequence = [];
-    gestureCenter = { x: event.clientX, y: event.clientY };
-    turnAnchor = { ...gestureCenter };
-    zone.dataset.dragActive = 'true';
-    zone.dataset.directionChanges = '0';
-    zone.dataset.gestureSequence = '';
-    zone.dataset.lastStart = `${Math.round(event.clientX)},${Math.round(event.clientY)}`;
-    joystick.classList.add('is-active');
-    setDirection('', event.clientX, event.clientY);
-    placeJoystick();
-    try { zone.setPointerCapture(pointerId); } catch (_) {}
-  };
-
-  const update = (event) => {
-    if (event.pointerId !== pointerId) return;
-    event.preventDefault();
-    updateDirection(event.clientX, event.clientY);
-    updateFollow(event.clientX, event.clientY);
-  };
-
-  const finish = (event) => {
-    if (pointerId === null || (event?.pointerId !== undefined && event.pointerId !== pointerId)) return;
-    const capturedPointer = pointerId;
-    try {
-      if (zone.hasPointerCapture(capturedPointer)) zone.releasePointerCapture(capturedPointer);
-    } catch (_) {}
-    resetControl();
-  };
-
-  zone.addEventListener('pointerdown', start);
-  zone.addEventListener('pointerup', finish);
-  zone.addEventListener('pointercancel', finish);
-  zone.addEventListener('lostpointercapture', finish);
-  zone.addEventListener('contextmenu', event => event.preventDefault());
-  window.addEventListener('pointermove', update, { passive: false });
-  window.addEventListener('pointerup', finish);
-  window.addEventListener('pointercancel', finish);
-  window.addEventListener('blur', resetControl);
-  window.addEventListener('resize', centerIdleJoystick);
-  if ('ResizeObserver' in window) new ResizeObserver(centerIdleJoystick).observe(zone);
-  resetControl();
-  requestAnimationFrame(centerIdleJoystick);
+  });
 };
-bindBurgerDirectionalDrag();
+if (window.VibeCadeJoystick) bindMovementJoystick();
+else window.addEventListener('vibecade-controls-ready', bindMovementJoystick, { once: true });
 
 if (controlButtons.length && isTouchDevice) {
   controlButtons.forEach((button) => {
