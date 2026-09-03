@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Lunar Lander | VibeCade</title>
+  <meta name="theme-color" content="#080b0d">
+  <link rel="stylesheet" href="../flyout.css">
+  <script src="../flyout.js" defer></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f3bd5c;
+      --ink-soft: #b98238;
+      --panel: #121518;
+      --edge: rgba(243, 189, 92, .46);
+      --danger: #ff765f;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body {
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(116, 78, 28, .13), transparent 44%),
+        linear-gradient(145deg, #111417, #050607 70%);
+      color: var(--ink);
+      font-family: "Courier New", Consolas, monospace;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+      opacity: .18;
+      background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, .28) 4px);
+    }
+    #flyout-nav { z-index: 80; }
+    .cabinet {
+      position: relative;
+      width: min(96vw, calc(92vh * 1.6));
+      aspect-ratio: 8 / 5;
+      max-height: 92vh;
+      border: 1px solid var(--edge);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #080b0d;
+      box-shadow: 0 28px 80px rgba(0, 0, 0, .62), inset 0 0 40px rgba(243, 189, 92, .05);
+    }
+    .cabinet::before {
+      content: "LUNAR GUIDANCE COMPUTER // VIBECADE FLIGHT DYNAMICS";
+      position: absolute;
+      z-index: 3;
+      left: 16px;
+      top: 11px;
+      font-size: clamp(8px, .72vw, 12px);
+      letter-spacing: .16em;
+      color: rgba(243, 189, 92, .68);
+      pointer-events: none;
+    }
+    canvas { display: block; width: 100%; height: 100%; outline: none; }
+    canvas:focus-visible { box-shadow: inset 0 0 0 3px #fff1bd; }
+    #help-button {
+      position: fixed;
+      z-index: 70;
+      top: 18px;
+      right: 18px;
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border: 1px solid rgba(243, 189, 92, .42);
+      border-radius: 50%;
+      background: rgba(18, 21, 24, .68);
+      color: var(--ink);
+      font: 700 22px/1 "Courier New", monospace;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      opacity: .78;
+    }
+    #help-button:hover, #help-button:focus-visible { opacity: 1; outline: 2px solid #fff1bd; outline-offset: 3px; }
+    .modal {
+      position: fixed;
+      z-index: 100;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(3, 4, 5, .8);
+      backdrop-filter: blur(8px);
+      overflow: auto;
+    }
+    .modal.is-visible { display: grid; }
+    .briefing {
+      width: min(610px, 94vw);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      border: 1px solid var(--edge);
+      border-radius: 8px;
+      padding: clamp(20px, 4vw, 38px);
+      background: linear-gradient(155deg, #171a1c, #090b0d);
+      box-shadow: 0 24px 80px #000;
+    }
+    .eyebrow { margin: 0 0 10px; color: var(--ink-soft); font-size: 12px; letter-spacing: .18em; }
+    h1 { margin: 0; color: #ffe3a1; font-size: clamp(29px, 6vw, 52px); line-height: .95; letter-spacing: -.07em; }
+    .briefing p { line-height: 1.55; color: #e2c58e; }
+    .instructions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 22px 0;
+    }
+    .instruction {
+      border-left: 3px solid var(--ink-soft);
+      padding: 7px 10px;
+      color: #f2d8a2;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .instruction b { display: block; margin-bottom: 3px; color: var(--ink); }
+    .flight-rule { color: #fff1bd !important; font-size: 13px; }
+    #instruction-close {
+      width: 100%;
+      min-height: 50px;
+      border: 1px solid #d69a42;
+      border-radius: 5px;
+      background: var(--ink);
+      color: #171008;
+      font: 900 15px/1 "Courier New", monospace;
+      letter-spacing: .12em;
+      cursor: pointer;
+    }
+    #instruction-close:hover, #instruction-close:focus-visible { background: #ffe3a1; outline: 2px solid white; outline-offset: 3px; }
+    #touch-controls { display: none; }
+    .touch-button {
+      pointer-events: auto;
+      width: 112px;
+      min-height: 66px;
+      border: 1px solid rgba(243, 189, 92, .5);
+      border-radius: 9px;
+      background: rgba(16, 18, 20, .82);
+      color: var(--ink);
+      font: 900 12px/1.15 "Courier New", monospace;
+      letter-spacing: .06em;
+      touch-action: none;
+      box-shadow: inset 0 0 18px rgba(243, 189, 92, .06);
+    }
+    .touch-button.is-pressed { transform: translateY(2px); color: #171008; background: var(--ink); }
+    .touch-button.thrust { min-height: 112px; border-color: rgba(255, 118, 95, .65); color: #ff9d77; }
+    .touch-button.utility { min-height: 46px; color: #d4ad6f; }
+    @media (max-width: 900px), (pointer: coarse) {
+      body { padding: 0 max(140px, env(safe-area-inset-right)) 0 max(140px, env(safe-area-inset-left)); }
+      .cabinet {
+        width: min(calc(100vw - 296px), calc(100vh * 1.6));
+        max-height: 100vh;
+        border-radius: 0;
+      }
+      .cabinet::before { top: 7px; left: 9px; font-size: 7px; }
+      #help-button, #flyout-nav { display: none !important; }
+      #touch-controls {
+        position: fixed;
+        z-index: 50;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: max(9px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(9px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+        pointer-events: none;
+      }
+      .control-rail { width: 118px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+      .control-rail.right { align-items: flex-end; }
+      .touch-button { width: 112px; }
+      body.instructions-open #touch-controls { display: none; }
+    }
+    @media (max-width: 720px) and (orientation: landscape) {
+      body { padding-left: 132px; padding-right: 132px; }
+      .cabinet { width: min(calc(100vw - 274px), calc(100vh * 1.6)); }
+      .control-rail { width: 104px; gap: 7px; }
+      .touch-button { width: 100px; min-height: 58px; font-size: 11px; }
+      .touch-button.thrust { min-height: 96px; }
+      .touch-button.utility { min-height: 40px; }
+    }
+    @media (orientation: portrait) and (max-width: 900px) {
+      body { padding: 0; align-content: start; }
+      .cabinet { width: 100vw; max-height: none; margin-top: 11vh; border-radius: 0; }
+      #touch-controls { align-items: end; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+      .control-rail { width: 47vw; flex-direction: row; align-items: end; gap: 7px; }
+      .control-rail.right { justify-content: flex-end; }
+      .touch-button { width: min(104px, 22vw); min-height: 58px; }
+      .touch-button.thrust { min-height: 78px; }
+      .touch-button.utility { width: min(70px, 15vw); min-height: 45px; font-size: 9px; }
+    }
+    @media (max-height: 440px) {
+      .briefing { padding: 16px 22px; }
+      .briefing p { margin: 8px 0; font-size: 12px; }
+      .instructions { margin: 10px 0; }
+      h1 { font-size: 30px; }
+    }
+    @media (prefers-reduced-motion: reduce) { body::after { display: none; } }
+  </style>
+</head>
+<body class="instructions-open">
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu"><span></span><span></span><span></span></button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+
+  <button id="help-button" type="button" aria-label="How to play Lunar Lander">?</button>
+
+  <main class="cabinet" aria-label="Lunar Lander game cabinet">
+    <canvas id="game" width="960" height="600" tabindex="0" aria-label="Lunar Lander. Rotate the module and use thrust to land gently on the marked pad."></canvas>
+  </main>
+
+  <div id="touch-controls" aria-label="Touch flight controls" aria-hidden="true">
+    <div class="control-rail left">
+      <button class="touch-button" type="button" data-control="left" aria-label="Rotate counterclockwise">↶<br>ROTATE</button>
+      <button class="touch-button" type="button" data-control="right" aria-label="Rotate clockwise">↷<br>ROTATE</button>
+    </div>
+    <div class="control-rail right">
+      <button class="touch-button utility" type="button" data-action="restart" aria-label="Restart mission">RESTART</button>
+      <button class="touch-button utility" type="button" data-action="sound" aria-label="Toggle sound" aria-pressed="false">SOUND</button>
+      <button class="touch-button thrust" type="button" data-control="thrust" aria-label="Fire main engine">▲<br>THRUST</button>
+    </div>
+  </div>
+
+  <section id="instruction-modal" class="modal is-visible" role="dialog" aria-modal="true" aria-labelledby="instruction-title">
+    <div class="briefing">
+      <p class="eyebrow">FLIGHT BRIEFING 01-A</p>
+      <h1 id="instruction-title">LUNAR<br>LANDER</h1>
+      <p>Guide the survey module to the striped landing pad. Kill sideways drift, settle upright, and save enough fuel for the final descent.</p>
+      <div class="instructions">
+        <div class="instruction"><b>ROTATE</b>← → or A / D<br>Touch: left controls</div>
+        <div class="instruction"><b>THRUST</b>↑, W, or Space<br>Touch: THRUST</div>
+        <div class="instruction"><b>RESTART</b>R key<br>Touch: RESTART</div>
+        <div class="instruction"><b>SOUND</b>M key<br>Touch: SOUND</div>
+      </div>
+      <p class="flight-rule">Green telemetry means safe. Land inside the pad with low speed and a nearly upright module. Three hulls leave room to recover from a bad approach.</p>
+      <button id="instruction-close" type="button">BEGIN DESCENT</button>
+    </div>
+  </section>
+
+  <script>
+  (function () {
+    'use strict';
+    try {
+
+    var canvas = document.getElementById('game');
+    var ctx = canvas.getContext('2d', { alpha: false });
+    var modal = document.getElementById('instruction-modal');
+    var closeButton = document.getElementById('instruction-close');
+    var helpButton = document.getElementById('help-button');
+    var touchControls = document.getElementById('touch-controls');
+    var W = 960;
+    var H = 600;
+    var TAU = Math.PI * 2;
+    var instructionKey = 'vibecade-instructions-lunar-lander-v1';
+    var params = new URLSearchParams(location.search);
+    var requestedLevel = Math.max(1, Math.min(5, Number(params.get('level')) || 1));
+    var assistedApproach = params.get('approach') === 'soft';
+    var reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var missions = [
+      { gravity: 18.0, thrust: 45, fuel: 100, pad: 160, wind: 0.0, safeY: 35, safeX: 19, safeA: 16, rough: 34, label: 'TRANQUILITY' },
+      { gravity: 18.8, thrust: 45, fuel: 96,  pad: 140, wind: 0.7, safeY: 33, safeX: 17, safeA: 14, rough: 42, label: 'FRA MAURO' },
+      { gravity: 19.6, thrust: 46, fuel: 91,  pad: 120, wind: 1.4, safeY: 31, safeX: 16, safeA: 12, rough: 51, label: 'HADLEY RILLE' },
+      { gravity: 20.5, thrust: 46, fuel: 86,  pad: 104, wind: 2.2, safeY: 29, safeX: 14, safeA: 10, rough: 61, label: 'TYCHO RIM' },
+      { gravity: 21.8, thrust: 47, fuel: 79,  pad: 76,  wind: 3.8, safeY: 25, safeX: 11, safeA: 7,  rough: 73, label: 'SHACKLETON' }
+    ];
+
+    var controls = { left: false, right: false, thrust: false };
+    var state = {
+      started: false,
+      paused: true,
+      mode: 'briefing',
+      level: requestedLevel,
+      score: 0,
+      hull: 3,
+      fuel: 0,
+      x: 480,
+      y: 90,
+      vx: 0,
+      vy: 0,
+      angle: 0,
+      terrain: [],
+      padX: 400,
+      padY: 500,
+      windPhase: 0,
+      transition: 0,
+      message: '',
+      submessage: '',
+      flash: 0,
+      shake: 0,
+      particles: [],
+      elapsed: 0,
+      muted: false,
+      best: Number(localStorage.getItem('vibecade-lunar-lander-best') || 0)
+    };
+
+    var stars = [];
+    for (var si = 0; si < 78; si += 1) {
+      stars.push({ x: (si * 157 + 41) % W, y: 45 + ((si * 83 + 17) % 360), a: .18 + (si % 5) * .08 });
+    }
+
+    var audioContext = null;
+    function tone(frequency, duration, volume, type) {
+      if (state.muted) return;
+      try {
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = audioContext.createOscillator();
+        var gain = audioContext.createGain();
+        osc.type = type || 'square';
+        osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        gain.gain.setValueAtTime(volume || .035, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.0001, audioContext.currentTime + duration);
+        osc.connect(gain).connect(audioContext.destination);
+        osc.start();
+        osc.stop(audioContext.currentTime + duration);
+      } catch (error) { /* Audio is optional. */ }
+    }
+
+    function seeded(seed) {
+      var value = seed >>> 0;
+      return function () {
+        value = (value * 1664525 + 1013904223) >>> 0;
+        return value / 4294967296;
+      };
+    }
+
+    function generateTerrain(level) {
+      var cfg = missions[level - 1];
+      var random = seeded(7717 + level * 991);
+      var pads = [400, 620, 220, 680, 160];
+      state.padX = pads[level - 1];
+      state.padY = 478 + Math.round(random() * 42);
+      var points = [];
+      var lastY = 460 + random() * 60;
+      for (var x = 0; x <= W; x += 8) {
+        if (x >= state.padX && x <= state.padX + cfg.pad) {
+          lastY = state.padY;
+        } else {
+          var distance = Math.min(Math.abs(x - state.padX), Math.abs(x - state.padX - cfg.pad));
+          var target = 430 + random() * 118;
+          var blend = distance < 42 ? .1 : .055;
+          lastY += (target - lastY) * blend + (random() - .5) * cfg.rough * .12;
+          lastY = Math.max(405, Math.min(548, lastY));
+        }
+        points.push({ x: x, y: lastY });
+      }
+      var startIndex = Math.floor(state.padX / 8);
+      var endIndex = Math.floor((state.padX + cfg.pad) / 8);
+      for (var i = startIndex; i <= endIndex; i += 1) points[i].y = state.padY;
+      if (startIndex > 0) points[startIndex - 1].y = state.padY + 18;
+      if (endIndex < points.length - 1) points[endIndex + 1].y = state.padY + 18;
+      state.terrain = points;
+    }
+
+    function terrainAt(x) {
+      var index = Math.max(0, Math.min(state.terrain.length - 2, Math.floor(x / 8)));
+      var a = state.terrain[index];
+      var b = state.terrain[index + 1];
+      var t = (x - a.x) / (b.x - a.x || 1);
+      return a.y + (b.y - a.y) * t;
+    }
+
+    function spawnLevel(level, keepRun) {
+      state.level = Math.max(1, Math.min(5, level));
+      var cfg = missions[state.level - 1];
+      generateTerrain(state.level);
+      var offsets = [0, -125, 150, -185, 225];
+      state.x = state.padX + cfg.pad / 2 + offsets[state.level - 1];
+      state.x = Math.max(90, Math.min(W - 90, state.x));
+      state.y = 88;
+      state.vx = state.level === 1 ? 0 : (state.level % 2 ? 5 : -5);
+      state.vy = 3;
+      state.angle = 0;
+      state.fuel = cfg.fuel;
+      state.windPhase = state.level * .8;
+      state.transition = 0;
+      state.mode = 'playing';
+      state.message = '';
+      state.submessage = '';
+      state.particles.length = 0;
+      state.flash = 0;
+      state.shake = 0;
+      if (assistedApproach && !keepRun) {
+        state.x = state.padX + cfg.pad / 2;
+        state.y = state.padY - 27;
+        state.vx = cfg.safeX * .3;
+        state.vy = cfg.safeY * .3;
+        state.angle = cfg.safeA * .3 * Math.PI / 180;
+      }
+      if (!keepRun) state.elapsed = 0;
+      releaseControls();
+    }
+
+    function startRun() {
+      state.score = 0;
+      state.hull = 3;
+      state.started = true;
+      state.paused = false;
+      spawnLevel(requestedLevel, false);
+      canvas.focus({ preventScroll: true });
+    }
+
+    function restartRun() {
+      tone(330, .08, .025);
+      startRun();
+    }
+
+    function releaseControls() {
+      controls.left = controls.right = controls.thrust = false;
+      document.querySelectorAll('.touch-button.is-pressed').forEach(function (button) { button.classList.remove('is-pressed'); });
+    }
+
+    function showInstructions() {
+      state.paused = true;
+      releaseControls();
+      modal.classList.add('is-visible');
+      document.body.classList.add('instructions-open');
+      touchControls.setAttribute('aria-hidden', 'true');
+      closeButton.focus();
+    }
+
+    function hideInstructions() {
+      modal.classList.remove('is-visible');
+      document.body.classList.remove('instructions-open');
+      touchControls.setAttribute('aria-hidden', 'false');
+      sessionStorage.setItem(instructionKey, '1');
+      if (!state.started) startRun();
+      else {
+        state.paused = false;
+        lastTime = performance.now();
+        canvas.focus({ preventScroll: true });
+      }
+    }
+
+    function setControl(name, pressed) {
+      if (Object.prototype.hasOwnProperty.call(controls, name)) controls[name] = pressed;
+    }
+
+    function pulseControl(name) {
+      if (state.paused || state.mode !== 'playing') return;
+      if (name === 'left') state.angle -= .045;
+      if (name === 'right') state.angle += .045;
+      if (name === 'thrust' && state.fuel > 0) {
+        state.vx += Math.sin(state.angle) * 1.3;
+        state.vy -= Math.cos(state.angle) * 1.3;
+        state.fuel = Math.max(0, state.fuel - .3);
+      }
+    }
+
+    function toggleSound() {
+      state.muted = !state.muted;
+      var soundButton = document.querySelector('[data-action="sound"]');
+      soundButton.textContent = state.muted ? 'SOUND OFF' : 'SOUND ON';
+      soundButton.setAttribute('aria-pressed', String(state.muted));
+      if (!state.muted) tone(520, .07, .025);
+    }
+
+    function addParticles(count, speed, color) {
+      var allowed = reducedMotion ? Math.ceil(count * .35) : count;
+      for (var i = 0; i < allowed && state.particles.length < 90; i += 1) {
+        var angle = Math.random() * TAU;
+        state.particles.push({
+          x: state.x,
+          y: state.y + 17,
+          vx: Math.cos(angle) * Math.random() * speed,
+          vy: Math.sin(angle) * Math.random() * speed,
+          life: .4 + Math.random() * .7,
+          color: color || '#f3bd5c'
+        });
+      }
+    }
+
+    function crash(reason) {
+      if (state.mode !== 'playing') return;
+      state.hull -= 1;
+      state.mode = state.hull > 0 ? 'crashed' : 'gameover';
+      state.transition = state.hull > 0 ? 1.7 : 0;
+      state.message = state.hull > 0 ? 'HARD CONTACT' : 'MISSION LOST';
+      state.submessage = state.hull > 0 ? reason + ' // ' + state.hull + ' HULLS REMAIN' : 'PRESS R OR RESTART TO FLY AGAIN';
+      state.shake = .45;
+      state.flash = .3;
+      addParticles(34, 105, '#ff765f');
+      tone(92, .5, .07, 'sawtooth');
+      releaseControls();
+    }
+
+    function land() {
+      if (state.mode !== 'playing') return;
+      var cfg = missions[state.level - 1];
+      var precision = Math.max(0, 1 - (Math.abs(state.vy) / cfg.safeY + Math.abs(state.vx) / cfg.safeX + Math.abs(state.angle) / (cfg.safeA * Math.PI / 180)) / 3);
+      var award = Math.round(700 + state.level * 300 + state.fuel * 8 + precision * 900);
+      state.score += award;
+      state.best = Math.max(state.best, state.score);
+      localStorage.setItem('vibecade-lunar-lander-best', String(state.best));
+      state.x = state.padX + cfg.pad / 2;
+      state.y = state.padY - 20;
+      state.vx = state.vy = 0;
+      state.angle = 0;
+      state.mode = state.level === 5 ? 'won' : 'landed';
+      state.transition = state.level === 5 ? 0 : 2.1;
+      state.message = state.level === 5 ? 'EXPEDITION COMPLETE' : 'SOFT LANDING';
+      state.submessage = '+' + award + ' // ' + Math.round(state.fuel) + '% FUEL RESERVED';
+      addParticles(22, 52, '#aee6a5');
+      tone(392, .12, .04, 'sine');
+      setTimeout(function () { tone(587, .18, .04, 'sine'); }, 100);
+      releaseControls();
+    }
+
+    function updateParticles(dt) {
+      for (var i = state.particles.length - 1; i >= 0; i -= 1) {
+        var p = state.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 28 * dt;
+        p.life -= dt;
+        if (p.life <= 0) state.particles.splice(i, 1);
+      }
+    }
+
+    function update(dt) {
+      updateParticles(dt);
+      if (state.flash > 0) state.flash -= dt;
+      if (state.shake > 0) state.shake -= dt;
+      if (state.paused || !state.started) return;
+
+      if (state.mode === 'landed' || state.mode === 'crashed') {
+        state.transition -= dt;
+        if (state.transition <= 0) {
+          if (state.mode === 'landed') spawnLevel(state.level + 1, true);
+          else spawnLevel(state.level, true);
+        }
+        return;
+      }
+      if (state.mode !== 'playing') return;
+
+      state.elapsed += dt;
+      var cfg = missions[state.level - 1];
+      var rotationRate = 1.82;
+      if (controls.left) state.angle -= rotationRate * dt;
+      if (controls.right) state.angle += rotationRate * dt;
+      while (state.angle > Math.PI) state.angle -= TAU;
+      while (state.angle < -Math.PI) state.angle += TAU;
+
+      state.windPhase += dt * (.6 + state.level * .08);
+      var gust = state.level === 5 ? Math.sin(state.windPhase * 2.7) * 1.35 : 0;
+      var wind = Math.sin(state.windPhase) * cfg.wind + gust;
+      state.vx += wind * dt;
+      state.vy += cfg.gravity * dt;
+
+      if (controls.thrust && state.fuel > 0) {
+        state.vx += Math.sin(state.angle) * cfg.thrust * dt;
+        state.vy -= Math.cos(state.angle) * cfg.thrust * dt;
+        state.fuel = Math.max(0, state.fuel - 10 * dt);
+        if (Math.random() < dt * 28) {
+          state.particles.push({
+            x: state.x - Math.sin(state.angle) * 14,
+            y: state.y + Math.cos(state.angle) * 14,
+            vx: -Math.sin(state.angle) * 32 + (Math.random() - .5) * 18,
+            vy: Math.cos(state.angle) * 32 + (Math.random() - .5) * 18,
+            life: .18 + Math.random() * .25,
+            color: '#f3bd5c'
+          });
+        }
+      }
+
+      state.x += state.vx * dt;
+      state.y += state.vy * dt;
+
+      if (state.x < 18 || state.x > W - 18 || state.y < 34) {
+        crash('FLIGHT ENVELOPE EXCEEDED');
+        return;
+      }
+
+      var ground = terrainAt(state.x);
+      if (state.y + 20 >= ground) {
+        var angleDeg = Math.abs(state.angle * 180 / Math.PI);
+        var insidePad = state.x - 17 >= state.padX && state.x + 17 <= state.padX + cfg.pad;
+        var safe = insidePad && Math.abs(state.vy) <= cfg.safeY && Math.abs(state.vx) <= cfg.safeX && angleDeg <= cfg.safeA;
+        if (safe) land();
+        else if (!insidePad) crash('PAD MISSED');
+        else if (Math.abs(state.vy) > cfg.safeY) crash('DESCENT RATE HIGH');
+        else if (Math.abs(state.vx) > cfg.safeX) crash('LATERAL DRIFT HIGH');
+        else crash('MODULE NOT UPRIGHT');
+      }
+    }
+
+    function line(x1, y1, x2, y2, color, width) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width || 1;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    function drawTerrain() {
+      var cfg = missions[state.level - 1];
+      ctx.save();
+      ctx.strokeStyle = '#c69245';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      state.terrain.forEach(function (point, index) {
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.closePath();
+      ctx.fillStyle = '#101315';
+      ctx.fill();
+
+      ctx.strokeStyle = '#ffe19a';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(state.padX, state.padY);
+      ctx.lineTo(state.padX + cfg.pad, state.padY);
+      ctx.stroke();
+      ctx.fillStyle = '#f3bd5c';
+      for (var x = state.padX + 5; x < state.padX + cfg.pad - 5; x += 14) {
+        ctx.fillRect(x, state.padY + 5, 7, 3);
+      }
+      ctx.font = '700 11px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f3bd5c';
+      ctx.fillText('LAND ' + state.level, state.padX + cfg.pad / 2, state.padY + 23);
+
+      if (state.mode === 'playing') {
+        var pulse = reducedMotion ? .65 : .38 + Math.sin(state.elapsed * 4) * .18;
+        ctx.globalAlpha = pulse;
+        line(state.padX, state.padY - 7, state.padX, state.padY - 34, '#f3bd5c', 1);
+        line(state.padX + cfg.pad, state.padY - 7, state.padX + cfg.pad, state.padY - 34, '#f3bd5c', 1);
+      }
+      ctx.restore();
+    }
+
+    function drawLander() {
+      ctx.save();
+      ctx.translate(state.x, state.y);
+      ctx.rotate(state.angle);
+      ctx.strokeStyle = state.flash > 0 ? '#ff765f' : '#ffe3a1';
+      ctx.fillStyle = '#121619';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-11, -13);
+      ctx.lineTo(11, -13);
+      ctx.lineTo(15, 5);
+      ctx.lineTo(8, 12);
+      ctx.lineTo(-8, 12);
+      ctx.lineTo(-15, 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#f3bd5c';
+      ctx.fillRect(-5, -6, 10, 7);
+      line(-8, 11, -17, 20, '#ffe3a1', 2);
+      line(8, 11, 17, 20, '#ffe3a1', 2);
+      line(-22, 20, -12, 20, '#ffe3a1', 2);
+      line(12, 20, 22, 20, '#ffe3a1', 2);
+      line(-13, 2, -22, 6, '#a87939', 1);
+      line(13, 2, 22, 6, '#a87939', 1);
+      if (controls.thrust && state.fuel > 0 && state.mode === 'playing') {
+        var flame = reducedMotion ? 24 : 20 + Math.random() * 10;
+        ctx.fillStyle = '#ff9a55';
+        ctx.beginPath();
+        ctx.moveTo(-6, 13);
+        ctx.lineTo(0, flame);
+        ctx.lineTo(6, 13);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawTelemetry() {
+      var cfg = missions[state.level - 1];
+      var altitude = Math.max(0, Math.round(terrainAt(state.x) - state.y - 20));
+      var angleDeg = Math.round(Math.abs(state.angle * 180 / Math.PI));
+      var xSafe = Math.abs(state.vx) <= cfg.safeX;
+      var ySafe = Math.abs(state.vy) <= cfg.safeY;
+      var aSafe = angleDeg <= cfg.safeA;
+      ctx.save();
+      ctx.textBaseline = 'top';
+      ctx.font = '700 15px Courier New';
+      ctx.fillStyle = '#f3bd5c';
+      ctx.fillText('MISSION ' + state.level + '/5  ' + cfg.label, 22, 35);
+      ctx.textAlign = 'right';
+      ctx.fillText('SCORE ' + String(state.score).padStart(6, '0') + '  BEST ' + String(state.best).padStart(6, '0'), W - 22, 35);
+      line(22, 59, W - 22, 59, 'rgba(243,189,92,.3)', 1);
+
+      ctx.font = '700 13px Courier New';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = state.fuel < 20 ? '#ff765f' : '#e9c47d';
+      ctx.fillText('FUEL ' + Math.ceil(state.fuel) + '%', 22, 70);
+      ctx.fillStyle = '#caa260';
+      ctx.fillText('HULL ' + '◆'.repeat(state.hull) + '◇'.repeat(3 - state.hull), 22, 91);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#caa260';
+      ctx.fillText('ALT ' + String(altitude).padStart(3, '0') + 'm', W - 22, 70);
+      ctx.fillStyle = xSafe ? '#aee6a5' : '#ff765f';
+      ctx.fillText('DRIFT ' + Math.abs(state.vx).toFixed(1) + '/' + cfg.safeX, W - 22, 91);
+      ctx.fillStyle = ySafe ? '#aee6a5' : '#ff765f';
+      ctx.fillText('DROP ' + Math.abs(state.vy).toFixed(1) + '/' + cfg.safeY, W - 22, 112);
+      ctx.fillStyle = aSafe ? '#aee6a5' : '#ff765f';
+      ctx.fillText('TILT ' + angleDeg + '°/' + cfg.safeA + '°', W - 22, 133);
+
+      if (state.level > 1) {
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#a87939';
+        var windValue = Math.sin(state.windPhase) * cfg.wind + (state.level === 5 ? Math.sin(state.windPhase * 2.7) * 1.35 : 0);
+        ctx.fillText('DUST VECTOR ' + (windValue >= 0 ? '→' : '←') + ' ' + Math.abs(windValue).toFixed(1), 22, 112);
+      }
+      ctx.restore();
+    }
+
+    function drawOverlay() {
+      if (!state.message) return;
+      ctx.save();
+      ctx.fillStyle = 'rgba(4,6,7,.76)';
+      ctx.fillRect(208, 228, 544, 126);
+      ctx.strokeStyle = state.mode === 'crashed' || state.mode === 'gameover' ? '#ff765f' : '#f3bd5c';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(208.5, 228.5, 543, 125);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = state.mode === 'crashed' || state.mode === 'gameover' ? '#ff9a82' : '#ffe3a1';
+      ctx.font = '900 29px Courier New';
+      ctx.fillText(state.message, W / 2, 278);
+      ctx.fillStyle = '#d1ac70';
+      ctx.font = '700 13px Courier New';
+      ctx.fillText(state.submessage, W / 2, 316);
+      if (state.mode === 'won') {
+        ctx.fillStyle = '#f3bd5c';
+        ctx.fillText('PRESS R OR RESTART FOR A NEW EXPEDITION', W / 2, 337);
+      }
+      ctx.restore();
+    }
+
+    function render() {
+      ctx.save();
+      if (state.shake > 0 && !reducedMotion) ctx.translate((Math.random() - .5) * 8, (Math.random() - .5) * 8);
+      ctx.fillStyle = '#080b0d';
+      ctx.fillRect(-10, -10, W + 20, H + 20);
+      stars.forEach(function (star) {
+        ctx.globalAlpha = star.a;
+        ctx.fillStyle = '#efd19a';
+        ctx.fillRect(star.x, star.y, 1.5, 1.5);
+      });
+      ctx.globalAlpha = 1;
+      drawTerrain();
+
+      state.particles.forEach(function (p) {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+      });
+      ctx.globalAlpha = 1;
+      drawLander();
+      drawTelemetry();
+      drawOverlay();
+      ctx.restore();
+
+      if (state.flash > 0) {
+        ctx.fillStyle = 'rgba(255,118,95,' + Math.min(.26, state.flash) + ')';
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+
+    var accumulator = 0;
+    var lastTime = performance.now();
+    function frame(now) {
+      var delta = Math.min(.1, Math.max(0, (now - lastTime) / 1000));
+      lastTime = now;
+      if (!state.paused || state.particles.length) {
+        accumulator = Math.min(.12, accumulator + delta);
+        while (accumulator >= 1 / 60) {
+          update(1 / 60);
+          accumulator -= 1 / 60;
+        }
+      }
+      render();
+      requestAnimationFrame(frame);
+    }
+
+    function keyFor(event) {
+      var key = event.key.toLowerCase();
+      if (key === 'arrowleft' || key === 'a') return 'left';
+      if (key === 'arrowright' || key === 'd') return 'right';
+      if (key === 'arrowup' || key === 'w' || event.code === 'Space') return 'thrust';
+      return '';
+    }
+
+    window.addEventListener('keydown', function (event) {
+      var control = keyFor(event);
+      if (control) {
+        event.preventDefault();
+        if (!event.repeat) pulseControl(control);
+        setControl(control, true);
+      }
+      if (!event.repeat && event.key.toLowerCase() === 'r') restartRun();
+      if (!event.repeat && event.key.toLowerCase() === 'm') toggleSound();
+      if (!event.repeat && event.key === 'Escape' && !modal.classList.contains('is-visible')) showInstructions();
+    });
+    window.addEventListener('keyup', function (event) {
+      var control = keyFor(event);
+      if (control) {
+        event.preventDefault();
+        setControl(control, false);
+      }
+    });
+    window.addEventListener('blur', releaseControls);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) releaseControls(); });
+    document.addEventListener('contextmenu', function (event) {
+      if (event.target.closest('#touch-controls') || event.target === canvas) event.preventDefault();
+    });
+
+    document.querySelectorAll('[data-control]').forEach(function (button) {
+      var control = button.getAttribute('data-control');
+      function press(event) {
+        event.preventDefault();
+        button.setPointerCapture(event.pointerId);
+        button.classList.add('is-pressed');
+        pulseControl(control);
+        setControl(control, true);
+      }
+      function release(event) {
+        if (event) event.preventDefault();
+        button.classList.remove('is-pressed');
+        setControl(control, false);
+      }
+      button.addEventListener('pointerdown', press);
+      button.addEventListener('pointerup', release);
+      button.addEventListener('pointercancel', release);
+      button.addEventListener('lostpointercapture', release);
+    });
+    document.querySelector('[data-action="restart"]').addEventListener('pointerdown', function (event) { event.preventDefault(); restartRun(); });
+    document.querySelector('[data-action="sound"]').addEventListener('pointerdown', function (event) { event.preventDefault(); toggleSound(); });
+
+    closeButton.addEventListener('click', hideInstructions);
+    modal.addEventListener('click', function (event) { if (event.target === modal) hideInstructions(); });
+    helpButton.addEventListener('click', showInstructions);
+
+    window.__lunarLanderTest = {
+      snapshot: function () {
+        return {
+          level: state.level, mode: state.mode, paused: state.paused, hull: state.hull,
+          fuel: Number(state.fuel.toFixed(1)), x: Number(state.x.toFixed(1)), y: Number(state.y.toFixed(1)),
+          vx: Number(state.vx.toFixed(1)), vy: Number(state.vy.toFixed(1)), angle: Number((state.angle * 180 / Math.PI).toFixed(1)),
+          padX: state.padX, padY: state.padY, padWidth: missions[state.level - 1].pad,
+          limits: { drop: missions[state.level - 1].safeY, drift: missions[state.level - 1].safeX, tilt: missions[state.level - 1].safeA }
+        };
+      },
+      jumpToLevel: function (level) { requestedLevel = Math.max(1, Math.min(5, Number(level) || 1)); startRun(); return this.snapshot(); },
+      setApproach: function (options) {
+        options = options || {};
+        var cfg = missions[state.level - 1];
+        state.mode = 'playing'; state.paused = false;
+        state.x = state.padX + cfg.pad / 2 + (options.offset || 0);
+        state.y = state.padY - (options.altitude || 80) - 20;
+        state.vx = options.vx || 0; state.vy = options.vy || 0;
+        state.angle = (options.angle || 0) * Math.PI / 180;
+        return this.snapshot();
+      }
+    };
+
+    generateTerrain(state.level);
+    state.fuel = missions[state.level - 1].fuel;
+    render();
+    if (sessionStorage.getItem(instructionKey) === '1') {
+      modal.classList.remove('is-visible');
+      document.body.classList.remove('instructions-open');
+      touchControls.setAttribute('aria-hidden', 'false');
+      startRun();
+    } else {
+      showInstructions();
+    }
+    requestAnimationFrame(frame);
+    } catch (bootError) {
+      console.error('Lunar Lander startup failed', bootError);
+    }
+  }());
+  </script>
+</body>
+</html>
