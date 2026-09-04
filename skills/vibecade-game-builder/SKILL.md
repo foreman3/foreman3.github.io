@@ -47,7 +47,15 @@ Follow `docs/GAME_STANDARDS.md` for:
 - artwork, feedback, accessibility, difficulty, and responsive layout;
 - registration, screenshots, Git safety, and release verification.
 
-Iterate through implementation, the smallest relevant static checks, local browser play, and desktop/mobile visual inspection. Fix observed defects and retest. Exercise both the easy opening and later challenge rather than validating only the title screen.
+Treat the first complete, functional version as the starting point, not the finish. Iterate through implementation, the smallest relevant static checks, local browser play, and desktop/mobile visual inspection. Fix observed defects and retest. Exercise both the easy opening and later challenge rather than validating only the title screen.
+
+After that initial version works end to end, complete two additional whole-game improvement passes before release. Do not collapse routine implementation fixes into these passes or count the initial build as one of them. In each pass:
+
+1. Replay or inspect the entire experience, including the opening, later challenge, game-over and restart flow, desktop presentation, and required mobile layouts.
+2. Look independently for further improvements to both graphics and gameplay: artwork, animation, effects, readability, feedback, layout, controls, feel, balance, pacing, collision fairness, scoring, and progression as applicable.
+3. Implement every safe, material improvement found within the task scope, then repeat the relevant static, browser-play, and visual checks.
+
+The second pass must be a fresh review of the result from the first pass, not merely confirmation that the first pass worked. If a pass finds no worthwhile change in either graphics or gameplay, document what was examined and why another change would not materially improve the game; do not invent churn to satisfy the pass count.
 
 ## Verify Scope and Release
 
