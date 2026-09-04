@@ -218,12 +218,15 @@
     <div class="instruction-card">
       <span class="stamp">Shift briefing</span>
       <h1 id="instruction-title">Barrel Brigade</h1>
-      <p class="dek">Climb the crooked girders, leap the runaway barrels, and ring the shift bell. Four hard hats give you room to learn.</p>
+      <p class="dek">Climb the crooked girders, leap runaway barrels, and ring the shift bell before the whole site turns against you.</p>
       <div class="instructions">
         <div class="instruction"><strong>Move</strong>Arrow keys or WASD. Up and down climb ladders.</div>
         <div class="instruction"><strong>Jump</strong>Space clears barrels. Clean leaps score a bonus.</div>
-        <div class="instruction"><strong>Utility</strong>R restarts the level. M toggles workshop sound.</div>
-        <div class="instruction"><strong>Mobile</strong>Use the stick to move and climb; tap Jump to vault.</div>
+        <div class="instruction"><strong>Broken ladders</strong>You can climb onto either end, but the missing middle is a dead end.</div>
+        <div class="instruction"><strong>Watch the route</strong>You climb uphill against the barrels. Any ladder—including a broken one—can divert them downward.</div>
+        <div class="instruction"><strong>Later shifts</strong>A living fire gives chase in shift 3, a wrecking ball joins in shift 4, and loose loads target you in shift 5.</div>
+        <div class="instruction"><strong>Hard hats</strong>A hit restarts the shift from the bottom and resets every hazard.</div>
+        <div class="instruction"><strong>Utility &amp; mobile</strong>R restarts, M toggles sound. On touch, use the stick and Jump.</div>
       </div>
       <button id="instruction-close" type="button">Clock in &amp; climb</button>
     </div>
@@ -242,7 +245,7 @@
     const soundButton = document.getElementById('sound-button');
     const W = 960;
     const H = 600;
-    const instructionKey = 'vibecade-instructions-barrel-brigade-v1';
+    const instructionKey = 'vibecade-instructions-barrel-brigade-v5';
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const keys = { left: false, right: false, up: false, down: false };
     const searchParams = new URLSearchParams(location.search);
@@ -250,36 +253,49 @@
     const testMode = searchParams.has('test');
 
     const LEVELS = [
-      { name: 'Morning Shift', speed: 74, spawn: 3.85, max: 5, time: 100, hot: 0, tips: 'Follow the ladders. Jump late and land steady.' },
-      { name: 'Lunch Rush', speed: 82, spawn: 3.45, max: 6, time: 94, hot: 0, tips: 'The barrels roll a little quicker now.' },
-      { name: 'Steel Parade', speed: 91, spawn: 3.08, max: 7, time: 89, hot: .06, tips: 'Watch for the first striped express barrel.' },
-      { name: 'Overtime', speed: 102, spawn: 2.68, max: 8, time: 86, hot: .13, tips: 'Demanding, but four hard hats leave recovery room.' },
-      { name: 'Foreman\'s Finest', speed: 119, spawn: 2.14, max: 10, time: 79, hot: .25, tips: 'Master the rhythm. Every safe opening matters.' }
+      { name: 'Hot Start', speed: 82, spawn: 3.45, max: 6, time: 94, hot: 0, fire: false, wreck: false, tips: 'Barrels can take ladders now. Read the whole girder.' },
+      { name: 'Full Tilt', speed: 119, spawn: 2.14, max: 10, time: 79, hot: .25, fire: false, wreck: false, tips: 'Express barrels turn the old finale into shift two.' },
+      { name: 'Fire Drill', speed: 119, spawn: 2.14, max: 10, time: 84, hot: .25, fire: true, wreck: false, tips: 'Ember Eddy ignites in five seconds and follows your route.' },
+      { name: 'Wrecking Shift', speed: 121, spawn: 2.08, max: 10, time: 84, hot: .25, fire: true, wreck: true, wreckRate: .9, wreckRadius: 27, tips: 'Time the painted arc while the fire climbs behind you.' },
+      { name: 'Final Inspection', speed: 129, spawn: 1.82, max: 12, time: 78, hot: .32, fire: true, wreck: true, wreckRate: 1.18, wreckRadius: 30, looseLoads: true, tips: 'Loose loads mark your position—move before the crate drops.' }
     ];
 
     const FLOORS = [
-      { y: 526, slope: .026 },
-      { y: 426, slope: -.026 },
-      { y: 326, slope: .026 },
-      { y: 226, slope: -.026 },
-      { y: 126, slope: .026 }
+      { y: 526, slope: -.026 },
+      { y: 426, slope: .026 },
+      { y: 326, slope: -.026 },
+      { y: 226, slope: .026 },
+      { y: 126, slope: -.026 }
     ];
     const LADDERS = [
-      { x: 770, lower: 0 },
-      { x: 205, lower: 1 },
-      { x: 735, lower: 2 },
-      { x: 250, lower: 3 }
+      { id: 'route-1', x: 770, lower: 0, broken: false },
+      { id: 'broken-2', x: 500, lower: 0, broken: true },
+      { id: 'route-2', x: 205, lower: 1, broken: false },
+      { id: 'route-3', x: 735, lower: 2, broken: false },
+      { id: 'broken-4', x: 500, lower: 2, broken: true },
+      { id: 'route-4', x: 250, lower: 3, broken: false }
     ];
+    const ROUTE_LADDERS = LADDERS.filter(ladder => !ladder.broken);
+    const PLAYER_SPEED = 142;
+    const FIRE_SPEED = PLAYER_SPEED * .6;
+    const WRECK_LENGTH = 295;
+    const WRECK_SWING = .98;
+    const BARREL_LADDER_CHANCE = .30;
+    const THROWER_X = 880;
+    const BELL_X = 812;
+    const BELL_TRIGGER_X = 784;
 
     const state = {
-      phase: 'instructions', level: queryLevel, score: 0, hats: 4, time: LEVELS[queryLevel - 1].time,
+      phase: 'instructions', level: queryLevel, score: 0, levelStartScore: 0, hats: 4, time: LEVELS[queryLevel - 1].time,
       paused: true, started: false, sound: true, barrels: [], sparks: [], texts: [], bolts: [],
-      spawnTimer: 1.35, elapsed: 0, shake: 0, flash: 0, banner: 0, nextPhase: '', lastTime: 0
+      spawnTimer: 1.35, elapsed: 0, shake: 0, flash: 0, banner: 0, retrying: false, nextPhase: '', lastTime: 0,
+      fire: { active: false, timer: Infinity, x: 74, y: 0, floor: 0, mode: 'floor', ladder: -1, face: 1, pulse: 0 },
+      looseLoad: { phase: 'idle', timer: Infinity, x: 480, y: 40, targetY: 500, floor: 0, pulse: 0 }
     };
 
     const player = {
       x: 105, y: 0, floor: 0, w: 26, h: 38, vx: 0, vy: 0, mode: 'floor',
-      ladder: -1, face: 1, invuln: 0, jumpHeld: false, step: 0, checkpoint: 0
+      ladder: -1, ladderSide: '', blockedNotified: false, face: 1, invuln: 0, jumpHeld: false, step: 0
     };
 
     let audio = null;
@@ -306,6 +322,10 @@
       return floor.y + floor.slope * (x - W / 2);
     }
 
+    function downhillDirection(floor) {
+      return Math.sign(FLOORS[floor].slope);
+    }
+
     function makeBolts() {
       return FLOORS.slice(0, 4).map((_, index) => ({
         x: index % 2 ? 525 : 435,
@@ -315,23 +335,43 @@
       }));
     }
 
-    function checkpointX(floor) {
-      return [105, 770, 205, 735, 250][floor] || 105;
-    }
-
-    function resetPlayer(useCheckpoint = false) {
-      if (!useCheckpoint) player.checkpoint = 0;
-      player.floor = useCheckpoint ? player.checkpoint : 0;
-      player.x = checkpointX(player.floor);
+    function resetPlayer() {
+      player.floor = 0;
+      player.x = 105;
       player.y = floorY(player.floor, player.x) - player.h / 2 - 8;
       player.vx = 0;
       player.vy = 0;
       player.mode = 'floor';
       player.ladder = -1;
+      player.ladderSide = '';
+      player.blockedNotified = false;
       player.face = 1;
       player.invuln = 1.7;
       player.jumpHeld = false;
       Object.keys(keys).forEach(key => { keys[key] = false; });
+    }
+
+    function resetHazards() {
+      const config = LEVELS[state.level - 1];
+      state.barrels.length = 0;
+      state.spawnTimer = 1.25;
+      state.elapsed = 0;
+      state.fire.active = false;
+      state.fire.timer = config.fire ? 5 : Infinity;
+      state.fire.x = 74;
+      state.fire.floor = 0;
+      state.fire.y = floorY(0, state.fire.x) - 24;
+      state.fire.mode = 'floor';
+      state.fire.ladder = -1;
+      state.fire.face = 1;
+      state.fire.pulse = 0;
+      state.looseLoad.phase = 'idle';
+      state.looseLoad.timer = config.looseLoads ? 2.6 : Infinity;
+      state.looseLoad.x = 480;
+      state.looseLoad.y = 40;
+      state.looseLoad.targetY = 500;
+      state.looseLoad.floor = 0;
+      state.looseLoad.pulse = 0;
     }
 
     function startLevel(level = state.level, keepScore = true) {
@@ -339,32 +379,39 @@
       state.phase = 'playing';
       state.hats = 4;
       state.time = LEVELS[state.level - 1].time;
-      state.barrels.length = 0;
       state.sparks.length = 0;
       state.texts.length = 0;
       state.bolts = makeBolts();
-      state.spawnTimer = 1.25;
       state.banner = 2.15;
+      state.retrying = false;
       state.nextPhase = '';
       if (!keepScore) state.score = 0;
+      state.levelStartScore = state.score;
+      resetHazards();
       resetPlayer();
       tone(220, .08, 'square', .03, 100);
     }
 
     function restartGame() {
       if (state.phase === 'victory') startLevel(1, false);
-      else startLevel(state.level, true);
+      else {
+        state.score = state.levelStartScore;
+        startLevel(state.level, true);
+      }
     }
     window.restartGame = restartGame;
     window.addEventListener('vibecade:restart', event => { event.preventDefault(); restartGame(); });
 
-    function spawnBarrel(forceHot = false) {
+    function spawnBarrel(forceHot = false, forceLadder = false, floor = 4, startX = null) {
       const config = LEVELS[state.level - 1];
       const hot = forceHot || Math.random() < config.hot;
+      const dir = downhillDirection(floor);
+      const x = startX ?? (dir > 0 ? 92 : 868);
       state.barrels.push({
-        x: 92, y: floorY(4, 92) - 17, floor: 4, r: 16, dir: 1,
+        x, y: floorY(floor, x) - 17, floor, r: 16, dir,
         speed: config.speed * (hot ? 1.18 : 1) * (.94 + Math.random() * .12),
-        falling: false, target: 3, hot, angle: 0, scored: false
+        falling: false, ladderRolling: false, target: Math.max(0, floor - 1), hot, angle: 0, scored: false,
+        passedLadders: {}, forceLadder
       });
       tone(hot ? 126 : 102, .09, 'sawtooth', .018, -18);
     }
@@ -388,6 +435,8 @@
       player.mode = 'climb';
       player.ladder = candidate;
       player.x = LADDERS[candidate].x;
+      player.ladderSide = direction < 0 ? 'lower' : 'upper';
+      player.blockedNotified = false;
       player.vx = 0;
       tone(165, .04, 'square', .012);
       return true;
@@ -407,21 +456,30 @@
       state.texts.push({ text, x, y, life: 1, color });
     }
 
-    function hitPlayer() {
+    function hitPlayer(source = 'barrel') {
       if (player.invuln > 0 || state.phase !== 'playing') return;
       state.hats -= 1;
-      state.shake = reducedMotion ? 0 : 9;
-      state.flash = .22;
-      burst(player.x, player.y, '#fff1cd', 18);
       tone(110, .24, 'sawtooth', .05, -70);
       if (state.hats <= 0) {
+        state.shake = reducedMotion ? 0 : 9;
+        state.flash = .22;
+        burst(player.x, player.y, '#fff1cd', 18);
         state.phase = 'game-over';
         state.banner = Infinity;
         return;
       }
-      state.score = Math.max(0, state.score - 100);
-      floatingText(player.checkpoint ? `CHECKPOINT ${player.checkpoint + 1}` : 'HARD HAT SAVED YOU', player.x, player.y - 20, '#fff1cd');
-      resetPlayer(true);
+      state.score = state.levelStartScore;
+      state.time = LEVELS[state.level - 1].time;
+      state.sparks.length = 0;
+      state.texts.length = 0;
+      state.bolts = makeBolts();
+      state.banner = 2.15;
+      state.retrying = true;
+      state.nextPhase = '';
+      resetHazards();
+      resetPlayer();
+      state.shake = reducedMotion ? 0 : 9;
+      state.flash = .22;
     }
 
     function reachBell() {
@@ -432,7 +490,7 @@
       state.phase = state.level >= 5 ? 'victory' : 'level-clear';
       state.banner = state.level >= 5 ? Infinity : 2.9;
       state.nextPhase = state.level >= 5 ? '' : 'next-level';
-      burst(845, floorY(4, 845) - 56, '#f6c653', 34);
+      burst(BELL_X, floorY(4, BELL_X) - 56, '#f6c653', 34);
       tone(392, .12, 'square', .04, 130);
       setTimeout(() => tone(523, .18, 'square', .04, 100), 120);
     }
@@ -448,22 +506,52 @@
         player.y += climb * 118 * dt;
         const upperY = floorY(ladder.lower + 1, ladder.x) - player.h / 2 - 8;
         const lowerY = floorY(ladder.lower, ladder.x) - player.h / 2 - 8;
+        if (ladder.broken) {
+          const gapMiddle = (upperY + lowerY) / 2;
+          const gapTop = gapMiddle - 19;
+          const gapBottom = gapMiddle + 19;
+          const hitGap = (player.ladderSide === 'lower' && player.y < gapBottom)
+            || (player.ladderSide === 'upper' && player.y > gapTop);
+          if (hitGap) {
+            player.y = player.ladderSide === 'lower' ? gapBottom : gapTop;
+            if (!player.blockedNotified) {
+              player.blockedNotified = true;
+              floatingText('BROKEN!', player.x, player.y - 24, '#f6c653');
+              tone(92, .12, 'square', .025, -18);
+            }
+          }
+          if (player.ladderSide === 'lower' && player.y >= lowerY) {
+            player.y = lowerY;
+            player.floor = ladder.lower;
+            player.mode = 'floor';
+            player.ladder = -1;
+            player.ladderSide = '';
+          } else if (player.ladderSide === 'upper' && player.y <= upperY) {
+            player.y = upperY;
+            player.floor = ladder.lower + 1;
+            player.mode = 'floor';
+            player.ladder = -1;
+            player.ladderSide = '';
+          }
+          return;
+        }
         if (player.y <= upperY) {
           player.y = upperY;
           player.floor = ladder.lower + 1;
-          player.checkpoint = Math.max(player.checkpoint, player.floor);
           player.mode = 'floor';
           player.ladder = -1;
+          player.ladderSide = '';
         } else if (player.y >= lowerY) {
           player.y = lowerY;
           player.floor = ladder.lower;
           player.mode = 'floor';
           player.ladder = -1;
+          player.ladderSide = '';
         }
         return;
       }
 
-      const targetVx = move * 142;
+      const targetVx = move * PLAYER_SPEED;
       player.vx += (targetVx - player.vx) * Math.min(1, dt * (move ? 11 : 16));
       if (move) player.face = move;
       player.x += player.vx * dt;
@@ -485,7 +573,7 @@
         else if (keys.down) enterLadder(1);
       }
 
-      if (player.floor === 4 && player.x > 823 && player.mode === 'floor') reachBell();
+      if (player.floor === 4 && player.x > BELL_TRIGGER_X && player.mode === 'floor') reachBell();
     }
 
     function updateBarrels(dt) {
@@ -497,36 +585,71 @@
       }
 
       state.barrels.forEach(barrel => {
-        if (barrel.falling) {
+        if (barrel.ladderRolling) {
+          barrel.y += Math.max(138, barrel.speed * .92) * dt;
+          barrel.angle += barrel.speed * dt / barrel.r;
+          const targetY = floorY(barrel.target, barrel.x) - barrel.r;
+          if (barrel.y >= targetY) {
+            barrel.y = targetY;
+            barrel.floor = barrel.target;
+            barrel.dir = downhillDirection(barrel.floor);
+            barrel.ladderRolling = false;
+            barrel.scored = false;
+            burst(barrel.x, barrel.y + barrel.r - 2, 'rgba(246,198,83,.85)', 8);
+            tone(138, .06, 'square', .014, -26);
+          }
+        } else if (barrel.falling) {
           barrel.y += 210 * dt;
           const targetY = floorY(barrel.target, barrel.x) - barrel.r;
           if (barrel.y >= targetY) {
             barrel.y = targetY;
             barrel.floor = barrel.target;
-            barrel.dir = barrel.floor % 2 === 0 ? 1 : -1;
+            barrel.dir = downhillDirection(barrel.floor);
             barrel.falling = false;
             barrel.scored = false;
             burst(barrel.x, barrel.y + barrel.r - 2, 'rgba(255,241,205,.75)', 5);
           }
         } else {
+          const previousX = barrel.x;
           barrel.x += barrel.dir * barrel.speed * dt;
           barrel.angle += barrel.dir * barrel.speed * dt / barrel.r;
           barrel.y = floorY(barrel.floor, barrel.x) - barrel.r;
-          const leaving = barrel.dir > 0 ? barrel.x >= 890 : barrel.x <= 70;
-          if (leaving) {
-            if (barrel.floor === 0) {
-              barrel.dead = true;
-            } else {
-              barrel.x = barrel.dir > 0 ? 890 : 70;
-              barrel.falling = true;
-              barrel.target = barrel.floor - 1;
+
+          const ladder = LADDERS.find(candidate => {
+            if (candidate.lower + 1 !== barrel.floor || barrel.passedLadders[candidate.id]) return false;
+            return barrel.dir > 0
+              ? previousX < candidate.x && barrel.x >= candidate.x
+              : previousX > candidate.x && barrel.x <= candidate.x;
+          });
+          if (ladder) {
+            barrel.passedLadders[ladder.id] = true;
+            if (barrel.forceLadder || Math.random() < BARREL_LADDER_CHANCE) {
+              barrel.x = ladder.x;
+              barrel.y = floorY(barrel.floor, ladder.x) - barrel.r;
+              barrel.target = ladder.lower;
+              barrel.ladderRolling = true;
+              barrel.forceLadder = false;
+              tone(ladder.broken ? 96 : 122, .08, 'triangle', .018, -18);
+            }
+          }
+
+          if (!barrel.ladderRolling) {
+            const leaving = barrel.dir > 0 ? barrel.x >= 890 : barrel.x <= 70;
+            if (leaving) {
+              if (barrel.floor === 0) {
+                barrel.dead = true;
+              } else {
+                barrel.x = barrel.dir > 0 ? 890 : 70;
+                barrel.falling = true;
+                barrel.target = barrel.floor - 1;
+              }
             }
           }
         }
 
         const dx = barrel.x - player.x;
         const dy = barrel.y - player.y;
-        if (!barrel.scored && !barrel.falling && barrel.floor === player.floor && player.mode === 'jump' && Math.abs(dx) < 31 && player.y < barrel.y - 22) {
+        if (!barrel.scored && !barrel.falling && !barrel.ladderRolling && barrel.floor === player.floor && player.mode === 'jump' && Math.abs(dx) < 31 && player.y < barrel.y - 22) {
           barrel.scored = true;
           state.score += barrel.hot ? 250 : 150;
           floatingText(barrel.hot ? '+250 EXPRESS!' : '+150', player.x, player.y - 28, '#f6c653');
@@ -534,9 +657,111 @@
         }
 
         const collision = Math.abs(dx) < barrel.r + player.w * .34 && Math.abs(dy) < barrel.r + player.h * .34;
-        if (collision) hitPlayer();
+        if (collision) hitPlayer('barrel');
       });
       state.barrels = state.barrels.filter(barrel => !barrel.dead);
+    }
+
+    function updateFire(dt) {
+      const config = LEVELS[state.level - 1];
+      if (!config.fire) return;
+      const fire = state.fire;
+      fire.pulse += dt;
+      if (!fire.active) {
+        fire.timer = Math.max(0, fire.timer - dt);
+        if (fire.timer <= 0) {
+          fire.active = true;
+          fire.x = 74;
+          fire.floor = 0;
+          fire.y = floorY(0, fire.x) - 24;
+          fire.mode = 'floor';
+          burst(fire.x, fire.y, '#ffcf4d', 18);
+          floatingText('EMBER EDDY!', 128, fire.y - 26, '#ffcf4d');
+          tone(172, .22, 'sawtooth', .035, 90);
+        }
+        return;
+      }
+
+      if (fire.mode === 'climb') {
+        const ladder = ROUTE_LADDERS[fire.ladder];
+        fire.x = ladder.x;
+        fire.y -= FIRE_SPEED * dt;
+        const upperY = floorY(ladder.lower + 1, ladder.x) - 24;
+        if (fire.y <= upperY) {
+          fire.y = upperY;
+          fire.floor = ladder.lower + 1;
+          fire.mode = 'floor';
+          fire.ladder = -1;
+        }
+      } else {
+        const routeLadder = fire.floor < 4 ? ROUTE_LADDERS[fire.floor] : null;
+        const shouldClimb = routeLadder && player.floor > fire.floor;
+        const targetX = shouldClimb ? routeLadder.x : player.x;
+        const dx = targetX - fire.x;
+        if (Math.abs(dx) > 2) {
+          fire.face = Math.sign(dx);
+          fire.x += Math.sign(dx) * Math.min(Math.abs(dx), FIRE_SPEED * dt);
+        }
+        fire.y = floorY(fire.floor, fire.x) - 24;
+        if (shouldClimb && Math.abs(fire.x - routeLadder.x) <= 2.5) {
+          fire.mode = 'climb';
+          fire.ladder = fire.floor;
+        }
+      }
+
+      if (Math.abs(fire.x - player.x) < 22 && Math.abs(fire.y - player.y) < 31) hitPlayer('fire');
+    }
+
+    function wreckBallPosition() {
+      const config = LEVELS[state.level - 1];
+      const angle = Math.sin(state.elapsed * (config.wreckRate || .9)) * WRECK_SWING;
+      const anchorX = 480;
+      const anchorY = 69;
+      return {
+        anchorX, anchorY, angle,
+        x: anchorX + Math.sin(angle) * WRECK_LENGTH,
+        y: anchorY + Math.cos(angle) * WRECK_LENGTH
+      };
+    }
+
+    function updateWreck() {
+      const config = LEVELS[state.level - 1];
+      if (!config.wreck) return;
+      const ball = wreckBallPosition();
+      if (Math.hypot(ball.x - player.x, ball.y - player.y) < config.wreckRadius + 14) hitPlayer('wreck');
+    }
+
+    function updateLooseLoad(dt) {
+      const config = LEVELS[state.level - 1];
+      if (!config.looseLoads) return;
+      const load = state.looseLoad;
+      load.pulse += dt;
+      load.timer -= dt;
+
+      if (load.phase === 'idle' && load.timer <= 0) {
+        load.phase = 'warning';
+        load.timer = 1.45;
+        load.floor = player.floor;
+        load.x = Math.max(105, Math.min(855, player.x));
+        load.targetY = floorY(load.floor, load.x) - 18;
+        tone(208, .12, 'square', .025, -42);
+      } else if (load.phase === 'warning' && load.timer <= 0) {
+        load.phase = 'falling';
+        load.timer = Infinity;
+        load.y = 42;
+        tone(118, .18, 'sawtooth', .03, -48);
+      } else if (load.phase === 'falling') {
+        load.y += 268 * dt;
+        if (Math.abs(load.x - player.x) < 31 && Math.abs(load.y - player.y) < 33) hitPlayer('load');
+        if (load.y >= load.targetY) {
+          load.y = load.targetY;
+          burst(load.x, load.y + 12, '#f6c653', 20);
+          floatingText('CRASH!', load.x, load.y - 18, '#fff1cd');
+          tone(76, .18, 'square', .035, -24);
+          load.phase = 'idle';
+          load.timer = 4;
+        }
+      }
     }
 
     function updatePickups(dt) {
@@ -570,12 +795,15 @@
 
     function update(dt) {
       updateEffects(dt);
-      document.documentElement.dataset.barrelBrigadeState = `${state.phase}|${state.level}|${state.hats}|${Math.ceil(state.time)}|${player.floor}|${player.mode}|${Math.round(player.x)}`;
+      document.documentElement.dataset.barrelBrigadeState = `${state.phase}|${state.level}|${state.hats}|${Math.ceil(state.time)}|${player.floor}|${player.mode}|${Math.round(player.x)}|${Math.round(player.y)}|${state.barrels.filter(barrel => barrel.ladderRolling).length}|${state.fire.active ? 'fire' : Math.ceil(state.fire.timer)}|${state.looseLoad.phase}|${state.elapsed.toFixed(1)}`;
       if (state.paused || state.phase === 'instructions') return;
       state.elapsed += dt;
       if (state.banner > 0 && Number.isFinite(state.banner)) {
         state.banner -= dt;
-        if (state.banner <= 0 && state.nextPhase === 'next-level') startLevel(state.level + 1, true);
+        if (state.banner <= 0) {
+          if (state.nextPhase === 'next-level') startLevel(state.level + 1, true);
+          else state.retrying = false;
+        }
       }
       if (state.phase !== 'playing') return;
       state.time = Math.max(0, state.time - dt);
@@ -587,6 +815,9 @@
       }
       updatePlayer(dt);
       updateBarrels(dt);
+      updateFire(dt);
+      updateWreck();
+      updateLooseLoad(dt);
       updatePickups(dt);
     }
 
@@ -667,22 +898,48 @@
       LADDERS.forEach(ladder => {
         const upperY = floorY(ladder.lower + 1, ladder.x) + 3;
         const lowerY = floorY(ladder.lower, ladder.x) - 7;
+        const middle = (upperY + lowerY) / 2;
+        const gapTop = middle - 21;
+        const gapBottom = middle + 21;
         ctx.strokeStyle = '#172f3e';
         ctx.lineWidth = 7;
         ctx.beginPath();
-        ctx.moveTo(ladder.x - 17, upperY); ctx.lineTo(ladder.x - 17, lowerY);
-        ctx.moveTo(ladder.x + 17, upperY); ctx.lineTo(ladder.x + 17, lowerY);
+        if (ladder.broken) {
+          ctx.moveTo(ladder.x - 17, upperY); ctx.lineTo(ladder.x - 17, gapTop);
+          ctx.moveTo(ladder.x + 17, upperY); ctx.lineTo(ladder.x + 17, gapTop + 5);
+          ctx.moveTo(ladder.x - 17, gapBottom - 4); ctx.lineTo(ladder.x - 17, lowerY);
+          ctx.moveTo(ladder.x + 17, gapBottom); ctx.lineTo(ladder.x + 17, lowerY);
+        } else {
+          ctx.moveTo(ladder.x - 17, upperY); ctx.lineTo(ladder.x - 17, lowerY);
+          ctx.moveTo(ladder.x + 17, upperY); ctx.lineTo(ladder.x + 17, lowerY);
+        }
         ctx.stroke();
         ctx.strokeStyle = '#f2cb76';
         ctx.lineWidth = 4;
         for (let y = upperY + 8; y < lowerY; y += 17) {
+          if (ladder.broken && y > gapTop - 3 && y < gapBottom + 3) continue;
           ctx.beginPath(); ctx.moveTo(ladder.x - 17, y); ctx.lineTo(ladder.x + 17, y); ctx.stroke();
+        }
+        if (ladder.broken) {
+          ctx.fillStyle = '#f6c653';
+          ctx.strokeStyle = '#702b23';
+          ctx.lineWidth = 2;
+          ctx.save();
+          ctx.translate(ladder.x + 30, middle);
+          ctx.rotate(-.08);
+          roundRect(-22, -8, 44, 16, 2); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#702b23';
+          ctx.font = '900 8px Trebuchet MS';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('BROKEN', 0, 1);
+          ctx.restore();
         }
       });
     }
 
     function drawThrower() {
-      const x = 99, y = floorY(4, x) - 24;
+      const x = THROWER_X, y = floorY(4, x) - 24;
       ctx.save();
       ctx.translate(x, y);
       ctx.fillStyle = '#14283a';
@@ -703,7 +960,7 @@
     }
 
     function drawBell() {
-      const x = 846, y = floorY(4, 846) - 43;
+      const x = BELL_X, y = floorY(4, BELL_X) - 29;
       const swing = state.phase === 'level-clear' || state.phase === 'victory' ? Math.sin(state.elapsed * 18) * .18 : 0;
       ctx.save(); ctx.translate(x, y); ctx.rotate(swing);
       ctx.strokeStyle = '#14283a'; ctx.lineWidth = 5;
@@ -747,6 +1004,124 @@
         ctx.fillStyle = 'rgba(240,91,48,.35)';
         ctx.beginPath(); ctx.arc(barrel.x - barrel.dir * 19, barrel.y, 9 + Math.sin(state.elapsed * 16) * 3, 0, Math.PI * 2); ctx.fill();
       }
+    }
+
+    function drawFire() {
+      const config = LEVELS[state.level - 1];
+      if (!config.fire) return;
+      const fire = state.fire;
+      if (!fire.active) {
+        const y = floorY(0, 105) - 46;
+        ctx.fillStyle = 'rgba(20,40,58,.88)';
+        roundRect(63, y - 17, 128, 29, 4); ctx.fill();
+        ctx.strokeStyle = '#ffcf4d'; ctx.lineWidth = 2; roundRect(63, y - 17, 128, 29, 4); ctx.stroke();
+        ctx.fillStyle = '#ffcf4d'; ctx.font = '900 12px Trebuchet MS'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`FIRE IN ${Math.max(0, Math.ceil(fire.timer))}`, 127, y - 2);
+        ctx.textBaseline = 'alphabetic';
+        return;
+      }
+
+      const flicker = Math.sin(fire.pulse * 11) * 3;
+      ctx.save();
+      ctx.translate(fire.x, fire.y);
+      ctx.scale(fire.face || 1, 1);
+      ctx.fillStyle = 'rgba(20,40,58,.24)';
+      ctx.beginPath(); ctx.ellipse(0, 25, 19, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#6f2b27'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-11, 5); ctx.lineTo(-24, 12 + flicker * .4);
+      ctx.moveTo(11, 5); ctx.lineTo(24, 8 - flicker * .4);
+      ctx.moveTo(-7, 18); ctx.lineTo(-11, 27);
+      ctx.moveTo(7, 18); ctx.lineTo(12, 27);
+      ctx.stroke();
+      ctx.fillStyle = '#e34f2f'; ctx.strokeStyle = '#6f2b27'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, -31 - flicker);
+      ctx.bezierCurveTo(10, -17, 21, -10, 17, 6);
+      ctx.bezierCurveTo(15, 20, 7, 25, 0, 24);
+      ctx.bezierCurveTo(-13, 26, -20, 16, -18, 4);
+      ctx.bezierCurveTo(-16, -7, -6, -12, 0, -31 - flicker);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffcf4d';
+      ctx.beginPath();
+      ctx.moveTo(1, -18 - flicker * .5);
+      ctx.bezierCurveTo(9, -8, 11, 1, 7, 11);
+      ctx.bezierCurveTo(2, 18, -8, 13, -8, 5);
+      ctx.bezierCurveTo(-8, -3, -2, -8, 1, -18 - flicker * .5);
+      ctx.fill();
+      ctx.fillStyle = '#fff6d1';
+      ctx.beginPath(); ctx.arc(-6, -2, 4, 0, Math.PI * 2); ctx.arc(7, -2, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#14283a';
+      ctx.beginPath(); ctx.arc(-5, -1, 1.8, 0, Math.PI * 2); ctx.arc(8, -1, 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#14283a'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(1, 8, 6, .1, Math.PI - .1); ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawWreck() {
+      const config = LEVELS[state.level - 1];
+      if (!config.wreck) return;
+      const ball = wreckBallPosition();
+      const radius = config.wreckRadius;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(246,198,83,.45)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 10]);
+      ctx.beginPath(); ctx.arc(ball.anchorX, ball.anchorY, WRECK_LENGTH, Math.PI / 2 - WRECK_SWING, Math.PI / 2 + WRECK_SWING); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = '#14283a'; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(ball.anchorX, ball.anchorY); ctx.lineTo(ball.x, ball.y); ctx.stroke();
+      ctx.fillStyle = '#f6c653'; ctx.strokeStyle = '#702b23'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(ball.anchorX, ball.anchorY, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.translate(ball.x, ball.y);
+      ctx.rotate(-ball.angle);
+      ctx.fillStyle = '#243a49'; ctx.strokeStyle = '#0f2132'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#f6c653'; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(-radius * .7, -radius * .45); ctx.lineTo(radius * .7, radius * .45); ctx.moveTo(-radius * .72, 7); ctx.lineTo(-7, radius * .72); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = '#702b23'; ctx.font = '900 10px Trebuchet MS'; ctx.textAlign = 'center';
+      ctx.fillText('SWING ZONE', ball.anchorX, 93);
+    }
+
+    function drawLooseLoad() {
+      const config = LEVELS[state.level - 1];
+      if (!config.looseLoads) return;
+      const load = state.looseLoad;
+      const pulse = .5 + Math.sin(load.pulse * 10) * .16;
+      ctx.save();
+
+      ctx.fillStyle = '#243a49';
+      ctx.fillRect(load.x - 25, 69, 50, 8);
+      ctx.strokeStyle = '#f6c653'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(load.x - 18, 77); ctx.lineTo(load.x - 10, 88); ctx.lineTo(load.x + 10, 88); ctx.lineTo(load.x + 18, 77); ctx.stroke();
+
+      if (load.phase === 'warning') {
+        ctx.strokeStyle = `rgba(255,207,77,${Math.min(1, pulse + .22)})`; ctx.lineWidth = 5; ctx.setLineDash([10, 8]);
+        ctx.beginPath(); ctx.moveTo(load.x, 89); ctx.lineTo(load.x, load.targetY); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = `rgba(227,79,47,${pulse})`;
+        ctx.beginPath(); ctx.ellipse(load.x, load.targetY + 15, 44, 13, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#ffcf4d'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.ellipse(load.x, load.targetY + 15, 52, 18, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#fff1cd'; ctx.font = '900 10px Trebuchet MS'; ctx.textAlign = 'center';
+        ctx.fillText('DROP ZONE', load.x, load.targetY + 46);
+      } else if (load.phase === 'falling') {
+        ctx.strokeStyle = 'rgba(255,241,205,.55)'; ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(load.x - 19, load.y - 35); ctx.lineTo(load.x - 19, load.y - 16);
+        ctx.moveTo(load.x + 19, load.y - 44); ctx.lineTo(load.x + 19, load.y - 18);
+        ctx.stroke();
+        ctx.translate(load.x, load.y);
+        ctx.fillStyle = '#c77c42'; ctx.strokeStyle = '#14283a'; ctx.lineWidth = 5;
+        ctx.fillRect(-24, -22, 48, 44); ctx.strokeRect(-24, -22, 48, 44);
+        ctx.strokeStyle = '#f6c653'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(-18, -16); ctx.lineTo(18, 16); ctx.moveTo(18, -16); ctx.lineTo(-18, 16); ctx.stroke();
+        ctx.fillStyle = '#14283a'; ctx.fillRect(-24, -5, 48, 10);
+        ctx.fillStyle = '#fff1cd'; ctx.font = '900 8px Trebuchet MS'; ctx.textAlign = 'center';
+        ctx.fillText('LOAD', 0, 3);
+      }
+      ctx.restore();
     }
 
     function drawPlayer() {
@@ -807,6 +1182,15 @@
       ctx.fillStyle = '#14283a'; ctx.font = '900 11px Trebuchet MS';
       const taken = state.bolts.filter(bolt => bolt.taken).length;
       ctx.textAlign = 'right'; ctx.fillText(`RIVETS ${taken}/4`, 918, 83);
+      if (LEVELS[state.level - 1].looseLoads) {
+        const load = state.looseLoad;
+        const loadStatus = load.phase === 'idle'
+          ? `LOOSE LOAD ${Math.max(0, Math.ceil(load.timer))}`
+          : load.phase === 'warning' ? 'LOAD TARGETED!' : 'LOAD FALLING!';
+        ctx.font = `900 ${touchHud ? 14 : 11}px Trebuchet MS`;
+        ctx.textAlign = 'left'; ctx.fillStyle = '#ffcf4d'; ctx.strokeStyle = '#14283a'; ctx.lineWidth = 4;
+        ctx.strokeText(loadStatus, 650, 40); ctx.fillText(loadStatus, 650, 40);
+      }
       ctx.textBaseline = 'alphabetic';
     }
 
@@ -814,6 +1198,7 @@
       if (state.banner <= 0 && state.phase === 'playing') return;
       let title = `SHIFT ${state.level}`;
       let subtitle = LEVELS[state.level - 1].tips;
+      if (state.retrying && state.phase === 'playing') { title = 'SHIFT RESET!'; subtitle = 'Back to the bottom • every hazard restarted'; }
       if (state.phase === 'level-clear') { title = 'BELL RUNG!'; subtitle = `Shift ${state.level} clear • next crew moving in`; }
       if (state.phase === 'game-over') { title = state.time <= 0 ? 'WHISTLE BLEW' : 'OUT OF HARD HATS'; subtitle = 'Press R or tap restart to try this shift again'; }
       if (state.phase === 'victory') { title = 'MASTER FOREMAN!'; subtitle = `All five shifts cleared • final score ${Math.floor(state.score)}`; }
@@ -833,10 +1218,13 @@
       if (state.shake > 0) ctx.translate((Math.random() - .5) * state.shake, (Math.random() - .5) * state.shake);
       drawBackdrop();
       drawGirders();
+      drawWreck();
+      drawLooseLoad();
       drawThrower();
       drawBell();
       drawBolts();
       state.barrels.forEach(drawBarrel);
+      drawFire();
       drawPlayer();
       drawEffects();
       drawHud();
@@ -890,6 +1278,23 @@
       ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
       ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down'
     };
+    function placeOnBrokenLadderForTest() {
+      const ladderIndex = LADDERS.findIndex(ladder => ladder.id === 'broken-2');
+      const ladder = LADDERS[ladderIndex];
+      const upperY = floorY(ladder.lower + 1, ladder.x) - player.h / 2 - 8;
+      const lowerY = floorY(ladder.lower, ladder.x) - player.h / 2 - 8;
+      player.mode = 'climb';
+      player.ladder = ladderIndex;
+      player.ladderSide = 'lower';
+      player.blockedNotified = false;
+      player.floor = ladder.lower;
+      player.x = ladder.x;
+      player.y = lowerY;
+      player.invuln = 10;
+      state.barrels = [];
+      keys.up = true;
+      setTimeout(() => { keys.up = false; }, 1200);
+    }
     addEventListener('keydown', event => {
       if (keyMap[event.code] || event.code === 'Space' || event.code === 'KeyR' || event.code === 'KeyM') event.preventDefault();
       if (keyMap[event.code]) keys[keyMap[event.code]] = true;
@@ -898,6 +1303,15 @@
       if (event.code === 'KeyM' && !event.repeat) toggleSound();
       if (event.code === 'BracketRight' && !event.repeat && testMode) reachBell();
       if (event.code === 'BracketLeft' && !event.repeat && testMode) { player.invuln = 0; hitPlayer(); }
+      if (event.code === 'KeyL' && !event.repeat && testMode) spawnBarrel(true, true, 3, 477);
+      if (event.code === 'KeyF' && !event.repeat && testMode && LEVELS[state.level - 1].fire) { state.fire.active = false; state.fire.timer = 0; }
+      if (event.code === 'KeyC' && !event.repeat && testMode && LEVELS[state.level - 1].looseLoads) {
+        state.looseLoad.phase = 'idle';
+        state.looseLoad.timer = 0;
+      }
+      if (event.code === 'KeyB' && !event.repeat && testMode) {
+        placeOnBrokenLadderForTest();
+      }
       if ((state.phase === 'game-over' || state.phase === 'victory') && event.code === 'Enter') startLevel(state.phase === 'victory' ? 1 : state.level, state.phase !== 'victory');
     }, { passive: false });
     addEventListener('keyup', event => {
@@ -927,7 +1341,7 @@
     modal.addEventListener('click', event => { if (event.target === modal) hideInstructions(); });
 
     window.__barrelBrigade = {
-      getState: () => ({ phase: state.phase, level: state.level, hats: state.hats, time: Number(state.time.toFixed(1)), score: state.score, barrels: state.barrels.length, player: { x: Math.round(player.x), y: Math.round(player.y), floor: player.floor, mode: player.mode } }),
+      getState: () => ({ phase: state.phase, level: state.level, hats: state.hats, time: Number(state.time.toFixed(1)), score: state.score, barrels: state.barrels.length, ladderBarrels: state.barrels.filter(barrel => barrel.ladderRolling).length, fire: state.fire.active, wreck: LEVELS[state.level - 1].wreck, looseLoad: state.looseLoad.phase, player: { x: Math.round(player.x), y: Math.round(player.y), floor: player.floor, mode: player.mode } }),
       jumpToLevel(level) { state.started = true; state.paused = false; startLevel(Number(level), false); },
       spawnBarrel,
       clearLevel: reachBell,
