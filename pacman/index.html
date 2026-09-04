@@ -1811,7 +1811,8 @@ function bindMovementJoystick() {
   const joystick = document.querySelector('[data-joystick]');
   window.VibeCadeJoystick(joystick, {
     mode: 'cardinal',
-    deadZone: 0.14,
+    deadZone: 0.16,
+    minimumDeadZone: 0.16,
     onChange(x, y) {
       if (gamePaused) return;
       const key = Math.abs(x) > 0.5

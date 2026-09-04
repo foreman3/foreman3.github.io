@@ -1744,7 +1744,7 @@ const controlButtons = document.querySelectorAll('.control-button');
 const bindMovementJoystick = () => {
   if (!window.VibeCadeJoystick) return;
   window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-    mode: 'cardinal', deadZone: 0.12,
+    mode: 'cardinal', deadZone: 0.16, minimumDeadZone: 0.16,
     onChange: (x, y) => {
       const next = Math.abs(x) > 0.5 ? (x < 0 ? 'left' : 'right')
         : Math.abs(y) > 0.5 ? (y < 0 ? 'up' : 'down') : '';

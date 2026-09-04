@@ -383,7 +383,11 @@
       ? options.mode
       : 'analog';
     const requestedDeadZone = Number.isFinite(options.deadZone) ? options.deadZone : 0.16;
-    const deadZone = Math.max(0.24, Math.min(0.42, requestedDeadZone));
+    const requestedMinimumDeadZone = Number.isFinite(options.minimumDeadZone)
+      ? options.minimumDeadZone
+      : 0.24;
+    const minimumDeadZone = Math.max(0.08, Math.min(0.24, requestedMinimumDeadZone));
+    const deadZone = Math.max(minimumDeadZone, Math.min(0.42, requestedDeadZone));
     const onChange = typeof options.onChange === 'function' ? options.onChange : () => {};
     let pointerId = null;
     let lastVector = '';
