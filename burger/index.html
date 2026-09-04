@@ -364,7 +364,7 @@
     <div id="instruction-card">
       <h2>How to Play</h2>
       <p>Assemble towering burgers while dodging mischievous food foes.</p>
-      <p>Drag the joystick to move and climb. Ladders gently pull you into position; slide sideways near a landing to step off. Tap PEP to unleash pepper spray.</p>
+      <p>Drag the joystick to move and climb. Turns queue for the next ladder or landing, while reversals happen immediately. Tap PEP to unleash pepper spray.</p>
       <p>Walk across all three glowing pressure points on an ingredient to drop it. Carry an enemy for one extra floor, collect condiments, and complete every burger stack.</p>
       <button id="instruction-close" type="button">Start</button>
     </div>
@@ -396,8 +396,8 @@
         Assemble towering gourmet burgers while dodging mischievous food foes. Use the
         <strong>drag joystick</strong> or Arrow Keys to move and climb, and tap <strong>PEP</strong>
         or Space to unleash a burst of pepper spray that stuns anything in front of you.
-        Ladders magnetize gently when you climb, and a sideways press near a landing
-        steps off cleanly. Walk across all three pressure points on each ingredient,
+        Turns queue for the next ladder or landing, while reversals happen immediately.
+        Walk across all three pressure points on each ingredient,
         carry enemies for an extra floor, and complete every mega stack!
       </p>
     </section>
@@ -523,6 +523,9 @@ const player = {
   invulnerable: 0,
   climbing: false,
   currentLadder: null,
+  targetFloor: null,
+  moveDirection: '',
+  nextDirection: '',
   dying: false,
   deathTimer: 0,
   respawnTimer: 0
@@ -586,7 +589,7 @@ const FRAME_TIME = 1000 / BASE_FPS;
 const FIXED_DT = FRAME_TIME / 1000;
 const MAX_CATCHUP_STEPS = 5;
 const LADDER_EXIT_BAND = 0.58;
-const LADDER_ENTRY_TOLERANCE = 1.05;
+const PLAYER_TURN_TOLERANCE = 0.18;
 const DEATH_ANIMATION_FRAMES = 72;
 const RESPAWN_COOLDOWN_FRAMES = 78;
 let accumulator = 0;
@@ -819,6 +822,9 @@ function resetActors(options = {}){
   player.invulnerable = 60;
   player.climbing = false;
   player.currentLadder = null;
+  player.targetFloor = null;
+  player.moveDirection = '';
+  player.nextDirection = '';
   player.dying = false;
   player.deathTimer = 0;
   player.respawnTimer = options.cooldown ?? 0;
@@ -956,7 +962,18 @@ function nearestFloorAt(y, tolerance = LADDER_EXIT_BAND){
   return match;
 }
 
-function ladderForIntent(entity, direction, tolerance = LADDER_ENTRY_TOLERANCE){
+function nextFloorInDirection(y, direction){
+  if(direction < 0){
+    let match;
+    for(const floor of floors){
+      if(floor < y - PLAYER_TURN_TOLERANCE) match = floor;
+    }
+    return match;
+  }
+  return floors.find(floor => floor > y + PLAYER_TURN_TOLERANCE);
+}
+
+function ladderForIntent(entity, direction, tolerance = PLAYER_TURN_TOLERANCE){
   const centerX = entity.x + 0.5;
   return ladders
     .filter(ladder => {
@@ -1077,6 +1094,9 @@ function playerHit(){
   player.vy = 0;
   player.climbing = false;
   player.currentLadder = null;
+  player.targetFloor = null;
+  player.moveDirection = '';
+  player.nextDirection = '';
   keys.left = keys.right = keys.up = keys.down = false;
   spawnParticles(player.x + 0.5, player.y - 0.5, '#ff5f6d', 24);
   setLevelMessage(lives > 0 ? 'Chef down!' : 'Last chef down!');
@@ -1185,15 +1205,19 @@ function handlePlayer(step){
   if(player.cooldown > 0) player.cooldown = Math.max(0, player.cooldown - step);
   if(player.invulnerable > 0) player.invulnerable = Math.max(0, player.invulnerable - step);
 
-  const horizontalDirection = keys.left ? -1 : (keys.right ? 1 : 0);
-  const verticalDirection = keys.up ? -1 : (keys.down ? 1 : 0);
-  const nearbyFloor = nearestFloorAt(player.y);
+  const requestedDirection = player.nextDirection;
+  const requestedHorizontal = requestedDirection === 'left' || requestedDirection === 'right';
+  const requestedVertical = requestedDirection === 'up' || requestedDirection === 'down';
+  const requestedSign = requestedDirection === 'left' || requestedDirection === 'up' ? -1 : 1;
 
-  if(!player.climbing && verticalDirection){
-    const candidate = ladderForIntent(player, verticalDirection);
+  if(!player.climbing && requestedVertical){
+    const candidate = ladderForIntent(player, requestedSign, PLAYER_TURN_TOLERANCE);
     if(candidate){
       player.climbing = true;
       player.currentLadder = candidate;
+      player.moveDirection = requestedDirection;
+      player.targetFloor = nextFloorInDirection(player.y, requestedSign);
+      player.x = candidate.x;
       player.vx = 0;
     }
   }
@@ -1202,25 +1226,47 @@ function handlePlayer(step){
     const ladder = player.currentLadder;
     player.x += (ladder.x - player.x) * Math.min(1, 0.48 * step);
     player.vx = 0;
+    if(requestedVertical && player.moveDirection !== requestedDirection){
+      player.moveDirection = requestedDirection;
+      player.targetFloor = nextFloorInDirection(player.y, requestedSign);
+    }
+
+    const verticalDirection = player.moveDirection === 'up' ? -1 : (player.moveDirection === 'down' ? 1 : 0);
     if(verticalDirection) player.y += verticalDirection * 0.13 * step;
 
-    const exitFloor = nearestFloorAt(player.y);
-    const reachedTop = player.y <= ladder.top;
-    const reachedBottom = player.y >= ladder.bottom;
-    if(horizontalDirection && exitFloor !== undefined){
-      player.y = exitFloor;
+    const turnFloor = player.targetFloor;
+    const reachedTurnFloor = turnFloor !== undefined && turnFloor !== null && (
+      verticalDirection < 0
+        ? player.y <= turnFloor + PLAYER_TURN_TOLERANCE
+        : player.y >= turnFloor - PLAYER_TURN_TOLERANCE
+    );
+    if(requestedHorizontal && reachedTurnFloor){
+      player.y = turnFloor;
       player.climbing = false;
       player.currentLadder = null;
-    } else if((verticalDirection < 0 && reachedTop) || (verticalDirection > 0 && reachedBottom)){
-      player.y = verticalDirection < 0 ? ladder.top : ladder.bottom;
-      player.climbing = false;
-      player.currentLadder = null;
-    } else if(!verticalDirection && exitFloor !== undefined){
-      player.y = exitFloor;
+      player.targetFloor = null;
+      player.moveDirection = requestedDirection;
+    } else {
+      if(reachedTurnFloor){
+        player.y = turnFloor;
+        player.targetFloor = nextFloorInDirection(player.y, verticalDirection);
+      }
+      if((verticalDirection < 0 && player.y <= ladder.top) || (verticalDirection > 0 && player.y >= ladder.bottom)){
+        player.y = verticalDirection < 0 ? ladder.top : ladder.bottom;
+        player.climbing = false;
+        player.currentLadder = null;
+        player.targetFloor = null;
+        player.moveDirection = '';
+      }
     }
   }
 
   if(!player.climbing){
+    const movingHorizontally = player.moveDirection === 'left' || player.moveDirection === 'right';
+    if(requestedHorizontal && (movingHorizontally || !player.moveDirection)){
+      player.moveDirection = requestedDirection;
+    }
+    const horizontalDirection = player.moveDirection === 'left' ? -1 : (player.moveDirection === 'right' ? 1 : 0);
     const standingFloor = nearestFloorAt(player.y, LADDER_EXIT_BAND);
     if(standingFloor !== undefined) player.y = standingFloor;
     if(horizontalDirection && (standingFloor !== undefined || isOnFloor(player) || isOnPiece(player))){
@@ -1683,6 +1729,8 @@ function draw(){
   canvas.dataset.playerX = player.x.toFixed(2);
   canvas.dataset.playerY = player.y.toFixed(2);
   canvas.dataset.climbing = String(player.climbing);
+  canvas.dataset.playerDirection = player.moveDirection || 'idle';
+  canvas.dataset.nextDirection = player.nextDirection || 'idle';
   canvas.dataset.playerPhase = player.dying ? 'dying' : (player.respawnTimer > 0 ? 'cooldown' : (gameOver ? 'game-over' : 'playing'));
   canvas.dataset.respawnTimer = String(Math.ceil(player.respawnTimer));
   canvas.dataset.enemies = String(enemies.length);
@@ -1713,12 +1761,18 @@ function draw(){
 }
 
 const keys = {};
+function queuePlayerDirection(direction){
+  if(direction === 'left' || direction === 'right' || direction === 'up' || direction === 'down'){
+    player.nextDirection = direction;
+  }
+}
+
 document.addEventListener('keydown', e => {
   if(e.key.startsWith('Arrow')) e.preventDefault();
-  if(e.key === 'ArrowLeft') keys.left = true;
-  if(e.key === 'ArrowRight') keys.right = true;
-  if(e.key === 'ArrowUp') keys.up = true;
-  if(e.key === 'ArrowDown') keys.down = true;
+  if(e.key === 'ArrowLeft') { keys.left = true; queuePlayerDirection('left'); }
+  if(e.key === 'ArrowRight') { keys.right = true; queuePlayerDirection('right'); }
+  if(e.key === 'ArrowUp') { keys.up = true; queuePlayerDirection('up'); }
+  if(e.key === 'ArrowDown') { keys.down = true; queuePlayerDirection('down'); }
   if(e.code === 'Space'){
     e.preventDefault();
     usePepper();
@@ -1744,11 +1798,11 @@ const controlButtons = document.querySelectorAll('.control-button');
 const bindMovementJoystick = () => {
   if (!window.VibeCadeJoystick) return;
   window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-    mode: 'cardinal', deadZone: 0.16, minimumDeadZone: 0.16,
+    mode: 'cardinal', deadZone: 7 / 63, minimumDeadZone: 7 / 63,
     onChange: (x, y) => {
       const next = Math.abs(x) > 0.5 ? (x < 0 ? 'left' : 'right')
         : Math.abs(y) > 0.5 ? (y < 0 ? 'up' : 'down') : '';
-      ['left', 'right', 'up', 'down'].forEach(direction => { keys[direction] = direction === next; });
+      if(next) queuePlayerDirection(next);
     }
   });
 };
