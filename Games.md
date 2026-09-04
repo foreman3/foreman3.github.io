@@ -6,9 +6,9 @@ This repository hosts simple arcade-style video games.
 
 - [Arkanoid Redux](arkanoid/) - Brick-busting with extra polish.
 - [Asteroids](asteroids/) - Blast space rocks and avoid collisions.
-- [Drop Game](drop-game/) - Catch falling fruit.
 - [Burger Time](burger/) - Assemble towering burgers while avoiding enemies.
 - [Flappy](flappy/) - Navigate obstacles and collect coins.
+- [Galactic Wing](galactic-wing/) - Break alien formations, intercept diving squadrons, and chase precision chains.
 - [Missile Command](missile-command/) - Defend your base from incoming missiles.
 - [Space Invaders Command](space-invaders-command/) - Fusion of invaders and exploding missiles.
 - [Neon Flight](neon-flight/) - Dodge wireframe skyscrapers in a glowing city.
