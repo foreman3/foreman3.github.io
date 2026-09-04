@@ -393,11 +393,7 @@
     }
 
     function restartGame() {
-      if (state.phase === 'victory') startLevel(1, false);
-      else {
-        state.score = state.levelStartScore;
-        startLevel(state.level, true);
-      }
+      startLevel(1, false);
     }
     window.restartGame = restartGame;
     window.addEventListener('vibecade:restart', event => { event.preventDefault(); restartGame(); });
@@ -1200,7 +1196,7 @@
       let subtitle = LEVELS[state.level - 1].tips;
       if (state.retrying && state.phase === 'playing') { title = 'SHIFT RESET!'; subtitle = 'Back to the bottom • every hazard restarted'; }
       if (state.phase === 'level-clear') { title = 'BELL RUNG!'; subtitle = `Shift ${state.level} clear • next crew moving in`; }
-      if (state.phase === 'game-over') { title = state.time <= 0 ? 'WHISTLE BLEW' : 'OUT OF HARD HATS'; subtitle = 'Press R or tap restart to try this shift again'; }
+      if (state.phase === 'game-over') { title = state.time <= 0 ? 'WHISTLE BLEW' : 'OUT OF HARD HATS'; subtitle = 'Press R or tap restart to begin again at shift 1'; }
       if (state.phase === 'victory') { title = 'MASTER FOREMAN!'; subtitle = `All five shifts cleared • final score ${Math.floor(state.score)}`; }
       const alpha = state.phase === 'playing' ? Math.min(1, state.banner * 1.5) : 1;
       ctx.globalAlpha = alpha;
@@ -1312,7 +1308,7 @@
       if (event.code === 'KeyB' && !event.repeat && testMode) {
         placeOnBrokenLadderForTest();
       }
-      if ((state.phase === 'game-over' || state.phase === 'victory') && event.code === 'Enter') startLevel(state.phase === 'victory' ? 1 : state.level, state.phase !== 'victory');
+      if ((state.phase === 'game-over' || state.phase === 'victory') && event.code === 'Enter') restartGame();
     }, { passive: false });
     addEventListener('keyup', event => {
       if (keyMap[event.code]) keys[keyMap[event.code]] = false;
