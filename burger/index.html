@@ -1761,18 +1761,42 @@ function draw(){
 }
 
 const keys = {};
+let joystickDirection = '';
+const playerDirections = ['left', 'right', 'up', 'down'];
+
 function queuePlayerDirection(direction){
-  if(direction === 'left' || direction === 'right' || direction === 'up' || direction === 'down'){
+  if(playerDirections.includes(direction)){
     player.nextDirection = direction;
   }
 }
 
+function stopPlayerMovement(){
+  player.nextDirection = '';
+  player.moveDirection = '';
+  player.vx = 0;
+}
+
+function directionIsHeld(direction){
+  return Boolean(keys[direction]) || joystickDirection === direction;
+}
+
+function syncPlayerDirection(preferredDirection = ''){
+  if(preferredDirection && directionIsHeld(preferredDirection)){
+    queuePlayerDirection(preferredDirection);
+    return;
+  }
+  if(player.nextDirection && directionIsHeld(player.nextDirection)) return;
+  const fallbackDirection = playerDirections.find(directionIsHeld) || '';
+  if(fallbackDirection) queuePlayerDirection(fallbackDirection);
+  else stopPlayerMovement();
+}
+
 document.addEventListener('keydown', e => {
   if(e.key.startsWith('Arrow')) e.preventDefault();
-  if(e.key === 'ArrowLeft') { keys.left = true; queuePlayerDirection('left'); }
-  if(e.key === 'ArrowRight') { keys.right = true; queuePlayerDirection('right'); }
-  if(e.key === 'ArrowUp') { keys.up = true; queuePlayerDirection('up'); }
-  if(e.key === 'ArrowDown') { keys.down = true; queuePlayerDirection('down'); }
+  if(e.key === 'ArrowLeft') { keys.left = true; syncPlayerDirection('left'); }
+  if(e.key === 'ArrowRight') { keys.right = true; syncPlayerDirection('right'); }
+  if(e.key === 'ArrowUp') { keys.up = true; syncPlayerDirection('up'); }
+  if(e.key === 'ArrowDown') { keys.down = true; syncPlayerDirection('down'); }
   if(e.code === 'Space'){
     e.preventDefault();
     usePepper();
@@ -1787,12 +1811,16 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('keyup', e => {
-  if(e.key === 'ArrowLeft') keys.left = false;
-  if(e.key === 'ArrowRight') keys.right = false;
-  if(e.key === 'ArrowUp') keys.up = false;
-  if(e.key === 'ArrowDown') keys.down = false;
+  if(e.key === 'ArrowLeft') { keys.left = false; syncPlayerDirection(); }
+  if(e.key === 'ArrowRight') { keys.right = false; syncPlayerDirection(); }
+  if(e.key === 'ArrowUp') { keys.up = false; syncPlayerDirection(); }
+  if(e.key === 'ArrowDown') { keys.down = false; syncPlayerDirection(); }
 });
-window.addEventListener('blur', () => Object.keys(keys).forEach(key => { keys[key] = false; }));
+window.addEventListener('blur', () => {
+  Object.keys(keys).forEach(key => { keys[key] = false; });
+  joystickDirection = '';
+  stopPlayerMovement();
+});
 
 const controlButtons = document.querySelectorAll('.control-button');
 const bindMovementJoystick = () => {
@@ -1802,7 +1830,8 @@ const bindMovementJoystick = () => {
     onChange: (x, y) => {
       const next = Math.abs(x) > 0.5 ? (x < 0 ? 'left' : 'right')
         : Math.abs(y) > 0.5 ? (y < 0 ? 'up' : 'down') : '';
-      if(next) queuePlayerDirection(next);
+      joystickDirection = next;
+      syncPlayerDirection(next);
     }
   });
 };
@@ -1834,10 +1863,6 @@ if (controlButtons.length && isTouchDevice) {
     button.addEventListener('mouseleave', release);
   });
 }
-
-window.addEventListener('blur', () => {
-  keys.left = keys.right = keys.up = keys.down = false;
-});
 
 function usePepper(){
   if(player.pepper <= 0 || player.cooldown > 0 || player.dying || player.respawnTimer > 0 || gameOver || win) return;
