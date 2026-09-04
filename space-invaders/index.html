@@ -441,6 +441,7 @@
     let nextLevel = false;
 
     const keys = {};
+    let joystickX = 0;
 
     function createAliens(){
       aliens.length = 0;
@@ -598,8 +599,9 @@
         updateStars(dt);
         return;
       }
-      if(keys['ArrowLeft']) player.x -= playerSpeed*dt;
-      if(keys['ArrowRight']) player.x += playerSpeed*dt;
+      const keyboardX = (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
+      const movementX = Math.max(-1, Math.min(1, keyboardX + joystickX));
+      player.x += playerSpeed * movementX * dt;
       player.x = Math.max(player.w/2, Math.min(GAME_WIDTH-player.w/2, player.x));
       player.pulse += dt * 4.8;
 
@@ -1120,10 +1122,9 @@
     const bindMovementJoystick = () => {
       if (!window.VibeCadeJoystick) return;
       window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-        mode: 'horizontal', deadZone: 0.12,
+        mode: 'horizontal', profile: 'precision',
         onChange: x => {
-          keys['ArrowLeft'] = x < -0.18;
-          keys['ArrowRight'] = x > 0.18;
+          joystickX = x;
         }
       });
     };

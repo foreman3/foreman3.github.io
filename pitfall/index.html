@@ -2229,7 +2229,7 @@
     const bindMovementJoystick = () => {
       if (!window.VibeCadeJoystick) return;
       window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-        mode: 'cardinal', deadZone: 0.12,
+        mode: 'cardinal', deadZone: 7 / 63, minimumDeadZone: 7 / 63,
         onChange: (x, y) => {
           const next = Math.abs(x) > 0.5 ? (x < 0 ? 'ArrowLeft' : 'ArrowRight')
             : Math.abs(y) > 0.5 ? (y < 0 ? 'ArrowUp' : 'ArrowDown') : '';

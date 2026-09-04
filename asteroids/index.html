@@ -438,6 +438,8 @@
     const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
     const KEY = { left: false, right: false, up: false, space: false };
+    let joystickTurn = 0;
+    let joystickThrust = 0;
 
     let isGameActive = false;
     let startTimerId = null;
@@ -549,6 +551,8 @@
           updateKey(action);
         });
         controlButtons.forEach((btn) => btn.classList.remove('pressed'));
+        joystickTurn = 0;
+        joystickThrust = 0;
       };
 
       controlButtons.forEach((button) => {
@@ -603,11 +607,10 @@
     function setupMovementJoystick() {
       if (!window.VibeCadeJoystick) return;
       window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-        mode: 'analog', deadZone: 0.1,
+        mode: 'analog', profile: 'precision',
         onChange: (x, y) => {
-          KEY.left = x < -0.16;
-          KEY.right = x > 0.16;
-          KEY.up = y < -0.16;
+          joystickTurn = x;
+          joystickThrust = Math.max(0, -y);
         }
       });
     }
@@ -854,11 +857,12 @@
           ship.invincible = 3;
         }
       } else {
-        if (KEY.left) ship.angle -= 4 * dt;
-        if (KEY.right) ship.angle += 4 * dt;
-        if (KEY.up) {
-          ship.vx += Math.cos(ship.angle) * 200 * dt;
-          ship.vy += Math.sin(ship.angle) * 200 * dt;
+        const turnInput = Math.max(-1, Math.min(1, (KEY.right ? 1 : 0) - (KEY.left ? 1 : 0) + joystickTurn));
+        const thrustInput = Math.max(0, Math.min(1, (KEY.up ? 1 : 0) + joystickThrust));
+        ship.angle += turnInput * 4 * dt;
+        if (thrustInput > 0) {
+          ship.vx += Math.cos(ship.angle) * 200 * thrustInput * dt;
+          ship.vy += Math.sin(ship.angle) * 200 * thrustInput * dt;
           const rearX = ship.x - Math.cos(ship.angle) * ship.radius;
           const rearY = ship.y - Math.sin(ship.angle) * ship.radius;
           const jitter = (Math.random() - 0.5) * 0.4;

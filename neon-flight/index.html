@@ -2092,11 +2092,11 @@
     const bindMovementJoystick = () => {
       if (!window.VibeCadeJoystick) return;
       window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-        mode: 'analog', deadZone: 0.1,
+        mode: 'analog', profile: 'precision',
         onChange: (x, y) => {
           touchJoystick.x = x;
           touchJoystick.y = y;
-          touchJoystick.active = Math.hypot(x, y) > 0.01;
+          touchJoystick.active = x !== 0 || y !== 0;
         }
       });
     };

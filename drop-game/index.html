@@ -358,6 +358,7 @@
 
       let rightPressed = false;
       let leftPressed = false;
+      let joystickX = 0;
       document.addEventListener('keydown', e => {
         if (e.key === 'ArrowRight' || e.key === 'd') rightPressed = true;
         if (e.key === 'ArrowLeft' || e.key === 'a') leftPressed = true;
@@ -372,11 +373,8 @@
       const bindMovementJoystick = () => {
         if (!window.VibeCadeJoystick) return;
         window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-          mode: 'horizontal', deadZone: 0.12,
-          onChange: x => {
-            leftPressed = x < -0.18;
-            rightPressed = x > 0.18;
-          }
+          mode: 'horizontal', profile: 'precision',
+          onChange: x => { joystickX = x; }
         });
       };
       if (window.VibeCadeJoystick) bindMovementJoystick();
@@ -753,8 +751,9 @@
     function step() {
       if (gamePaused) return;
       if (gameOver) return;
-      if (rightPressed && basketX < canvas.width - basketWidth) basketX += 6;
-      if (leftPressed && basketX > 0) basketX -= 6;
+      const keyboardX = (rightPressed ? 1 : 0) - (leftPressed ? 1 : 0);
+      const movementX = Math.max(-1, Math.min(1, keyboardX + joystickX));
+      basketX = Math.max(0, Math.min(canvas.width - basketWidth, basketX + 6 * movementX));
       if (Math.random() < 0.028) spawnItem();
       updateBullets();
       updateItems();
@@ -795,6 +794,7 @@
       gameOver = false;
       gamePaused = false;
       basketX = (canvas.width - basketWidth) / 2;
+      joystickX = 0;
       if (scoreValue) scoreValue.textContent = score;
       if (livesValue) livesValue.textContent = lives;
       document.getElementById('message').textContent = '';

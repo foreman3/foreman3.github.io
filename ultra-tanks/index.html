@@ -377,6 +377,8 @@
     }
 
     const keys = {};
+    let joystickTurn = 0;
+    let joystickThrottle = 0;
     const bullets = [];
     const guidedMissiles = [];
     const obstacles = [];
@@ -564,10 +566,13 @@
 
       if (player.alive) {
         let nx = player.x, ny = player.y, na = player.angle;
-        if (keys['ArrowLeft'] || keys['a'] || keys['A']) na -= 0.05;
-        if (keys['ArrowRight'] || keys['d'] || keys['D']) na += 0.05;
-        if (keys['ArrowUp'] || keys['w'] || keys['W']) { nx += Math.cos(na) * 2; ny += Math.sin(na) * 2; }
-        if (keys['ArrowDown'] || keys['s'] || keys['S']) { nx -= Math.cos(na) * 2; ny -= Math.sin(na) * 2; }
+        const keyboardTurn = (keys['ArrowRight'] || keys['d'] || keys['D'] ? 1 : 0) - (keys['ArrowLeft'] || keys['a'] || keys['A'] ? 1 : 0);
+        const keyboardThrottle = (keys['ArrowUp'] || keys['w'] || keys['W'] ? 1 : 0) - (keys['ArrowDown'] || keys['s'] || keys['S'] ? 1 : 0);
+        const turnInput = Math.max(-1, Math.min(1, keyboardTurn + joystickTurn));
+        const throttleInput = Math.max(-1, Math.min(1, keyboardThrottle + joystickThrottle));
+        na += turnInput * 0.05;
+        nx += Math.cos(na) * 2 * throttleInput;
+        ny += Math.sin(na) * 2 * throttleInput;
         nx = Math.max(15, Math.min(canvas.width - 15, nx));
         ny = Math.max(15, Math.min(canvas.height - 15, ny));
         if (!obstacleCollision(nx, ny)) { player.x = nx; player.y = ny; }
@@ -1088,12 +1093,10 @@
       const bindMovementJoystick = () => {
         if (!window.VibeCadeJoystick) return;
         window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-          mode: 'analog', deadZone: 0.1,
+          mode: 'analog', profile: 'precision',
           onChange: (x, y) => {
-            keys['ArrowLeft'] = x < -0.16;
-            keys['ArrowRight'] = x > 0.16;
-            keys['ArrowUp'] = y < -0.16;
-            keys['ArrowDown'] = y > 0.16;
+            joystickTurn = x;
+            joystickThrottle = -y;
           }
         });
       };

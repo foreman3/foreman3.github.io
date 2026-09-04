@@ -1165,7 +1165,7 @@
     joystick.dataset.bound = 'true';
     window.VibeCadeJoystick(joystick, {
       mode: 'horizontal',
-      deadZone: .26,
+      profile: 'precision',
       onChange: x => {
         input.joystick = x;
         shell.dataset.joystickX = x.toFixed(3);

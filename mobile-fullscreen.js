@@ -382,16 +382,18 @@
     const mode = options.mode === 'cardinal' || options.mode === 'horizontal'
       ? options.mode
       : 'analog';
-    const requestedDeadZone = Number.isFinite(options.deadZone) ? options.deadZone : 0.16;
+    const precision = options.profile === 'precision' && mode !== 'cardinal';
+    const requestedDeadZone = Number.isFinite(options.deadZone) ? options.deadZone : 7 / 63;
     const requestedMinimumDeadZone = Number.isFinite(options.minimumDeadZone)
       ? options.minimumDeadZone
-      : 0.24;
+      : 7 / 63;
     const minimumDeadZone = Math.max(0.08, Math.min(0.24, requestedMinimumDeadZone));
     const deadZone = Math.max(minimumDeadZone, Math.min(0.42, requestedDeadZone));
     const onChange = typeof options.onChange === 'function' ? options.onChange : () => {};
     let pointerId = null;
     let lastVector = '';
-    element.dataset.joystickDeadZone = deadZone.toFixed(2);
+    element.dataset.joystickDeadZone = precision ? '0.00' : deadZone.toFixed(2);
+    element.dataset.joystickProfile = precision ? 'precision' : 'standard';
 
     const directionName = (x, y) => {
       if (Math.hypot(x, y) < 0.01) return 'idle';
@@ -401,10 +403,10 @@
     };
 
     const emit = (x, y) => {
-      const key = `${x.toFixed(3)},${y.toFixed(3)}`;
+      const key = `${x},${y}`;
       if (key === lastVector) return;
       lastVector = key;
-      element.dataset.joystickVector = key;
+      element.dataset.joystickVector = `${x.toFixed(3)},${y.toFixed(3)}`;
       element.dataset.joystickDirection = directionName(x, y);
       onChange(x, y);
     };
@@ -429,6 +431,22 @@
 
       if (knob) {
         knob.style.transform = `translate(calc(-50% + ${dx * visualScale}px), calc(-50% + ${dy * visualScale}px))`;
+      }
+
+      if (precision) {
+        if (distance === 0) {
+          emit(0, 0);
+          return;
+        }
+        if (mode === 'horizontal') {
+          const displacement = Math.max(-1, Math.min(1, dx / maxTravel));
+          emit(Math.sign(displacement) * Math.pow(Math.abs(displacement), 1.6), 0);
+          return;
+        }
+        const displacement = Math.min(1, distance / maxTravel);
+        const strength = Math.pow(displacement, 1.6);
+        emit(dx / distance * strength, dy / distance * strength);
+        return;
       }
 
       if (distance <= radius * deadZone) {

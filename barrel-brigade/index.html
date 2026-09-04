@@ -910,7 +910,7 @@
       if (!window.VibeCadeJoystick || document.documentElement.dataset.brigadeJoystickBound) return;
       document.documentElement.dataset.brigadeJoystickBound = 'true';
       window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-        mode: 'cardinal', deadZone: .16, minimumDeadZone: .13,
+        mode: 'cardinal', deadZone: 7 / 63, minimumDeadZone: 7 / 63,
         onChange(x, y) {
           keys.left = x < -.5; keys.right = x > .5; keys.up = y < -.5; keys.down = y > .5;
         }

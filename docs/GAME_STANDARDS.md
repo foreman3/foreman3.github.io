@@ -85,7 +85,7 @@ Use `window.VibeCadeJoystick` for continuous directional input:
 - `cardinal` for four-way maze, digging, and grid movement;
 - `horizontal` for paddle, ship, racing, or balance movement.
 
-The shared joystick is currently 126 px with a default minimum 24% neutral dead zone. Games that need faster center-crossing turns may explicitly lower `minimumDeadZone`, but should retain enough neutral travel to prevent direction flicker. A player must be able to hold, slide to a new direction, slide diagonally in analog games, and return to neutral without lifting the thumb. Pointer capture must prevent context menus or dropped movement when the thumb drifts.
+The shared joystick is currently 126 px and supports two response profiles. Cardinal maze, digging, and grid games use a 7 px (about 11%) neutral dead zone. Games that depend on steering finesse or continuous motion use `profile: 'precision'`: no hard dead zone, a continuous `|input|^1.6` response curve, and full force at the knob's maximum visual travel. A player must be able to hold, slide to a new direction, slide diagonally in analog games, and return to neutral without lifting the thumb. Pointer capture must prevent context menus or dropped movement when the thumb drifts.
 
 In mobile landscape, the shared layout reserves a 136–150 px rail on each side and fits the playfield proportionally between them. The joystick belongs in the left rail. Actions belong in the right rail and stack vertically when there is more than one. Controls must not cover the playfield.
 

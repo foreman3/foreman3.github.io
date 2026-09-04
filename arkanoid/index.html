@@ -564,6 +564,7 @@
     const particles = [];
     const scoreFlashes = [];
     const keys = {};
+    let joystickX = 0;
     const controlButtons = document.querySelectorAll('.control-button');
     const controlMap = {
       left: ['ArrowLeft', 'KeyA'],
@@ -736,11 +737,8 @@
     const bindMovementJoystick = () => {
       if (!window.VibeCadeJoystick) return;
       window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-        mode: 'horizontal', deadZone: 0.1,
-        onChange: x => {
-          setControlState('left', x < -0.14);
-          setControlState('right', x > 0.14);
-        }
+        mode: 'horizontal', profile: 'precision',
+        onChange: x => { joystickX = x; }
       });
     };
     if (window.VibeCadeJoystick) bindMovementJoystick();
@@ -1107,12 +1105,9 @@
     function handleInput(dt) {
       const move = paddle.speed * dt * 1.2;
       const previousX = paddle.x;
-      if (keys['ArrowLeft'] || keys['KeyA']) {
-        paddle.x = Math.max(0, paddle.x - move);
-      }
-      if (keys['ArrowRight'] || keys['KeyD']) {
-        paddle.x = Math.min(canvas.width - paddle.width, paddle.x + move);
-      }
+      const keyboardX = (keys['ArrowRight'] || keys['KeyD'] ? 1 : 0) - (keys['ArrowLeft'] || keys['KeyA'] ? 1 : 0);
+      const movementX = Math.max(-1, Math.min(1, keyboardX + joystickX));
+      paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x + move * movementX));
       if (keys['Space'] || keys['ArrowUp'] || keys['KeyW']) {
         attemptShoot();
       }

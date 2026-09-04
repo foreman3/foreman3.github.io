@@ -181,7 +181,7 @@
       rank:TOTAL_RIVALS,countdown:3.9,nextCheckpoint:0,checkpointIndex:1,shake:0,steerVisual:0,finishPlace:0,
       muted:localStorage.getItem('vibecade-pole-muted')==='1'
     };
-    let trackLength=0,gamePaused=true,gameStarted=false,messageTimer=0,audioContext=null,engineOscillator=null,engineGain=null;
+    let trackLength=0,joystickSteer=0,gamePaused=true,gameStarted=false,messageTimer=0,audioContext=null,engineOscillator=null,engineGain=null;
     const easeIn=(a,b,p)=>a+(b-a)*p*p;
     const easeOut=(a,b,p)=>a+(b-a)*(1-Math.pow(1-p,2));
     const easeInOut=(a,b,p)=>a+(b-a)*((-Math.cos(p*Math.PI)/2)+.5);
@@ -232,7 +232,7 @@
     function resetRace(){
       Object.assign(state,{phase:'countdown',position:0,raceDistance:0,speed:0,playerX:0,lap:1,time:45,score:0,boost:20,combo:1,
         comboTimer:0,rank:TOTAL_RIVALS,countdown:3.9,nextCheckpoint:trackLength/4,checkpointIndex:1,shake:0,finishPlace:0});
-      particles.length=0;floaters.length=0;resetRivals();showMessage('Qualifying Grid',1.2);updateHud();
+      joystickSteer=0;particles.length=0;floaters.length=0;resetRivals();showMessage('Qualifying Grid',1.2);updateHud();
     }
     function ensureAudio(){
       if(state.muted)return null;
@@ -300,7 +300,7 @@
         updateParticles(dt);updateEngine();updateHud();return;
       }
       if(state.phase!=='racing'){updateParticles(dt);updateEngine();updateHud();return;}
-      const speedRatio=state.speed/MAX_SPEED,steer=(controls.left?-1:0)+(controls.right?1:0);
+      const speedRatio=state.speed/MAX_SPEED,steer=limit((controls.left?-1:0)+(controls.right?1:0)+joystickSteer,-1,1);
       state.steerVisual+=(steer-state.steerVisual)*limit(dt*9,0,1);
       if(controls.accelerate)state.speed+=ACCEL*dt;else state.speed+=COAST*dt;
       if(controls.brake)state.speed+=BRAKE*dt;
@@ -438,9 +438,9 @@
       const key=event.key.toLowerCase();if(key==='arrowleft'||key==='a')setControl('left',false);if(key==='arrowright'||key==='d')setControl('right',false);
       if(key==='arrowup'||key==='w')setControl('accelerate',false);if(key==='arrowdown'||key==='s')setControl('brake',false);if(key===' ')setControl('boost',false);
     });
-    window.addEventListener('blur',()=>Object.keys(controls).forEach(key=>controls[key]=false));
+    window.addEventListener('blur',()=>{Object.keys(controls).forEach(key=>controls[key]=false);joystickSteer=0;});
     const isTouchDevice=window.matchMedia('(pointer:coarse)').matches;if(isTouchDevice)document.body.classList.add('touch-device');
-    const bindMovementJoystick=()=>{if(!window.VibeCadeJoystick)return;window.VibeCadeJoystick(document.querySelector('[data-joystick]'),{mode:'horizontal',deadZone:.12,onChange:x=>{setControl('left',x<-.18);setControl('right',x>.18);}});};
+    const bindMovementJoystick=()=>{if(!window.VibeCadeJoystick)return;window.VibeCadeJoystick(document.querySelector('[data-joystick]'),{mode:'horizontal',profile:'precision',onChange:x=>{joystickSteer=x;}});};
     if(window.VibeCadeJoystick)bindMovementJoystick();else window.addEventListener('vibecade-controls-ready',bindMovementJoystick,{once:true});
     document.querySelectorAll('.control-button').forEach(button=>{
       const action=button.dataset.action,press=event=>{event.preventDefault();button.classList.add('pressed');setControl(action,true);},

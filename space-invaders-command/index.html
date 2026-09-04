@@ -304,6 +304,7 @@
     const playerImg = new Image();
     playerImg.src = '../images/player_ship.svg';
     const keys = {};
+    let joystickX = 0;
 
     let missiles = [];
     let explosions = [];
@@ -398,8 +399,9 @@
     window.addEventListener('keyup', e => { keys[e.key] = false; });
 
     function updatePlayer() {
-      if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
-      if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+      const keyboardX = (keys['ArrowRight'] || keys['d'] ? 1 : 0) - (keys['ArrowLeft'] || keys['a'] ? 1 : 0);
+      const movementX = Math.max(-1, Math.min(1, keyboardX + joystickX));
+      player.x += player.speed * movementX;
       if (player.x < player.w / 2) player.x = player.w / 2;
       if (player.x > canvas.width - player.w / 2) player.x = canvas.width - player.w / 2;
     }
@@ -599,10 +601,9 @@
     const bindMovementJoystick = () => {
       if (!window.VibeCadeJoystick) return;
       window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-        mode: 'horizontal', deadZone: 0.12,
+        mode: 'horizontal', profile: 'precision',
         onChange: x => {
-          keys['ArrowLeft'] = x < -0.18;
-          keys['ArrowRight'] = x > 0.18;
+          joystickX = x;
         }
       });
     };

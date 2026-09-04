@@ -40,7 +40,7 @@
     'use strict';
     var canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),W=1280,H=720,LAVA_Y=676,GRAVITY=690;
     var scoreEl=document.getElementById('score'),livesEl=document.getElementById('lives'),waveEl=document.getElementById('wave'),enemiesEl=document.getElementById('enemies'),comboEl=document.getElementById('combo'),furyFill=document.getElementById('fury-fill'),furyCopy=document.getElementById('fury-copy'),messageEl=document.getElementById('message'),subEl=document.getElementById('sub-message');
-    var controls={left:false,right:false,dive:false,fury:false},state={},player={},enemies=[],eggs=[],particles=[],floaters=[],platforms=[],paused=true,started=false,lastTime=performance.now(),accumulator=0,messageTimer=0,subTimer=0,audioContext=null;
+    var controls={left:false,right:false,dive:false,fury:false},joystickSteer=0,state={},player={},enemies=[],eggs=[],particles=[],floaters=[],platforms=[],paused=true,started=false,lastTime=performance.now(),accumulator=0,messageTimer=0,subTimer=0,audioContext=null;
     var layouts=[
       [{x:95,y:515,w:260},{x:480,y:455,w:320},{x:945,y:520,w:240},{x:270,y:285,w:250},{x:775,y:275,w:270}],
       [{x:40,y:470,w:220},{x:350,y:565,w:230},{x:700,y:440,w:240},{x:1000,y:545,w:230},{x:500,y:245,w:290},{x:930,y:240,w:190}],
@@ -58,7 +58,7 @@
       var boss=type==='boss';return{x:x,y:y,vx:rand(-70,70),vy:0,face:Math.random()<.5?-1:1,r:boss?35:27,type:type||'rook',flapCool:rand(0,.4),hitCool:0,ai:rand(0,10),hp:boss?3:1,dead:false,grounded:false}
     }
     function resetGame(){
-      state={phase:'countdown',countdown:3.4,score:0,wave:1,lives:3,fury:28,combo:1,comboTimer:0,waveTimer:0,shake:0,muted:localStorage.getItem('vibecade-joust-muted')==='1'};
+      state={phase:'countdown',countdown:3.4,score:0,wave:1,lives:3,fury:28,combo:1,comboTimer:0,waveTimer:0,shake:0,muted:localStorage.getItem('vibecade-joust-muted')==='1'};joystickSteer=0;
       player={x:W*.5,y:390,vx:0,vy:0,face:1,r:29,flapCool:0,hitCool:0,invuln:2,dead:false,respawn:0,grounded:false};
       enemies=[];eggs=[];particles=[];floaters=[];platforms=layouts[0];showMessage('3','LANCES READY',.75);updateHud(0)
     }
@@ -88,7 +88,7 @@
     }
     function updatePlayer(dt){
       if(player.dead){player.respawn-=dt;player.vy+=GRAVITY*dt;player.y+=player.vy*dt;player.angle=(player.angle||0)+dt*5;if(player.respawn<=0)respawnPlayer();return}
-      var move=(controls.left?-1:0)+(controls.right?1:0);player.vx+=move*520*dt;player.vx*=Math.pow(.22,dt);if(move)player.face=move;player.vx=clamp(player.vx,-285,285);
+      var move=clamp((controls.left?-1:0)+(controls.right?1:0)+joystickSteer,-1,1);player.vx+=move*520*dt;player.vx*=Math.pow(.22,dt);if(move)player.face=Math.sign(move);player.vx=clamp(player.vx,-285,285);
       if(controls.dive&&!player.grounded)player.vy+=440*dt;if(controls.dive&&player.grounded){player.y+=10;player.vy=95}
       if(controls.fury&&state.fury>0){state.fury=Math.max(0,state.fury-31*dt);player.vx+=player.face*520*dt;player.vx=clamp(player.vx,-430,430);player.invuln=Math.max(player.invuln,.08);if(Math.random()<dt*35)burst(player.x-player.face*30,player.y,2,'#ffd85c',105)}
       else state.fury=clamp(state.fury+1.1*dt,0,100);
@@ -152,8 +152,8 @@
     function playerFlap(){if(paused||state.phase==='gameover')return;ensureAudio();flap(player,controls.fury&&state.fury>8?360:300)}
     document.addEventListener('keydown',function(e){var k=e.key.toLowerCase();if(['arrowleft','arrowright','arrowup','arrowdown',' ','shift'].indexOf(k)>=0)e.preventDefault();if(k==='arrowleft'||k==='a')setControl('left',true);if(k==='arrowright'||k==='d')setControl('right',true);if(k==='arrowdown'||k==='s')setControl('dive',true);if(k==='shift')setControl('fury',true);if((k==='arrowup'||k==='w'||k===' ')&&!e.repeat)playerFlap();if(k==='r')resetGame();if(k==='m'){state.muted=!state.muted;localStorage.setItem('vibecade-joust-muted',state.muted?'1':'0');showMessage(state.muted?'SOUND OFF':'SOUND ON','',.8)}})
     document.addEventListener('keyup',function(e){var k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')setControl('left',false);if(k==='arrowright'||k==='d')setControl('right',false);if(k==='arrowdown'||k==='s')setControl('dive',false);if(k==='shift')setControl('fury',false)})
-    window.addEventListener('blur',function(){Object.keys(controls).forEach(function(k){controls[k]=false})});
-    window.VibeCadeJoystick(document.querySelector('[data-joystick]'),{mode:'horizontal',deadZone:.12,onChange:function(x){setControl('left',x<-.18);setControl('right',x>.18)}});document.querySelectorAll('.touch-button').forEach(function(btn){var a=btn.dataset.action;function down(e){e.preventDefault();btn.classList.add('pressed');if(a==='flap')playerFlap();else setControl(a,true)}function up(e){if(e)e.preventDefault();btn.classList.remove('pressed');if(a!=='flap')setControl(a,false)}btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('pointerleave',up)});
+    window.addEventListener('blur',function(){Object.keys(controls).forEach(function(k){controls[k]=false});joystickSteer=0});
+    window.VibeCadeJoystick(document.querySelector('[data-joystick]'),{mode:'horizontal',profile:'precision',onChange:function(x){joystickSteer=x}});document.querySelectorAll('.touch-button').forEach(function(btn){var a=btn.dataset.action;function down(e){e.preventDefault();btn.classList.add('pressed');if(a==='flap')playerFlap();else setControl(a,true)}function up(e){if(e)e.preventDefault();btn.classList.remove('pressed');if(a!=='flap')setControl(a,false)}btn.addEventListener('pointerdown',down);btn.addEventListener('pointerup',up);btn.addEventListener('pointercancel',up);btn.addEventListener('pointerleave',up)});
     var modal=document.getElementById('instruction-modal'),close=document.getElementById('instruction-close'),help=document.getElementById('help-button'),key='vibecade-instructions-joust-v3';function start(){if(!started){started=true;resetGame()}paused=false;lastTime=performance.now()}function hide(){modal.classList.remove('is-visible');sessionStorage.setItem(key,'1');start()}function show(){paused=true;modal.classList.add('is-visible')}close.addEventListener('click',hide);modal.addEventListener('click',function(e){if(e.target===modal)hide()});help.addEventListener('click',show);
     var toggle=document.getElementById('menu-toggle'),nav=document.getElementById('nav-slot');toggle.addEventListener('click',function(){document.body.classList.toggle('menu-open')});fetch('../sidebar.html').then(function(r){return r.text()}).then(function(h){nav.innerHTML=h}).catch(function(){nav.innerHTML='<a href="../index.html">← Arcade</a>'});
     resetGame();state.phase='idle';updateHud(0);requestAnimationFrame(frame);if(sessionStorage.getItem(key)==='1'){modal.classList.remove('is-visible');start()}

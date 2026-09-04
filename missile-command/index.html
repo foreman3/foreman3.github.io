@@ -572,9 +572,9 @@
     const bindAimJoystick = () => {
       if (!window.VibeCadeJoystick) return;
       window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-        mode: 'analog', deadZone: 0.1,
+        mode: 'analog', profile: 'precision',
         onChange: (x, y) => {
-          if (Math.hypot(x, y) > 0.01) startAim(x, y);
+          if (x !== 0 || y !== 0) startAim(x, y);
           else {
             stopAim('x');
             stopAim('y');

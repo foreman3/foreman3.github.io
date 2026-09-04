@@ -577,6 +577,7 @@
 
     let moveLeft = false;
     let moveRight = false;
+    let joystickX = 0;
     let gamePaused = true;
     let gameStarted = false;
     const moveSpeed = 7;
@@ -618,11 +619,13 @@
 
     Events.on(engine, 'beforeUpdate', () => {
       engine.timing.timeScale = gamePaused ? 0 : 1;
-      if (moveLeft && platform.position.x - platformWidth / 2 > 0) {
-        Body.translate(platform, { x: -moveSpeed, y: 0 });
+      const keyboardX = (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
+      const movementX = Math.max(-1, Math.min(1, keyboardX + joystickX));
+      if (movementX < 0 && platform.position.x - platformWidth / 2 > 0) {
+        Body.translate(platform, { x: moveSpeed * movementX, y: 0 });
       }
-      if (moveRight && platform.position.x + platformWidth / 2 < 800) {
-        Body.translate(platform, { x: moveSpeed, y: 0 });
+      if (movementX > 0 && platform.position.x + platformWidth / 2 < 800) {
+        Body.translate(platform, { x: moveSpeed * movementX, y: 0 });
       }
 
       // Apply friction so blocks initially slide then catch up to the platform
@@ -734,11 +737,8 @@
     const bindMovementJoystick = () => {
       if (!window.VibeCadeJoystick) return;
       window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
-        mode: 'horizontal', deadZone: 0.12,
-        onChange: x => {
-          moveLeft = !gamePaused && x < -0.18;
-          moveRight = !gamePaused && x > 0.18;
-        }
+        mode: 'horizontal', profile: 'precision',
+        onChange: x => { joystickX = gamePaused ? 0 : x; }
       });
     };
     if (window.VibeCadeJoystick) bindMovementJoystick();
@@ -772,6 +772,7 @@
       gamePaused = false;
       moveLeft = false;
       moveRight = false;
+      joystickX = 0;
       document.getElementById('score').textContent = 'Blocks: 0';
       document.getElementById('message').textContent = '';
       spawnInterval = setInterval(() => {
