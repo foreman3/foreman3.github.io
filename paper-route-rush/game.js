@@ -24,11 +24,11 @@
   const HORIZON = 132;
   const PLAYER_Y = 447;
   const ROUTE_DIFFICULTY = [
-    { quota: 6, routeTime: 32, worldSpeed: 156, targetEvery: 3.08, obstacleEvery: 2, dogChance: 0, doubleChance: 0, dogWeave: .16 },
-    { quota: 7, routeTime: 34, worldSpeed: 164, targetEvery: 3, obstacleEvery: 1.85, dogChance: 0, doubleChance: 0, dogWeave: .17 },
-    { quota: 7, routeTime: 36, worldSpeed: 172, targetEvery: 2.9, obstacleEvery: 1.7, dogChance: .06, doubleChance: 0, dogWeave: .19 },
-    { quota: 8, routeTime: 38, worldSpeed: 184, targetEvery: 2.75, obstacleEvery: 1.52, dogChance: .16, doubleChance: 0, dogWeave: .22 },
-    { quota: 9, routeTime: 36, worldSpeed: 196, targetEvery: 2.63, obstacleEvery: 1.31, dogChance: .28, doubleChance: 0, dogWeave: .255 }
+    { worldSpeed: 156, targetEvery: 1.8, obstacleEvery: 2.2, dogChance: 0, doubleChance: 0, dogWeave: .16, carDrift: 0, name: 'QUIET MORNING' },
+    { worldSpeed: 180, targetEvery: 1.65, obstacleEvery: 1.8, dogChance: 0, doubleChance: 0, dogWeave: .17, carDrift: .16, name: 'COMMUTER TRAFFIC' },
+    { worldSpeed: 208, targetEvery: 1.55, obstacleEvery: 1.5, dogChance: .16, doubleChance: 0, dogWeave: .22, carDrift: .22, name: 'DOGS ON THE LOOSE' },
+    { worldSpeed: 238, targetEvery: 1.5, obstacleEvery: 1.27, dogChance: .21, doubleChance: .08, dogWeave: .26, carDrift: .28, name: 'BUSY INTERSECTIONS' },
+    { worldSpeed: 256, targetEvery: 1.4, obstacleEvery: 1.05, dogChance: .27, doubleChance: .16, dogWeave: .30, carDrift: .34, name: 'RUSH HOUR' }
   ];
   const params = new URLSearchParams(location.search);
   const initialPhase = Math.max(1, Math.min(8, Number(params.get('phase')) || 1));
@@ -42,6 +42,14 @@
   const flyingPapers = [];
   const particles = [];
   const scenery = [];
+  const MIN_CUSTOMERS = 4;
+  const neighborhood = Array.from({ length: 24 }, (_, id) => ({
+    id, number: 101 + id, side: id % 2 ? 1 : -1,
+    subscribed: id % 3 === 0,
+    hue: ['#d8cbb5', '#a7b5ab', '#ba8c73', '#d7d3c3'][id % 4],
+    roof: ['#544c48', '#424f56', '#775b4c'][id % 3]
+  }));
+  const customerCount = () => neighborhood.filter(home => home.subscribed).length;
 
   const player = {
     x: W / 2,
@@ -57,12 +65,20 @@
     phase: initialPhase,
     score: 0,
     lives: 3,
-    papers: 8,
+    papers: 11,
     delivered: 0,
-    quota: 7,
+    quota: 8,
     combo: 0,
     bestCombo: 0,
     misses: 0,
+    gained: 0,
+    lost: 0,
+    crashes: 0,
+    perfect: false,
+    newSubscribers: [],
+    carDrift: 0,
+    nextAddress: 0,
+    endReason: '',
     routeTotal: 32,
     routeRemaining: 32,
     worldSpeed: ROUTE_DIFFICULTY[0].worldSpeed,
@@ -101,14 +117,14 @@
     if (phase <= ROUTE_DIFFICULTY.length) return ROUTE_DIFFICULTY[Math.max(1, phase) - 1];
     const extra = phase - ROUTE_DIFFICULTY.length;
     return {
-      quota: 9 + Math.min(4, Math.ceil(extra / 2)),
-      routeTime: 36 + Math.min(4, extra),
-      worldSpeed: 196 + Math.min(6, extra) * 12,
-      targetEvery: Math.max(1.85, 2.63 - extra * .12),
-      obstacleEvery: Math.max(.74, 1.31 - extra * .11),
+      worldSpeed: 256 + Math.min(4, extra) * 10,
+      targetEvery: Math.max(1.3, 1.4 - extra * .02),
+      obstacleEvery: Math.max(.82, 1.05 - extra * .04),
       dogChance: Math.min(.42, .28 + extra * .025),
       doubleChance: Math.min(.3, extra * .06),
-      dogWeave: Math.min(.38, .255 + extra * .02)
+      dogWeave: Math.min(.38, .30 + extra * .02),
+      carDrift: Math.min(.4, .34 + extra * .02),
+      name: 'OVERTIME EDITION'
     };
   }
 
@@ -172,6 +188,9 @@
     hud.phase.textContent = state.phase;
     hud.delivered.textContent = state.delivered;
     hud.quota.textContent = state.quota;
+    document.getElementById('customers').textContent = `${customerCount()}/${neighborhood.length}`;
+    document.getElementById('customer-card').classList.toggle('at-risk', customerCount() <= MIN_CUSTOMERS + 1);
+    document.getElementById('customer-status').textContent = state.mode === 'gameover' ? 'ROUTE CLOSED · RESTART TO TRY AGAIN' : `KEEP ${MIN_CUSTOMERS}+ · ${customerCount() <= MIN_CUSTOMERS ? 'LAST CHANCE' : state.misses === 0 && state.crashes === 0 ? 'PERFECT: +2 AT FINISH' : '+1 SUBSCRIBER AT FINISH'}`;
     hud.papers.textContent = state.papers;
     hud.lives.textContent = '♥'.repeat(Math.max(0, state.lives)) || '—';
     hud.route.style.transform = `scaleX(${clamp(state.routeRemaining / state.routeTotal, 0, 1)})`;
@@ -190,7 +209,9 @@
     shell.dataset.doubleChance = String(state.doubleChance);
     shell.dataset.targetCount = String(targets.length);
     shell.dataset.hazardCount = String(hazards.length);
-    const nextTarget = targets.filter(target => !target.dead && !target.delivered).sort((a, b) => b.y - a.y)[0];
+    shell.dataset.customers = String(customerCount());
+    shell.dataset.customerRoster = neighborhood.map(home => home.subscribed ? '1' : '0').join('');
+    const nextTarget = targets.filter(target => target.wasSubscribed && !target.dead && !target.delivered).sort((a, b) => b.y - a.y)[0];
     shell.dataset.targetSide = nextTarget ? String(nextTarget.side) : '0';
     shell.dataset.targetY = nextTarget ? nextTarget.y.toFixed(1) : '0';
   }
@@ -210,12 +231,19 @@
   function startPhase(phase) {
     state.phase = Math.max(1, phase);
     const difficulty = routeDifficulty(state.phase);
-    state.quota = difficulty.quota;
+    state.quota = customerCount();
     state.delivered = 0;
     state.misses = 0;
+    state.gained = 0;
+    state.lost = 0;
+    state.crashes = 0;
+    state.perfect = false;
+    state.newSubscribers = [];
+    state.nextAddress = 0;
+    state.endReason = '';
     state.combo = 0;
-    state.papers = 8;
-    state.routeTotal = difficulty.routeTime;
+    state.papers = Math.min(20, state.quota + 3);
+    state.routeTotal = difficulty.targetEvery * (neighborhood.length - 1) + 6;
     state.routeRemaining = state.routeTotal;
     state.worldSpeed = difficulty.worldSpeed;
     state.targetEvery = difficulty.targetEvery;
@@ -223,6 +251,7 @@
     state.dogChance = difficulty.dogChance;
     state.doubleChance = difficulty.doubleChance;
     state.dogWeave = difficulty.dogWeave;
+    state.carDrift = difficulty.carDrift;
     state.obstacleTimer = 1.25;
     state.targetTimer = .7;
     state.bundleTimer = 8;
@@ -248,17 +277,12 @@
       state.targetTimer = 4;
     } else if (testScenario === 'clear') {
       state.delivered = state.quota;
+      state.nextAddress = neighborhood.length;
       state.routeRemaining = .35;
     }
-    const routeCallout = state.phase === 1
-      ? 'EASY STREET · LEARN THE CURBS'
-      : state.phase >= 5
-        ? `ROUTE ${state.phase} · MASTERY RUN`
-        : state.phase === 4
-          ? 'ROUTE 4 · PEAK TRAFFIC'
-          : `ROUTE ${state.phase} · PICK UP THE PACE`;
+    const routeCallout = `DAY ${state.phase} · ${difficulty.name}`;
     showMessage(routeCallout, 2.2);
-    announce(`Route ${state.phase}. Deliver ${state.quota} papers.`);
+    announce(`Day ${state.phase}. ${state.quota} deliveries across ${neighborhood.length} houses. ${difficulty.name}. Serve subscribers only. Finish for one new subscriber, or two with every delivery and no crashes.`);
     updateHud();
   }
 
@@ -266,8 +290,9 @@
     state.score = 0;
     state.lives = 3;
     state.worldScroll = 0;
+    neighborhood.forEach(home => { home.subscribed = home.id % 3 === 0; });
     state.started = true;
-    startPhase(initialPhase);
+    startPhase(1);
     state.paused = modal.classList.contains('is-visible');
     lastTime = performance.now();
     showMessage('FRESH BAG · FRESH START', 1.6);
@@ -276,8 +301,12 @@
   window.restartGame = restartGame;
 
   function spawnTarget(forcedSide = 0) {
-    const side = forcedSide || (random() < .5 ? -1 : 1);
+    if (state.nextAddress >= neighborhood.length) return;
+    const home = neighborhood[state.nextAddress++];
+    const side = forcedSide || home.side;
     targets.push({
+      home,
+      wasSubscribed: home.subscribed,
       y: HORIZON + 4,
       x: W / 2,
       side,
@@ -351,7 +380,7 @@
 
     let side = player.x < W / 2 ? -1 : 1;
     if (Math.abs(player.x - W / 2) < 24) {
-      const nearest = targets.filter(target => !target.dead && !target.delivered).sort((a, b) => b.y - a.y)[0];
+      const nearest = targets.filter(target => target.wasSubscribed && !target.dead && !target.delivered).sort((a, b) => b.y - a.y)[0];
       if (nearest) side = nearest.side;
     }
     state.papers -= 1;
@@ -373,12 +402,14 @@
     if (player.invulnerable > 0) return;
     player.invulnerable = 2.1;
     state.lives -= 1;
+    state.crashes += 1;
     state.combo = 0;
     state.shake = reducedMotion ? 2 : 12;
     burst(player.x, PLAYER_Y, '#f5e8c8', 18);
     soundCrash();
     if (state.lives <= 0) {
       state.mode = 'gameover';
+      state.endReason = 'Three wipeouts ended your delivery run';
       showMessage('ROUTE CANCELLED', 99);
       announce(`Game over. Score ${Math.floor(state.score)}. Press R to restart.`);
     } else {
@@ -389,6 +420,12 @@
   }
 
   function deliver(target, paper) {
+    if (target.delivered || target.dead) return;
+    if (!target.wasSubscribed) {
+      paper.dead = true;
+      showMessage(`#${target.home.number} · NOT A SUBSCRIBER`, 1);
+      return;
+    }
     target.delivered = true;
     paper.dead = true;
     state.delivered += 1;
@@ -398,14 +435,14 @@
     state.score += points;
     burst(target.x, target.y, '#f4c95d', 16);
     soundDelivery();
-    showMessage(`${state.combo > 1 ? `COMBO ×${state.combo} · ` : ''}+${points}`, .9);
-    if (state.delivered === state.quota) announce('Delivery quota reached. Finish the route!');
+    showMessage(`#${target.home.number} DELIVERED · +${points}`, 1.2);
+    announce(`Delivered to ${target.home.number}.`);
     updateHud();
   }
 
   function collectBundle(bundle) {
     bundle.dead = true;
-    const gained = Math.min(5, 12 - state.papers);
+    const gained = Math.max(0, Math.min(5, 20 - state.papers));
     state.papers += gained;
     state.score += 50;
     burst(bundle.x, bundle.y, '#fff5cf', 10);
@@ -417,29 +454,32 @@
 
   function finishPhase() {
     if (state.mode !== 'playing') return;
-    const success = state.delivered >= state.quota;
+    const success = customerCount() >= MIN_CUSTOMERS;
     state.mode = 'transition';
     state.transitionSuccess = success;
-    state.transitionTimer = 2.7;
+    state.transitionTimer = 6;
     if (success) {
+      state.perfect = state.delivered === state.quota && state.crashes === 0;
+      const candidates = neighborhood.filter(home => !home.subscribed);
+      // Rotate new addresses through the street so the delivery pattern keeps changing.
+      const offset = candidates.length ? (state.phase * 7) % candidates.length : 0;
+      for (let i = 0; i < Math.min(state.perfect ? 2 : 1, candidates.length); i++) {
+        const home = candidates[(offset + i) % candidates.length];
+        home.subscribed = true;
+        state.newSubscribers.push(home.number);
+      }
+      state.gained = state.newSubscribers.length;
       const bonus = 500 + state.phase * 100 + state.papers * 15;
       state.score += bonus;
-      showMessage(`ROUTE CLEAR · BONUS ${bonus}`, 3);
+      showMessage(`DAY ${state.phase} COMPLETE · ${customerCount()} CUSTOMERS`, 6);
+      state.lives = Math.min(3, state.lives + 1);
       tone(440, .1, 'square', .04);
       tone(660, .12, 'square', .035, .1);
       tone(880, .16, 'square', .03, .21);
-      announce(`Route ${state.phase} cleared.`);
+      announce(`Day ${state.phase} complete. ${state.perfect ? 'Perfect run! ' : ''}${state.gained} new subscribers. ${state.newSubscribers.join(', ')}. ${customerCount()} customers total.`);
     } else {
-      state.lives -= 1;
-      state.combo = 0;
-      showMessage(`QUOTA MISSED · ${state.delivered}/${state.quota}`, 3);
-      soundCrash();
-      announce(`Quota missed. Delivered ${state.delivered} of ${state.quota}.`);
-      if (state.lives <= 0) {
-        state.mode = 'gameover';
-        state.message = 'ROUTE CANCELLED';
-        state.messageTimer = 99;
-      }
+      state.mode = 'gameover';
+      state.endReason = 'Too few customers to keep the route';
     }
     updateHud();
   }
@@ -457,8 +497,8 @@
 
   function updatePlaying(dt) {
     const steer = clamp((input.right ? 1 : 0) - (input.left ? 1 : 0) + input.joystick, -1, 1);
-    const acceleration = steer ? 10 : 7;
-    player.vx = lerp(player.vx, steer * 345, 1 - Math.exp(-acceleration * dt));
+    const acceleration = steer ? 13 : 9;
+    player.vx = lerp(player.vx, steer * 450, 1 - Math.exp(-acceleration * dt));
     player.x += player.vx * dt;
     const playerEdge = roadHalf(PLAYER_Y) * .7;
     player.x = clamp(player.x, W / 2 - playerEdge, W / 2 + playerEdge);
@@ -470,9 +510,9 @@
     updateScenery(dt, state.worldSpeed);
 
     state.targetTimer -= dt;
-    if (state.targetTimer <= 0 && state.routeRemaining > 3.5) {
+    if (state.targetTimer <= 0 && state.nextAddress < neighborhood.length) {
       spawnTarget();
-      state.targetTimer = state.targetEvery + randomRange(-.2, .35);
+      state.targetTimer = state.targetEvery;
     }
 
     state.obstacleTimer -= dt;
@@ -495,13 +535,25 @@
       target.pulse += dt * 5;
       if (target.y > H + 45) {
         target.dead = true;
-        if (!target.delivered) {
+        if (target.wasSubscribed && !target.delivered) {
           state.misses += 1;
           state.combo = 0;
-          showMessage('MISSED ADDRESS', .8);
+          if (target.home.subscribed) {
+            target.home.subscribed = false;
+            state.lost += 1;
+            showMessage(`#${target.home.number} CANCELLED · ${customerCount()} CUSTOMERS`, 1.4);
+            announce(`Missed delivery. ${target.home.number} cancelled. ${customerCount()} customers remain.`);
+            if (customerCount() < MIN_CUSTOMERS) {
+              state.mode = 'gameover';
+              state.endReason = `Only ${customerCount()} customers left · minimum ${MIN_CUSTOMERS}`;
+              showMessage('TOO FEW CUSTOMERS · ROUTE CLOSED', 99);
+              soundCrash();
+            }
+          }
         }
       }
     });
+    if (state.mode !== 'playing') return;
 
     hazards.forEach(hazard => {
       const depth = clamp((hazard.y - HORIZON) / (H - HORIZON), 0, 1);
@@ -509,6 +561,11 @@
       if (hazard.type === 'dog') {
         const weave = Math.sin(state.worldScroll * .022 + hazard.phase) * state.dogWeave;
         hazard.lane = clamp(hazard.baseLane + weave, -.88, .88);
+      }
+      if (hazard.type === 'car' && state.carDrift > 0) {
+        const progress = clamp((hazard.y - 210) / 190, 0, 1);
+        const direction = hazard.baseLane > 0 ? -1 : 1;
+        hazard.lane = hazard.baseLane + direction * state.carDrift * progress * progress * (3 - 2 * progress);
       }
       hazard.x = roadX(hazard.lane, hazard.y);
       const scale = .28 + depth * .92;
@@ -545,7 +602,7 @@
     for (let index = bundles.length - 1; index >= 0; index -= 1) if (bundles[index].dead) bundles.splice(index, 1);
     for (let index = flyingPapers.length - 1; index >= 0; index -= 1) if (flyingPapers[index].dead) flyingPapers.splice(index, 1);
 
-    if (state.routeRemaining <= 0) finishPhase();
+    if (state.routeRemaining <= 0 && state.nextAddress === neighborhood.length && targets.length === 0) finishPhase();
   }
 
   function updateParticles(dt) {
@@ -586,15 +643,12 @@
     ctx.translate(x, y);
     ctx.scale(scale, scale);
     ctx.fillStyle = 'rgba(245, 232, 200, .82)';
-    ctx.strokeStyle = '#2d6173';
-    ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(-28, 5, 20, 0, Math.PI * 2);
     ctx.arc(0, -4, 29, 0, Math.PI * 2);
     ctx.arc(31, 6, 18, 0, Math.PI * 2);
     ctx.rect(-29, 3, 60, 22);
     ctx.fill();
-    ctx.stroke();
     ctx.restore();
   }
 
@@ -605,15 +659,19 @@
     ctx.beginPath();
     ctx.arc(770, 84, 40, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#2d6173';
-    ctx.lineWidth = 3;
-    ctx.stroke();
     drawCloud(188 - (state.worldScroll * .03) % 240, 73, .72);
     drawCloud(535 - (state.worldScroll * .018) % 330, 48, .52);
 
+    // Distant gardens and rooftops ground the vanishing point in a neighborhood.
+    ctx.fillStyle = '#739381';
+    for (let i = 0; i < 24; i++) {
+      const x = i * 43;
+      ctx.beginPath(); ctx.arc(x, HORIZON + 2, 13 + i % 4 * 5, Math.PI, Math.PI * 2); ctx.fill();
+    }
+
     ctx.fillStyle = '#486f57';
     ctx.fillRect(0, HORIZON, W, H - HORIZON);
-    ctx.fillStyle = '#d6ca8e';
+    ctx.fillStyle = '#c8c3af';
     ctx.beginPath();
     ctx.moveTo(W / 2 - 82, HORIZON);
     ctx.lineTo(W / 2 + 82, HORIZON);
@@ -621,9 +679,6 @@
     ctx.lineTo(0, H);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = '#172a32';
-    ctx.lineWidth = 5;
-    ctx.stroke();
 
     ctx.fillStyle = '#4d5558';
     ctx.beginPath();
@@ -654,10 +709,25 @@
     }
   }
 
+  function drawGarden(item) {
+    const depth = clamp((item.y - HORIZON) / (H - HORIZON), 0, 1);
+    const scale = .2 + depth * .8;
+    const x = W / 2 + item.side * (roadHalf(item.y) + 180 * scale);
+    ctx.save(); ctx.translate(x, item.y); ctx.scale(scale, scale);
+    ctx.fillStyle = '#243f3738'; ctx.beginPath(); ctx.ellipse(17, 7, 45, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#70604b'; ctx.fillRect(-5, -70, 10, 74);
+    ctx.strokeStyle = '#70604b'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, -33); ctx.lineTo(-19, -63); ctx.moveTo(1, -44); ctx.lineTo(21, -76); ctx.stroke();
+    ctx.fillStyle = '#365d43'; ctx.beginPath(); ctx.arc(-20, -79, 27, 0, Math.PI * 2); ctx.arc(15, -90, 33, 0, Math.PI * 2); ctx.arc(28, -66, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#638453'; ctx.beginPath(); ctx.ellipse(-12, -93, 26, 18, -.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#b7b1a0'; ctx.fillRect(-61, 13, 122, 4); ctx.fillRect(-61, 26, 122, 4);
+    for (let x = -59; x <= 60; x += 15) ctx.fillRect(x, 7, 5, 31);
+    ctx.restore();
+  }
+
   function drawHouse(item) {
     const depth = clamp((item.y - HORIZON) / (H - HORIZON), 0, 1);
-    const scale = .26 + depth * .75;
-    const x = W / 2 + item.side * (roadHalf(item.y) + 115 * scale);
+    const scale = .26 + depth * .68;
+    const x = W / 2 + item.side * (roadHalf(item.y) + 97 * scale);
     const y = item.y - 44 * scale;
     ctx.save();
     ctx.translate(x, y);
@@ -666,27 +736,52 @@
     ctx.beginPath();
     ctx.ellipse(0, 55, 78, 16, 0, 0, Math.PI * 2);
     ctx.fill();
+    // A three-quarter house: shaded side wall, clapboard front and shingled roof.
+    ctx.fillStyle = '#b8b1a0';
+    ctx.beginPath(); ctx.moveTo(-65, 53); ctx.lineTo(-96, 35); ctx.lineTo(-96, -45); ctx.lineTo(-65, -27); ctx.closePath(); ctx.fill();
     ctx.fillStyle = item.hue;
-    ctx.strokeStyle = '#172a32';
-    ctx.lineWidth = 5;
-    ctx.fillRect(-62, -22, 124, 75);
-    ctx.strokeRect(-62, -22, 124, 75);
+    ctx.strokeStyle = '#645f54';
+    ctx.lineWidth = 1.5;
+    const tall = item.id % 3 === 0 ? 22 : 0;
+    ctx.fillRect(-65, -30 - tall, 130, 83 + tall);
+    ctx.strokeRect(-65, -30 - tall, 130, 83 + tall);
+    ctx.strokeStyle = 'rgba(64,55,43,.22)';
+    for (let row = -24 - tall; row < 51; row += 7) {
+      ctx.beginPath(); ctx.moveTo(-64, row); ctx.lineTo(64, row); ctx.stroke();
+    }
     ctx.fillStyle = item.roof;
     ctx.beginPath();
-    ctx.moveTo(-75, -21);
-    ctx.lineTo(0, -76);
-    ctx.lineTo(75, -21);
+    ctx.moveTo(-75, -29 - tall);
+    ctx.lineTo(-8, -86 - tall);
+    ctx.lineTo(75, -29 - tall);
     ctx.closePath();
     ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#f5e8c8';
-    ctx.fillRect(-40, 0, 25, 25);
-    ctx.fillRect(17, 0, 25, 25);
-    ctx.strokeRect(-40, 0, 25, 25);
-    ctx.strokeRect(17, 0, 25, 25);
-    ctx.fillStyle = '#713f35';
-    ctx.fillRect(-10, 13, 22, 40);
-    ctx.strokeRect(-10, 13, 22, 40);
+    ctx.fillStyle = '#3c4141';
+    ctx.beginPath(); ctx.moveTo(-75, -29 - tall); ctx.lineTo(-106, -47 - tall); ctx.lineTo(-39, -103 - tall); ctx.lineTo(-8, -86 - tall); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#986f59'; ctx.fillRect(34, -83 - tall, 15, 31);
+    ctx.fillStyle = '#c3ad92'; ctx.fillRect(31, -86 - tall, 21, 5);
+    ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 1;
+    for (let row = 1; row < 6; row++) {
+      const ry = -86 - tall + row * 9;
+      ctx.beginPath(); ctx.moveTo(-8 - row * 10.6, ry); ctx.lineTo(-8 + row * 13, ry); ctx.stroke();
+    }
+    ctx.fillStyle = '#efe7d5'; ctx.fillRect(-72, -30 - tall, 145, 5);
+    for (const wx of [-46, 27]) {
+      ctx.fillStyle = '#eee8d8'; ctx.fillRect(wx - 3, -15 - tall, 29, 35);
+      ctx.fillStyle = '#496b77'; ctx.fillRect(wx, -12 - tall, 23, 29);
+      ctx.fillStyle = '#b5d5d6'; ctx.beginPath(); ctx.moveTo(wx + 2, -10 - tall); ctx.lineTo(wx + 20, -10 - tall); ctx.lineTo(wx + 2, 8 - tall); ctx.fill();
+      ctx.fillStyle = '#e9e0cc'; ctx.fillRect(wx + 10, -12 - tall, 2, 29); ctx.fillRect(wx, 1 - tall, 23, 2);
+      ctx.fillStyle = item.roof; ctx.fillRect(wx - 10, -14 - tall, 5, 32); ctx.fillRect(wx + 28, -14 - tall, 5, 32);
+    }
+    ctx.fillStyle = '#594b3d'; ctx.fillRect(-13, 4, 27, 49);
+    ctx.fillStyle = '#88a4a6'; ctx.fillRect(-8, 9, 17, 15);
+    ctx.fillStyle = '#d4b472'; ctx.beginPath(); ctx.arc(8, 35, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#b1a593'; ctx.fillRect(-27, 51, 56, 6); ctx.fillRect(-32, 57, 66, 6);
+    ctx.fillStyle = '#ddd2b9'; ctx.fillRect(-25, 9, 4, 42); ctx.fillRect(24, 9, 4, 42);
+    ctx.fillStyle = item.roof; ctx.beginPath(); ctx.moveTo(-33, 10); ctx.lineTo(-3, -9); ctx.lineTo(35, 10); ctx.fill();
+    ctx.fillStyle = '#3e6446';
+    for (const bx of [-49, 48]) { ctx.beginPath(); ctx.ellipse(bx, 49, 20, 10, 0, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#dfd8c4'; ctx.fillRect(-15, 63, 30, 18);
     ctx.restore();
   }
 
@@ -696,8 +791,9 @@
     ctx.save();
     ctx.translate(target.x, target.y);
     ctx.scale(scale, scale);
-    if (!target.delivered) {
-      ctx.strokeStyle = `rgba(244, 201, 93, ${.55 + Math.sin(target.pulse) * .2})`;
+    const subscriber = target.wasSubscribed;
+    if (subscriber && !target.delivered) {
+      ctx.strokeStyle = subscriber ? '#b5e4a5' : '#edc579';
       ctx.lineWidth = 8;
       ctx.setLineDash([8, 7]);
       ctx.beginPath();
@@ -707,7 +803,7 @@
     }
     ctx.fillStyle = '#172a32';
     ctx.fillRect(-5, -8, 10, 50);
-    ctx.fillStyle = target.delivered ? '#e7a44d' : '#f5e8c8';
+    ctx.fillStyle = target.delivered ? '#e7a44d' : subscriber ? '#f5e8c8' : '#919895';
     ctx.strokeStyle = '#172a32';
     ctx.lineWidth = 4;
     roundedRect(-25, -44, 49, 31, 8);
@@ -725,6 +821,11 @@
       ctx.lineTo(15, -39);
       ctx.stroke();
     }
+    ctx.fillStyle = subscriber ? '#254d36' : '#4b5354';
+    roundedRect(-40, -79, 80, 23, 4); ctx.fill();
+    ctx.fillStyle = '#fff9e8'; ctx.font = 'bold 13px Trebuchet MS'; ctx.textAlign = 'center';
+    ctx.fillText(target.delivered ? 'THANKS!' : subscriber ? 'DELIVER' : 'PASS', 0, -63);
+    ctx.fillStyle = '#fff8df'; ctx.font = 'bold 12px Trebuchet MS'; ctx.fillText(`#${target.home.number}`, 0, 30);
     ctx.restore();
   }
 
@@ -738,18 +839,28 @@
     ctx.fill();
     ctx.fillStyle = hazard.color;
     ctx.strokeStyle = '#172a32';
-    ctx.lineWidth = 5;
-    roundedRect(-35, -34, 70, 57, 10);
+    ctx.lineWidth = 2;
+    ctx.fillStyle = '#20272a';
+    roundedRect(-37, -17, 12, 39, 4); ctx.fill(); roundedRect(25, -17, 12, 39, 4); ctx.fill();
+    ctx.fillStyle = hazard.color;
+    roundedRect(-34, -39, 68, 62, 8);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = '#9dd0d0';
-    ctx.fillRect(-24, -24, 48, 19);
-    ctx.strokeRect(-24, -24, 48, 19);
-    ctx.fillStyle = '#f4c95d';
-    ctx.beginPath();
-    ctx.arc(-23, 11, 6, 0, Math.PI * 2);
-    ctx.arc(23, 11, 6, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-31, -29); ctx.lineTo(-24, -60); ctx.quadraticCurveTo(0, -68, 24, -60); ctx.lineTo(31, -29); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#344f5a';
+    ctx.beginPath(); ctx.moveTo(-23, -34); ctx.lineTo(-19, -56); ctx.lineTo(19, -56); ctx.lineTo(23, -34); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#a6c9ce'; ctx.beginPath(); ctx.moveTo(-18, -53); ctx.lineTo(14, -53); ctx.lineTo(-19, -39); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffffff24'; ctx.fillRect(-25, -26, 50, 16);
+    ctx.strokeStyle = '#00000038'; ctx.beginPath(); ctx.moveTo(-24, -25); ctx.lineTo(-28, -3); ctx.moveTo(24, -25); ctx.lineTo(28, -3); ctx.stroke();
+    ctx.fillStyle = '#d8d5c8'; roundedRect(-34, 12, 68, 7, 3); ctx.fill();
+    ctx.fillStyle = '#222d30'; ctx.fillRect(-14, 2, 28, 10);
+    ctx.fillStyle = '#b3b9b6'; for (let gx = -11; gx < 13; gx += 5) ctx.fillRect(gx, 4, 2, 6);
+    ctx.fillStyle = '#fff0bc'; ctx.fillRect(-29, 0, 13, 9); ctx.fillRect(16, 0, 13, 9);
+    ctx.fillStyle = '#f8f0dd'; ctx.fillRect(-9, 15, 18, 5);
+    ctx.fillStyle = hazard.color; ctx.fillRect(-41, -33, 9, 6); ctx.fillRect(32, -33, 9, 6);
+    if (state.carDrift > 0 && hazard.y < 400 && Math.floor(hazard.y / 18) % 2 === 0) {
+      ctx.fillStyle = '#ffb52e'; ctx.fillRect(hazard.baseLane > 0 ? -31 : 24, -3, 7, 5);
+    }
     ctx.restore();
   }
 
@@ -1026,6 +1137,33 @@
     ctx.restore();
   }
 
+  function deliveryReady(target) {
+    if ((player.x - W / 2) * target.side < 90) return false;
+    const a = state.worldSpeed * .48;
+    const b = state.worldSpeed * .62 / (H - HORIZON);
+    for (let t = .06; t <= .7; t += .025) {
+      const y = HORIZON + (target.y - HORIZON + a / b) * Math.exp(b * t) - a / b;
+      const x = W / 2 + target.side * (roadHalf(y) + 31);
+      const px = player.x + target.side * (17 + (365 + Math.min(state.phase, 6) * 8) * t);
+      const py = PLAYER_Y - 18 - 92 * t + 14 * t * t;
+      if (Math.hypot(px - x, (py - y) * .85) < 28) return true;
+    }
+    return false;
+  }
+
+  function drawDeliveryCue() {
+    if (state.mode !== 'playing') return;
+    const next = targets.find(target => target.wasSubscribed && !target.delivered && !target.dead && target.y > 290 && target.y < 440);
+    if (!next) return;
+    const ready = deliveryReady(next);
+    ctx.save(); ctx.textAlign = 'center';
+    ctx.fillStyle = ready ? '#fff2b5' : '#f6eedb'; ctx.strokeStyle = '#172a32'; ctx.lineWidth = 4;
+    ctx.font = 'bold 17px Trebuchet MS';
+    const cue = ready ? 'THROW NOW!' : next.side < 0 ? '← LEFT DELIVERY' : 'RIGHT DELIVERY →';
+    ctx.strokeText(cue, player.x, PLAYER_Y + 61); ctx.fillText(cue, player.x, PLAYER_Y + 61);
+    ctx.restore();
+  }
+
   function drawEndOverlay() {
     if (state.mode !== 'gameover' && state.mode !== 'transition') return;
     ctx.save();
@@ -1036,22 +1174,34 @@
     ctx.fillStyle = '#f5e8c8';
     ctx.strokeStyle = '#172a32';
     ctx.lineWidth = 6;
-    roundedRect(-230, -95, 460, 190, 10);
+    roundedRect(-260, -116, 520, 262, 10);
     ctx.fill(); ctx.stroke();
     ctx.fillStyle = state.mode === 'gameover' ? '#c84630' : state.transitionSuccess ? '#34694d' : '#c84630';
-    ctx.font = '900 47px Impact, Arial Black, sans-serif';
+    ctx.font = '900 38px Impact, Arial Black, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(state.mode === 'gameover' ? 'ROUTE CANCELLED' : state.transitionSuccess ? 'ROUTE CLEAR!' : 'QUOTA MISSED', 0, -28);
+    ctx.fillText(state.mode === 'gameover' ? 'ROUTE CANCELLED' : state.perfect ? 'PERFECT RUN!' : `DAY ${state.phase} · CUSTOMER REPORT`, 0, -76);
     ctx.fillStyle = '#172a32';
     ctx.font = '900 18px Trebuchet MS, sans-serif';
     if (state.mode === 'gameover') {
+      ctx.font = 'bold 17px Trebuchet MS';
+      ctx.fillText(state.endReason, 0, -23);
       ctx.fillText(`FINAL SCORE ${String(Math.floor(state.score)).padStart(6, '0')}`, 0, 13);
       ctx.font = '800 15px Trebuchet MS, sans-serif';
       ctx.fillText('PRESS R OR TAP ↻ TO START FRESH', 0, 52);
     } else {
-      ctx.fillText(`${state.delivered} OF ${state.quota} DELIVERED`, 0, 12);
+      ctx.fillText(`${customerCount()} CUSTOMERS · +${state.gained} JOINED / −${state.lost} CANCELLED`, 0, -45);
+      neighborhood.forEach((home, index) => {
+        const x = -235 + (index % 12) * 40;
+        const y = -27 + Math.floor(index / 12) * 30;
+        ctx.fillStyle = state.newSubscribers.includes(home.number) ? '#ba6b21' : home.subscribed ? '#34694d' : '#bfae95';
+        ctx.fillRect(x, y, 30, 24);
+        ctx.fillStyle = '#fff9e7'; ctx.font = 'bold 11px Trebuchet MS'; ctx.fillText(home.number, x + 15, y + 16);
+      });
+      ctx.fillStyle = '#172a32';
       ctx.font = '800 14px Trebuchet MS, sans-serif';
-      ctx.fillText(state.transitionSuccess ? `ROUTE ${state.phase + 1} IS NEXT` : 'ONE LIFE SPENT · RETRYING', 0, 48);
+      ctx.fillText(state.gained ? `NEW NEXT DAY: ${state.newSubscribers.map(number => '#' + number).join(' & ')}` : 'THE WHOLE STREET SUBSCRIBES!', 0, 52);
+      ctx.fillText(`${state.delivered}/${state.quota} DELIVERED · ${state.crashes} CRASHES · ${state.lives}/3 LIVES`, 0, 77);
+      ctx.fillText(`DAY ${state.phase + 1} STARTS IN ${Math.max(1, Math.ceil(state.transitionTimer))}…`, 0, 113);
     }
     ctx.restore();
   }
@@ -1060,12 +1210,13 @@
     ctx.save();
     if (state.shake > 0) ctx.translate(randomRange(-state.shake, state.shake), randomRange(-state.shake, state.shake));
     drawBackground();
-    scenery.slice().sort((a, b) => a.y - b.y).forEach(drawHouse);
+    scenery.slice().sort((a, b) => a.y - b.y).forEach(drawGarden);
+    targets.slice().sort((a, b) => a.y - b.y).forEach(target => drawHouse({ ...target.home, y: target.y, side: target.side }));
     drawActors();
     flyingPapers.forEach(drawFlyingPaper);
     drawPlayer();
+    drawDeliveryCue();
     drawParticles();
-    drawComicTexture();
     drawMessage();
     drawEndOverlay();
     ctx.restore();
@@ -1088,6 +1239,7 @@
     input.left = false;
     input.right = false;
     input.joystick = 0;
+    document.querySelectorAll('[data-action="throw"]').forEach(button => button.classList.remove('pressed'));
   }
 
   function showInstructions() {
@@ -1102,7 +1254,7 @@
 
   function hideInstructions() {
     modal.classList.remove('is-visible');
-    try { sessionStorage.setItem('vibecade-instructions-paper-route-rush-v1', '1'); } catch (_) {}
+    try { sessionStorage.setItem('vibecade-instructions-paper-route-rush-v3', '1'); } catch (_) {}
     ensureAudio();
     if (!state.started) {
       state.started = true;
@@ -1241,7 +1393,7 @@
   animationFrame = requestAnimationFrame(frame);
 
   let hasSeenInstructions = false;
-  try { hasSeenInstructions = sessionStorage.getItem('vibecade-instructions-paper-route-rush-v1') === '1'; } catch (_) {}
+  try { hasSeenInstructions = sessionStorage.getItem('vibecade-instructions-paper-route-rush-v3') === '1'; } catch (_) {}
   if (hasSeenInstructions) {
     modal.classList.remove('is-visible');
     state.started = true;

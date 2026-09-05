@@ -72,7 +72,7 @@ button { font: inherit; }
 }
 
 .hud-card {
-  min-width: 90px;
+  min-width: 76px;
   padding: 7px 11px 6px;
   border: 2px solid var(--ink);
   border-radius: 9px 9px 13px 9px;
@@ -88,6 +88,9 @@ button { font: inherit; }
 .hud-label { display: block; font-size: .57rem; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
 .hud-card strong { display: block; margin-top: 1px; font-family: Consolas, monospace; font-size: .98rem; line-height: 1; }
 #lives { color: #c84630; letter-spacing: .08em; }
+#customer-card { background: #d9ead5; }
+#customer-card.at-risk { background: #ffb8a0; }
+#customer-status { position: absolute; bottom: 10px; left: 12px; padding: 5px 9px; border-radius: 4px; background: #172a32dd; color: #fff8e7; font: 800 11px/1.2 Consolas, monospace; pointer-events: none; }
 
 #route-meter {
   position: absolute;
@@ -251,8 +254,9 @@ button { font: inherit; }
 
 body.touch-device #game-shell { border-width: 1px; border-radius: 10px; }
 body.touch-device #sound-status { display: none; }
-body.touch-device .hud-card { min-width: 56px; padding: 4px 6px; border-width: 1px; box-shadow: 2px 2px 0 rgba(23, 42, 50, .65); }
-body.touch-device .hud-card.wide { min-width: 76px; }
+body.touch-device .hud-card { min-width: 0; flex: 1; padding: 4px 3px; border-width: 1px; box-shadow: 2px 2px 0 rgba(23, 42, 50, .65); }
+body.touch-device .hud-card.wide { min-width: 0; }
+body.touch-device #customer-status { font-size: 8px; bottom: 4px; left: 4px; }
 body.touch-device .hud-label { font-size: .45rem; }
 body.touch-device .hud-card strong { font-size: .72rem; }
 body.touch-device #hud { top: 5px; width: calc(100% - 22px); gap: 4px; }
