@@ -1,0 +1,240 @@
+
+*{box-sizing:border-box}
+html,body{margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden}
+body{--accent:#e7be74;
+  background:radial-gradient(ellipse at 50% 10%,#303b39,#101817 75%);
+  color:#edf2e8;
+  font-family:Segoe UI,sans-serif;
+  display:flex;
+  align-items:center;
+  justify-content:center}
+body.ultra{--accent:#73d9d0;
+  background:radial-gradient(ellipse at top,#243c44,#0c141c 75%)}
+#sidebar-placeholder{display:none}
+#game-container{width:100%;
+  height:100dvh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  padding:82px 20px 58px}
+h1{position:fixed;
+  top:15px;
+  left:76px;
+  margin:0;
+  font-size:24px;
+  letter-spacing:5px;
+  text-transform:uppercase;
+  color:var(--accent)}
+h1:after{content:' / ARMORED OPERATIONS';
+  font-size:10px;
+  letter-spacing:2px;
+  color:#98aaa7}
+canvas{width:min(calc(100vw - 40px),calc((100dvh - 140px)*4/3));
+  height:auto;
+  max-height:100%;
+  aspect-ratio:4/3;
+  border:2px solid #65756a;
+  border-radius:6px;
+  box-shadow:0 18px 60px #0008;
+  touch-action:none}
+#info{position:fixed;
+  top:51px;
+  left:76px;
+  font-size:12px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:#c8d4ce}
+#options,#specialWeapon{position:fixed;
+  bottom:18px;
+  right:22px;
+  font-size:12px;
+  color:var(--accent)}
+#options label{display:flex;
+  gap:8px;
+  align-items:center;
+  min-height:44px}
+#message{position:absolute;
+  bottom:65px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:10px 18px;
+  background:#101b20ed;
+  border:1px solid #9ba897;
+  border-radius:6px;
+  text-align:center;
+  z-index:4;
+  pointer-events:none}
+#message:empty{display:none}
+#message .subtext{display:block;
+  font-size:12px;
+  margin-top:6px}
+button{font:inherit;
+  cursor:pointer;
+  touch-action:none}
+button:focus-visible,input:focus-visible{outline:3px solid #fff;
+  outline-offset:4px}
+#restartBtn{position:fixed;
+  bottom:16px;
+  left:24px;
+  padding:10px 18px;
+  background:#273832;
+  color:#e5eedd;
+  border:1px solid #6b8172;
+  border-radius:6px}
+#help-button{position:fixed;
+  right:20px;
+  top:18px;
+  width:36px;
+  height:36px;
+  border:1px solid #819a8d;
+  background:#354c4266;
+  color:#fff;
+  border-radius:50%;
+  z-index:50}
+#instruction-modal,.overlay{position:fixed;
+  inset:0;
+  z-index:1000;
+  background:#081114dd;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px}
+#instruction-modal:not(.is-visible),.overlay.hidden{display:none}
+#instruction-card,.overlay-content{width:min(550px,100%);
+  max-height:calc(100dvh - 40px);
+  overflow-y:auto;
+  padding:28px;
+  background:#1b2b2b;
+  border:1px solid #758c7d;
+  border-radius:12px;
+  box-shadow:0 20px 80px #0009}
+h2{margin:0 0 18px;
+  color:var(--accent);
+  font-size:27px;
+  letter-spacing:2px}
+h3{font-size:14px;
+  color:var(--accent)}
+p,li{font-size:14px;
+  line-height:1.6;
+  color:#d3ded6}
+#instruction-close,#startGameBtn{width:100%;
+  padding:14px;
+  background:var(--accent);
+  color:#152822;
+  border:0;
+  border-radius:5px;
+  font-weight:800;
+  margin-top:12px}
+#touch-controls{display:none;
+  pointer-events:none}
+.control-cluster{display:flex;
+  flex-direction:column;
+  gap:8px}
+.control-button{pointer-events:auto;
+  touch-action:none;
+  user-select:none;
+  width:120px;
+  height:52px;
+  border:1px solid #778c7e;
+  border-radius:8px;
+  background:linear-gradient(#304840,#1c302b);
+  color:#eff5e7;
+  font-weight:750;
+  font-size:14px;
+  box-shadow:0 3px 0 #071411;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px}
+.control-button small{font-size:10px;
+  color:#c0d4c5;
+  font-weight:500}
+.control-button[data-action=fire]{height:64px;
+  background:linear-gradient(#e9ca83,#b98b4b);
+  color:#202c22;
+  border-color:#efd6a3}
+.control-button.pressed,.control-button[aria-pressed=true]{background:#51766a;
+  box-shadow:inset 0 0 0 2px var(--accent)}
+.control-button:disabled{opacity:.45}
+.aim-hint{position:fixed;
+  bottom:18px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:11px;
+  color:var(--accent);
+  pointer-events:none;
+  white-space:nowrap}
+body.touch-device #help-button,body.touch-device h1{display:none}
+body.touch-device #info{left:10px;
+  top:14px;
+  font-size:11px;
+  line-height:1.6;
+  letter-spacing:1px;
+  width:120px}
+body.touch-device #specialWeapon{display:none}
+body.touch-device #options{left:8px;
+  right:auto;
+  bottom:52px;
+  font-size:11px;
+  width:124px;
+  z-index:41;
+  pointer-events:auto}
+body.touch-device #options label{pointer-events:auto}
+body.touch-device #message{bottom:8px;
+  font-size:12px;
+  max-width:45%}
+body.touch-device .aim-hint{bottom:12px;
+  white-space:normal;
+  text-align:center;
+  width:40%}
+body.touch-device #restartBtn{display:none}
+body.touch-device #touch-controls{display:flex;
+  position:fixed;
+  inset:auto 10px 20px;
+  justify-content:space-between;
+  align-items:center;
+  z-index:38}
+body.touch-device.vibecade-joystick-rails #info{position:fixed;
+  left:max(8px,env(safe-area-inset-left));
+  top:12px;
+  width:120px}
+body.touch-device.vibecade-joystick-rails #options{top:auto;
+  bottom:52px}
+body.touch-device.vibecade-joystick-rails .control-cluster{padding-right:env(safe-area-inset-right)}
+@media(max-width:599px),(orientation:portrait) and (pointer:coarse){body.touch-device #game-container{padding:68px 10px 280px;
+  align-items:center}
+body.touch-device canvas{width:100%;
+  height:auto;
+  max-height:100%;
+  object-fit:contain}
+body.touch-device #info{width:auto;
+  right:10px;
+  text-align:center}
+body.touch-device #touch-controls{bottom:max(18px,env(safe-area-inset-bottom))}
+body.touch-device #options{bottom:180px}
+body.touch-device .aim-hint{bottom:260px;
+  width:95%}
+body.touch-device #message{bottom:275px;
+  max-width:90%}
+}
+
+@media (max-width:599px), (orientation:portrait) and (pointer:coarse) {
+  body.touch-device #game-container #touch-controls {inset:auto 10px max(18px, env(safe-area-inset-bottom)) !important;
+  height:244px !important;
+  padding:0 !important;
+  align-items:center !important;
+  }
+
+}
+
+body.touch-device.vibecade-joystick-rails #game-container {padding:0 !important;
+  max-width:100vw !important;
+  }
+
+
+@media(max-width:599px),(orientation:portrait) and (pointer:coarse){body.touch-device canvas{width:min(calc(100vw - 20px),calc((100dvh - 348px)*4/3));height:auto;max-height:none;}}
