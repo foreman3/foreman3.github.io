@@ -27,6 +27,10 @@
         <p><strong>Mobile</strong><br>Slide the joystick · Hold Fire · Tap Pulse to clear nearby enemy shots</p>
       </div>
       <p>Shoot supply saucers for upgrades. Rapid Fire and Piercing Shot last briefly; Repair restores a damaged bunker. Every 12 kills recharges Pulse.</p>
+      <div class="settings" aria-label="Game options">
+        <label><input id="auto-fire-option" type="checkbox"> Auto-fire</label>
+        <label><input id="reduced-motion-option" type="checkbox"> Reduce motion</label>
+      </div>
       <button id="instruction-close" class="primary" type="button">DEFEND EARTH</button>
     </div>
   </div>
@@ -37,6 +41,7 @@
       <span id="score">000000</span><span id="wave">WAVE 1</span><span id="lives">LIVES 3</span>
     </div>
     <div id="status"></div>
+    <div id="power-status"></div>
     <div id="boss-hud" hidden><span>MOTHERSHIP</span><div><i></i></div></div>
     <div id="touch-controls" aria-hidden="true">
       <div class="virtual-joystick" data-joystick data-axis="horizontal" role="group" aria-label="Slide to move left or right">

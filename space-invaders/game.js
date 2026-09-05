@@ -4,7 +4,8 @@
   const W = 800;
   const H = 600;
   const MOBILE = matchMedia('(pointer: coarse)').matches || matchMedia('(max-width: 900px)').matches;
-  const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let autoFire = false;
   const SCALE = MOBILE ? 0.75 : 1;
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
@@ -16,12 +17,13 @@
 
   const ui = {
     score: document.getElementById('score'), wave: document.getElementById('wave'), lives: document.getElementById('lives'),
-    status: document.getElementById('status'), boss: document.getElementById('boss-hud'), bossBar: document.querySelector('#boss-hud i'),
+    status: document.getElementById('status'), power: document.getElementById('power-status'), boss: document.getElementById('boss-hud'), bossBar: document.querySelector('#boss-hud i'),
     instructions: document.getElementById('instruction-modal'), start: document.getElementById('instruction-close'),
     help: document.getElementById('help-button'), sound: document.getElementById('sound-button'),
     results: document.getElementById('end-modal'), title: document.getElementById('end-title'),
     kicker: document.getElementById('result-kicker'), summary: document.getElementById('run-summary'),
     restart: document.getElementById('restart-button'), fire: document.querySelector('[data-action="fire"]'),
+    autoFire: document.getElementById('auto-fire-option'), reducedMotion: document.getElementById('reduced-motion-option'),
     pulse: document.querySelector('[data-action="pulse"]'), pulseLabel: document.querySelector('[data-action="pulse"] small')
   };
 
@@ -66,6 +68,7 @@
   let slowFrames = 0;
   let frameCounter = 0;
   let lastStatus = '';
+  let lastPowerStatus = '';
 
   const player = { x: W / 2, y: H - 45, w: 46, h: 25, cooldown: 0, invulnerable: 0, alive: true };
   const waveConfig = [
@@ -143,6 +146,12 @@
     ui.status.textContent = text;
   }
 
+  function setPowerStatus(text) {
+    if (text === lastPowerStatus) return;
+    lastPowerStatus = text;
+    ui.power.textContent = text;
+  }
+
   function updateHud() {
     ui.score.textContent = String(score).padStart(6, '0');
     ui.wave.textContent = `WAVE ${wave}`;
@@ -217,7 +226,7 @@
 
   function newGame() {
     wave = 1; score = 0; lives = 3; pulseCharges = 1; killsTowardPulse = 0; activePickup = null; pickupTimer = 0;
-    ui.results.classList.remove('is-visible'); beginWave();
+    setPowerStatus(''); ui.results.classList.remove('is-visible'); beginWave();
   }
 
   function firePlayer() {
@@ -271,7 +280,7 @@
   function collectPickup(pickup) {
     pickup.alive = false;
     if (pickup.type === 'repair') repairShield();
-    else { activePickup = pickup.type; pickupTimer = 10; setStatus(pickup.type === 'rapid' ? 'RAPID FIRE · 10s' : 'PIERCING SHOT · 10s'); tone(600, .25, 'triangle', .045, 600); }
+    else { activePickup = pickup.type; pickupTimer = 10; setStatus(pickup.type === 'rapid' ? 'RAPID FIRE ACQUIRED' : 'PIERCING SHOT ACQUIRED'); setPowerStatus(`${pickup.type === 'rapid' ? 'RAPID FIRE' : 'PIERCING'} · 10s`); tone(600, .25, 'triangle', .045, 600); }
   }
 
   function spawnSaucer() {
@@ -310,26 +319,28 @@
   }
 
   function updateFormation(dt) {
-    const alive = aliens.filter(a => a.alive);
-    if (!alive.length) { if (wave === 5 && !bossPhaseStarted) startBoss(); else if (!boss) finishWave(); return; }
+    let aliveCount = 0;
+    let lowest = -Infinity;
+    for (const alien of aliens) if (alien.alive) { aliveCount++; lowest = Math.max(lowest, alien.y); }
+    if (!aliveCount) { if (wave === 5 && !bossPhaseStarted) startBoss(); else if (!boss) finishWave(); return; }
     const config = waveConfig[wave];
     formationStepTimer += dt;
-    const remainingRatio = alive.length / aliens.length;
+    const remainingRatio = aliveCount / aliens.length;
     const interval = Math.max(.18, config.interval * (.62 + remainingRatio * .38));
     if (formationStepTimer >= interval) {
       formationStepTimer -= interval;
       let left = Infinity, right = -Infinity;
-      alive.forEach(a => { left = Math.min(left, a.x - a.w / 2); right = Math.max(right, a.x + a.w / 2); });
+      for (const alien of aliens) if (alien.alive) { left = Math.min(left, alien.x - alien.w / 2); right = Math.max(right, alien.x + alien.w / 2); }
       if ((formationDirection < 0 && left < 24) || (formationDirection > 0 && right > W - 24)) {
-        formationDirection *= -1; alive.forEach(a => a.y += 17);
-      } else alive.forEach(a => a.x += formationDirection * config.step);
+        formationDirection *= -1;
+        for (const alien of aliens) if (alien.alive) alien.y += 17;
+      } else for (const alien of aliens) if (alien.alive) alien.x += formationDirection * config.step;
       tone(92 + (1 - remainingRatio) * 65, .025, 'square', .009);
     }
-    const lowest = Math.max(...alive.map(a => a.y));
     if (lowest > 430) {
-      for (const alien of alive) if (alien.y > 425) for (const block of shieldBlocks) if (block.hp && Math.abs(alien.x - block.x) < 28 && Math.abs(alien.y - block.y) < 25) block.hp = 0;
+      for (const alien of aliens) if (alien.alive && alien.y > 425) for (const block of shieldBlocks) if (block.hp && Math.abs(alien.x - block.x) < 28 && Math.abs(alien.y - block.y) < 25) block.hp = 0;
     }
-    if (lowest > player.y - 34) finishRun(false);
+    if (lowest > player.y - 34) { finishRun(false); return; }
 
     enemyFireTimer -= dt;
     if (enemyFireTimer <= 0) {
@@ -337,12 +348,12 @@
       if (shooters.length) {
         const specialists = shooters.filter(a => a.role === 'specialist');
         const shooter = specialists.length && Math.random() < .45 ? specialists[Math.floor(Math.random() * specialists.length)] : shooters[Math.floor(Math.random() * shooters.length)];
-        if (shooter.role === 'specialist') { shooter.warning = .55; setTimeoutSafe(() => shooter.alive && fireEnemy(shooter, true), .52); }
+        if (shooter.role === 'specialist') { shooter.warning = .55; tone(690, .08, 'sine', .025, 180); setTimeoutSafe(() => shooter.alive && fireEnemy(shooter, true), .52); }
         else fireEnemy(shooter);
       }
       enemyFireTimer = config.fire * (.8 + Math.random() * .5);
     }
-    alive.forEach(a => { if (a.warning > 0) a.warning -= dt; });
+    for (const alien of aliens) if (alien.warning > 0) alien.warning -= dt;
   }
 
   const delayed = [];
@@ -362,7 +373,7 @@
       }
     } else if (boss.fire <= 0) {
       boss.warning = .75; boss.beamX = Math.max(45, Math.min(W - 45, player.x)); boss.fire = 1.7;
-      setStatus('WARNING · COLUMN STRIKE');
+      setStatus('WARNING · COLUMN STRIKE'); tone(760, .14, 'square', .035, -300);
     }
   }
 
@@ -420,10 +431,14 @@
   function updateEffects(dt) {
     for (const particle of particles) { particle.x += particle.vx * dt; particle.y += particle.vy * dt; particle.vx *= .97; particle.vy *= .97; particle.life -= dt; }
     for (const flash of flashes) { flash.radius += 135 * dt; flash.life -= dt; }
-    for (const star of stars) { star.y += star.speed * dt; if (star.y > H) { star.y = 0; star.x = Math.random() * W; } }
+    if (!reducedMotion) for (const star of stars) { star.y += star.speed * dt; if (star.y > H) { star.y = 0; star.x = Math.random() * W; } }
     removeExpired(particles); removeExpired(flashes);
     if (pulseEffect > 0) pulseEffect -= dt;
-    if (pickupTimer > 0) { pickupTimer -= dt; if (pickupTimer <= 0) { activePickup = null; setStatus('WEAPON SYSTEM NORMAL'); } }
+    if (pickupTimer > 0) {
+      pickupTimer -= dt;
+      if (pickupTimer <= 0) { activePickup = null; setPowerStatus(''); setStatus('WEAPON SYSTEM NORMAL'); }
+      else setPowerStatus(`${activePickup === 'rapid' ? 'RAPID FIRE' : 'PIERCING'} · ${Math.ceil(pickupTimer)}s`);
+    }
   }
 
   function removeExpired(collection) {
@@ -438,23 +453,22 @@
     const movement = Math.max(-1, Math.min(1, ((keys.ArrowRight || keys.d || keys.D) ? 1 : 0) - ((keys.ArrowLeft || keys.a || keys.A) ? 1 : 0) + joystickX));
     player.x = Math.max(player.w / 2, Math.min(W - player.w / 2, player.x + movement * 390 * dt));
     player.cooldown = Math.max(0, player.cooldown - dt); player.invulnerable = Math.max(0, player.invulnerable - dt);
-    if (fireHeld || keys[' ']) firePlayer();
+    if (autoFire || fireHeld || keys[' ']) firePlayer();
     if (saucer) { saucer.x += saucer.vx * dt; if (!saucer.alive || saucer.x > W + 55) saucer = null; }
     else { saucerTimer -= dt; if (saucerTimer <= 0 && !boss) { spawnSaucer(); saucerTimer = 18 + Math.random() * 8; } }
     updateFormation(dt); updateBoss(dt); updateProjectiles(dt);
-    updateHud();
   }
 
   function finishWave() {
     if (transitionQueued) return;
     transitionQueued = true; running = false;
-    const accuracy = shotsFired ? Math.round(shotsHit / shotsFired * 100) : 0;
+    const accuracy = shotsFired ? Math.min(100, Math.round(shotsHit / shotsFired * 100)) : 0;
     const clearBonus = 300 * wave;
     const accuracyBonus = Math.round(accuracy * wave * 2);
     score += clearBonus + accuracyBonus;
     updateHud(); tone(520, .4, 'triangle', .045, 440);
     if (wave >= 5) { finishRun(true); return; }
-    setStatus(`WAVE ${wave} CLEARED · +${clearBonus + accuracyBonus}`);
+    setStatus(`WAVE ${wave} CLEARED · +${clearBonus + accuracyBonus} · ACC ${accuracy}%`);
     setTimeoutSafe(() => { wave++; beginWave(); }, 1.6);
   }
 
@@ -473,8 +487,9 @@
     for (const star of stars) ctx.fillRect(star.x, star.y, star.size, star.size * 1.8);
     for (const block of shieldBlocks) if (block.hp) { ctx.fillStyle = block.hp === 2 ? '#43e0d5' : '#267f89'; ctx.fillRect(block.x - 5, block.y - 4, 9, 8); }
     if (saucer) ctx.drawImage(sprite.saucer, saucer.x - 45, saucer.y - 16, 90, 32);
+    const visualTime = performance.now();
     for (const alien of aliens) if (alien.alive) {
-      const bob = REDUCED_MOTION ? 0 : Math.sin(performance.now() / 260 + alien.col) * 1.5;
+      const bob = reducedMotion ? 0 : Math.sin(visualTime / 260 + alien.col) * 1.5;
       if (alien.warning > 0) { ctx.strokeStyle = '#ffedf5'; ctx.lineWidth = 2; ctx.strokeRect(alien.x - 26, alien.y - 21, 52, 42); }
       ctx.drawImage(sprite[alien.role], alien.x - 25, alien.y - 19 + bob, 50, 38);
       if (alien.hp > 1) { ctx.fillStyle = '#fff1a8'; ctx.fillRect(alien.x - 11, alien.y - 18, 22, 2); }
@@ -537,10 +552,10 @@
 
   addEventListener('keydown', event => {
     if (['ArrowLeft', 'ArrowRight', ' '].includes(event.key)) event.preventDefault();
+    if ((event.key === 'r' || event.key === 'R') && !ui.instructions.classList.contains('is-visible')) { newGame(); return; }
     if (/BUTTON|INPUT/.test(event.target.tagName)) return;
     ensureAudio(); keys[event.key] = true;
     if (event.key === 'x' || event.key === 'X') usePulse();
-    if (event.key === 'r' || event.key === 'R') newGame();
     if (event.key === 'm' || event.key === 'M') toggleSound();
   });
   addEventListener('keyup', event => { keys[event.key] = false; });
@@ -552,6 +567,9 @@
     soundOn = !soundOn; ui.sound.textContent = soundOn ? 'SOUND ON' : 'SOUND OFF'; ui.sound.setAttribute('aria-label', soundOn ? 'Mute sound' : 'Enable sound');
   }
   ui.sound.addEventListener('click', toggleSound);
+  ui.autoFire.addEventListener('change', () => { autoFire = ui.autoFire.checked; ui.fire.textContent = autoFire ? 'AUTO' : 'FIRE'; });
+  ui.reducedMotion.checked = reducedMotion;
+  ui.reducedMotion.addEventListener('change', () => { reducedMotion = ui.reducedMotion.checked; });
   ui.help.addEventListener('click', () => { resetInput(); paused = true; ui.instructions.classList.add('is-visible'); });
   ui.start.addEventListener('click', () => {
     ensureAudio(); ui.instructions.classList.remove('is-visible');
@@ -563,11 +581,12 @@
 
   if (new URLSearchParams(location.search).has('debug')) {
     window.__spaceInvadersDebug = {
-      snapshot: () => ({ wave, score, lives, running, paused, bullets: bullets.length, bombs: bombs.length, aliens: aliens.filter(a => a.alive).length, bossHp: boss?.hp ?? null, pulseCharges, activePickup, renderEvery }),
+      snapshot: () => ({ wave, score, lives, running, paused, playerX: player.x, bullets: bullets.length, bombs: bombs.length, aliens: aliens.filter(a => a.alive).length, bossHp: boss?.hp ?? null, pulseCharges, activePickup, shieldHealth: shieldBlocks.reduce((total, block) => total + block.hp, 0), renderEvery }),
       startWave: number => { wave = Math.max(1, Math.min(5, Number(number) || 1)); beginWave(); },
       clearFormation: () => { aliens.forEach(alien => { alien.alive = false; }); },
       spawnSaucer: () => { spawnSaucer(); },
       spawnPickup: type => { pickups.push({ x: player.x, y: player.y - 30, vy: 80, type, alive: true }); },
+      awardKills: count => { aliens.filter(alien => alien.alive).slice(0, count).forEach(registerKill); },
       setBossHp: hp => { if (boss) boss.hp = Math.max(1, Number(hp) || 1); },
       defeatBoss: () => { if (boss) { boss = null; finishWave(); } },
       lose: () => { lives = 0; finishRun(false); },
