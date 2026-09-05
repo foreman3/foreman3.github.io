@@ -11,24 +11,27 @@
   const hud = {
     score: document.getElementById('score'),
     phase: document.getElementById('phase'),
+    street: document.getElementById('street'),
     delivered: document.getElementById('delivered'),
     quota: document.getElementById('quota'),
     papers: document.getElementById('papers'),
-    lives: document.getElementById('lives'),
+    health: document.getElementById('health'),
+    strikes: document.getElementById('strikes'),
     route: document.getElementById('route-fill'),
     sound: document.getElementById('sound-status')
   };
+  const attemptAction = document.getElementById('attempt-action');
 
   const W = 960;
   const H = 540;
   const HORIZON = 132;
   const PLAYER_Y = 447;
   const ROUTE_DIFFICULTY = [
-    { worldSpeed: 156, targetEvery: 1.8, obstacleEvery: 2.2, dogChance: 0, doubleChance: 0, dogWeave: .16, carDrift: 0, name: 'QUIET MORNING' },
-    { worldSpeed: 180, targetEvery: 1.65, obstacleEvery: 1.8, dogChance: 0, doubleChance: 0, dogWeave: .17, carDrift: .16, name: 'COMMUTER TRAFFIC' },
-    { worldSpeed: 208, targetEvery: 1.55, obstacleEvery: 1.5, dogChance: .16, doubleChance: 0, dogWeave: .22, carDrift: .22, name: 'DOGS ON THE LOOSE' },
-    { worldSpeed: 238, targetEvery: 1.5, obstacleEvery: 1.27, dogChance: .21, doubleChance: .08, dogWeave: .26, carDrift: .28, name: 'BUSY INTERSECTIONS' },
-    { worldSpeed: 256, targetEvery: 1.4, obstacleEvery: 1.05, dogChance: .27, doubleChance: .16, dogWeave: .30, carDrift: .34, name: 'RUSH HOUR' }
+    { worldSpeed: 150, targetEvery: 1.9, obstacleEvery: 3.0, dogChance: 0, doubleChance: 0, dogWeave: .16, crossChance: 0, overtakeChance: 0, name: 'QUIET MORNING' },
+    { worldSpeed: 166, targetEvery: 1.82, obstacleEvery: 2.6, dogChance: 0, doubleChance: 0, dogWeave: .17, crossChance: .48, overtakeChance: .14, name: 'COMMUTER TRAFFIC' },
+    { worldSpeed: 181, targetEvery: 1.74, obstacleEvery: 2.25, dogChance: .12, doubleChance: 0, dogWeave: .20, crossChance: .58, overtakeChance: .18, name: 'AROUND THE CORNER' },
+    { worldSpeed: 198, targetEvery: 1.66, obstacleEvery: 1.95, dogChance: .17, doubleChance: .05, dogWeave: .24, crossChance: .70, overtakeChance: .23, name: 'BUSY INTERSECTIONS' },
+    { worldSpeed: 216, targetEvery: 1.58, obstacleEvery: 1.72, dogChance: .22, doubleChance: .10, dogWeave: .28, crossChance: .82, overtakeChance: .28, name: 'RUSH HOUR' }
   ];
   const params = new URLSearchParams(location.search);
   const initialPhase = Math.max(1, Math.min(8, Number(params.get('phase')) || 1));
@@ -42,13 +45,16 @@
   const flyingPapers = [];
   const particles = [];
   const scenery = [];
-  const MIN_CUSTOMERS = 4;
-  const neighborhood = Array.from({ length: 24 }, (_, id) => ({
-    id, number: 101 + id, side: id % 2 ? 1 : -1,
-    subscribed: id % 3 === 0,
-    hue: ['#d8cbb5', '#a7b5ab', '#ba8c73', '#d7d3c3'][id % 4],
-    roof: ['#544c48', '#424f56', '#775b4c'][id % 3]
-  }));
+  const intersections = [];
+  const PASS_TARGET = 7;
+  const STARTING_SUBSCRIBERS = new Set([0, 2, 5, 7, 10, 12, 15, 17, 20, 22]);
+  const neighborhoods = [1, 2].map(street => Array.from({ length: 24 }, (_, id) => ({
+    id, number: street * 100 + 101 + id, side: id % 2 ? 1 : -1,
+    subscribed: STARTING_SUBSCRIBERS.has(id),
+    hue: ['#d8cbb5', '#a7b5ab', '#ba8c73', '#d7d3c3'][(id + street) % 4],
+    roof: ['#544c48', '#424f56', '#775b4c'][(id + street) % 3]
+  })));
+  let neighborhood = neighborhoods[0];
   const customerCount = () => neighborhood.filter(home => home.subscribed).length;
 
   const player = {
@@ -64,10 +70,16 @@
     mode: 'ready',
     phase: initialPhase,
     score: 0,
-    lives: 3,
-    papers: 11,
+    health: 3,
+    healthMax: 3,
+    strikes: 0,
+    street: 1,
+    streetCount: 1,
+    streetResults: [],
+    levelCheckpoint: null,
+    papers: 13,
     delivered: 0,
-    quota: 8,
+    quota: PASS_TARGET,
     combo: 0,
     bestCombo: 0,
     misses: 0,
@@ -76,7 +88,8 @@
     crashes: 0,
     perfect: false,
     newSubscribers: [],
-    carDrift: 0,
+    crossChance: 0,
+    overtakeChance: 0,
     nextAddress: 0,
     endReason: '',
     routeTotal: 32,
@@ -89,6 +102,8 @@
     dogWeave: ROUTE_DIFFICULTY[0].dogWeave,
     worldScroll: 0,
     obstacleTimer: 1.3,
+    intersectionTimer: 7,
+    overtakeTimer: 9,
     targetTimer: .8,
     bundleTimer: 8,
     throwCooldown: 0,
@@ -123,7 +138,8 @@
       dogChance: Math.min(.42, .28 + extra * .025),
       doubleChance: Math.min(.3, extra * .06),
       dogWeave: Math.min(.38, .30 + extra * .02),
-      carDrift: Math.min(.4, .34 + extra * .02),
+      crossChance: Math.min(.92, .84 + extra * .02),
+      overtakeChance: Math.min(.38, .30 + extra * .02),
       name: 'OVERTIME EDITION'
     };
   }
@@ -186,19 +202,28 @@
   function updateHud() {
     hud.score.textContent = String(Math.floor(state.score)).padStart(6, '0');
     hud.phase.textContent = state.phase;
+    hud.street.textContent = `${state.street}/${state.streetCount}`;
     hud.delivered.textContent = state.delivered;
-    hud.quota.textContent = state.quota;
+    hud.quota.textContent = PASS_TARGET;
     document.getElementById('customers').textContent = `${customerCount()}/${neighborhood.length}`;
-    document.getElementById('customer-card').classList.toggle('at-risk', customerCount() <= MIN_CUSTOMERS + 1);
-    document.getElementById('customer-status').textContent = state.mode === 'gameover' ? 'ROUTE CLOSED · RESTART TO TRY AGAIN' : `KEEP ${MIN_CUSTOMERS}+ · ${customerCount() <= MIN_CUSTOMERS ? 'LAST CHANCE' : state.misses === 0 && state.crashes === 0 ? 'PERFECT: +2 AT FINISH' : '+1 SUBSCRIBER AT FINISH'}`;
+    document.getElementById('customer-card').classList.toggle('at-risk', state.delivered < PASS_TARGET && state.misses > Math.max(0, state.quota - PASS_TARGET));
+    document.getElementById('customer-status').textContent = state.mode === 'gameover' ? 'THREE STRIKES · ROUTE CLOSED' : state.mode === 'failed' ? 'STRIKE · RETRY THIS LEVEL' : `${Math.max(0, PASS_TARGET - state.delivered)} MORE TO PASS · ${state.delivered}/${state.quota} SUBSCRIBERS SERVED`;
     hud.papers.textContent = state.papers;
-    hud.lives.textContent = '♥'.repeat(Math.max(0, state.lives)) || '—';
+    hud.health.textContent = `${Math.max(0, state.health)}/${state.healthMax}`;
+    hud.strikes.textContent = '●'.repeat(state.strikes) + '○'.repeat(Math.max(0, 3 - state.strikes));
     hud.route.style.transform = `scaleX(${clamp(state.routeRemaining / state.routeTotal, 0, 1)})`;
     hud.sound.textContent = `SOUND ${state.sound ? 'ON' : 'OFF'} · M`;
+    attemptAction.hidden = state.mode !== 'failed' && state.mode !== 'gameover';
+    attemptAction.textContent = state.mode === 'gameover' ? 'Start over · Level 1' : 'Retry level';
     shell.dataset.gameMode = state.mode;
     shell.dataset.started = String(state.started);
     shell.dataset.paused = String(state.paused);
     shell.dataset.phase = String(state.phase);
+    shell.dataset.street = String(state.street);
+    shell.dataset.streetCount = String(state.streetCount);
+    shell.dataset.health = String(state.health);
+    shell.dataset.healthMax = String(state.healthMax);
+    shell.dataset.strikes = String(state.strikes);
     shell.dataset.playerX = player.x.toFixed(1);
     shell.dataset.routeRemaining = state.routeRemaining.toFixed(2);
     shell.dataset.quota = String(state.quota);
@@ -228,21 +253,27 @@
     }
   }
 
-  function startPhase(phase) {
-    state.phase = Math.max(1, phase);
+  function clearStreetActors() {
+    targets.length = 0;
+    hazards.length = 0;
+    bundles.length = 0;
+    flyingPapers.length = 0;
+    particles.length = 0;
+    intersections.length = 0;
+  }
+
+  function startStreet(street) {
+    state.street = street;
+    neighborhood = neighborhoods[street - 1];
     const difficulty = routeDifficulty(state.phase);
     state.quota = customerCount();
     state.delivered = 0;
     state.misses = 0;
-    state.gained = 0;
-    state.lost = 0;
-    state.crashes = 0;
-    state.perfect = false;
-    state.newSubscribers = [];
+    state.streetCrashes = 0;
     state.nextAddress = 0;
     state.endReason = '';
     state.combo = 0;
-    state.papers = Math.min(20, state.quota + 3);
+    state.papers = Math.min(24, state.quota + 4);
     state.routeTotal = difficulty.targetEvery * (neighborhood.length - 1) + 6;
     state.routeRemaining = state.routeTotal;
     state.worldSpeed = difficulty.worldSpeed;
@@ -251,8 +282,11 @@
     state.dogChance = difficulty.dogChance;
     state.doubleChance = difficulty.doubleChance;
     state.dogWeave = difficulty.dogWeave;
-    state.carDrift = difficulty.carDrift;
-    state.obstacleTimer = 1.25;
+    state.crossChance = difficulty.crossChance;
+    state.overtakeChance = difficulty.overtakeChance;
+    state.obstacleTimer = 2.1;
+    state.intersectionTimer = 6.4;
+    state.overtakeTimer = 7.5;
     state.targetTimer = .7;
     state.bundleTimer = 8;
     state.throwCooldown = 0;
@@ -263,11 +297,7 @@
     player.vx = 0;
     player.tilt = 0;
     player.invulnerable = 0;
-    targets.length = 0;
-    hazards.length = 0;
-    bundles.length = 0;
-    flyingPapers.length = 0;
-    particles.length = 0;
+    clearStreetActors();
     seedScenery();
     if (testScenario === 'delivery') {
       player.x = W / 2 + roadHalf(PLAYER_Y) * .67;
@@ -279,18 +309,71 @@
       state.delivered = state.quota;
       state.nextAddress = neighborhood.length;
       state.routeRemaining = .35;
+    } else if (testScenario === 'fail') {
+      state.delivered = 6;
+      state.nextAddress = neighborhood.length;
+      state.routeRemaining = .35;
+    } else if (testScenario === 'traffic') {
+      spawnIntersection(true);
+      intersections[0].y = 315;
+      const crossing = hazards.find(hazard => hazard.type === 'cross');
+      if (crossing) { crossing.x = 255; crossing.y = 315; }
+      spawnHazard('parked');
+      hazards.at(-1).y = 350;
+      spawnHazard('oncoming');
+      hazards.at(-1).y = 245;
+      if (state.phase >= 2) {
+        spawnHazard('overtaking');
+        hazards.at(-1).y = 505;
+      }
+      state.obstacleTimer = 5;
     }
-    const routeCallout = `DAY ${state.phase} · ${difficulty.name}`;
+    const routeCallout = street === 2 ? `STREET 2 · ANGLED AVENUE` : state.streetCount > 1 ? `LEVEL ${state.phase} · STREET 1` : `LEVEL ${state.phase} · ${difficulty.name}`;
     showMessage(routeCallout, 2.2);
-    announce(`Day ${state.phase}. ${state.quota} deliveries across ${neighborhood.length} houses. ${difficulty.name}. Serve subscribers only. Finish for one new subscriber, or two with every delivery and no crashes.`);
+    announce(`Level ${state.phase}, street ${street} of ${state.streetCount}. ${state.quota} subscribers across ${neighborhood.length} houses. Deliver to at least seven.`);
     updateHud();
+  }
+
+  function startPhase(phase, retry = false) {
+    state.phase = Math.max(1, phase);
+    state.streetCount = state.phase >= 3 ? 2 : 1;
+    if (!retry) {
+      state.levelCheckpoint = {
+        score: state.score,
+        randomSeed,
+        rosters: neighborhoods.map(street => street.map(home => home.subscribed))
+      };
+    } else if (state.levelCheckpoint) {
+      state.score = state.levelCheckpoint.score;
+      randomSeed = state.levelCheckpoint.randomSeed;
+      neighborhoods.forEach((street, streetIndex) => street.forEach((home, homeIndex) => {
+        home.subscribed = state.levelCheckpoint.rosters[streetIndex][homeIndex];
+      }));
+    }
+    state.healthMax = state.phase + 2;
+    state.health = state.healthMax;
+    state.gained = 0;
+    state.lost = 0;
+    state.crashes = 0;
+    state.streetCrashes = 0;
+    state.perfect = false;
+    state.newSubscribers = [];
+    state.streetResults = [];
+    startStreet(1);
+    if (testScenario === 'street2' && state.streetCount > 1) startStreet(2);
+  }
+
+  function retryLevel() {
+    if (state.mode !== 'failed') return;
+    startPhase(state.phase, true);
+    showMessage(`LEVEL ${state.phase} · TRY AGAIN`, 1.8);
   }
 
   function restartGame() {
     state.score = 0;
-    state.lives = 3;
+    state.strikes = 0;
     state.worldScroll = 0;
-    neighborhood.forEach(home => { home.subscribed = home.id % 3 === 0; });
+    neighborhoods.forEach(street => street.forEach(home => { home.subscribed = STARTING_SUBSCRIBERS.has(home.id); }));
     state.started = true;
     startPhase(1);
     state.paused = modal.classList.contains('is-visible');
@@ -318,18 +401,22 @@
 
   function spawnHazard(forcedType = '') {
     const roll = random();
-    let type = forcedType;
+    let type = forcedType === 'car' ? 'oncoming' : forcedType;
     if (!type) {
       if (roll < state.dogChance) type = 'dog';
-      else if (roll < .56) type = 'car';
-      else if (roll < .8) type = 'puddle';
+      else if (roll < .43) type = 'parked';
+      else if (roll < .66) type = 'oncoming';
+      else if (roll < .84) type = 'puddle';
       else type = 'cones';
     }
     let lane = randomRange(-.82, .82);
     if (type === 'cones') lane = [-.55, 0, .55][Math.floor(random() * 3)];
+    if (type === 'parked') lane = random() < .5 ? -.78 : .78;
+    if (type === 'oncoming') lane = -.38;
+    if (type === 'overtaking') lane = .38;
     hazards.push({
       type,
-      y: HORIZON + 3,
+      y: type === 'overtaking' ? H + 72 : HORIZON + 3,
       x: W / 2,
       lane,
       baseLane: lane,
@@ -337,6 +424,20 @@
       color: ['#d84f39', '#315f79', '#e6ac3e'][Math.floor(random() * 3)],
       dead: false
     });
+  }
+
+  function spawnIntersection(forceTraffic = false) {
+    const intersection = { y: HORIZON + 4, dead: false, crossTraffic: false };
+    intersections.push(intersection);
+    if (state.phase >= 2 && (forceTraffic || random() < state.crossChance)) {
+      const direction = random() < .5 ? 1 : -1;
+      intersection.crossTraffic = true;
+      hazards.push({
+        type: 'cross', intersection, direction,
+        y: intersection.y, x: direction > 0 ? -120 : W + 120,
+        color: ['#d84f39', '#315f79', '#e6ac3e'][Math.floor(random() * 3)], dead: false
+      });
+    }
   }
 
   function spawnBundle() {
@@ -401,20 +502,25 @@
     hazard.dead = true;
     if (player.invulnerable > 0) return;
     player.invulnerable = 2.1;
-    state.lives -= 1;
+    const damage = hazard.type === 'dog' ? 2 : ['oncoming', 'overtaking', 'cross'].includes(hazard.type) ? 4 : 1;
+    state.health -= damage;
     state.crashes += 1;
+    state.streetCrashes += 1;
     state.combo = 0;
     state.shake = reducedMotion ? 2 : 12;
     burst(player.x, PLAYER_Y, '#f5e8c8', 18);
     soundCrash();
-    if (state.lives <= 0) {
-      state.mode = 'gameover';
-      state.endReason = 'Three wipeouts ended your delivery run';
-      showMessage('ROUTE CANCELLED', 99);
-      announce(`Game over. Score ${Math.floor(state.score)}. Press R to restart.`);
+    if (state.health <= 0) {
+      state.health = 0;
+      state.mode = 'falling';
+      state.transitionTimer = 1.5;
+      state.endReason = `Health reached zero on street ${state.street}`;
+      player.tilt = 1.25;
+      showMessage('RIDER DOWN!', 2);
+      announce('Health reached zero. The route attempt failed.');
     } else {
-      showMessage('WIPEOUT! · KEEP PEDALING', 1.5);
-      announce(`${state.lives} lives remaining.`);
+      showMessage(`CRASH! · −${damage} HEALTH`, 1.5);
+      announce(`${damage} damage. ${state.health} health remaining.`);
     }
     updateHud();
   }
@@ -452,34 +558,70 @@
     updateHud();
   }
 
-  function finishPhase() {
-    if (state.mode !== 'playing') return;
-    const success = customerCount() >= MIN_CUSTOMERS;
-    state.mode = 'transition';
-    state.transitionSuccess = success;
-    state.transitionTimer = 6;
-    if (success) {
-      state.perfect = state.delivered === state.quota && state.crashes === 0;
-      const candidates = neighborhood.filter(home => !home.subscribed);
-      // Rotate new addresses through the street so the delivery pattern keeps changing.
-      const offset = candidates.length ? (state.phase * 7) % candidates.length : 0;
-      for (let i = 0; i < Math.min(state.perfect ? 2 : 1, candidates.length); i++) {
+  function failAttempt(reason) {
+    if (state.mode === 'failed' || state.mode === 'gameover') return;
+    state.strikes = Math.min(3, state.strikes + 1);
+    state.endReason = reason;
+    state.mode = state.strikes >= 3 ? 'gameover' : 'failed';
+    state.transitionTimer = 0;
+    showMessage(state.mode === 'gameover' ? 'THREE STRIKES · GAME OVER' : `STRIKE ${state.strikes} · RETRY LEVEL ${state.phase}`, 99);
+    announce(state.mode === 'gameover' ? `Game over after three strikes. Final score ${Math.floor(state.score)}.` : `${reason}. Strike ${state.strikes} of 3. Retry level ${state.phase}.`);
+    updateHud();
+    requestAnimationFrame(() => attemptAction.focus({ preventScroll: true }));
+  }
+
+  function awardSubscribers() {
+    state.newSubscribers = [];
+    state.gained = 0;
+    state.streetResults.forEach(result => {
+      const street = neighborhoods[result.street - 1];
+      const candidates = street.filter(home => !home.subscribed);
+      const offset = candidates.length ? (state.phase * 7 + result.street * 5) % candidates.length : 0;
+      for (let i = 0; i < Math.min(result.perfect ? 2 : 1, candidates.length); i += 1) {
         const home = candidates[(offset + i) % candidates.length];
         home.subscribed = true;
         state.newSubscribers.push(home.number);
+        state.gained += 1;
       }
-      state.gained = state.newSubscribers.length;
-      const bonus = 500 + state.phase * 100 + state.papers * 15;
-      state.score += bonus;
-      showMessage(`DAY ${state.phase} COMPLETE · ${customerCount()} CUSTOMERS`, 6);
-      state.lives = Math.min(3, state.lives + 1);
-      tone(440, .1, 'square', .04);
-      tone(660, .12, 'square', .035, .1);
-      tone(880, .16, 'square', .03, .21);
-      announce(`Day ${state.phase} complete. ${state.perfect ? 'Perfect run! ' : ''}${state.gained} new subscribers. ${state.newSubscribers.join(', ')}. ${customerCount()} customers total.`);
+    });
+  }
+
+  function completeLevel() {
+    awardSubscribers();
+    state.perfect = state.streetResults.every(result => result.perfect);
+    state.mode = 'transition';
+    state.transitionSuccess = true;
+    state.transitionTimer = 5.5;
+    const bonus = 500 + state.phase * 100 + state.papers * 15 + (state.streetCount - 1) * 350;
+    state.score += bonus;
+    showMessage(`LEVEL ${state.phase} COMPLETE · +${state.gained} SUBSCRIBERS`, 5.5);
+    tone(440, .1, 'square', .04);
+    tone(660, .12, 'square', .035, .1);
+    tone(880, .16, 'square', .03, .21);
+    announce(`Level ${state.phase} complete. ${state.gained} new subscribers. Level ${state.phase + 1} begins soon.`);
+    updateHud();
+  }
+
+  function finishPhase() {
+    if (state.mode !== 'playing') return;
+    if (state.delivered < PASS_TARGET) {
+      failAttempt(`Street ${state.street}: ${state.delivered} delivered · ${PASS_TARGET} required`);
+      return;
+    }
+    state.streetResults.push({
+      street: state.street,
+      delivered: state.delivered,
+      quota: state.quota,
+      perfect: state.delivered === state.quota && state.streetCrashes === 0
+    });
+    if (state.street < state.streetCount) {
+      state.mode = 'turning';
+      state.transitionTimer = 2.4;
+      showMessage('STREET 1 PASSED · TURN RIGHT!', 2.4);
+      tone(520, .08, 'square', .03);
+      tone(680, .1, 'square', .025, .09);
     } else {
-      state.mode = 'gameover';
-      state.endReason = 'Too few customers to keep the route';
+      completeLevel();
     }
     updateHud();
   }
@@ -522,6 +664,20 @@
       state.obstacleTimer = state.obstacleEvery + randomRange(-.12, .26);
     }
 
+    state.intersectionTimer -= dt;
+    if (state.intersectionTimer <= 0 && state.routeRemaining > 7) {
+      spawnIntersection();
+      state.intersectionTimer = randomRange(9.2, 11.2);
+    }
+
+    if (state.phase >= 2) {
+      state.overtakeTimer -= dt;
+      if (state.overtakeTimer <= 0 && state.routeRemaining > 5 && !hazards.some(hazard => hazard.type === 'overtaking')) {
+        if (random() < state.overtakeChance) spawnHazard('overtaking');
+        state.overtakeTimer = randomRange(6.5, 9.5);
+      }
+    }
+
     state.bundleTimer -= dt;
     if (state.bundleTimer <= 0 && state.routeRemaining > 5) {
       spawnBundle();
@@ -543,35 +699,42 @@
             state.lost += 1;
             showMessage(`#${target.home.number} CANCELLED · ${customerCount()} CUSTOMERS`, 1.4);
             announce(`Missed delivery. ${target.home.number} cancelled. ${customerCount()} customers remain.`);
-            if (customerCount() < MIN_CUSTOMERS) {
-              state.mode = 'gameover';
-              state.endReason = `Only ${customerCount()} customers left · minimum ${MIN_CUSTOMERS}`;
-              showMessage('TOO FEW CUSTOMERS · ROUTE CLOSED', 99);
-              soundCrash();
-            }
           }
         }
       }
     });
     if (state.mode !== 'playing') return;
 
+    intersections.forEach(intersection => {
+      const depth = clamp((intersection.y - HORIZON) / (H - HORIZON), 0, 1);
+      intersection.y += state.worldSpeed * dt * (.48 + depth * .62);
+      if (intersection.y > H + 90) intersection.dead = true;
+    });
+
     hazards.forEach(hazard => {
+      if (hazard.type === 'cross') {
+        hazard.y = hazard.intersection.y;
+        hazard.x += hazard.direction * (155 + state.phase * 12) * dt;
+        if (hazard.intersection.dead || hazard.x < -170 || hazard.x > W + 170) hazard.dead = true;
+      } else {
+        const depth = clamp((hazard.y - HORIZON) / (H - HORIZON), 0, 1);
+        if (hazard.type === 'overtaking') hazard.y -= (68 + state.phase * 7) * dt;
+        else {
+          const speedFactor = hazard.type === 'oncoming' ? 1.62 : hazard.type === 'dog' ? 1.06 : 1;
+          hazard.y += state.worldSpeed * dt * (.5 + depth * .68) * speedFactor;
+        }
+      }
       const depth = clamp((hazard.y - HORIZON) / (H - HORIZON), 0, 1);
-      hazard.y += state.worldSpeed * dt * (.5 + depth * .68) * (hazard.type === 'dog' ? 1.06 : 1);
       if (hazard.type === 'dog') {
         const weave = Math.sin(state.worldScroll * .022 + hazard.phase) * state.dogWeave;
         hazard.lane = clamp(hazard.baseLane + weave, -.88, .88);
       }
-      if (hazard.type === 'car' && state.carDrift > 0) {
-        const progress = clamp((hazard.y - 210) / 190, 0, 1);
-        const direction = hazard.baseLane > 0 ? -1 : 1;
-        hazard.lane = hazard.baseLane + direction * state.carDrift * progress * progress * (3 - 2 * progress);
-      }
-      hazard.x = roadX(hazard.lane, hazard.y);
+      if (hazard.type === 'parked') hazard.x = W / 2 + Math.sign(hazard.lane) * roadHalf(hazard.y) * .86;
+      else if (hazard.type !== 'cross') hazard.x = roadX(hazard.lane, hazard.y);
       const scale = .28 + depth * .92;
-      const hitRadius = hazard.type === 'puddle' ? 27 * scale : hazard.type === 'car' ? 31 * scale : 24 * scale;
+      const hitRadius = hazard.type === 'puddle' ? 27 * scale : ['parked', 'oncoming', 'overtaking', 'cross'].includes(hazard.type) ? 31 * scale : 24 * scale;
       if (!hazard.dead && hazard.y > PLAYER_Y - 50 && hazard.y < PLAYER_Y + 36 && Math.abs(hazard.x - player.x) < hitRadius + 17) hitPlayer(hazard);
-      if (hazard.y > H + 80) hazard.dead = true;
+      if (hazard.y > H + 80 || hazard.y < HORIZON - 40) hazard.dead = true;
     });
 
     bundles.forEach(bundle => {
@@ -599,6 +762,7 @@
 
     for (let index = targets.length - 1; index >= 0; index -= 1) if (targets[index].dead) targets.splice(index, 1);
     for (let index = hazards.length - 1; index >= 0; index -= 1) if (hazards[index].dead) hazards.splice(index, 1);
+    for (let index = intersections.length - 1; index >= 0; index -= 1) if (intersections[index].dead) intersections.splice(index, 1);
     for (let index = bundles.length - 1; index >= 0; index -= 1) if (bundles[index].dead) bundles.splice(index, 1);
     for (let index = flyingPapers.length - 1; index >= 0; index -= 1) if (flyingPapers[index].dead) flyingPapers.splice(index, 1);
 
@@ -625,10 +789,15 @@
     else if (state.mode === 'transition') {
       state.transitionTimer -= dt;
       updateScenery(dt, state.worldSpeed * .25);
-      if (state.transitionTimer <= 0) {
-        if (state.transitionSuccess) startPhase(state.phase + 1);
-        else if (state.lives > 0) startPhase(state.phase);
-      }
+      if (state.transitionTimer <= 0) startPhase(state.phase + 1);
+    } else if (state.mode === 'turning') {
+      state.transitionTimer -= dt;
+      player.tilt = lerp(player.tilt, .8, 1 - Math.exp(-3 * dt));
+      updateScenery(dt, state.worldSpeed * .35);
+      if (state.transitionTimer <= 0) startStreet(state.street + 1);
+    } else if (state.mode === 'falling') {
+      state.transitionTimer -= dt;
+      if (state.transitionTimer <= 0) failAttempt(state.endReason);
     }
     updateHud();
   }
@@ -707,6 +876,33 @@
       ctx.lineTo(W / 2 + roadHalf(y), y);
       ctx.stroke();
     }
+  }
+
+  function drawIntersection(intersection) {
+    const depth = clamp((intersection.y - HORIZON) / (H - HORIZON), 0, 1);
+    const height = 20 + depth * 94;
+    ctx.save();
+    ctx.translate(0, intersection.y);
+    ctx.fillStyle = '#4d5558';
+    ctx.fillRect(0, -height / 2, W, height);
+    ctx.fillStyle = '#c8c3af';
+    ctx.fillRect(0, -height / 2 - 8, W, 8);
+    ctx.fillRect(0, height / 2, W, 8);
+    ctx.strokeStyle = 'rgba(245,232,200,.82)';
+    ctx.lineWidth = Math.max(2, depth * 4);
+    ctx.setLineDash([13 + depth * 18, 11 + depth * 14]);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(W, 0);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(245,232,200,.85)';
+    const halfRoad = roadHalf(intersection.y) * .72;
+    for (let stripe = -2; stripe <= 2; stripe += 1) {
+      const x = W / 2 + stripe * halfRoad * .22;
+      ctx.fillRect(x - 5 - depth * 4, -height / 2, 10 + depth * 8, height);
+    }
+    ctx.restore();
   }
 
   function drawGarden(item) {
@@ -832,6 +1028,7 @@
   function drawCar(hazard, scale) {
     ctx.save();
     ctx.translate(hazard.x, hazard.y);
+    if (hazard.type === 'cross') ctx.rotate(hazard.direction * Math.PI / 2);
     ctx.scale(scale, scale);
     ctx.fillStyle = 'rgba(23, 42, 50, .27)';
     ctx.beginPath();
@@ -855,10 +1052,11 @@
     ctx.fillStyle = '#d8d5c8'; roundedRect(-34, 12, 68, 7, 3); ctx.fill();
     ctx.fillStyle = '#222d30'; ctx.fillRect(-14, 2, 28, 10);
     ctx.fillStyle = '#b3b9b6'; for (let gx = -11; gx < 13; gx += 5) ctx.fillRect(gx, 4, 2, 6);
-    ctx.fillStyle = '#fff0bc'; ctx.fillRect(-29, 0, 13, 9); ctx.fillRect(16, 0, 13, 9);
+    ctx.fillStyle = hazard.type === 'overtaking' || hazard.type === 'parked' ? '#d94432' : '#fff0bc';
+    ctx.fillRect(-29, 0, 13, 9); ctx.fillRect(16, 0, 13, 9);
     ctx.fillStyle = '#f8f0dd'; ctx.fillRect(-9, 15, 18, 5);
     ctx.fillStyle = hazard.color; ctx.fillRect(-41, -33, 9, 6); ctx.fillRect(32, -33, 9, 6);
-    if (state.carDrift > 0 && hazard.y < 400 && Math.floor(hazard.y / 18) % 2 === 0) {
+    if (hazard.type === 'overtaking' && hazard.y < 400 && Math.floor(hazard.y / 18) % 2 === 0) {
       ctx.fillStyle = '#ffb52e'; ctx.fillRect(hazard.baseLane > 0 ? -31 : 24, -3, 7, 5);
     }
     ctx.restore();
@@ -1087,7 +1285,7 @@
       else {
         const depth = clamp((actor.item.y - HORIZON) / (H - HORIZON), 0, 1);
         const scale = .3 + depth * .92;
-        if (actor.item.type === 'car') drawCar(actor.item, scale);
+        if (['parked', 'oncoming', 'overtaking', 'cross'].includes(actor.item.type)) drawCar(actor.item, scale);
         else if (actor.item.type === 'dog') drawDog(actor.item, scale);
         else if (actor.item.type === 'puddle') drawPuddle(actor.item, scale);
         else drawCones(actor.item, scale);
@@ -1137,6 +1335,34 @@
     ctx.restore();
   }
 
+  function drawTurnSequence() {
+    if (state.mode !== 'turning') return;
+    const progress = clamp(1 - state.transitionTimer / 2.4, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = .45 + progress * .45;
+    ctx.strokeStyle = '#c8c3af';
+    ctx.lineWidth = 104;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(W / 2, H + 35);
+    ctx.bezierCurveTo(W / 2, 390, 650, 300, W + 60, 292);
+    ctx.stroke();
+    ctx.strokeStyle = '#4d5558';
+    ctx.lineWidth = 84;
+    ctx.stroke();
+    ctx.strokeStyle = '#f5e8c8';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([20, 18]);
+    ctx.lineDashOffset = state.worldScroll;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f4c95d';
+    ctx.font = '900 24px Impact, Arial Black, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TURNING ONTO ANGLED AVENUE →', W / 2 + 120, 250);
+    ctx.restore();
+  }
+
   function deliveryReady(target) {
     if ((player.x - W / 2) * target.side < 90) return false;
     const a = state.worldSpeed * .48;
@@ -1165,7 +1391,7 @@
   }
 
   function drawEndOverlay() {
-    if (state.mode !== 'gameover' && state.mode !== 'transition') return;
+    if (!['gameover', 'failed', 'transition'].includes(state.mode)) return;
     ctx.save();
     ctx.fillStyle = 'rgba(12, 29, 36, .62)';
     ctx.fillRect(0, 0, W, H);
@@ -1176,40 +1402,43 @@
     ctx.lineWidth = 6;
     roundedRect(-260, -116, 520, 262, 10);
     ctx.fill(); ctx.stroke();
-    ctx.fillStyle = state.mode === 'gameover' ? '#c84630' : state.transitionSuccess ? '#34694d' : '#c84630';
+    ctx.fillStyle = state.mode === 'transition' ? '#34694d' : '#c84630';
     ctx.font = '900 38px Impact, Arial Black, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(state.mode === 'gameover' ? 'ROUTE CANCELLED' : state.perfect ? 'PERFECT RUN!' : `DAY ${state.phase} · CUSTOMER REPORT`, 0, -76);
+    ctx.fillText(state.mode === 'gameover' ? 'GAME OVER' : state.mode === 'failed' ? `STRIKE ${state.strikes}` : state.perfect ? 'PERFECT LEVEL!' : `LEVEL ${state.phase} COMPLETE`, 0, -76);
     ctx.fillStyle = '#172a32';
     ctx.font = '900 18px Trebuchet MS, sans-serif';
-    if (state.mode === 'gameover') {
+    if (state.mode === 'gameover' || state.mode === 'failed') {
       ctx.font = 'bold 17px Trebuchet MS';
       ctx.fillText(state.endReason, 0, -23);
-      ctx.fillText(`FINAL SCORE ${String(Math.floor(state.score)).padStart(6, '0')}`, 0, 13);
+      ctx.fillText(state.mode === 'gameover' ? `FINAL SCORE ${String(Math.floor(state.score)).padStart(6, '0')}` : `STRIKES ${state.strikes}/3 · LEVEL ${state.phase}`, 0, 13);
       ctx.font = '800 15px Trebuchet MS, sans-serif';
-      ctx.fillText('PRESS R OR TAP ↻ TO START FRESH', 0, 52);
+      ctx.fillText(state.mode === 'gameover' ? 'RESTART BEGINS AT LEVEL 1' : 'RETRY RESTORES THIS LEVEL', 0, 52);
     } else {
-      ctx.fillText(`${customerCount()} CUSTOMERS · +${state.gained} JOINED / −${state.lost} CANCELLED`, 0, -45);
-      neighborhood.forEach((home, index) => {
-        const x = -235 + (index % 12) * 40;
-        const y = -27 + Math.floor(index / 12) * 30;
-        ctx.fillStyle = state.newSubscribers.includes(home.number) ? '#ba6b21' : home.subscribed ? '#34694d' : '#bfae95';
-        ctx.fillRect(x, y, 30, 24);
-        ctx.fillStyle = '#fff9e7'; ctx.font = 'bold 11px Trebuchet MS'; ctx.fillText(home.number, x + 15, y + 16);
+      state.streetResults.forEach((result, index) => {
+        ctx.fillText(`STREET ${result.street}: ${result.delivered}/${result.quota} DELIVERED${result.perfect ? ' · PERFECT' : ''}`, 0, -35 + index * 31);
       });
       ctx.fillStyle = '#172a32';
       ctx.font = '800 14px Trebuchet MS, sans-serif';
-      ctx.fillText(state.gained ? `NEW NEXT DAY: ${state.newSubscribers.map(number => '#' + number).join(' & ')}` : 'THE WHOLE STREET SUBSCRIBES!', 0, 52);
-      ctx.fillText(`${state.delivered}/${state.quota} DELIVERED · ${state.crashes} CRASHES · ${state.lives}/3 LIVES`, 0, 77);
-      ctx.fillText(`DAY ${state.phase + 1} STARTS IN ${Math.max(1, Math.ceil(state.transitionTimer))}…`, 0, 113);
+      ctx.fillText(`+${state.gained} SUBSCRIBERS · ${state.crashes} CRASHES · ${state.health}/${state.healthMax} HEALTH`, 0, 57);
+      ctx.fillText(`STRIKES ${state.strikes}/3 · LEVEL ${state.phase + 1} IN ${Math.max(1, Math.ceil(state.transitionTimer))}…`, 0, 87);
     }
     ctx.restore();
   }
 
   function render() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#78bdc3';
+    ctx.fillRect(0, 0, W, H);
     ctx.save();
     if (state.shake > 0) ctx.translate(randomRange(-state.shake, state.shake), randomRange(-state.shake, state.shake));
+    ctx.save();
+    if (state.street === 2) {
+      ctx.translate(105, -60);
+      ctx.transform(1, .11, -.18, 1.12, 0, 0);
+    }
     drawBackground();
+    intersections.slice().sort((a, b) => a.y - b.y).forEach(drawIntersection);
     scenery.slice().sort((a, b) => a.y - b.y).forEach(drawGarden);
     targets.slice().sort((a, b) => a.y - b.y).forEach(target => drawHouse({ ...target.home, y: target.y, side: target.side }));
     drawActors();
@@ -1217,6 +1446,8 @@
     drawPlayer();
     drawDeliveryCue();
     drawParticles();
+    ctx.restore();
+    drawTurnSequence();
     drawMessage();
     drawEndOverlay();
     ctx.restore();
@@ -1254,7 +1485,7 @@
 
   function hideInstructions() {
     modal.classList.remove('is-visible');
-    try { sessionStorage.setItem('vibecade-instructions-paper-route-rush-v3', '1'); } catch (_) {}
+    try { sessionStorage.setItem('vibecade-instructions-paper-route-rush-v4', '1'); } catch (_) {}
     ensureAudio();
     if (!state.started) {
       state.started = true;
@@ -1270,6 +1501,11 @@
   }
 
   closeInstructions.addEventListener('click', hideInstructions);
+  attemptAction.addEventListener('click', () => {
+    if (state.mode === 'failed') retryLevel();
+    else if (state.mode === 'gameover') restartGame();
+    shell.focus({ preventScroll: true });
+  });
   helpButton.addEventListener('click', showInstructions);
   modal.addEventListener('click', event => {
     if (event.target === modal) hideInstructions();
@@ -1287,7 +1523,10 @@
       if (!event.repeat) player.vx = Math.min(345, player.vx + 58);
     }
     if ((key === ' ' || key === 'f') && !event.repeat) throwPaper();
-    if (key === 'r' && !event.repeat && !modal.classList.contains('is-visible')) restartGame();
+    if (key === 'r' && !event.repeat && !modal.classList.contains('is-visible')) {
+      if (state.mode === 'failed') retryLevel();
+      else restartGame();
+    }
     if (key === 'm' && !event.repeat) {
       state.sound = !state.sound;
       if (state.sound) {
@@ -1350,7 +1589,8 @@
 
   window.addEventListener('vibecade:restart', event => {
     event.preventDefault();
-    restartGame();
+    if (state.mode === 'failed') retryLevel();
+    else restartGame();
   });
 
   window.__paperRouteDebug = Object.freeze({
@@ -1360,7 +1600,11 @@
       mode: state.mode,
       phase: state.phase,
       score: state.score,
-      lives: state.lives,
+      health: state.health,
+      healthMax: state.healthMax,
+      strikes: state.strikes,
+      street: state.street,
+      streetCount: state.streetCount,
       papers: state.papers,
       delivered: state.delivered,
       quota: state.quota,
@@ -1373,6 +1617,7 @@
       doubleChance: state.doubleChance,
       targets: targets.length,
       hazards: hazards.length,
+      intersections: intersections.length,
       joystick: input.joystick
     }),
     setPhase: phase => {
@@ -1383,6 +1628,10 @@
     },
     spawnMailbox: side => spawnTarget(side < 0 ? -1 : 1),
     spawnHazard: type => spawnHazard(type),
+    spawnIntersection,
+    retryLevel,
+    failAttempt,
+    finishPhase,
     setRouteRemaining: seconds => { state.routeRemaining = Math.max(0, Number(seconds) || 0); },
     setInvulnerable: seconds => { player.invulnerable = Math.max(0, Number(seconds) || 0); }
   });
@@ -1393,7 +1642,7 @@
   animationFrame = requestAnimationFrame(frame);
 
   let hasSeenInstructions = false;
-  try { hasSeenInstructions = sessionStorage.getItem('vibecade-instructions-paper-route-rush-v3') === '1'; } catch (_) {}
+  try { hasSeenInstructions = sessionStorage.getItem('vibecade-instructions-paper-route-rush-v4') === '1'; } catch (_) {}
   if (hasSeenInstructions) {
     modal.classList.remove('is-visible');
     state.started = true;
