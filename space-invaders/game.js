@@ -31,6 +31,7 @@
   const bullets = [];
   const bombs = [];
   const aliens = [];
+  const raiders = [];
   const shieldBlocks = [];
   const particles = [];
   const flashes = [];
@@ -57,6 +58,8 @@
   let pulseEffect = 0;
   let saucer = null;
   let saucerTimer = 12;
+  let dropShip = null;
+  let dropShipTimer = 10;
   let activePickup = null;
   let pickupTimer = 0;
   let boss = null;
@@ -73,11 +76,11 @@
   const player = { x: W / 2, y: H - 45, w: 46, h: 25, cooldown: 0, invulnerable: 0, alive: true };
   const waveConfig = [
     null,
-    { rows: 4, cols: 8, armored: 0, specialists: 0, step: 7, interval: .54, fire: 1.05 },
-    { rows: 4, cols: 9, armored: 5, specialists: 0, step: 8, interval: .48, fire: .9 },
-    { rows: 5, cols: 9, armored: 7, specialists: 2, step: 9, interval: .43, fire: .76 },
-    { rows: 5, cols: 10, armored: 10, specialists: 5, step: 10, interval: .38, fire: .65 },
-    { rows: 3, cols: 8, armored: 8, specialists: 4, step: 11, interval: .34, fire: .58 }
+    { rows: 4, cols: 8, armored: 0, specialists: 0, step: 7, interval: .54, fire: .78 },
+    { rows: 4, cols: 9, armored: 5, specialists: 0, step: 8, interval: .48, fire: .67 },
+    { rows: 5, cols: 9, armored: 7, specialists: 2, step: 9, interval: .43, fire: .56 },
+    { rows: 5, cols: 10, armored: 10, specialists: 5, step: 10, interval: .38, fire: .48 },
+    { rows: 3, cols: 8, armored: 8, specialists: 4, step: 11, interval: .34, fire: .42 }
   ];
 
   function makeCanvas(width, height, draw) {
@@ -132,6 +135,13 @@
     }),
     saucer: makeCanvas(90, 32, g => {
       g.translate(45, 16); g.fillStyle = '#ffdc76'; g.fillRect(-32, -2, 64, 11); g.fillStyle = '#74fff1'; g.beginPath(); g.ellipse(0, -2, 19, 10, 0, Math.PI, 0); g.fill(); g.fillStyle = '#fff4bd'; g.fillRect(-39, 5, 78, 5);
+    }),
+    dropShip: makeCanvas(112, 42, g => {
+      g.translate(56, 21); g.fillStyle = '#8d315f'; g.beginPath(); g.moveTo(-51, 1); g.lineTo(-34, -13); g.lineTo(34, -13); g.lineTo(51, 1); g.lineTo(36, 14); g.lineTo(-36, 14); g.closePath(); g.fill();
+      g.fillStyle = '#ff78aa'; g.fillRect(-35, -5, 70, 14); g.fillStyle = '#240719'; g.fillRect(-25, -2, 50, 8); g.fillStyle = '#fff0a0'; g.fillRect(-42, 14, 20, 4); g.fillRect(22, 14, 20, 4);
+    }),
+    raider: makeCanvas(46, 34, g => {
+      g.translate(23, 17); g.fillStyle = '#ff7bab'; g.beginPath(); g.moveTo(0, -13); g.lineTo(20, 2); g.lineTo(13, 12); g.lineTo(0, 8); g.lineTo(-13, 12); g.lineTo(-20, 2); g.closePath(); g.fill(); g.fillStyle = '#290719'; g.fillRect(-8, -1, 5, 5); g.fillRect(3, -1, 5, 5); g.fillStyle = '#ffe794'; g.fillRect(-3, 7, 6, 3);
     }),
     boss: makeCanvas(190, 80, g => {
       g.translate(95, 40); g.fillStyle = '#912f62'; g.beginPath(); g.moveTo(-88, 4); g.lineTo(-57, -25); g.lineTo(0, -36); g.lineTo(57, -25); g.lineTo(88, 4); g.lineTo(58, 31); g.lineTo(-58, 31); g.closePath(); g.fill(); g.fillStyle = '#ff7eb0'; g.fillRect(-64, -8, 128, 28); g.fillStyle = '#160821'; g.fillRect(-49, -1, 98, 14); g.fillStyle = '#ffe479'; for (const x of [-48, 0, 48]) { g.beginPath(); g.arc(x, 13, 9, 0, Math.PI * 2); g.fill(); }
@@ -209,9 +219,9 @@
   }
 
   function resetTransient() {
-    bullets.length = 0; bombs.length = 0; particles.length = 0; flashes.length = 0; pickups.length = 0;
-    saucer = null; boss = null; bossPhaseStarted = false; pulseEffect = 0; transitionQueued = false;
-    delayed.length = 0; formationDirection = 1; formationStepTimer = 0; enemyFireTimer = .8; waveTime = 0; saucerTimer = wave === 1 ? 9 : 12 + Math.random() * 5;
+    bullets.length = 0; bombs.length = 0; raiders.length = 0; particles.length = 0; flashes.length = 0; pickups.length = 0;
+    saucer = null; dropShip = null; boss = null; bossPhaseStarted = false; pulseEffect = 0; transitionQueued = false;
+    delayed.length = 0; formationDirection = 1; formationStepTimer = 0; enemyFireTimer = .65; waveTime = 0; saucerTimer = wave === 1 ? 9 : 12 + Math.random() * 5; dropShipTimer = 8 + Math.random() * 4;
     player.x = W / 2; player.cooldown = 0; player.invulnerable = 1.1; player.alive = true;
     fireHeld = false; joystickX = 0; Object.keys(keys).forEach(key => delete keys[key]);
   }
@@ -294,6 +304,58 @@
     pickups.push({ x, y, vy: 80, type, alive: true });
   }
 
+  function spawnDropShip() {
+    const totalDrops = 3 + (Math.random() < .55 ? 1 : 0);
+    dropShip = { x: -65, y: 60, vx: 92 + wave * 4, hp: 3 + Math.floor(wave / 3), totalDrops, dropsDone: 0, beam: 0 };
+    setStatus('HOSTILE DROPSHIP INBOUND'); tone(145, .35, 'sawtooth', .04, -55);
+  }
+
+  function beamRaider() {
+    if (!dropShip) return;
+    const x = Math.max(52, Math.min(W - 52, dropShip.x));
+    dropShip.beam = .55; dropShip.beamX = x;
+    dropShip.dropsDone++;
+    raiders.push({ x, baseX: x, y: 425, w: 38, h: 27, hp: 1, alive: true, spawn: .55, fire: .65 + Math.random() * .55, phase: Math.random() * Math.PI * 2 });
+    setStatus(`RAIDER DEPLOYED · ${dropShip.totalDrops - dropShip.dropsDone} REMAIN`); tone(440, .2, 'sine', .032, -280);
+  }
+
+  function destroyDropShip() {
+    if (!dropShip) return;
+    score += 250; waveScore += 250;
+    burst(dropShip.x, dropShip.y, '#ff7dab', 18); tone(260, .28, 'sawtooth', .045, -160);
+    setStatus('DROPSHIP DESTROYED · DEPLOYMENT STOPPED');
+    dropShip = null; dropShipTimer = 16 + Math.random() * 5; updateHud();
+  }
+
+  function destroyRaider(raider) {
+    raider.alive = false; score += 40; waveScore += 40; killsTowardPulse++;
+    if (killsTowardPulse >= 12 && pulseCharges < 1) { pulseCharges = 1; killsTowardPulse = 0; setStatus('PULSE RECHARGED'); }
+    burst(raider.x, raider.y, '#ff7dab', 8); tone(230, .07, 'square', .022, -90); updateHud();
+  }
+
+  function updateDropShip(dt) {
+    if (!dropShip) {
+      if (!boss && !saucer) { dropShipTimer -= dt; if (dropShipTimer <= 0) spawnDropShip(); }
+      return;
+    }
+    dropShip.x += dropShip.vx * dt;
+    dropShip.beam = Math.max(0, dropShip.beam - dt);
+    const nextDropX = W * (dropShip.dropsDone + 1) / (dropShip.totalDrops + 1);
+    if (dropShip.dropsDone < dropShip.totalDrops && dropShip.x >= nextDropX) beamRaider();
+    if (dropShip.x > W + 65) { dropShip = null; dropShipTimer = 15 + Math.random() * 5; }
+  }
+
+  function updateRaiders(dt) {
+    for (const raider of raiders) {
+      if (!raider.alive) continue;
+      if (raider.spawn > 0) { raider.spawn -= dt; continue; }
+      raider.x = raider.baseX + Math.sin(waveTime * 1.7 + raider.phase) * 23;
+      raider.fire -= dt;
+      if (raider.fire <= 0) { fireEnemy(raider, true); raider.fire = .95 + Math.random() * .55; }
+    }
+    removeDead(raiders);
+  }
+
   function lowestShooters() {
     const selected = [];
     const config = waveConfig[wave];
@@ -306,7 +368,7 @@
   }
 
   function fireEnemy(alien, aimed = false) {
-    if (bombs.filter(b => b.alive).length >= (MOBILE ? 9 : 12)) return;
+    if (bombs.filter(b => b.alive).length >= (MOBILE ? 11 : 15)) return;
     const dx = aimed ? Math.max(-120, Math.min(120, player.x - alien.x)) : 0;
     const speed = 190 + wave * 10;
     bombs.push({ x: alien.x, y: alien.y + 17, vx: dx * .5, vy: speed, alive: true, color: aimed ? '#ff78ad' : '#ffcb68' });
@@ -322,7 +384,11 @@
     let aliveCount = 0;
     let lowest = -Infinity;
     for (const alien of aliens) if (alien.alive) { aliveCount++; lowest = Math.max(lowest, alien.y); }
-    if (!aliveCount) { if (wave === 5 && !bossPhaseStarted) startBoss(); else if (!boss) finishWave(); return; }
+    if (!aliveCount) {
+      if (raiders.some(raider => raider.alive) || dropShip) return;
+      if (wave === 5 && !bossPhaseStarted) startBoss(); else if (!boss) finishWave();
+      return;
+    }
     const config = waveConfig[wave];
     formationStepTimer += dt;
     const remainingRatio = aliveCount / aliens.length;
@@ -404,6 +470,19 @@
         break;
       }
       if (!bullet.alive) continue;
+      for (const raider of raiders) {
+        if (!raider.alive || raider.spawn > 0 || bullet.x < raider.x - raider.w / 2 || bullet.x > raider.x + raider.w / 2 || bullet.y > raider.y + raider.h / 2 || previousY < raider.y - raider.h / 2) continue;
+        shotsHit++; bullet.pierce--; destroyRaider(raider);
+        if (bullet.pierce <= 0) bullet.alive = false;
+        break;
+      }
+      if (!bullet.alive) continue;
+      if (dropShip && Math.abs(bullet.x - dropShip.x) < 56 && bullet.y <= dropShip.y + 22 && previousY >= dropShip.y - 22) {
+        shotsHit++; bullet.pierce--; dropShip.hp--; flashes.push({ x: bullet.x, y: dropShip.y, radius: 3, life: .13, color: '#ffb0ca' });
+        if (dropShip.hp <= 0) destroyDropShip(); else tone(125, .045, 'square', .016);
+        if (bullet.pierce <= 0) bullet.alive = false;
+      }
+      if (!bullet.alive) continue;
       for (const block of shieldBlocks) if (block.hp && Math.abs(bullet.x - block.x) < 6 && bullet.y <= block.y + 6 && previousY >= block.y - 6) { block.hp--; bullet.alive = false; break; }
       if (saucer?.alive && Math.abs(bullet.x - saucer.x) < 45 && bullet.y < saucer.y + 17 && previousY > saucer.y - 17) {
         bullet.alive = false; saucer.alive = false; shotsHit++; score += 150; waveScore += 150; spawnPickup(saucer.x, saucer.y); burst(saucer.x, saucer.y, '#ffe47a', 14); tone(470, .25, 'triangle', .045, 600);
@@ -455,8 +534,8 @@
     player.cooldown = Math.max(0, player.cooldown - dt); player.invulnerable = Math.max(0, player.invulnerable - dt);
     if (autoFire || fireHeld || keys[' ']) firePlayer();
     if (saucer) { saucer.x += saucer.vx * dt; if (!saucer.alive || saucer.x > W + 55) saucer = null; }
-    else { saucerTimer -= dt; if (saucerTimer <= 0 && !boss) { spawnSaucer(); saucerTimer = 18 + Math.random() * 8; } }
-    updateFormation(dt); updateBoss(dt); updateProjectiles(dt);
+    else { saucerTimer -= dt; if (saucerTimer <= 0 && !boss && !dropShip) { spawnSaucer(); saucerTimer = 18 + Math.random() * 8; } }
+    updateDropShip(dt); updateRaiders(dt); updateFormation(dt); updateBoss(dt); updateProjectiles(dt);
   }
 
   function finishWave() {
@@ -487,6 +566,18 @@
     for (const star of stars) ctx.fillRect(star.x, star.y, star.size, star.size * 1.8);
     for (const block of shieldBlocks) if (block.hp) { ctx.fillStyle = block.hp === 2 ? '#43e0d5' : '#267f89'; ctx.fillRect(block.x - 5, block.y - 4, 9, 8); }
     if (saucer) ctx.drawImage(sprite.saucer, saucer.x - 45, saucer.y - 16, 90, 32);
+    if (dropShip) {
+      if (dropShip.beam > 0) {
+        ctx.globalAlpha = .22 + dropShip.beam * .75; ctx.fillStyle = '#ff72b5';
+        ctx.beginPath(); ctx.moveTo(dropShip.beamX - 18, dropShip.y + 16); ctx.lineTo(dropShip.beamX + 18, dropShip.y + 16); ctx.lineTo(dropShip.beamX + 30, 440); ctx.lineTo(dropShip.beamX - 30, 440); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+      }
+      ctx.drawImage(sprite.dropShip, dropShip.x - 56, dropShip.y - 21, 112, 42);
+      ctx.fillStyle = '#331124'; ctx.fillRect(dropShip.x - 31, dropShip.y - 31, 62, 4); ctx.fillStyle = '#ff83b3'; ctx.fillRect(dropShip.x - 31, dropShip.y - 31, 62 * dropShip.hp / (3 + Math.floor(wave / 3)), 4);
+    }
+    for (const raider of raiders) if (raider.alive) {
+      ctx.globalAlpha = raider.spawn > 0 ? .35 + Math.sin(raider.spawn * 35) * .25 : 1;
+      ctx.drawImage(sprite.raider, raider.x - 23, raider.y - 17, 46, 34); ctx.globalAlpha = 1;
+    }
     const visualTime = performance.now();
     for (const alien of aliens) if (alien.alive) {
       const bob = reducedMotion ? 0 : Math.sin(visualTime / 260 + alien.col) * 1.5;
@@ -581,10 +672,14 @@
 
   if (new URLSearchParams(location.search).has('debug')) {
     window.__spaceInvadersDebug = {
-      snapshot: () => ({ wave, score, lives, running, paused, playerX: player.x, bullets: bullets.length, bombs: bombs.length, aliens: aliens.filter(a => a.alive).length, bossHp: boss?.hp ?? null, pulseCharges, activePickup, shieldHealth: shieldBlocks.reduce((total, block) => total + block.hp, 0), renderEvery }),
+      snapshot: () => ({ wave, score, lives, running, paused, playerX: player.x, bullets: bullets.length, bombs: bombs.length, aliens: aliens.filter(a => a.alive).length, raiders: raiders.filter(r => r.alive).length, dropShip: dropShip ? { x: dropShip.x, hp: dropShip.hp, dropsDone: dropShip.dropsDone, totalDrops: dropShip.totalDrops } : null, bossHp: boss?.hp ?? null, pulseCharges, activePickup, shieldHealth: shieldBlocks.reduce((total, block) => total + block.hp, 0), renderEvery }),
       startWave: number => { wave = Math.max(1, Math.min(5, Number(number) || 1)); beginWave(); },
       clearFormation: () => { aliens.forEach(alien => { alien.alive = false; }); },
       spawnSaucer: () => { spawnSaucer(); },
+      spawnDropShip: () => { if (!dropShip) spawnDropShip(); },
+      advanceDropShip: seconds => { for (let time = 0; time < seconds; time += 1 / 60) updateDropShip(1 / 60); },
+      destroyDropShip: () => { destroyDropShip(); },
+      clearRaiders: () => { raiders.forEach(raider => { raider.alive = false; }); },
       spawnPickup: type => { pickups.push({ x: player.x, y: player.y - 30, vy: 80, type, alive: true }); },
       awardKills: count => { aliens.filter(alien => alien.alive).slice(0, count).forEach(registerKill); },
       setBossHp: hp => { if (boss) boss.hp = Math.max(1, Number(hp) || 1); },
