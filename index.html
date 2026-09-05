@@ -120,14 +120,32 @@
       box-shadow: var(--shadow);
       text-decoration: none;
       color: var(--text);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      align-content: center;
+      column-gap: 12px;
+      row-gap: 6px;
       min-height: 120px;
       animation: rise 0.6s ease forwards;
       animation-delay: var(--delay, 0s);
       opacity: 0;
       transform: translateY(14px);
+    }
+
+    .card::before {
+      content: attr(data-icon);
+      display: grid;
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border: 1px solid hsla(var(--thumb-hue, 170), 80%, 72%, 0.32);
+      border-radius: 13px;
+      background: linear-gradient(145deg, hsla(var(--thumb-hue, 170), 72%, 52%, 0.28), rgba(3, 9, 20, 0.82));
+      box-shadow: inset 0 0 20px hsla(var(--thumb-hue, 170), 80%, 62%, 0.1);
+      font-size: 1.55rem;
     }
 
     .card:hover {
@@ -146,11 +164,13 @@
     }
 
     .card-title {
+      grid-column: 2;
       font-size: 1.05rem;
       font-weight: 600;
     }
 
     .card-meta {
+      grid-column: 2;
       color: var(--muted);
       font-size: 0.95rem;
     }
@@ -311,8 +331,7 @@
         touch-action: manipulation;
       }
 
-      .recent-thumb,
-      .card::before {
+      .recent-thumb {
         display: grid;
         place-items: center;
         width: 54px;
@@ -360,11 +379,6 @@
       }
 
       .card {
-        display: grid;
-        grid-template-columns: 54px minmax(0, 1fr);
-        grid-template-rows: auto auto;
-        align-content: center;
-        column-gap: 12px;
         row-gap: 4px;
         min-height: 84px;
         padding: 11px 13px;
@@ -372,12 +386,6 @@
         animation-duration: 0.24s;
         animation-delay: 0s;
         touch-action: manipulation;
-      }
-
-      .card::before {
-        content: attr(data-icon);
-        grid-column: 1;
-        grid-row: 1 / span 2;
       }
 
       .card[data-status="work"]::after {
@@ -532,97 +540,97 @@
           <div class="card-title">Asteroids</div>
           <div class="card-meta">Drift, blast, and survive the belt.</div>
         </a>
-        <a class="card" data-icon="🍔" style="--delay: 0.2s" href="burger/">
+        <a class="card" data-icon="🎵" style="--delay: 0.15s" href="https://audio.vibe-cade.com">
+          <div class="card-title">Audio Assault</div>
+          <div class="card-meta">Intense music trivia</div>
+        </a>
+        <a class="card" data-icon="🛢️" style="--delay: 0.2s" href="barrel-brigade/">
+          <div class="card-title">Barrel Brigade</div>
+          <div class="card-meta">Climb the girders and outjump runaway barrels.</div>
+        </a>
+        <a class="card" data-icon="🍔" style="--delay: 0.25s" href="burger/">
           <div class="card-title">Burger Time</div>
           <div class="card-meta">Stack towering burgers under pressure.</div>
         </a>
-        <a class="card" data-icon="🐦" style="--delay: 0.25s" href="flappy/">
+        <a class="card" data-icon="⛏️" style="--delay: 0.3s" href="deep-core/">
+          <div class="card-title">Deep Core</div>
+          <div class="card-meta">Dig tactical tunnels beneath a hostile moon.</div>
+        </a>
+        <a class="card" data-icon="🐦" style="--delay: 0.35s" href="flappy/">
           <div class="card-title">Flappy</div>
           <div class="card-meta">Threads the gaps, grab coins.</div>
         </a>
-        <a class="card" data-icon="🚀" style="--delay: 0.3s" href="missile-command/">
+        <a class="card" data-icon="🛸" style="--delay: 0.4s; --thumb-hue: 195" href="galactic-wing/">
+          <div class="card-title">Galactic Wing</div>
+          <div class="card-meta">Break formations and intercept diving squadrons.</div>
+        </a>
+        <a class="card" data-icon="🌘" style="--delay: 0.45s" href="lunar-lander/">
+          <div class="card-title">Lunar Lander</div>
+          <div class="card-meta">Feather a survey module onto the landing pad.</div>
+        </a>
+        <a class="card" data-icon="🚀" style="--delay: 0.5s" href="missile-command/">
           <div class="card-title">Missile Command</div>
           <div class="card-meta">Defend the skyline with precise detonations.</div>
         </a>
-        <a class="card" data-icon="💥" style="--delay: 0.35s" href="space-invaders-command/">
-          <div class="card-title">Space Invaders Command</div>
-          <div class="card-meta">Invaders meet cascading explosions.</div>
+        <a class="card" data-icon="🍄" style="--delay: 0.55s" href="mushroom-moon/">
+          <div class="card-title">Mushroom Moon</div>
+          <div class="card-meta">Split star-worms in a mutating lunar garden.</div>
         </a>
-        <a class="card" data-icon="✈️" style="--delay: 0.4s" href="neon-flight/">
+        <a class="card" data-icon="✈️" style="--delay: 0.6s" href="neon-flight/">
           <div class="card-title">Neon Flight</div>
           <div class="card-meta">Weave through a glowing skyline.</div>
         </a>
-        <a class="card" data-icon="🔶" style="--delay: 0.45s" href="qbert/">
-          <div class="card-title">Qbert Clone</div>
-          <div class="card-meta">Hop the pyramid and dodge foes.</div>
+        <a class="card" data-icon="🚗" style="--delay: 0.65s" href="river-run/">
+          <div class="card-title">Neon River Run</div>
+          <div class="card-meta">Cross traffic and ride a living neon river.</div>
         </a>
-        <a class="card" data-icon="👾" style="--delay: 0.5s" href="space-invaders/">
-          <div class="card-title">Space Invaders</div>
-          <div class="card-meta">Classic wave shooter, tuned up.</div>
-        </a>
-        <a class="card" data-icon="🛡️" style="--delay: 0.55s" href="tanks/">
-          <div class="card-title">Tanks</div>
-          <div class="card-meta">Top-down armor duels.</div>
-        </a>
-        <a class="card" data-icon="🟡" style="--delay: 0.58s" href="pacman/">
+        <a class="card" data-icon="🟡" style="--delay: 0.7s" href="pacman/">
           <div class="card-title">Pac-Man</div>
           <div class="card-meta">Nom pellets, dodge ghosts.</div>
         </a>
-        <a class="card" data-icon="🧩" style="--delay: 0.6s" href="tetris/">
-          <div class="card-title">Tetris</div>
-          <div class="card-meta">Stack, rotate, clear.</div>
-        </a>
-        <a class="card" data-icon="🐭" style="--delay: 0.65s" href="trap-the-mouse/">
-          <div class="card-title">Trap the Mouse</div>
-          <div class="card-meta">Outsmart the escape route.</div>
-        </a>
-        <a class="card" data-icon="♠️" style="--delay: 0.7s" href="video-poker/">
-          <div class="card-title">Video Poker Lounge</div>
-          <div class="card-meta">Deal, hold, and chase jackpots.</div>
-        </a>
-        <a class="card" data-icon="💣" style="--delay: 0.75s" href="ultra-tanks/">
-          <div class="card-title">Ultra Tanks</div>
-          <div class="card-meta">Bouncing bullets and big raids.</div>
+        <a class="card" data-icon="🗞️" style="--delay: 0.75s" href="paper-route-rush/">
+          <div class="card-title">Paper Route Rush</div>
+          <div class="card-meta">Dodge hazards and nail each delivery.</div>
         </a>
         <a class="card" data-icon="🌴" style="--delay: 0.8s" href="pitfall/">
           <div class="card-title">Pitfall</div>
           <div class="card-meta">Run, jump, and dodge pits.</div>
         </a>
-        <a class="card" data-icon="🚗" style="--delay: 0.85s" href="river-run/">
-          <div class="card-title">Neon River Run</div>
-          <div class="card-meta">Cross traffic and ride a living neon river.</div>
+        <a class="card" data-icon="🔶" style="--delay: 0.85s" href="qbert/">
+          <div class="card-title">Qbert Clone</div>
+          <div class="card-meta">Hop the pyramid and dodge foes.</div>
         </a>
-        <a class="card" data-icon="⛏️" style="--delay: 0.9s" href="deep-core/">
-          <div class="card-title">Deep Core</div>
-          <div class="card-meta">Dig tactical tunnels beneath a hostile moon.</div>
-        </a>
-        <a class="card" data-icon="🍄" style="--delay: 0.95s" href="mushroom-moon/">
-          <div class="card-title">Mushroom Moon</div>
-          <div class="card-meta">Split star-worms in a mutating lunar garden.</div>
-        </a>
-        <a class="card" data-icon="🎵" style="--delay: 1s" href="https://audio.vibe-cade.com">
-          <div class="card-title">Audio Assault</div>
-          <div class="card-meta">Intense music trivia</div>
-        </a>
-        <a class="card" data-icon="🥤" style="--delay: 1.05s" href="soda-shift/">
+        <a class="card" data-icon="🥤" style="--delay: 0.9s" href="soda-shift/">
           <div class="card-title">Soda Shift</div>
           <div class="card-meta">Serve the rush and catch every empty.</div>
         </a>
-        <a class="card" data-icon="🗞️" style="--delay: 1.1s" href="paper-route-rush/">
-          <div class="card-title">Paper Route Rush</div>
-          <div class="card-meta">Dodge hazards and nail each delivery.</div>
+        <a class="card" data-icon="👾" style="--delay: 0.95s" href="space-invaders/">
+          <div class="card-title">Space Invaders</div>
+          <div class="card-meta">Classic wave shooter, tuned up.</div>
         </a>
-        <a class="card" data-icon="🌘" style="--delay: 1.15s" href="lunar-lander/">
-          <div class="card-title">Lunar Lander</div>
-          <div class="card-meta">Feather a survey module onto the landing pad.</div>
+        <a class="card" data-icon="💥" style="--delay: 1s" href="space-invaders-command/">
+          <div class="card-title">Space Invaders Command</div>
+          <div class="card-meta">Invaders meet cascading explosions.</div>
         </a>
-        <a class="card" data-icon="🛢️" style="--delay: 1.2s" href="barrel-brigade/">
-          <div class="card-title">Barrel Brigade</div>
-          <div class="card-meta">Climb the girders and outjump runaway barrels.</div>
+        <a class="card" data-icon="🛡️" style="--delay: 1.05s" href="tanks/">
+          <div class="card-title">Tanks</div>
+          <div class="card-meta">Top-down armor duels.</div>
         </a>
-        <a class="card" data-icon="🛸" style="--delay: 1.25s; --thumb-hue: 195" href="galactic-wing/">
-          <div class="card-title">Galactic Wing</div>
-          <div class="card-meta">Break formations and intercept diving squadrons.</div>
+        <a class="card" data-icon="🧩" style="--delay: 1.1s" href="tetris/">
+          <div class="card-title">Tetris</div>
+          <div class="card-meta">Stack, rotate, clear.</div>
+        </a>
+        <a class="card" data-icon="🐭" style="--delay: 1.15s" href="trap-the-mouse/">
+          <div class="card-title">Trap the Mouse</div>
+          <div class="card-meta">Outsmart the escape route.</div>
+        </a>
+        <a class="card" data-icon="💣" style="--delay: 1.2s" href="ultra-tanks/">
+          <div class="card-title">Ultra Tanks</div>
+          <div class="card-meta">Bouncing bullets and big raids.</div>
+        </a>
+        <a class="card" data-icon="♠️" style="--delay: 1.25s" href="video-poker/">
+          <div class="card-title">Video Poker Lounge</div>
+          <div class="card-meta">Deal, hold, and chase jackpots.</div>
         </a>
       </div>
     </section>
@@ -630,13 +638,13 @@
     <section class="section game-section" data-status="work">
       <div class="section-title"><span>In Work</span><span class="section-count" data-section-count>8</span></div>
       <div class="grid">
-        <a class="card" data-icon="🥊" style="--delay: 0.05s" href="boxing/">
-          <div class="card-title">Boxing</div>
-          <div class="card-meta">Dodge, weave, land combos.</div>
-        </a>
-        <a class="card" data-icon="⚖️" style="--delay: 0.1s" href="balance/">
+        <a class="card" data-icon="⚖️" style="--delay: 0.05s" href="balance/">
           <div class="card-title">Block Balance</div>
           <div class="card-meta">Keep the tower steady.</div>
+        </a>
+        <a class="card" data-icon="🥊" style="--delay: 0.1s" href="boxing/">
+          <div class="card-title">Boxing</div>
+          <div class="card-meta">Dodge, weave, land combos.</div>
         </a>
         <a class="card" data-icon="🏍️" style="--delay: 0.15s" href="excitebike/">
           <div class="card-title">Excitebike</div>
@@ -646,21 +654,21 @@
           <div class="card-title">Joust</div>
           <div class="card-meta">Air duels with lances drawn.</div>
         </a>
+        <a class="card" data-icon="🔢" style="--delay: 0.25s" href="number-munchers/">
+          <div class="card-title">Number Munchers</div>
+          <div class="card-meta">Snack on the right answers.</div>
+        </a>
         <a class="card" data-icon="🎱" style="--delay: 0.3s" href="pinball/">
           <div class="card-title">Pinball</div>
           <div class="card-meta">Treasure hunt on a full table.</div>
         </a>
-        <a class="card" data-icon="🏁" style="--delay: 0.4s" href="pole/">
+        <a class="card" data-icon="🏁" style="--delay: 0.35s" href="pole/">
           <div class="card-title">Pole Position</div>
           <div class="card-meta">Thread the track and rival racers.</div>
         </a>
-        <a class="card" data-icon="💥" style="--delay: 0.45s" href="scorched-earth/">
+        <a class="card" data-icon="💥" style="--delay: 0.4s" href="scorched-earth/">
           <div class="card-title">Scorched Skies</div>
           <div class="card-meta">Artillery duels in the clouds.</div>
-        </a>
-        <a class="card" data-icon="🔢" style="--delay: 0.5s" href="number-munchers/">
-          <div class="card-title">Number Munchers</div>
-          <div class="card-meta">Snack on the right answers.</div>
         </a>
       </div>
     </section>
