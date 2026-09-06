@@ -21,22 +21,25 @@
     sound: document.getElementById('sound-status')
   };
   const attemptAction = document.getElementById('attempt-action');
+  const trafficWarning = document.getElementById('traffic-warning');
 
   const W = 960;
   const H = 540;
   const HORIZON = 132;
   const PLAYER_Y = 447;
+  const STREET_TRANSITION_SECONDS = 1.2;
   const ROUTE_DIFFICULTY = [
     { worldSpeed: 150, targetEvery: 1.9, obstacleEvery: 3.0, dogChance: 0, doubleChance: 0, dogWeave: .16, crossChance: 0, overtakeChance: 0, name: 'QUIET MORNING' },
     { worldSpeed: 166, targetEvery: 1.82, obstacleEvery: 2.6, dogChance: 0, doubleChance: 0, dogWeave: .17, crossChance: .48, overtakeChance: .14, name: 'COMMUTER TRAFFIC' },
     { worldSpeed: 181, targetEvery: 1.74, obstacleEvery: 2.25, dogChance: .12, doubleChance: 0, dogWeave: .20, crossChance: .58, overtakeChance: .18, name: 'AROUND THE CORNER' },
-    { worldSpeed: 198, targetEvery: 1.66, obstacleEvery: 1.95, dogChance: .17, doubleChance: .05, dogWeave: .24, crossChance: .70, overtakeChance: .23, name: 'BUSY INTERSECTIONS' },
-    { worldSpeed: 216, targetEvery: 1.58, obstacleEvery: 1.72, dogChance: .22, doubleChance: .10, dogWeave: .28, crossChance: .82, overtakeChance: .28, name: 'RUSH HOUR' }
+    { worldSpeed: 212, targetEvery: 1.66, obstacleEvery: 1.5, dogChance: .25, doubleChance: .12, dogWeave: .24, crossChance: .92, overtakeChance: .48, name: 'BUSY INTERSECTIONS' },
+    { worldSpeed: 230, targetEvery: 1.58, obstacleEvery: 1.32, dogChance: .29, doubleChance: .16, dogWeave: .28, crossChance: 1, overtakeChance: .58, name: 'RUSH HOUR' }
   ];
   const params = new URLSearchParams(location.search);
   const initialPhase = Math.max(1, Math.min(8, Number(params.get('phase')) || 1));
   const testScenario = params.get('scenario') || '';
   let randomSeed = (Number(params.get('seed')) || 271828) >>> 0;
+  let visualSeed = randomSeed ^ 0x9e3779b9;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const input = { left: false, right: false, joystick: 0 };
   const targets = [];
@@ -46,7 +49,10 @@
   const particles = [];
   const scenery = [];
   const intersections = [];
+  const roadMarks = [];
   const PASS_TARGET = 7;
+  const BAG_CAPACITY = 24;
+  const BLOCK_SIZE = 6;
   const STARTING_SUBSCRIBERS = new Set([0, 2, 5, 7, 10, 12, 15, 17, 20, 22]);
   const neighborhoods = [1, 2].map(street => Array.from({ length: 24 }, (_, id) => ({
     id, number: street * 100 + 101 + id, side: id % 2 ? 1 : -1,
@@ -102,7 +108,7 @@
     dogWeave: ROUTE_DIFFICULTY[0].dogWeave,
     worldScroll: 0,
     obstacleTimer: 1.3,
-    intersectionTimer: 7,
+    nextIntersectionAddress: BLOCK_SIZE,
     overtakeTimer: 9,
     targetTimer: .8,
     bundleTimer: 8,
@@ -127,6 +133,11 @@
     return randomSeed / 4294967296;
   };
   const randomRange = (min, max) => min + (max - min) * random();
+  // Effects and rendering must never change the traffic a retry will encounter.
+  const visualRange = (min, max) => {
+    visualSeed = (1664525 * visualSeed + 1013904223) >>> 0;
+    return min + (max - min) * visualSeed / 4294967296;
+  };
 
   function routeDifficulty(phase) {
     if (phase <= ROUTE_DIFFICULTY.length) return ROUTE_DIFFICULTY[Math.max(1, phase) - 1];
@@ -145,12 +156,39 @@
   }
 
   function roadHalf(y) {
+    if (state.street === 2) return 70 + 355 * (PLAYER_Y - HORIZON) / (H - HORIZON);
     const depth = clamp((y - HORIZON) / (H - HORIZON), 0, 1);
     return lerp(70, 425, depth);
   }
 
   function roadX(lane, y) {
     return W / 2 + lane * roadHalf(y) * .72;
+  }
+
+  const routeSpawnY = () => state.street === 2 ? -260 : HORIZON + 4;
+  const groundAdvance = (y, distance) => y + distance * (state.street === 2 ? .96
+    : .48 + clamp((y - HORIZON) / (H - HORIZON), 0, 1) * .62);
+
+  function seedRoadMarks() {
+    roadMarks.length = 0;
+    for (let y = routeSpawnY(); y < H + 200;) {
+      const gap = state.street === 2 ? 70 : 14 + clamp((y - HORIZON) / (H - HORIZON), 0, 1) * 44;
+      roadMarks.push({ y, endY: y + gap * .48 });
+      y += gap;
+    }
+  }
+
+  function updateRoadMarks(distance) {
+    for (const mark of roadMarks) {
+      mark.y = groundAdvance(mark.y, distance);
+      mark.endY = groundAdvance(mark.endY, distance);
+    }
+    while (roadMarks.at(-1)?.y > H + 200) roadMarks.pop();
+    const gap = state.street === 2 ? 70 : 14;
+    while (roadMarks[0].y > routeSpawnY() + gap) {
+      const y = roadMarks[0].y - gap;
+      roadMarks.unshift({ y, endY: y + gap * .48 });
+    }
   }
 
   function ensureAudio() {
@@ -213,6 +251,8 @@
     hud.strikes.textContent = '●'.repeat(state.strikes) + '○'.repeat(Math.max(0, 3 - state.strikes));
     hud.route.style.transform = `scaleX(${clamp(state.routeRemaining / state.routeTotal, 0, 1)})`;
     hud.sound.textContent = `SOUND ${state.sound ? 'ON' : 'OFF'} · M`;
+    trafficWarning.hidden = state.paused || state.mode !== 'playing'
+      || !hazards.some(hazard => hazard.type === 'overtaking' && !hazard.dead && hazard.y > PLAYER_Y - 50);
     attemptAction.hidden = state.mode !== 'failed' && state.mode !== 'gameover';
     attemptAction.textContent = state.mode === 'gameover' ? 'Start over · Level 1' : 'Retry level';
     shell.dataset.gameMode = state.mode;
@@ -223,6 +263,8 @@
     shell.dataset.streetCount = String(state.streetCount);
     shell.dataset.health = String(state.health);
     shell.dataset.healthMax = String(state.healthMax);
+    shell.dataset.dogModes = hazards.filter(hazard => hazard.type === 'dog' && !hazard.dead).map(dog => dog.dogMode).join(',');
+    shell.dataset.branchCount = String(hazards.filter(hazard => hazard.type === 'branch' && !hazard.dead).length);
     shell.dataset.strikes = String(state.strikes);
     shell.dataset.playerX = player.x.toFixed(1);
     shell.dataset.routeRemaining = state.routeRemaining.toFixed(2);
@@ -273,8 +315,9 @@
     state.nextAddress = 0;
     state.endReason = '';
     state.combo = 0;
-    state.papers = Math.min(24, state.quota + 4);
-    state.routeTotal = difficulty.targetEvery * (neighborhood.length - 1) + 6;
+    state.papers = Math.min(BAG_CAPACITY, state.quota + 4);
+    const junctionCount = Math.floor((neighborhood.length - 1) / BLOCK_SIZE);
+    state.routeTotal = difficulty.targetEvery * (neighborhood.length - 1 + junctionCount) + (street === 2 ? 10 : 6);
     state.routeRemaining = state.routeTotal;
     state.worldSpeed = difficulty.worldSpeed;
     state.targetEvery = difficulty.targetEvery;
@@ -285,7 +328,8 @@
     state.crossChance = difficulty.crossChance;
     state.overtakeChance = difficulty.overtakeChance;
     state.obstacleTimer = 2.1;
-    state.intersectionTimer = 6.4;
+    state.nextIntersectionAddress = BLOCK_SIZE;
+    state.worldScroll = 0;
     state.overtakeTimer = 7.5;
     state.targetTimer = .7;
     state.bundleTimer = 8;
@@ -299,6 +343,7 @@
     player.invulnerable = 0;
     clearStreetActors();
     seedScenery();
+    seedRoadMarks();
     if (testScenario === 'delivery') {
       player.x = W / 2 + roadHalf(PLAYER_Y) * .67;
       spawnTarget(1);
@@ -313,13 +358,21 @@
       state.delivered = 6;
       state.nextAddress = neighborhood.length;
       state.routeRemaining = .35;
+    } else if (testScenario === 'dog') {
+      spawnHazard('dog');
+      Object.assign(hazards.at(-1), { homeSide: 1, lane: 1.4, y: 345, dogMode: 'charging' });
+      hazards.at(-1).x = roadX(1.4, 345);
+      player.x = roadX(.62, PLAYER_Y);
+      spawnHazard('branch');
+      Object.assign(hazards.at(-1), { lane: -.55, y: 370, x: roadX(-.55, 370) });
+      state.obstacleTimer = state.overtakeTimer = 8;
     } else if (testScenario === 'traffic') {
       spawnIntersection(true);
       intersections[0].y = 315;
       const crossing = hazards.find(hazard => hazard.type === 'cross');
       if (crossing) { crossing.x = 255; crossing.y = 315; }
       spawnHazard('parked');
-      hazards.at(-1).y = 350;
+      hazards.at(-1).y = 215;
       spawnHazard('oncoming');
       hazards.at(-1).y = 245;
       if (state.phase >= 2) {
@@ -360,7 +413,16 @@
     state.newSubscribers = [];
     state.streetResults = [];
     startStreet(1);
-    if (testScenario === 'street2' && state.streetCount > 1) startStreet(2);
+    if ((testScenario === 'street2' || params.get('street') === '2') && state.streetCount > 1) startStreet(2);
+    if (testScenario === 'street2') {
+      for (let index=0;index<6;index+=1) {
+        spawnTarget();
+        const target=targets.at(-1);
+        target.y=180+index*58;
+        target.x=W/2+target.side*(roadHalf(target.y)+31);
+      }
+      state.targetTimer=3;
+    }
   }
 
   function retryLevel() {
@@ -390,13 +452,15 @@
     targets.push({
       home,
       wasSubscribed: home.subscribed,
-      y: HORIZON + 4,
-      x: W / 2,
+      y: routeSpawnY(),
+      x: W / 2 + side * (roadHalf(routeSpawnY()) + 31),
       side,
       delivered: false,
       dead: false,
-      pulse: randomRange(0, Math.PI * 2)
+      pulse: visualRange(0, Math.PI * 2)
     });
+    // One branch in level two, two per street thereafter, away from junctions.
+    if (state.phase >= 2 && (home.id === 4 || (state.phase >= 3 && home.id === 16))) spawnHazard('branch');
   }
 
   function spawnHazard(forcedType = '') {
@@ -409,17 +473,24 @@
       else if (roll < .84) type = 'puddle';
       else type = 'cones';
     }
+    if (!forcedType && type === 'dog' && hazards.some(hazard => hazard.type === 'dog' && !hazard.dead && hazard.dogMode !== 'retreating')) type = 'cones';
     let lane = randomRange(-.82, .82);
     if (type === 'cones') lane = [-.55, 0, .55][Math.floor(random() * 3)];
     if (type === 'parked') lane = random() < .5 ? -.78 : .78;
     if (type === 'oncoming') lane = -.38;
     if (type === 'overtaking') lane = .38;
+    const homeSide = random() < .5 ? -1 : 1;
+    if (type === 'dog') lane = homeSide * 1.65;
+    const y = type === 'overtaking' ? (state.street === 2 ? H + 300 : H + 72) : routeSpawnY();
     hazards.push({
       type,
-      y: type === 'overtaking' ? H + 72 : HORIZON + 3,
-      x: W / 2,
+      y,
+      x: type === 'parked' ? W / 2 + Math.sign(lane) * roadHalf(y) * .86 : roadX(lane, y),
       lane,
       baseLane: lane,
+      homeSide,
+      dogMode: 'waiting',
+      attackAge: 0,
       phase: randomRange(0, Math.PI * 2),
       color: ['#d84f39', '#315f79', '#e6ac3e'][Math.floor(random() * 3)],
       dead: false
@@ -427,25 +498,27 @@
   }
 
   function spawnIntersection(forceTraffic = false) {
-    const intersection = { y: HORIZON + 4, dead: false, crossTraffic: false };
+    const intersection = { y: routeSpawnY(), dead: false, crossTraffic: false };
     intersections.push(intersection);
     if (state.phase >= 2 && (forceTraffic || random() < state.crossChance)) {
       const direction = random() < .5 ? 1 : -1;
       intersection.crossTraffic = true;
       hazards.push({
         type: 'cross', intersection, direction,
-        y: intersection.y, x: direction > 0 ? -120 : W + 120,
+        y: intersection.y, x: state.street === 2 ? W / 2 - direction * 3.5 * roadHalf(intersection.y) : direction > 0 ? -120 : W + 120,
+        groundU: -direction * 700,
         color: ['#d84f39', '#315f79', '#e6ac3e'][Math.floor(random() * 3)], dead: false
       });
     }
   }
 
   function spawnBundle() {
+    const lane = randomRange(-.68, .68);
     bundles.push({
-      y: HORIZON + 3,
-      x: W / 2,
-      lane: randomRange(-.68, .68),
-      spin: randomRange(0, Math.PI * 2),
+      y: routeSpawnY(),
+      x: roadX(lane, routeSpawnY()),
+      lane,
+      spin: visualRange(0, Math.PI * 2),
       dead: false
     });
   }
@@ -454,17 +527,17 @@
     const available = Math.max(0, 96 - particles.length);
     const total = Math.min(count, available, reducedMotion ? 5 : count);
     for (let index = 0; index < total; index += 1) {
-      const angle = randomRange(0, Math.PI * 2);
-      const speed = randomRange(45, 160);
+      const angle = visualRange(0, Math.PI * 2);
+      const speed = visualRange(45, 160);
       particles.push({
         x,
         y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed - 30,
-        life: randomRange(.35, .8),
+        life: visualRange(.35, .8),
         maxLife: .8,
         color,
-        size: randomRange(2, 6)
+        size: visualRange(2, 6)
       });
     }
   }
@@ -499,8 +572,10 @@
   }
 
   function hitPlayer(hazard) {
-    hazard.dead = true;
-    if (player.invulnerable > 0) return;
+    if (state.mode !== 'playing' || hazard.dead || hazard.contacted || player.invulnerable > 0) return;
+    if (hazard.type === 'dog' && (hazard.dogMode === 'retreating' || (player.x - W / 2) * hazard.homeSide < 0)) return;
+    hazard.contacted = true;
+    if (hazard.type === 'dog') hazard.dogMode = 'retreating';
     player.invulnerable = 2.1;
     const damage = hazard.type === 'dog' ? 2 : ['oncoming', 'overtaking', 'cross'].includes(hazard.type) ? 4 : 1;
     state.health -= damage;
@@ -548,13 +623,13 @@
 
   function collectBundle(bundle) {
     bundle.dead = true;
-    const gained = Math.max(0, Math.min(5, 20 - state.papers));
+    const gained = Math.max(0, Math.min(5, BAG_CAPACITY - state.papers));
     state.papers += gained;
     state.score += 50;
     burst(bundle.x, bundle.y, '#fff5cf', 10);
     tone(410, .06, 'triangle', .035);
     tone(610, .09, 'triangle', .03, .055);
-    showMessage(`BAG REFILL +${gained}`, 1);
+    showMessage(gained ? `BAG REFILL +${gained}` : 'BAG FULL · +50', 1);
     updateHud();
   }
 
@@ -616,8 +691,8 @@
     });
     if (state.street < state.streetCount) {
       state.mode = 'turning';
-      state.transitionTimer = 2.4;
-      showMessage('STREET 1 PASSED · TURN RIGHT!', 2.4);
+      state.transitionTimer = STREET_TRANSITION_SECONDS;
+      showMessage('STREET 1 COMPLETE', STREET_TRANSITION_SECONDS);
       tone(520, .08, 'square', .03);
       tone(680, .1, 'square', .025, .09);
     } else {
@@ -628,13 +703,49 @@
 
   function updateScenery(dt, speed) {
     scenery.forEach(item => {
-      const depth = clamp((item.y - HORIZON) / (H - HORIZON), 0, 1);
-      item.y += speed * dt * (.44 + depth * .62);
+      item.y = groundAdvance(item.y, speed * dt);
       if (item.y > H + 105) {
-        item.y = HORIZON + randomRange(0, 20);
+        item.y = HORIZON + visualRange(0, 20);
         item.side *= -1;
       }
     });
+  }
+
+  const moveToward = (value, target, step) => value + clamp(target - value, -step, step);
+
+  function updateDog(dog, dt) {
+    if (dog.dogMode === 'waiting') {
+      dog.y = groundAdvance(dog.y, state.worldSpeed * dt);
+      if (dog.y >= 285) dog.dogMode = 'charging';
+    } else if (dog.dogMode === 'charging') {
+      dog.attackAge += dt;
+      const riderLane = (player.x - W / 2) / (roadHalf(PLAYER_Y) * .72);
+      const destination = dog.homeSide * clamp(riderLane * dog.homeSide, .22, .98);
+      dog.lane = moveToward(dog.lane, destination, (state.phase >= 4 ? 1.2 : .95) * dt);
+      dog.y = moveToward(dog.y, PLAYER_Y - 20, 175 * dt);
+      if (dog.attackAge > 3) dog.dogMode = 'retreating';
+    } else {
+      dog.lane += dog.homeSide * 2.1 * dt;
+      dog.y = groundAdvance(dog.y, state.worldSpeed * dt);
+      if (Math.abs(dog.lane) > 3) dog.dead = true;
+    }
+  }
+
+  function paperHitsDog(dog, dt) {
+    if (dog.dead || dog.dogMode === 'retreating') return;
+    const radius = state.street === 2 ? 25 : 18 + clamp((dog.y - HORIZON) / (H - HORIZON), 0, 1) * 19;
+    for (const paper of flyingPapers) {
+      if (paper.dead) continue;
+      const dx = paper.vx * dt, dy = paper.vy * dt;
+      const t = clamp(((dog.x - paper.x) * dx + (dog.y - 9 - paper.y) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+      if (Math.hypot(paper.x + dx * t - dog.x, paper.y + dy * t - (dog.y - 9)) > radius) continue;
+      paper.dead = true;
+      dog.dogMode = 'retreating';
+      burst(dog.x, dog.y - 15, '#f5e8c8', 8);
+      tone(470, .08, 'triangle', .025);
+      announce('Dog chased away.');
+      break;
+    }
   }
 
   function updatePlaying(dt) {
@@ -649,32 +760,33 @@
     state.throwCooldown = Math.max(0, state.throwCooldown - dt);
     state.routeRemaining = Math.max(0, state.routeRemaining - dt);
     state.worldScroll += state.worldSpeed * dt;
+    updateRoadMarks(state.worldSpeed * dt);
     updateScenery(dt, state.worldSpeed);
 
     state.targetTimer -= dt;
     if (state.targetTimer <= 0 && state.nextAddress < neighborhood.length) {
-      spawnTarget();
+      // Reserve a full house slot for each junction so driveways never open into it.
+      if (state.nextAddress === state.nextIntersectionAddress) {
+        spawnIntersection();
+        state.nextIntersectionAddress += BLOCK_SIZE;
+      } else spawnTarget();
       state.targetTimer = state.targetEvery;
     }
 
     state.obstacleTimer -= dt;
-    if (state.obstacleTimer <= 0 && state.routeRemaining > 2) {
+    const junctionAtSpawn = (state.nextAddress === state.nextIntersectionAddress && state.targetTimer < .9)
+      || intersections.some(intersection => intersection.y < routeSpawnY() + 80);
+    if (state.obstacleTimer <= 0 && state.routeRemaining > 2 && !junctionAtSpawn) {
       spawnHazard();
       if (random() < state.doubleChance) spawnHazard(random() < .45 ? 'cones' : 'puddle');
       state.obstacleTimer = state.obstacleEvery + randomRange(-.12, .26);
-    }
-
-    state.intersectionTimer -= dt;
-    if (state.intersectionTimer <= 0 && state.routeRemaining > 7) {
-      spawnIntersection();
-      state.intersectionTimer = randomRange(9.2, 11.2);
     }
 
     if (state.phase >= 2) {
       state.overtakeTimer -= dt;
       if (state.overtakeTimer <= 0 && state.routeRemaining > 5 && !hazards.some(hazard => hazard.type === 'overtaking')) {
         if (random() < state.overtakeChance) spawnHazard('overtaking');
-        state.overtakeTimer = randomRange(6.5, 9.5);
+        state.overtakeTimer = state.phase >= 4 ? randomRange(4.5, 6.5) : randomRange(6.5, 9.5);
       }
     }
 
@@ -685,8 +797,7 @@
     }
 
     targets.forEach(target => {
-      const depth = clamp((target.y - HORIZON) / (H - HORIZON), 0, 1);
-      target.y += state.worldSpeed * dt * (.48 + depth * .62);
+      target.y = groundAdvance(target.y, state.worldSpeed * dt);
       target.x = W / 2 + target.side * (roadHalf(target.y) + 31);
       target.pulse += dt * 5;
       if (target.y > H + 45) {
@@ -706,40 +817,45 @@
     if (state.mode !== 'playing') return;
 
     intersections.forEach(intersection => {
-      const depth = clamp((intersection.y - HORIZON) / (H - HORIZON), 0, 1);
-      intersection.y += state.worldSpeed * dt * (.48 + depth * .62);
+      intersection.y = groundAdvance(intersection.y, state.worldSpeed * dt);
       if (intersection.y > H + 90) intersection.dead = true;
     });
 
-    hazards.forEach(hazard => {
+    for (const hazard of hazards) {
       if (hazard.type === 'cross') {
         hazard.y = hazard.intersection.y;
-        hazard.x += hazard.direction * (155 + state.phase * 12) * dt;
-        if (hazard.intersection.dead || hazard.x < -170 || hazard.x > W + 170) hazard.dead = true;
+        if (state.street === 2) {
+          hazard.groundU += hazard.direction * (185 + state.phase * 12) * dt;
+          hazard.x = W / 2 + hazard.groundU / 200 * roadHalf(hazard.y);
+          if (Math.abs(hazard.groundU) > 1100) hazard.dead = true;
+        } else {
+          hazard.x += hazard.direction * (155 + state.phase * 12) * dt;
+          if (hazard.x < -170 || hazard.x > W + 170) hazard.dead = true;
+        }
+        if (hazard.intersection.dead) hazard.dead = true;
+      } else if (hazard.type === 'dog') {
+        updateDog(hazard, dt);
       } else {
-        const depth = clamp((hazard.y - HORIZON) / (H - HORIZON), 0, 1);
         if (hazard.type === 'overtaking') hazard.y -= (68 + state.phase * 7) * dt;
         else {
-          const speedFactor = hazard.type === 'oncoming' ? 1.62 : hazard.type === 'dog' ? 1.06 : 1;
-          hazard.y += state.worldSpeed * dt * (.5 + depth * .68) * speedFactor;
+          const speedFactor = hazard.type === 'oncoming' ? 1.62 : 1;
+          hazard.y = groundAdvance(hazard.y, state.worldSpeed * dt * speedFactor);
         }
       }
       const depth = clamp((hazard.y - HORIZON) / (H - HORIZON), 0, 1);
-      if (hazard.type === 'dog') {
-        const weave = Math.sin(state.worldScroll * .022 + hazard.phase) * state.dogWeave;
-        hazard.lane = clamp(hazard.baseLane + weave, -.88, .88);
-      }
       if (hazard.type === 'parked') hazard.x = W / 2 + Math.sign(hazard.lane) * roadHalf(hazard.y) * .86;
       else if (hazard.type !== 'cross') hazard.x = roadX(hazard.lane, hazard.y);
+      // Resolve a thrown paper before the dog's bite on this frame.
+      if (hazard.type === 'dog') paperHitsDog(hazard, dt);
       const scale = .28 + depth * .92;
-      const hitRadius = hazard.type === 'puddle' ? 27 * scale : ['parked', 'oncoming', 'overtaking', 'cross'].includes(hazard.type) ? 31 * scale : 24 * scale;
+      const hitRadius = hazard.type === 'cross' ? 48 * scale : hazard.type === 'branch' ? 45 * scale : hazard.type === 'puddle' ? 27 * scale : ['parked', 'oncoming', 'overtaking'].includes(hazard.type) ? 31 * scale : 24 * scale;
       if (!hazard.dead && hazard.y > PLAYER_Y - 50 && hazard.y < PLAYER_Y + 36 && Math.abs(hazard.x - player.x) < hitRadius + 17) hitPlayer(hazard);
-      if (hazard.y > H + 80 || hazard.y < HORIZON - 40) hazard.dead = true;
-    });
+      if (state.mode !== 'playing') return;
+      if (hazard.y > H + (hazard.type === 'overtaking' && state.street === 2 ? 400 : 80) || hazard.y < routeSpawnY() - 80) hazard.dead = true;
+    }
 
     bundles.forEach(bundle => {
-      const depth = clamp((bundle.y - HORIZON) / (H - HORIZON), 0, 1);
-      bundle.y += state.worldSpeed * dt * (.5 + depth * .66);
+      bundle.y = groundAdvance(bundle.y, state.worldSpeed * dt);
       bundle.x = roadX(bundle.lane, bundle.y);
       bundle.spin += dt * 4;
       if (!bundle.dead && Math.abs(bundle.y - PLAYER_Y) < 36 && Math.abs(bundle.x - player.x) < 36) collectBundle(bundle);
@@ -792,9 +908,13 @@
       if (state.transitionTimer <= 0) startPhase(state.phase + 1);
     } else if (state.mode === 'turning') {
       state.transitionTimer -= dt;
-      player.tilt = lerp(player.tilt, .8, 1 - Math.exp(-3 * dt));
-      updateScenery(dt, state.worldSpeed * .35);
-      if (state.transitionTimer <= 0) startStreet(state.street + 1);
+      if (state.street === 1 && state.transitionTimer <= STREET_TRANSITION_SECONDS / 2) {
+        const remaining = state.transitionTimer;
+        startStreet(2);
+        state.mode = 'turning';
+        state.transitionTimer = remaining;
+      }
+      if (state.transitionTimer <= 0) state.mode = 'playing';
     } else if (state.mode === 'falling') {
       state.transitionTimer -= dt;
       if (state.transitionTimer <= 0) failAttempt(state.endReason);
@@ -858,23 +978,12 @@
     ctx.closePath();
     ctx.fill();
 
-    ctx.strokeStyle = '#f5e8c8';
-    ctx.lineWidth = 4;
-    ctx.setLineDash([19, 18]);
-    ctx.lineDashOffset = state.worldScroll * .75;
-    ctx.beginPath();
-    ctx.moveTo(W / 2, HORIZON + 4);
-    ctx.lineTo(W / 2, H + 30);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.strokeStyle = 'rgba(23, 42, 50, .18)';
-    ctx.lineWidth = 1;
-    for (let y = 152; y < H; y += 28) {
-      ctx.beginPath();
-      ctx.moveTo(W / 2 - roadHalf(y), y);
-      ctx.lineTo(W / 2 + roadHalf(y), y);
-      ctx.stroke();
+    ctx.fillStyle = '#f5e8c8';
+    for (const mark of roadMarks) {
+      const top = Math.max(HORIZON, mark.y), bottom = Math.min(H, mark.endY);
+      if (bottom <= top) continue;
+      const width = roadHalf(top) / roadHalf(PLAYER_Y) * 4;
+      ctx.fillRect(W / 2 - width / 2, top, width, bottom - top);
     }
   }
 
@@ -888,14 +997,14 @@
     ctx.fillStyle = '#c8c3af';
     ctx.fillRect(0, -height / 2 - 8, W, 8);
     ctx.fillRect(0, height / 2, W, 8);
-    ctx.strokeStyle = 'rgba(245,232,200,.82)';
-    ctx.lineWidth = Math.max(2, depth * 4);
-    ctx.setLineDash([13 + depth * 18, 11 + depth * 14]);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(W, 0);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    // Paint belongs to this street: project fixed marks about the junction's
+    // center, independent of the main road's animated canvas dash offset.
+    ctx.fillStyle = 'rgba(245,232,200,.82)';
+    const paintScale = roadHalf(intersection.y) / roadHalf(PLAYER_Y);
+    const markCount = Math.ceil(W / (48 * paintScale));
+    for (let mark = -markCount; mark <= markCount; mark += 1) {
+      ctx.fillRect(W / 2 + (mark * 48 - 11) * paintScale, -2 * paintScale, 22 * paintScale, 4 * paintScale);
+    }
     ctx.fillStyle = 'rgba(245,232,200,.85)';
     const halfRoad = roadHalf(intersection.y) * .72;
     for (let stripe = -2; stripe <= 2; stripe += 1) {
@@ -908,6 +1017,10 @@
   function drawGarden(item) {
     const depth = clamp((item.y - HORIZON) / (H - HORIZON), 0, 1);
     const scale = .2 + depth * .8;
+    if (intersections.some(junction => {
+      const junctionDepth = clamp((junction.y - HORIZON) / (H - HORIZON), 0, 1);
+      return Math.abs(item.y - junction.y) < 10 + junctionDepth * 47 + 40 * scale;
+    })) return;
     const x = W / 2 + item.side * (roadHalf(item.y) + 180 * scale);
     ctx.save(); ctx.translate(x, item.y); ctx.scale(scale, scale);
     ctx.fillStyle = '#243f3738'; ctx.beginPath(); ctx.ellipse(17, 7, 45, 10, 0, 0, Math.PI * 2); ctx.fill();
@@ -981,9 +1094,9 @@
     ctx.restore();
   }
 
-  function drawMailbox(target) {
+  function drawMailbox(target, fixedScale = null) {
     const depth = clamp((target.y - HORIZON) / (H - HORIZON), 0, 1);
-    const scale = .32 + depth * .9;
+    const scale = fixedScale ?? .32 + depth * .9;
     ctx.save();
     ctx.translate(target.x, target.y);
     ctx.scale(scale, scale);
@@ -1026,9 +1139,12 @@
   }
 
   function drawCar(hazard, scale) {
+    if (hazard.type === 'cross') {
+      drawSideCar(hazard, scale);
+      return;
+    }
     ctx.save();
     ctx.translate(hazard.x, hazard.y);
-    if (hazard.type === 'cross') ctx.rotate(hazard.direction * Math.PI / 2);
     ctx.scale(scale, scale);
     ctx.fillStyle = 'rgba(23, 42, 50, .27)';
     ctx.beginPath();
@@ -1062,10 +1178,36 @@
     ctx.restore();
   }
 
+  function drawSideCar(car, scale) {
+    ctx.save();
+    ctx.translate(car.x, car.y);
+    ctx.scale(scale * car.direction, scale);
+    ctx.fillStyle = '#172a3240';
+    ctx.beginPath(); ctx.ellipse(0, 10, 53, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#172a32'; ctx.lineWidth = 3;
+    ctx.fillStyle = car.color;
+    ctx.beginPath();
+    ctx.moveTo(-53, 0); ctx.lineTo(-52, -22); ctx.lineTo(-33, -28);
+    ctx.lineTo(-22, -47); ctx.lineTo(17, -47); ctx.lineTo(34, -27);
+    ctx.lineTo(51, -22); ctx.lineTo(55, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#afd2d7';
+    ctx.beginPath(); ctx.moveTo(-27, -28); ctx.lineTo(-18, -42); ctx.lineTo(-3, -42); ctx.lineTo(-3, -28); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(3, -42); ctx.lineTo(14, -42); ctx.lineTo(27, -28); ctx.lineTo(3, -28); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#172a3270'; ctx.beginPath(); ctx.moveTo(0, -25); ctx.lineTo(0, -3); ctx.stroke();
+    ctx.fillStyle = '#fff0bc'; ctx.fillRect(46, -18, 7, 8);
+    ctx.fillStyle = '#cc3f31'; ctx.fillRect(-53, -18, 6, 8);
+    for (const x of [-33, 33]) {
+      ctx.fillStyle = '#172a32'; ctx.beginPath(); ctx.arc(x, 0, 11, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#b7c2c1'; ctx.beginPath(); ctx.arc(x, 0, 5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function drawDog(hazard, scale) {
     ctx.save();
     ctx.translate(hazard.x, hazard.y);
-    ctx.scale(scale, scale);
+    const facing = hazard.dogMode === 'retreating' ? hazard.homeSide : -hazard.homeSide;
+    ctx.scale(scale * (facing || 1), scale);
     ctx.strokeStyle = '#172a32';
     ctx.lineWidth = 5;
     ctx.lineCap = 'round';
@@ -1078,9 +1220,14 @@
     ctx.arc(23, -22, 15, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
+    ctx.beginPath(); ctx.roundRect(30, -21, 19, 12, 5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#754629';
+    ctx.beginPath(); ctx.moveTo(13, -35); ctx.lineTo(23, -32); ctx.lineTo(14, -12); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#172a32'; ctx.beginPath(); ctx.ellipse(47, -18, 4, 4, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath();
-    ctx.moveTo(-17, 3); ctx.lineTo(-24, 24);
-    ctx.moveTo(13, 3); ctx.lineTo(20, 24);
+    const stride = hazard.dogMode === 'waiting' ? 0 : Math.sin(state.worldScroll * .09) * 9;
+    ctx.moveTo(-17, 3); ctx.lineTo(-24 + stride, 24);
+    ctx.moveTo(13, 3); ctx.lineTo(20 - stride, 24);
     ctx.moveTo(-25, -15); ctx.quadraticCurveTo(-43, -31, -37, -42);
     ctx.stroke();
     ctx.fillStyle = '#172a32';
@@ -1102,6 +1249,24 @@
     ctx.strokeStyle = '#a7d3cf';
     ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(-6, -1, 14, Math.PI * .1, Math.PI * .75); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBranch(hazard, scale) {
+    ctx.save(); ctx.translate(hazard.x, hazard.y); ctx.scale(scale, scale);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const [color, width] of [['#24352b55', 15], ['#493d30', 12], ['#997044', 7]]) {
+      ctx.strokeStyle = color; ctx.lineWidth = width;
+      ctx.beginPath(); ctx.moveTo(-49, 13); ctx.lineTo(-10, -2); ctx.lineTo(45, -9); ctx.stroke();
+    }
+    ctx.strokeStyle = '#735236'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(-17, 1); ctx.lineTo(-25, -22); ctx.lineTo(-14, -34);
+    ctx.moveTo(13, -5); ctx.lineTo(30, 17); ctx.lineTo(45, 23); ctx.stroke();
+    ctx.fillStyle = '#d4b284'; ctx.beginPath(); ctx.ellipse(-49, 13, 4, 6, -.4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#668448';
+    for (const [x,y] of [[-26,-24],[-12,-31],[33,17],[46,21]]) {
+      ctx.beginPath(); ctx.ellipse(x,y,8,4,-.6,0,Math.PI*2); ctx.fill();
+    }
     ctx.restore();
   }
 
@@ -1163,7 +1328,7 @@
   }
 
   function drawPlayer() {
-    if (player.invulnerable > 0 && Math.floor(player.invulnerable * 12) % 2 === 0) return;
+    if (state.mode === 'playing' && player.invulnerable > 0 && Math.floor(player.invulnerable * 12) % 2 === 0) return;
     ctx.save();
     ctx.translate(player.x, PLAYER_Y);
     ctx.rotate(player.tilt);
@@ -1288,6 +1453,7 @@
         if (['parked', 'oncoming', 'overtaking', 'cross'].includes(actor.item.type)) drawCar(actor.item, scale);
         else if (actor.item.type === 'dog') drawDog(actor.item, scale);
         else if (actor.item.type === 'puddle') drawPuddle(actor.item, scale);
+        else if (actor.item.type === 'branch') drawBranch(actor.item, scale);
         else drawCones(actor.item, scale);
       }
     });
@@ -1337,29 +1503,12 @@
 
   function drawTurnSequence() {
     if (state.mode !== 'turning') return;
-    const progress = clamp(1 - state.transitionTimer / 2.4, 0, 1);
+    const progress = clamp(1 - state.transitionTimer / STREET_TRANSITION_SECONDS, 0, 1);
+    const fade = 1 - Math.abs(progress * 2 - 1);
     ctx.save();
-    ctx.globalAlpha = .45 + progress * .45;
-    ctx.strokeStyle = '#c8c3af';
-    ctx.lineWidth = 104;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(W / 2, H + 35);
-    ctx.bezierCurveTo(W / 2, 390, 650, 300, W + 60, 292);
-    ctx.stroke();
-    ctx.strokeStyle = '#4d5558';
-    ctx.lineWidth = 84;
-    ctx.stroke();
-    ctx.strokeStyle = '#f5e8c8';
-    ctx.lineWidth = 4;
-    ctx.setLineDash([20, 18]);
-    ctx.lineDashOffset = state.worldScroll;
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = '#f4c95d';
-    ctx.font = '900 24px Impact, Arial Black, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('TURNING ONTO ANGLED AVENUE →', W / 2 + 120, 250);
+    ctx.globalAlpha = fade * fade * (3 - 2 * fade);
+    ctx.fillStyle = '#172a32';
+    ctx.fillRect(0, 0, W, H);
     ctx.restore();
   }
 
@@ -1368,26 +1517,14 @@
     const a = state.worldSpeed * .48;
     const b = state.worldSpeed * .62 / (H - HORIZON);
     for (let t = .06; t <= .7; t += .025) {
-      const y = HORIZON + (target.y - HORIZON + a / b) * Math.exp(b * t) - a / b;
+      const y = state.street === 2 ? target.y + state.worldSpeed * .96 * t
+        : HORIZON + (target.y - HORIZON + a / b) * Math.exp(b * t) - a / b;
       const x = W / 2 + target.side * (roadHalf(y) + 31);
       const px = player.x + target.side * (17 + (365 + Math.min(state.phase, 6) * 8) * t);
       const py = PLAYER_Y - 18 - 92 * t + 14 * t * t;
       if (Math.hypot(px - x, (py - y) * .85) < 28) return true;
     }
     return false;
-  }
-
-  function drawDeliveryCue() {
-    if (state.mode !== 'playing') return;
-    const next = targets.find(target => target.wasSubscribed && !target.delivered && !target.dead && target.y > 290 && target.y < 440);
-    if (!next) return;
-    const ready = deliveryReady(next);
-    ctx.save(); ctx.textAlign = 'center';
-    ctx.fillStyle = ready ? '#fff2b5' : '#f6eedb'; ctx.strokeStyle = '#172a32'; ctx.lineWidth = 4;
-    ctx.font = 'bold 17px Trebuchet MS';
-    const cue = ready ? 'THROW NOW!' : next.side < 0 ? '← LEFT DELIVERY' : 'RIGHT DELIVERY →';
-    ctx.strokeText(cue, player.x, PLAYER_Y + 61); ctx.fillText(cue, player.x, PLAYER_Y + 61);
-    ctx.restore();
   }
 
   function drawEndOverlay() {
@@ -1426,17 +1563,159 @@
     ctx.restore();
   }
 
+  // Convert the simulation's road-relative coordinates into an orthographic
+  // isometric ground plane. Every actor uses this same mapping, including papers.
+  function isoGround(u, v, height = 0) {
+    return { x: 335 + .866 * (u + v), y: 365 + .5 * (u - v) - height };
+  }
+
+  function isoPosition(x, y) {
+    return { u: (x - W / 2) / roadHalf(y) * 200, v: (PLAYER_Y - y) * 1.55 };
+  }
+
+  function isoPolygon(points, color, outline = false) {
+    ctx.beginPath();
+    points.forEach(([u, v, h = 0], index) => {
+      const p = isoGround(u, v, h);
+      if (index === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+    });
+    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+    if (outline) { ctx.strokeStyle = '#263c3e'; ctx.lineWidth = 1.4; ctx.stroke(); }
+  }
+
+  function isoBox(u, v, width, length, height, colors, base = 0) {
+    const a = u - width / 2, b = u + width / 2;
+    const c = v - length / 2, d = v + length / 2;
+    isoPolygon([[a,c,base],[b,c,base],[b,c,base+height],[a,c,base+height]], colors[0], true);
+    isoPolygon([[b,c,base],[b,d,base],[b,d,base+height],[b,c,base+height]], colors[1], true);
+    isoPolygon([[a,c,base+height],[b,c,base+height],[b,d,base+height],[a,d,base+height]], colors[2], true);
+  }
+
+  function drawIsoHouse(home, v) {
+    const u = home.side * 325;
+    isoPolygon([[u-65,v-64],[u+65,v-64],[u+65,v+64],[u-65,v+64]], '#8da477');
+    isoPolygon([[home.side*211,v-9],[u,v-9],[u,v+9],[home.side*211,v+9]], '#c9c4ae');
+    isoBox(u, v, 89, 75, 59, [home.hue, '#9aab98', '#e3d6bc']);
+    const a = u - 49, b = u + 49, c = v - 43, d = v + 43;
+    isoPolygon([[a,c,59],[b,c,59],[u,c,89]], '#d2c1a7', true);
+    isoPolygon([[a,c,59],[u,c,89],[u,d,89],[a,d,59]], home.roof, true);
+    isoPolygon([[u,c,89],[b,c,59],[b,d,59],[u,d,89]], '#677274', true);
+    for (const offset of [-25, 22]) {
+      isoPolygon([[u+offset-8,v-38,23],[u+offset+8,v-38,23],[u+offset+8,v-38,43],[u+offset-8,v-38,43]], '#b5d7d6', true);
+    }
+    isoPolygon([[u-8,v-38,0],[u+8,v-38,0],[u+8,v-38,31],[u-8,v-38,31]], '#6e5947', true);
+    isoBox(u+24, v+10, 12, 14, 27, ['#9d705b','#765446','#c49377'], 65);
+  }
+
+  function drawIsoCar(car, u, v) {
+    const crossing = car.type === 'cross';
+    const width = crossing ? 66 : 30, length = crossing ? 30 : 66;
+    isoPolygon([[u-width/2-4,v-length/2-3],[u+width/2+4,v-length/2-3],[u+width/2+4,v+length/2+3],[u-width/2-4,v+length/2+3]], '#243b3c45');
+    isoBox(u, v, width, length, 17, [car.color, car.color, car.color], 5);
+    isoBox(u, v+2, crossing ? 33 : 26, crossing ? 26 : 33, 14, ['#71929b','#416778','#b8ced0'], 22);
+    isoBox(u, v+3, crossing ? 24 : 23, crossing ? 23 : 24, 2, [car.color,car.color,car.color], 36);
+    for (const offset of [-21, 21]) {
+      const p = isoGround(u + (crossing ? offset : 17), v + (crossing ? -17 : offset), 7);
+      ctx.fillStyle = '#172a32'; ctx.beginPath(); ctx.ellipse(p.x,p.y,5,8,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#bbc6c2'; ctx.beginPath(); ctx.arc(p.x,p.y,2.5,0,Math.PI*2); ctx.fill();
+    }
+    const front = car.type === 'oncoming' ? -1 : 1;
+    for (const side of [-1, 1]) {
+      const p = crossing ? isoGround(u+car.direction*width/2, v+side*10, 13) : isoGround(u+side*10,v+front*length/2,13);
+      ctx.fillStyle = '#fff2bb'; ctx.fillRect(p.x-3,p.y-2,6,4);
+    }
+  }
+
+  function drawIsoRider(u, v) {
+    if (player.invulnerable > 0 && state.mode !== 'falling' && Math.floor(player.invulnerable * 12) % 2 === 0) return;
+    const p = isoGround(u,v);
+    ctx.save(); ctx.translate(p.x,p.y);
+    if (state.mode === 'falling') ctx.rotate(1.1);
+    ctx.fillStyle = '#172a323a'; ctx.beginPath(); ctx.ellipse(0,7,31,9,-.5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#172a32'; ctx.lineWidth = 4;
+    for (const [x,y] of [[-19,12],[20,-10]]) {
+      ctx.beginPath(); ctx.ellipse(x,y,9,16,.35,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.strokeStyle = '#ed7546'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-19,12); ctx.lineTo(-9,-14); ctx.lineTo(8,3); ctx.lineTo(-19,12); ctx.lineTo(18,-25); ctx.lineTo(20,-10); ctx.stroke();
+    ctx.strokeStyle = '#263b43'; ctx.beginPath(); ctx.moveTo(12,-28); ctx.lineTo(26,-23); ctx.moveTo(-17,-16); ctx.lineTo(-4,-19); ctx.stroke();
+    ctx.strokeStyle = '#325f79'; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.moveTo(-9,-24); ctx.lineTo(-2,-6); ctx.lineTo(9,-2); ctx.moveTo(-6,-23); ctx.lineTo(-18,-1); ctx.lineTo(-9,7); ctx.stroke();
+    ctx.strokeStyle = '#ee7945'; ctx.lineWidth = 17;
+    ctx.beginPath(); ctx.moveTo(-9,-25); ctx.lineTo(0,-45); ctx.stroke();
+    ctx.strokeStyle = '#f1b07a'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(1,-42); ctx.lineTo(13,-29); ctx.lineTo(23,-25); ctx.stroke();
+    ctx.fillStyle = '#f1b07a'; ctx.beginPath(); ctx.arc(5,-57,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#315f79'; ctx.beginPath(); ctx.arc(4,-59,11,Math.PI,Math.PI*2); ctx.fill(); ctx.fillRect(4,-60,17,4);
+    ctx.fillStyle = '#f4c95d'; ctx.strokeStyle = '#263b43'; ctx.lineWidth=2;
+    ctx.fillRect(-32,-14,18,21); ctx.strokeRect(-32,-14,18,21);
+    ctx.restore();
+  }
+
+  function drawIsometricStreet() {
+    ctx.fillStyle = '#86a27b'; ctx.fillRect(0,0,W,H);
+    isoPolygon([[-226,-1100],[226,-1100],[226,1500],[-226,1500]], '#d3cfb9');
+    isoPolygon([[-200,-1100],[200,-1100],[200,1500],[-200,1500]], '#505d60');
+    for (const mark of roadMarks) {
+      const v = isoPosition(W / 2, mark.y).v, end = isoPosition(W / 2, mark.endY).v;
+      isoPolygon([[-2,v],[2,v],[2,end],[-2,end]], '#efe4bc');
+    }
+    for (const intersection of intersections) {
+      const v = isoPosition(W/2,intersection.y).v;
+      isoPolygon([[-1300,v-51],[1300,v-51],[1300,v+51],[-1300,v+51]], '#c9c7b3');
+      isoPolygon([[-1300,v-43],[1300,v-43],[1300,v+43],[-1300,v+43]], '#505d60');
+      for (let u=-650;u<1050;u+=72) isoPolygon([[u,v-2],[u+30,v-2],[u+30,v+2],[u,v+2]], '#eee3bb');
+    }
+    const actors = [];
+    for (const target of targets) {
+      const pos = isoPosition(target.x,target.y);
+      actors.push({ depth: isoGround(target.side*325,pos.v).y, draw: () => drawIsoHouse(target.home,pos.v) });
+      actors.push({ depth: isoGround(pos.u,pos.v).y, draw: () => {
+        const p = isoGround(pos.u,pos.v);
+        drawMailbox({...target,x:p.x,y:p.y},.65);
+      }});
+    }
+    for (const hazard of hazards) {
+      const pos = isoPosition(hazard.x,hazard.y), p = isoGround(pos.u,pos.v);
+      actors.push({depth:p.y,draw:()=>{
+        if (['parked','oncoming','overtaking','cross'].includes(hazard.type)) drawIsoCar(hazard,pos.u,pos.v);
+        else if (hazard.type==='dog') drawDog({...hazard,x:p.x,y:p.y},.6);
+        else if (hazard.type==='puddle') drawPuddle({...hazard,x:p.x,y:p.y},.65);
+        else if (hazard.type==='branch') drawBranch({...hazard,x:p.x,y:p.y},.85);
+        else drawCones({...hazard,x:p.x,y:p.y},.6);
+      }});
+    }
+    for (const bundle of bundles) {
+      const pos=isoPosition(bundle.x,bundle.y),p=isoGround(pos.u,pos.v);
+      actors.push({depth:p.y,draw:()=>{
+        isoBox(pos.u,pos.v,22,25,10,['#ddd7bb','#b6baa7','#fff1ca']);
+        ctx.fillStyle='#bd5736';ctx.fillRect(p.x-6,p.y-16,12,4);
+      }});
+    }
+    const rider=isoPosition(player.x,PLAYER_Y);
+    actors.push({depth:isoGround(rider.u,rider.v).y,draw:()=>drawIsoRider(rider.u,rider.v)});
+    actors.sort((a,b)=>a.depth-b.depth).forEach(actor=>actor.draw());
+    for (const paper of flyingPapers) {
+      const pos=isoPosition(paper.x,paper.y),p=isoGround(pos.u,pos.v);
+      drawFlyingPaper({...paper,x:p.x,y:p.y});
+    }
+    for (const particle of particles) {
+      const pos=isoPosition(particle.x,particle.y),p=isoGround(pos.u,pos.v);
+      ctx.globalAlpha=clamp(particle.life/particle.maxLife,0,1);ctx.fillStyle=particle.color;
+      ctx.fillRect(p.x,p.y,particle.size,particle.size);
+    }
+    ctx.globalAlpha=1;
+  }
+
   function render() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#78bdc3';
     ctx.fillRect(0, 0, W, H);
     ctx.save();
-    if (state.shake > 0) ctx.translate(randomRange(-state.shake, state.shake), randomRange(-state.shake, state.shake));
+    if (state.shake > 0) ctx.translate(visualRange(-state.shake, state.shake), visualRange(-state.shake, state.shake));
     ctx.save();
-    if (state.street === 2) {
-      ctx.translate(105, -60);
-      ctx.transform(1, .11, -.18, 1.12, 0, 0);
-    }
+    if (state.street === 2) drawIsometricStreet();
+    else {
     drawBackground();
     intersections.slice().sort((a, b) => a.y - b.y).forEach(drawIntersection);
     scenery.slice().sort((a, b) => a.y - b.y).forEach(drawGarden);
@@ -1444,12 +1723,12 @@
     drawActors();
     flyingPapers.forEach(drawFlyingPaper);
     drawPlayer();
-    drawDeliveryCue();
     drawParticles();
+    }
     ctx.restore();
-    drawTurnSequence();
     drawMessage();
     drawEndOverlay();
+    drawTurnSequence();
     ctx.restore();
   }
 
@@ -1637,6 +1916,7 @@
   });
 
   seedScenery();
+  seedRoadMarks();
   updateHud();
   render();
   animationFrame = requestAnimationFrame(frame);

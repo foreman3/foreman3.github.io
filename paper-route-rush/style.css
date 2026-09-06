@@ -92,6 +92,8 @@ button { font: inherit; }
 #customer-card { background: #d9ead5; }
 #customer-card.at-risk { background: #ffb8a0; }
 #customer-status { position: absolute; bottom: 10px; left: 12px; padding: 5px 9px; border-radius: 4px; background: #172a32dd; color: #fff8e7; font: 800 11px/1.2 Consolas, monospace; pointer-events: none; }
+#traffic-warning { position: absolute; z-index: 6; right: 12px; bottom: 40px; padding: 6px 9px; border: 2px solid var(--ink); border-radius: 5px; background: var(--yellow); color: var(--ink); font: 900 12px/1.2 Consolas, monospace; pointer-events: none; }
+#traffic-warning[hidden] { display: none; }
 
 #route-meter {
   position: absolute;
@@ -284,6 +286,7 @@ body.touch-device #hud .hud-card:first-child { display: none; }
 body.touch-device .hud-card { min-width: 0; flex: 1; padding: 4px 3px; border-width: 1px; box-shadow: 2px 2px 0 rgba(23, 42, 50, .65); }
 body.touch-device .hud-card.wide { min-width: 0; }
 body.touch-device #customer-status { font-size: 8px; bottom: 4px; left: 4px; }
+body.touch-device #traffic-warning { right: 4px; bottom: 27px; padding: 4px 5px; font-size: 9px; border-width: 1px; }
 body.touch-device .hud-label { font-size: .45rem; }
 body.touch-device #customer-card .hud-label,
 body.touch-device .hud-card.wide .hud-label { font-size: 0; }
@@ -307,7 +310,6 @@ body.touch-device #attempt-action { bottom: 66px; min-width: 166px; min-height: 
   .instruction-grid { margin: 9px 0; gap: 6px; }
   .instruction-grid > div { min-height: 43px; padding: 5px; }
   .key { min-height: 23px; min-width: 25px; }
-  .tip { display: none; }
   #instruction-close { min-height: 40px; }
 }
 

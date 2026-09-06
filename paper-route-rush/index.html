@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="../flyout.css">
   <link rel="stylesheet" href="style.css">
   <script src="../flyout.js" defer></script>
-  <script src="../mobile-fullscreen.js" defer></script>
 </head>
 <body>
   <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
@@ -36,6 +35,7 @@
     <div id="route-meter" aria-hidden="true"><span id="route-fill"></span></div>
     <div id="customer-status">DELIVER TO 7 · BUILD YOUR ROUTE</div>
     <div id="sound-status" aria-live="polite">SOUND ON · M</div>
+    <div id="traffic-warning" role="status" hidden>↑ CAR PASSING ON RIGHT</div>
     <button id="attempt-action" type="button" hidden>Retry level</button>
   </main>
 
@@ -61,14 +61,16 @@
       <p class="kicker">Morning edition</p>
       <h1 id="instruction-title">Paper Route Rush</h1>
       <p>Ride a street of <strong>24 houses, starting with 10 subscribers</strong>. Green <strong>DELIVER</strong> mailboxes need a paper; gray <strong>PASS</strong> houses don't subscribe. Papers thrown there are wasted. Miss a subscriber and they cancel. <strong>Deliver to at least 7 subscribers on every street.</strong></p>
-      <p>Steer toward the correct curb and throw as the mailbox approaches. Dodge parked cars and hazards. Oncoming cars keep left; from level 2, traffic crosses intersections and passes on your right. Moving cars cause 4 damage, dogs 2, and stationary hazards 1.</p>
+      <p>Steer toward the correct curb and throw as the mailbox approaches. Dodge parked cars and hazards. From level 2, watch for fallen branches, cross traffic, and cars passing on your right. Oncoming cars keep left. Moving cars cause 4 damage, dogs 2, and stationary hazards 1.</p>
+      <p><strong>Dogs charge from the roadside.</strong> Hit one with a newspaper to send it running away, or cross to the other half of the road. Dogs stop at the center line.</p>
       <div class="instruction-grid">
         <div><span class="key">← →</span><span class="key">A D</span><b>Steer</b></div>
         <div><span class="key wide-key">SPACE</span><span class="key">F</span><b>Throw</b></div>
         <div><span class="key">R</span><b>Restart / retry</b></div>
         <div><span class="key">M</span><b>Sound on/off</b></div>
       </div>
-      <p><strong>Finish a street: +1 subscriber. Perfect street: +2.</strong> Perfect means every subscriber served with no crashes. From level 3, turn onto a second angled street and pass both.</p>
+      <p><strong>Touch controls:</strong> drag the joystick to steer and tap THROW to deliver.</p>
+      <p><strong>Finish a street: +1 subscriber. Perfect street: +2.</strong> Perfect means every subscriber served with no crashes. From level 3, turn onto a second isometric street and pass both.</p>
       <p class="tip"><b>Three strikes end the game.</b> Missing the 7-delivery target or losing all health adds a strike and retries the whole level. Health starts at 3 and rises by 1 each level; it resets for every level and retry. Paper bundles refill your bag.</p>
       <button id="instruction-close" type="button">Start the route</button>
     </div>
