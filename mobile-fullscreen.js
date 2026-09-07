@@ -17,6 +17,7 @@
     controlPreference = value === 'buttons' ? 'buttons' : 'joystick';
     if (persist) { try { localStorage.setItem(controlPreferenceKey, controlPreference); } catch (_) {} }
     controlBindings.forEach(apply => apply());
+    syncOptions();
   };
   window.addEventListener('storage', event => {
     if (event.key === controlPreferenceKey || event.key === null) setControlPreference(event.newValue, false);
@@ -94,20 +95,38 @@
       -webkit-user-select: none;
       user-select: none;
     }
-    .vibecade-control-toggle, .vibecade-direction-pad { display: none !important; }
-    body.touch-device .virtual-joystick > .vibecade-control-toggle {
-      display: block !important;
-      position: absolute !important;
-      top: -52px !important; left: 0 !important;
-      width: 126px !important; height: 42px !important;
-      margin: 0 !important; padding: 4px !important;
-      border: 1px solid #91bacb !important; border-radius: 12px !important;
-      background: #13293d !important; color: #f4faff !important;
-      font: 700 12px/1.2 system-ui, sans-serif !important;
-      text-transform: none !important; letter-spacing: 0 !important;
-      pointer-events: auto !important; touch-action: manipulation !important;
-      cursor: pointer;
+    .vibecade-direction-pad { display: none !important; }
+    .vibecade-mobile-options { display: none !important; }
+    body.touch-device .vibecade-mobile-options:not([hidden]) {
+      display: grid !important; position: fixed; z-index: 39;
+      top: max(8px, env(safe-area-inset-top));
+      right: auto; left: calc(100vw - max(8px, env(safe-area-inset-right)) - 92px);
+      width: 42px; height: 42px; padding: 0; place-items: center;
+      border: 1px solid rgba(255,255,255,.3); border-radius: 50%;
+      background: rgba(8,18,32,.8); color: #fff; cursor: pointer;
     }
+    .vibecade-mobile-options svg { width: 23px; height: 23px; pointer-events: none; }
+    #vibecade-options {
+      position: fixed; inset: auto; top: calc(max(8px, env(safe-area-inset-top)) + 50px);
+      right: auto; left: max(12px, calc(100vw - max(8px, env(safe-area-inset-right)) - 310px)); margin: 0;
+      width: min(310px, calc(100vw - 24px)); box-sizing: border-box;
+      max-height: calc(100dvh - 76px); overflow-y: auto;
+      padding: 18px; border: 1px solid #91bacb; border-radius: 16px;
+      background: #13293d; color: #f4faff; box-shadow: 0 12px 32px #0007;
+      font: 14px/1.4 system-ui, sans-serif; text-align: left;
+    }
+    #vibecade-options header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    #vibecade-options h2 { margin: 0; color: inherit; font: 700 20px/1.2 system-ui, sans-serif; letter-spacing: normal; }
+    #vibecade-options button {
+      min-height: 42px; margin: 0; padding: 8px 12px; border: 1px solid #91bacb;
+      border-radius: 10px; background: #254b63; color: #fff; cursor: pointer;
+      font: 700 14px/1.2 system-ui, sans-serif; letter-spacing: normal; text-transform: none;
+    }
+    #vibecade-options .vibecade-options-close { width: 42px; padding: 0; font-size: 24px; }
+    #vibecade-options .vibecade-option-row { display: flex; flex-direction: column; gap: 10px; }
+    #vibecade-options p { margin: 10px 0 0; font: 12px/1.4 system-ui, sans-serif; color: #c0d6e2; }
+    body.touch-device:has(#instruction-modal.is-visible) .vibecade-mobile-options,
+    body.touch-device:has(#tutorialOverlay:not(.hidden)) .vibecade-mobile-options { visibility: hidden !important; }
     body.touch-device .virtual-joystick[data-control-style="buttons"] {
       background: none !important; border-color: transparent !important;
       box-shadow: none !important; backdrop-filter: none !important;
@@ -294,7 +313,7 @@
     .vibecade-mobile-restart {
       position: fixed;
       top: max(8px, env(safe-area-inset-top));
-      right: max(8px, env(safe-area-inset-right));
+      right: auto; left: calc(100vw - max(8px, env(safe-area-inset-right)) - 42px);
       z-index: 39;
       display: none;
       width: 42px;
@@ -436,6 +455,38 @@
   restartButton.textContent = '↻';
   document.body.appendChild(restartButton);
 
+  const optionsButton = document.createElement('button');
+  optionsButton.type = 'button'; optionsButton.className = 'vibecade-mobile-options';
+  optionsButton.setAttribute('aria-label', 'Options');
+  optionsButton.setAttribute('aria-haspopup', 'dialog');
+  optionsButton.setAttribute('aria-controls', 'vibecade-options');
+  optionsButton.setAttribute('aria-expanded', 'false');
+  optionsButton.hidden = true;
+  optionsButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 3 1-2h4l1 2 2 1 2-.2 2 3-1 2v4l1 2-2 3-2-.2-2 1-1 2h-4l-1-2-2-1-2 .2-2-3 1-2V9L3 7l2-3 2 .2Z" transform="translate(1 1) scale(.9)"/><circle cx="12" cy="11" r="3.3"/></svg>';
+  const optionsPanel = document.createElement('div');
+  optionsPanel.id = 'vibecade-options'; optionsPanel.popover = 'auto';
+  optionsPanel.setAttribute('role', 'dialog'); optionsPanel.setAttribute('aria-labelledby', 'vibecade-options-title');
+  optionsPanel.innerHTML = '<header><h2 id="vibecade-options-title">Options</h2><button class="vibecade-options-close" type="button" aria-label="Close options">×</button></header><div class="vibecade-options-list"><div class="vibecade-option-row"><strong>Movement controls</strong><button class="vibecade-control-toggle" type="button"></button><p>Saved for all games on this browser.</p></div></div>';
+  const controlToggle = optionsPanel.querySelector('.vibecade-control-toggle');
+  function syncOptions() {
+    optionsButton.hidden = controlBindings.size === 0;
+    controlToggle.textContent = controlPreference === 'buttons' ? 'Buttons · switch to joystick' : 'Joystick · switch to buttons';
+    controlToggle.setAttribute('aria-label', controlPreference === 'buttons' ? 'Use joystick in all games' : 'Use buttons in all games');
+  }
+  const closeOptions = () => { optionsPanel.hidePopover(); };
+  optionsButton.popoverTargetElement = optionsPanel;
+  optionsPanel.querySelector('.vibecade-options-close').addEventListener('click', closeOptions);
+  controlToggle.addEventListener('click', () => setControlPreference(controlPreference === 'buttons' ? 'joystick' : 'buttons'));
+  optionsPanel.addEventListener('beforetoggle', event => {
+    if (event.newState === 'open') window.dispatchEvent(new Event('vibecade:reset-input'));
+    optionsButton.setAttribute('aria-expanded', String(event.newState === 'open'));
+  });
+  optionsPanel.addEventListener('keydown', event => { event.stopPropagation(); });
+  optionsPanel.addEventListener('keyup', event => { event.stopPropagation(); });
+  window.addEventListener('resize', closeOptions);
+  restartButton.addEventListener('click', closeOptions);
+  document.body.append(optionsButton, optionsPanel);
+
   window.VibeCadeJoystick = function bindVibeCadeJoystick(element, options = {}) {
     if (!element) return () => {};
 
@@ -563,9 +614,6 @@
     pad.dataset.axis = mode;
     pad.setAttribute('role', 'group');
     pad.setAttribute('aria-label', mode === 'horizontal' ? 'Left and right controls' : 'Directional controls');
-    const toggle = document.createElement('button');
-    toggle.type = 'button'; toggle.className = 'vibecade-control-toggle';
-    toggle.title = 'Control preference is saved for all games on this browser';
     const heldPointers = new Map();
     const heldKeys = new Set();
     const directions = mode === 'horizontal' ? ['left', 'right'] : ['up', 'left', 'right', 'down'];
@@ -638,16 +686,12 @@
       element.dataset.controlStyle = controlPreference;
       pad.inert = controlPreference !== 'buttons';
       pad.setAttribute('aria-hidden', String(controlPreference !== 'buttons'));
-      toggle.textContent = controlPreference === 'buttons' ? 'Use joystick' : 'Use buttons';
-      toggle.setAttribute('aria-label', toggle.textContent + ' in all games');
+
     };
-    toggle.addEventListener('pointerdown', event => event.stopPropagation());
-    toggle.addEventListener('click', event => {
-      event.stopPropagation(); setControlPreference(controlPreference === 'buttons' ? 'joystick' : 'buttons');
-    });
-    element.append(pad, toggle);
+    element.append(pad);
     controlBindings.add(applyPreference);
     applyPreference();
+    syncOptions();
     const onVisibility = () => { if (document.hidden) releaseInput(); };
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('blur', releaseInput);
@@ -667,7 +711,9 @@
       window.removeEventListener('vibecade:reset-input', releaseInput);
       controlBindings.delete(applyPreference);
       document.removeEventListener('visibilitychange', onVisibility);
-      releaseInput(); pad.remove(); toggle.remove();
+      releaseInput(); pad.remove();
+      syncOptions();
+      if (!controlBindings.size) closeOptions();
       delete element.dataset.controlStyle;
       centerKnob();
     };
