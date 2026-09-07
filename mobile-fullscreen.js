@@ -9,6 +9,18 @@
   const coarsePointer = window.matchMedia('(pointer: coarse)');
   let mobileSession = narrowViewport.matches || coarsePointer.matches;
   let touchLayoutEnabled = mobileSession;
+  const controlPreferenceKey = 'vibecade-mobile-controls';
+  const controlBindings = new Set();
+  let controlPreference = 'joystick';
+  try { if (localStorage.getItem(controlPreferenceKey) === 'buttons') controlPreference = 'buttons'; } catch (_) {}
+  const setControlPreference = (value, persist = true) => {
+    controlPreference = value === 'buttons' ? 'buttons' : 'joystick';
+    if (persist) { try { localStorage.setItem(controlPreferenceKey, controlPreference); } catch (_) {} }
+    controlBindings.forEach(apply => apply());
+  };
+  window.addEventListener('storage', event => {
+    if (event.key === controlPreferenceKey || event.key === null) setControlPreference(event.newValue, false);
+  });
   const suppressTouchCallout = (event) => {
     if (touchLayoutEnabled) event.preventDefault();
   };
@@ -82,6 +94,46 @@
       -webkit-user-select: none;
       user-select: none;
     }
+    .vibecade-control-toggle, .vibecade-direction-pad { display: none !important; }
+    body.touch-device .virtual-joystick > .vibecade-control-toggle {
+      display: block !important;
+      position: absolute !important;
+      top: -52px !important; left: 0 !important;
+      width: 126px !important; height: 42px !important;
+      margin: 0 !important; padding: 4px !important;
+      border: 1px solid #91bacb !important; border-radius: 12px !important;
+      background: #13293d !important; color: #f4faff !important;
+      font: 700 12px/1.2 system-ui, sans-serif !important;
+      text-transform: none !important; letter-spacing: 0 !important;
+      pointer-events: auto !important; touch-action: manipulation !important;
+      cursor: pointer;
+    }
+    body.touch-device .virtual-joystick[data-control-style="buttons"] {
+      background: none !important; border-color: transparent !important;
+      box-shadow: none !important; backdrop-filter: none !important;
+    }
+    body.touch-device .virtual-joystick[data-control-style="buttons"] > :is(.joystick-knob, .joystick-mark, .joystick-label) { display: none !important; }
+    body.touch-device .virtual-joystick[data-control-style="buttons"] > .vibecade-direction-pad {
+      display: block !important; position: absolute !important; inset: 0 !important;
+      width: 126px !important; height: 126px !important; touch-action: none !important;
+    }
+    body.touch-device .vibecade-direction-pad > button {
+      position: absolute !important; display: grid !important; place-items: center !important;
+      width: 44px !important; height: 44px !important; min-width: 0 !important; min-height: 0 !important;
+      margin: 0 !important; padding: 0 !important; box-sizing: border-box !important;
+      border: 1px solid #9dc4d3 !important; border-radius: 10px !important;
+      background: #19394e !important; color: #f4faff !important;
+      font: 900 20px/1 system-ui, sans-serif !important;
+      box-shadow: 0 3px 0 #081723 !important;
+      pointer-events: auto !important; touch-action: none !important;
+    }
+    body.touch-device .vibecade-direction-pad > [data-direction="up"] { top: 0 !important; left: 41px !important; }
+    body.touch-device .vibecade-direction-pad > [data-direction="down"] { bottom: 0 !important; left: 41px !important; }
+    body.touch-device .vibecade-direction-pad > [data-direction="left"] { top: 41px !important; left: 0 !important; }
+    body.touch-device .vibecade-direction-pad > [data-direction="right"] { top: 41px !important; right: 0 !important; }
+    body.touch-device .vibecade-direction-pad[data-axis="horizontal"] > button { width: 58px !important; height: 58px !important; top: 34px !important; }
+    body.touch-device .vibecade-direction-pad > button.is-held { background: #396d87 !important; box-shadow: inset 0 2px 4px #081723 !important; }
+    body.touch-device :is(.vibecade-control-toggle, .vibecade-direction-pad > button):focus-visible { outline: 3px solid #ffd470 !important; outline-offset: 2px !important; }
     body.touch-device .joystick-mark {
       position: absolute !important;
       color: rgba(220, 248, 255, .62) !important;
@@ -151,6 +203,9 @@
       pointer-events: none !important;
     }
     body.touch-device.vibecade-joystick-rails :is(#touch-controls, .touch-controls) > .virtual-joystick {
+      inset: auto !important;
+      margin: 0 !important;
+      transform: none !important;
       grid-column: 1 !important;
       grid-row: 1 !important;
       align-self: center !important;
@@ -341,7 +396,10 @@
   const syncJoystickLayout = () => {
     if (!document.body || !joystickElement || !playfieldCanvas || !playfieldElement) return;
 
-    const useRails = touchLayoutEnabled && window.innerWidth >= 600 && window.innerWidth > window.innerHeight;
+    // Decorative overflow can inflate innerWidth on mobile; fit to the visible viewport.
+    const viewportWidth = Math.min(window.innerWidth, root.clientWidth || window.innerWidth);
+    const viewportHeight = Math.min(window.innerHeight, root.clientHeight || window.innerHeight);
+    const useRails = touchLayoutEnabled && viewportWidth >= 600 && viewportWidth > viewportHeight;
     document.body.classList.toggle('vibecade-joystick-rails', useRails);
     playfieldElement.classList.toggle('vibecade-joystick-playfield', useRails);
 
@@ -354,9 +412,9 @@
       return;
     }
 
-    const railSize = Math.round(Math.max(136, Math.min(150, window.innerWidth * 0.2)));
-    const availableWidth = Math.max(240, window.innerWidth - railSize * 2);
-    const availableHeight = Math.max(180, window.innerHeight - 8);
+    const railSize = Math.round(Math.max(136, Math.min(150, viewportWidth * 0.2)));
+    const availableWidth = Math.max(240, viewportWidth - railSize * 2);
+    const availableHeight = Math.max(180, viewportHeight - 8);
     const intrinsicWidth = Number(playfieldCanvas.getAttribute('width')) || playfieldCanvas.width || 16;
     const intrinsicHeight = Number(playfieldCanvas.getAttribute('height')) || playfieldCanvas.height || 9;
     const scale = Math.min(availableWidth / intrinsicWidth, availableHeight / intrinsicHeight);
@@ -385,6 +443,7 @@
     const mode = options.mode === 'cardinal' || options.mode === 'horizontal'
       ? options.mode
       : 'analog';
+    element.dataset.axis = mode;
     const precision = options.profile === 'precision' && mode !== 'cardinal';
     const requestedDeadZone = Number.isFinite(options.deadZone) ? options.deadZone : 7 / 63;
     const requestedMinimumDeadZone = Number.isFinite(options.minimumDeadZone)
@@ -474,6 +533,7 @@
     };
 
     const start = (event) => {
+      if (controlPreference === 'buttons' || event.target.closest('.vibecade-control-toggle, .vibecade-direction-pad')) return;
       if (pointerId !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
       event.preventDefault();
       pointerId = event.pointerId;
@@ -498,7 +558,98 @@
     element.addEventListener('pointercancel', finish);
     element.addEventListener('lostpointercapture', finish);
     element.addEventListener('contextmenu', suppressTouchCallout);
-    const releaseInput = () => finish({});
+    const pad = document.createElement('div');
+    pad.className = 'vibecade-direction-pad';
+    pad.dataset.axis = mode;
+    pad.setAttribute('role', 'group');
+    pad.setAttribute('aria-label', mode === 'horizontal' ? 'Left and right controls' : 'Directional controls');
+    const toggle = document.createElement('button');
+    toggle.type = 'button'; toggle.className = 'vibecade-control-toggle';
+    toggle.title = 'Control preference is saved for all games on this browser';
+    const heldPointers = new Map();
+    const heldKeys = new Set();
+    const directions = mode === 'horizontal' ? ['left', 'right'] : ['up', 'left', 'right', 'down'];
+    const vectors = {left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1]};
+    const buttons = new Map();
+    const emitButtons = () => {
+      const held = [...heldPointers.values(), ...heldKeys].filter(Boolean);
+      buttons.forEach((button, direction) => {
+        button.classList.toggle('is-held', held.includes(direction));
+        button.setAttribute('aria-pressed', String(held.includes(direction)));
+      });
+      if (mode === 'cardinal') { const v = vectors[held[held.length - 1]] || [0, 0]; emit(...v); return; }
+      let x = Number(held.includes('right')) - Number(held.includes('left'));
+      let y = Number(held.includes('down')) - Number(held.includes('up'));
+      const length = Math.max(1, Math.hypot(x, y));
+      emit(x / length, y / length);
+    };
+    const releaseButtons = () => {
+      const captures = [...heldPointers.keys()];
+      heldPointers.clear(); heldKeys.clear();
+      captures.forEach(id => { try { if (pad.hasPointerCapture(id)) pad.releasePointerCapture(id); } catch (_) {} });
+      emitButtons();
+    };
+    const releaseInput = () => { finish({}); releaseButtons(); };
+    directions.forEach(direction => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.dataset.direction = direction;
+      button.textContent = {left: '◀', right: '▶', up: '▲', down: '▼'}[direction];
+      button.setAttribute('aria-label', direction[0].toUpperCase() + direction.slice(1));
+      button.draggable = false;
+      button.addEventListener('keydown', event => {
+        if (controlPreference !== 'buttons' || !['Space', 'Enter'].includes(event.code)) return;
+        event.preventDefault(); event.stopPropagation(); heldKeys.add(direction); emitButtons();
+      });
+      button.addEventListener('keyup', event => {
+        if (!['Space', 'Enter'].includes(event.code)) return;
+        event.preventDefault(); event.stopPropagation(); heldKeys.delete(direction); emitButtons();
+      });
+      button.addEventListener('blur', () => { heldKeys.delete(direction); emitButtons(); });
+      buttons.set(direction, button); pad.appendChild(button);
+    });
+    pad.addEventListener('pointerdown', event => {
+      if (controlPreference !== 'buttons' || !touchLayoutEnabled || (event.pointerType === 'mouse' && event.button !== 0)) return;
+      const button = event.target.closest('[data-direction]');
+      if (!button) return;
+      event.preventDefault(); event.stopPropagation();
+      heldPointers.set(event.pointerId, button.dataset.direction);
+      try { pad.setPointerCapture(event.pointerId); } catch (_) {}
+      emitButtons();
+    });
+    pad.addEventListener('pointermove', event => {
+      if (!heldPointers.has(event.pointerId)) return;
+      event.preventDefault(); event.stopPropagation();
+      const button = [...buttons.values()].find(button => {
+        const rect = button.getBoundingClientRect();
+        return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+      });
+      // Keep capture through the neutral space so a thumb can slide to another direction.
+      heldPointers.set(event.pointerId, button?.dataset.direction || ''); emitButtons();
+    });
+    const finishButton = event => {
+      if (!heldPointers.has(event.pointerId)) return;
+      event.preventDefault(); event.stopPropagation(); heldPointers.delete(event.pointerId);
+      try { if (pad.hasPointerCapture(event.pointerId)) pad.releasePointerCapture(event.pointerId); } catch (_) {}
+      emitButtons();
+    };
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) pad.addEventListener(type, finishButton);
+    const applyPreference = () => {
+      releaseInput();
+      element.dataset.controlStyle = controlPreference;
+      pad.inert = controlPreference !== 'buttons';
+      pad.setAttribute('aria-hidden', String(controlPreference !== 'buttons'));
+      toggle.textContent = controlPreference === 'buttons' ? 'Use joystick' : 'Use buttons';
+      toggle.setAttribute('aria-label', toggle.textContent + ' in all games');
+    };
+    toggle.addEventListener('pointerdown', event => event.stopPropagation());
+    toggle.addEventListener('click', event => {
+      event.stopPropagation(); setControlPreference(controlPreference === 'buttons' ? 'joystick' : 'buttons');
+    });
+    element.append(pad, toggle);
+    controlBindings.add(applyPreference);
+    applyPreference();
+    const onVisibility = () => { if (document.hidden) releaseInput(); };
+    document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('blur', releaseInput);
     window.addEventListener('resize', releaseInput);
     window.addEventListener('vibecade:reset-input', releaseInput);
@@ -514,6 +665,10 @@
       window.removeEventListener('blur', releaseInput);
       window.removeEventListener('resize', releaseInput);
       window.removeEventListener('vibecade:reset-input', releaseInput);
+      controlBindings.delete(applyPreference);
+      document.removeEventListener('visibilitychange', onVisibility);
+      releaseInput(); pad.remove(); toggle.remove();
+      delete element.dataset.controlStyle;
       centerKnob();
     };
   };

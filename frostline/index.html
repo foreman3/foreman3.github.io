@@ -187,13 +187,14 @@
     <div class="modal-card">
       <div class="eyebrow">North Survey • Field Card 01</div>
       <h1 id="instruction-title">Frostline</h1>
-      <p class="lead">Recover every red survey pennant before the whiteout. Slide ice blocks into prowling frostlings to stun them and open hidden supply markers.</p>
+      <p class="lead">Map all ten routes: recover every red survey pennant before each whiteout. Slide ice blocks into prowling frostlings to stun them and open hidden supply markers.</p>
       <div class="instruction-grid">
         <div class="tip"><strong>Move</strong>Arrow keys or WASD. On touch, hold and slide the field stick.</div>
         <div class="tip"><strong>Push</strong>Space or the Push Ice button. A trapped block crumbles instead.</div>
         <div class="tip"><strong>Recover</strong>Walk over every pennant. Some wait beneath striped ice.</div>
         <div class="tip"><strong>Field kit</strong>R restarts. M toggles sound. Four warmth hearts absorb mistakes.</div>
       </div>
+      <p class="lead">Level 4: cracked ice warns with a gold ! before breaking. Step off until it refreezes. Level 7: horned frostlings aim, then charge straight. Dodge sideways or stun them.</p>
       <button id="instruction-close" class="start-button" type="button">Begin expedition</button>
     </div>
   </section>
@@ -207,13 +208,16 @@
     </div>
   </section>
 
-  <script src="../mobile-fullscreen.js?v=13"></script>
+  <script src="../mobile-fullscreen.js?v=14"></script>
   <script>
   (() => {
     'use strict';
 
     const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
+    let ctx = canvas.getContext('2d');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    const mobileProfile = matchMedia('(max-width: 900px), (pointer: coarse)');
+    let terrainCache = null, lastDraw = 0, needsDraw = true;
     const modal = document.getElementById('instruction-modal');
     const closeInstructions = document.getElementById('instruction-close');
     const helpButton = document.getElementById('help-button');
@@ -223,9 +227,9 @@
     const statusAction = document.getElementById('status-action');
     const soundButton = document.querySelector('[data-sound]');
     const pushButton = document.querySelector('[data-push]');
-    const instructionKey = 'vibecade-instructions-frostline-v1';
+    const instructionKey = 'vibecade-instructions-frostline-v2';
     const params = new URLSearchParams(location.search);
-    const requestedLevel = Math.max(1, Math.min(5, Number(params.get('level')) || 1));
+    const requestedLevel = Math.max(1, Math.min(10, Math.floor(Number(params.get('level'))) || 1));
     const W = 960, H = 600, COLS = 15, ROWS = 9, CELL = 52, BOARD_X = 90, BOARD_Y = 103;
     const DIRS = {
       left: { x: -1, y: 0 }, right: { x: 1, y: 0 }, up: { x: 0, y: -1 }, down: { x: 0, y: 1 }
@@ -235,13 +239,18 @@
       { pennants: 5, covered: 1, enemies: 2, speed: 1.48, bias: .39, time: 76, label: 'Blue Ravine' },
       { pennants: 6, covered: 2, enemies: 3, speed: 1.62, bias: .46, time: 71, label: 'Crackle Pass' },
       { pennants: 7, covered: 2, enemies: 4, speed: 1.78, bias: .54, time: 68, label: 'Long Whiteout' },
-      { pennants: 8, covered: 3, enemies: 5, speed: 2.12, bias: .69, time: 58, label: 'Polar Crown' }
+      { pennants: 8, covered: 3, enemies: 5, speed: 2.12, bias: .69, time: 58, label: 'Polar Crown' },
+      { pennants: 9, covered: 3, enemies: 6, speed: 2.28, bias: .72, time: 56, label: 'Rift Country' },
+      { pennants: 10, covered: 4, enemies: 6, speed: 2.44, bias: .75, time: 54, label: 'Horn Ridge' },
+      { pennants: 11, covered: 4, enemies: 7, speed: 2.60, bias: .78, time: 51, label: 'Broken Shelf' },
+      { pennants: 12, covered: 5, enemies: 7, speed: 2.76, bias: .81, time: 48, label: 'Storm Divide' },
+      { pennants: 13, covered: 5, enemies: 8, speed: 2.92, bias: .84, time: 45, label: 'Last Summit' }
     ];
     const keys = { left: false, right: false, up: false, down: false };
     const state = {
       level: requestedLevel, score: 0, hearts: 4, time: 0, phase: 'instructions', paused: true,
       muted: false, started: false, collected: 0, combo: 0, comboTime: 0, shake: 0,
-      banner: '', bannerTime: 0, player: null, blocks: [], enemies: [], pennants: [], particles: [], flakes: [], last: performance.now()
+      banner: '', bannerTime: 0, player: null, blocks: [], enemies: [], pennants: [], particles: [], flakes: [], cracks: [], elapsed: 0, last: performance.now()
     };
     let audioContext = null;
     let resumeAfterHelp = false;
@@ -311,6 +320,9 @@
       rng = seeded(7481 + level * 997);
       const config = LEVELS[level - 1];
       state.level = level;
+      state.elapsed = 0;
+      state.cracks = [];
+      needsDraw = true;
       state.time = config.time;
       state.collected = 0;
       state.combo = 0;
@@ -355,10 +367,16 @@
         state.pennants.push({ x: cell.x, y: cell.y, revealed: true, collected: false, flutter: rng() * 6 });
       }
 
-      const starts = [{x:1,y:1},{x:13,y:1},{x:1,y:7},{x:13,y:7},{x:7,y:0}];
+      if (level >= 4) {
+        openCells.filter(cell => Math.abs(cell.x-spawn.x)+Math.abs(cell.y-spawn.y)>3)
+          .slice(0, 4 + level).forEach((cell,i) => state.cracks.push({...cell, offset:i*.19}));
+        state.banner = level === 4 ? 'NEW: CRACKED ICE · LEAVE BEFORE IT BREAKS' : level === 7 ? 'NEW: HORNED FROSTLINGS CHARGE STRAIGHT' : 'WATCH THE CRACKS · KEEP MOVING';
+        state.bannerTime = 4;
+      }
+      const starts = [{x:1,y:1},{x:13,y:1},{x:1,y:7},{x:13,y:7},{x:7,y:0},{x:0,y:4},{x:14,y:4},{x:7,y:8}];
       starts.slice(0, config.enemies).forEach((start, index) => {
         const enemy = makeMover(start.x, start.y, 1 / config.speed);
-        Object.assign(enemy, { id: index, facing: index % 2 ? 'left' : 'right', stunned: 1.2 + index * .16, think: rng() * .2, scout: level >= 3 && index === config.enemies - 1 });
+        Object.assign(enemy, { id: index, facing: index % 2 ? 'left' : 'right', stunned: 1.2 + index * .16, think: rng() * .2, charger: level >= 7 && index < (level >= 9 ? 2 : 1), charge: 0, windup: 0, chargeCooldown: 2, chargeDir: null, scout: level >= 3 && index === config.enemies - 1 });
         state.enemies.push(enemy);
       });
       announce(`${config.label}. ${config.pennants} pennants. ${config.time} seconds.`);
@@ -370,6 +388,7 @@
       state.hearts = 4;
       hideStatus();
       buildLevel(requestedLevel);
+      if(modal.classList.contains('is-visible'))state.paused=true;
       canvas.focus({ preventScroll: true });
       window.dispatchEvent(new Event('vibecade:reset-input'));
     }
@@ -389,12 +408,12 @@
       if (state.phase !== 'active') return;
       state.score += Math.ceil(state.time) * 12 + state.hearts * 150;
       tone(740, .17, 'triangle', .06);
-      if (state.level >= 5) {
+      if (state.level >= LEVELS.length) {
         state.phase = 'victory';
-        showStatus('Frostline mapped', `All five routes are secure. Final field score: ${state.score.toLocaleString()}.`, 'Start a new survey');
+        showStatus('Frostline mapped', `All ten routes are secure. Final field score: ${state.score.toLocaleString()}.`, 'Start a new survey');
       } else {
         state.phase = 'levelComplete';
-        showStatus('Route secured', `${LEVELS[state.level - 1].label} is marked. You carry ${state.hearts} warmth ${state.hearts === 1 ? 'heart' : 'hearts'} onward.`, 'Next expedition');
+        showStatus('Route secured', `${LEVELS[state.level - 1].label} is marked. ${state.level === 3 ? 'Next: cracked tiles warn for 1.4 seconds before breaking. Move off them until they refreeze. ' : state.level === 6 ? 'Next: horned frostlings aim along a dashed line, then charge straight. Step sideways or stun them with ice. ' : ''}You carry ${state.hearts} warmth ${state.hearts === 1 ? 'heart' : 'hearts'} onward.`, 'Next expedition');
       }
     }
 
@@ -479,7 +498,7 @@
       const p = state.player;
       state.enemies.forEach(enemy => {
         if ((p.gx === enemy.gx && Math.abs(p.gy-enemy.gy) <= 3) || (p.gy === enemy.gy && Math.abs(p.gx-enemy.gx) <= 3)) {
-          enemy.stunned = Math.max(enemy.stunned, 1.45); hits++;
+          enemy.stunned = Math.max(enemy.stunned, 1.45); enemy.charge=0; enemy.windup=0; enemy.chargeCooldown=2; hits++;
         }
       });
       if (hits) state.score += hits * 40;
@@ -499,6 +518,7 @@
           if (Math.hypot(block.drawX - enemy.x, block.drawY - enemy.y) < .68) {
             block.hit.add(enemy.id);
             enemy.stunned = 3.25;
+            enemy.charge=0; enemy.windup=0; enemy.chargeCooldown=2;
             state.score += 180;
             state.combo = Math.max(1, state.combo + 1);
             state.comboTime = 4;
@@ -524,7 +544,28 @@
       const config = LEVELS[state.level - 1];
       state.enemies.forEach(enemy => {
         if (enemy.stunned > 0) { enemy.stunned = Math.max(0, enemy.stunned - dt); return; }
+        enemy.chargeCooldown = Math.max(0, enemy.chargeCooldown-dt);
         if (enemy.moveT < 1) { updateMover(enemy, dt); return; }
+        if (enemy.windup > 0) {
+          enemy.windup = Math.max(0, enemy.windup-dt);
+          if (!enemy.windup) enemy.charge = 4;
+          return;
+        }
+        if (enemy.charge > 0) {
+          enemy.charge--;
+          if (!beginMove(enemy, enemy.chargeDir.x, enemy.chargeDir.y, .16)) enemy.charge = 0;
+          if (!enemy.charge) enemy.chargeCooldown = 3.5;
+          return;
+        }
+        if (enemy.charger && !enemy.chargeCooldown) {
+          const dx=state.player.gx-enemy.gx, dy=state.player.gy-enemy.gy;
+          if ((dx===0 || dy===0) && Math.abs(dx)+Math.abs(dy)>1 && Math.abs(dx)+Math.abs(dy)<=6) {
+            const dir={x:Math.sign(dx),y:Math.sign(dy)};
+            let clear=true;
+            for(let step=1;step<=Math.abs(dx)+Math.abs(dy);step++) if(!cellOpen(enemy.gx+dir.x*step,enemy.gy+dir.y*step)) clear=false;
+            if(clear){enemy.chargeDir=dir;enemy.windup=.9;return;}
+          }
+        }
         const options = enemyDirections(enemy);
         if (!options.length) return;
         let choice;
@@ -548,6 +589,12 @@
       if (player.invulnerable > 0) return;
       const enemy = state.enemies.find(item => item.stunned <= 0 && Math.hypot(item.x-player.x, item.y-player.y) < .56);
       if (!enemy) return;
+      hurtPlayer();
+    }
+
+    function hurtPlayer() {
+      const player = state.player;
+      if (player.invulnerable > 0 || state.phase !== 'active') return;
       state.hearts--;
       state.score = Math.max(0, state.score - 80);
       state.shake = .35;
@@ -557,7 +604,7 @@
       tone(95, .35, 'sawtooth', .06);
       if (state.hearts <= 0) { gameOver('Your last hand-warmer went cold.'); return; }
       Object.assign(player, makeMover(7,7,.115), { facing:'up', invulnerable: 2.5, pushCooldown: .35 });
-      state.enemies.forEach(item => item.stunned = Math.max(item.stunned, 1.05));
+      state.enemies.forEach(item => { item.stunned = Math.max(item.stunned, 1.05); item.charge=0; item.windup=0; item.chargeCooldown=2; });
       announce(`${state.hearts} warmth hearts remain.`);
       updateDiagnostic(performance.now(),true);
     }
@@ -575,7 +622,7 @@
     }
 
     function burst(gx, gy, color, count) {
-      for (let i = 0; i < count && state.particles.length < 90; i++) {
+      for (let i = 0; i < count && state.particles.length < (mobileProfile.matches ? 40 : 90); i++) {
         const angle = rng() * Math.PI * 2, speed = 1.2 + rng() * 3.3;
         state.particles.push({ x:gx, y:gy, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, life:.45+rng()*.45, max:.9, color });
       }
@@ -589,6 +636,7 @@
 
     function update(dt) {
       if (state.phase !== 'active' || state.paused) return;
+      state.elapsed += dt;
       state.time -= dt;
       if (state.time <= 0) { timeout(); return; }
       state.comboTime = Math.max(0, state.comboTime - dt);
@@ -596,9 +644,11 @@
       if (!state.comboTime) state.combo = 0;
       state.shake = Math.max(0, state.shake - dt);
       movePlayer(dt);
+      if (state.phase !== 'active') return;
       updateBlocks(dt);
       moveEnemies(dt);
       checkEnemyCollision();
+      if (state.cracks.some(tile => crackPhase(tile) === 'open' && Math.hypot(state.player.x-tile.x,state.player.y-tile.y)<.43 && !blockAt(tile.x,tile.y))) hurtPlayer();
       updateParticles(dt);
     }
 
@@ -627,18 +677,49 @@
       ctx.fillStyle = state.time < 12 ? '#f08a6f' : '#e6ad42'; ctx.font = `900 ${touchHud?23:19}px Trebuchet MS`; ctx.fillText(`${Math.max(0,Math.ceil(state.time))}s`,scoreX,56);
       ctx.textAlign = 'left';
       if (state.combo > 1) { ctx.fillStyle='#b64d3b';ctx.font='800 12px Trebuchet MS';ctx.fillText(`TRAIL CHAIN ×${state.combo}`, BOARD_X,590); }
-      ctx.fillStyle='rgba(21,41,64,.16)'; roundRect(BOARD_X-8,BOARD_Y-8,COLS*CELL+16,ROWS*CELL+16,18).fill();
-      for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) {
-        ctx.fillStyle=(x+y)%2?'#eaf0e5':'#e3ece3';ctx.fillRect(BOARD_X+x*CELL,BOARD_Y+y*CELL,CELL,CELL);
-        const speck=(x*47+y*29)%31;ctx.fillStyle='rgba(43,77,91,.10)';ctx.fillRect(BOARD_X+x*CELL+8+speck%28,BOARD_Y+y*CELL+10+(speck*3)%28,2,2);
+      if (!terrainCache) {
+        terrainCache=document.createElement('canvas');terrainCache.width=W;terrainCache.height=H;
+        const screenContext=ctx;ctx=terrainCache.getContext('2d');
+        ctx.fillStyle='rgba(21,41,64,.16)'; roundRect(BOARD_X-8,BOARD_Y-8,COLS*CELL+16,ROWS*CELL+16,18).fill();
+        for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) {
+          ctx.fillStyle=(x+y)%2?'#eaf0e5':'#e3ece3';ctx.fillRect(BOARD_X+x*CELL,BOARD_Y+y*CELL,CELL,CELL);
+          const speck=(x*47+y*29)%31;ctx.fillStyle='rgba(43,77,91,.10)';ctx.fillRect(BOARD_X+x*CELL+8+speck%28,BOARD_Y+y*CELL+10+(speck*3)%28,2,2);
+        }
+        ctx.strokeStyle='rgba(37,76,91,.12)';ctx.lineWidth=1;
+        for(let x=0;x<=COLS;x++){ctx.beginPath();ctx.moveTo(BOARD_X+x*CELL,BOARD_Y);ctx.lineTo(BOARD_X+x*CELL,BOARD_Y+ROWS*CELL);ctx.stroke();}
+        for(let y=0;y<=ROWS;y++){ctx.beginPath();ctx.moveTo(BOARD_X,BOARD_Y+y*CELL);ctx.lineTo(BOARD_X+COLS*CELL,BOARD_Y+y*CELL);ctx.stroke();}
+
+        // Static snow banks and survey ticks are rasterized just once.
+        ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=2;
+        for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+          const px=BOARD_X+x*CELL,py=BOARD_Y+y*CELL;
+          ctx.beginPath();ctx.moveTo(px+5,py+39);ctx.quadraticCurveTo(px+21,py+30,px+44,py+35);ctx.stroke();
+        }
+        ctx.fillStyle='#728f96';ctx.font='10px Trebuchet MS';
+        for(let y=0;y<ROWS;y++)ctx.fillText(String(y+1).padStart(2,'0'),BOARD_X-25,BOARD_Y+y*CELL+30);
+        ctx=screenContext;
       }
-      ctx.strokeStyle='rgba(37,76,91,.12)';ctx.lineWidth=1;
-      for(let x=0;x<=COLS;x++){ctx.beginPath();ctx.moveTo(BOARD_X+x*CELL,BOARD_Y);ctx.lineTo(BOARD_X+x*CELL,BOARD_Y+ROWS*CELL);ctx.stroke();}
-      for(let y=0;y<=ROWS;y++){ctx.beginPath();ctx.moveTo(BOARD_X,BOARD_Y+y*CELL);ctx.lineTo(BOARD_X+COLS*CELL,BOARD_Y+y*CELL);ctx.stroke();}
+      ctx.drawImage(terrainCache,0,0);
       state.flakes.forEach(flake => {
-        const drift=(now*.012*flake.speed+flake.offset)%W;
+        const drift=((reducedMotion.matches?0:now)*.012*flake.speed+flake.offset)%W;
         ctx.globalAlpha=.18;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(drift,flake.y,flake.r,0,Math.PI*2);ctx.fill();
       });ctx.globalAlpha=1;
+    }
+
+    function crackPhase(tile) {
+      const cycle=(state.elapsed+tile.offset)%7;
+      return cycle<3.8?'safe':cycle<5.2?'warning':'open';
+    }
+    function drawCracks() {
+      state.cracks.forEach(tile=>{
+        if(blockAt(tile.x,tile.y))return;
+        const p=gridToScreen(tile.x,tile.y),phase=crackPhase(tile);
+        ctx.fillStyle=phase==='open'?'#193d54':phase==='warning'?'#efd08c':'#c5dede';
+        roundRect(p.x-23,p.y-23,46,46,7).fill();
+        ctx.strokeStyle=phase==='warning'?'#8c492b':'#668e9c';ctx.lineWidth=phase==='safe'?1.5:3;
+        ctx.beginPath();ctx.moveTo(p.x-19,p.y-15);ctx.lineTo(p.x+1,p.y-6);ctx.lineTo(p.x-7,p.y+5);ctx.lineTo(p.x+16,p.y+19);ctx.moveTo(p.x-7,p.y+5);ctx.lineTo(p.x-20,p.y+13);ctx.stroke();
+        if(phase!=='safe'){ctx.fillStyle=phase==='open'?'#d9f2eb':'#713b26';ctx.font='900 23px Trebuchet MS';ctx.textAlign='center';ctx.fillText('!',p.x+12,p.y-4);ctx.textAlign='left';}
+      });
     }
 
     function drawPennant(item, now) {
@@ -657,6 +738,8 @@
       ctx.fillStyle='rgba(17,49,69,.18)';roundRect(-size/2+4,-size/2+6,size,size,9).fill();
       ctx.fillStyle=block.hiddenMark?'#8ccfd2':'#afdfe0';roundRect(-size/2,-size/2,size,size,9).fill();
       ctx.strokeStyle='#4d8993';ctx.lineWidth=2;roundRect(-size/2,-size/2,size,size,9).stroke();
+      ctx.fillStyle='rgba(255,255,255,.26)';ctx.beginPath();ctx.moveTo(-20,-19);ctx.lineTo(18,-19);ctx.lineTo(3,-5);ctx.lineTo(-20,8);ctx.fill();
+      ctx.fillStyle='rgba(35,102,120,.16)';ctx.fillRect(-17,15,34,6);
       ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-15,-13);ctx.lineTo(-3,-18);ctx.lineTo(12,-12);ctx.stroke();
       ctx.strokeStyle='rgba(52,102,112,.28)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-9,5);ctx.lineTo(-2,0);ctx.lineTo(4,9);ctx.lineTo(12,3);ctx.stroke();
       if(block.hiddenMark){ctx.fillStyle='#e76b51';ctx.fillRect(-size/2,-5,size,10);ctx.fillStyle='#f7f1df';for(let x=-18;x<20;x+=12)ctx.fillRect(x,-5,6,10);}
@@ -691,7 +774,15 @@
       ctx.fillStyle='#17314a';ctx.fillRect(-14,-9,28,7);ctx.fillStyle='#9fd9dc';ctx.fillRect(-10,-7,7,4);ctx.fillRect(3,-7,7,4);
       ctx.fillStyle='#17314a';ctx.beginPath();ctx.arc(0,4,3,0,Math.PI*2);ctx.fill();
       if(stunned){ctx.fillStyle='#fff';ctx.font='900 16px Georgia';ctx.fillText('✦',-5,-27);}
+      if(enemy.charger){
+        ctx.fillStyle='#f3d195';ctx.beginPath();ctx.moveTo(-16,-17);ctx.lineTo(-23,-32);ctx.lineTo(-8,-21);ctx.moveTo(10,-21);ctx.lineTo(24,-32);ctx.lineTo(18,-16);ctx.fill();
+      }
       ctx.restore();
+      if(enemy.windup>0 && !stunned){
+        ctx.strokeStyle='#af4f36';ctx.lineWidth=4;ctx.setLineDash([9,7]);ctx.beginPath();ctx.moveTo(p.x,p.y);
+        let reach=0;while(reach<4&&cellOpen(enemy.gx+enemy.chargeDir.x*(reach+1),enemy.gy+enemy.chargeDir.y*(reach+1)))reach++;
+        ctx.lineTo(p.x+enemy.chargeDir.x*CELL*reach,p.y+enemy.chargeDir.y*CELL*reach);ctx.stroke();ctx.setLineDash([]);
+      }
     }
 
     function drawParticles() {
@@ -699,6 +790,7 @@
     }
 
     function updateDiagnostic(now, force = false) {
+      if(force)needsDraw=true;
       const nextDiagnosticTick=Math.floor(now/250);
       if(!force&&nextDiagnosticTick===diagnosticTick)return;
       diagnosticTick=nextDiagnosticTick;
@@ -711,16 +803,18 @@
 
     function draw(now) {
       ctx.save();
-      if(state.shake>0&&!matchMedia('(prefers-reduced-motion: reduce)').matches)ctx.translate((Math.random()-.5)*7,(Math.random()-.5)*7);
-      drawBackground(now);
-      state.pennants.forEach(item=>drawPennant(item,now));
+      if(state.shake>0&&!reducedMotion.matches)ctx.translate((Math.random()-.5)*7,(Math.random()-.5)*7);
+      const visualTime=reducedMotion.matches?0:now;
+      drawBackground(visualTime);
+      drawCracks();
+      state.pennants.forEach(item=>drawPennant(item,visualTime));
       state.blocks.forEach(drawBlock);
-      state.enemies.forEach(enemy=>drawEnemy(enemy,now));
-      if(state.player)drawPlayer(now);
+      state.enemies.forEach(enemy=>drawEnemy(enemy,visualTime));
+      if(state.player)drawPlayer(visualTime);
       drawParticles();
       ctx.restore();
       if(state.bannerTime>0){
-        ctx.globalAlpha=Math.min(1,state.bannerTime*2);ctx.fillStyle='rgba(21,41,64,.88)';roundRect(338,76,284,24,12).fill();ctx.fillStyle='#f7f1df';ctx.textAlign='center';ctx.font='900 12px Trebuchet MS';ctx.fillText(state.banner,480,92);ctx.textAlign='left';ctx.globalAlpha=1;
+        ctx.globalAlpha=Math.min(1,state.bannerTime*2);ctx.fillStyle='rgba(21,41,64,.88)';roundRect(210,76,540,24,12).fill();ctx.fillStyle='#f7f1df';ctx.textAlign='center';ctx.font='900 12px Trebuchet MS';ctx.fillText(state.banner,480,92);ctx.textAlign='left';ctx.globalAlpha=1;
       }
       if(state.paused&&state.phase==='active'&&!modal.classList.contains('is-visible')){
         ctx.fillStyle='rgba(16,35,58,.7)';ctx.fillRect(0,0,W,H);ctx.fillStyle='#f7f1df';ctx.textAlign='center';ctx.font='900 48px Georgia';ctx.fillText('FIELD NOTES OPEN',W/2,H/2);ctx.textAlign='left';
@@ -729,7 +823,9 @@
     }
 
     function frame(now) {
-      const dt=Math.min(.05,(now-state.last)/1000||0);state.last=now;update(dt);draw(now);requestAnimationFrame(frame);
+      const dt=Math.min(.05,(now-state.last)/1000||0);state.last=now;update(dt);
+      if(needsDraw || (state.phase==='active'&&!state.paused && now-lastDraw>=(mobileProfile.matches?1000/30:0))){draw(now);lastDraw=now;needsDraw=false;}
+      requestAnimationFrame(frame);
     }
 
     function setKey(key,value) {
@@ -824,10 +920,12 @@
     buildLevel(requestedLevel);state.phase='instructions';state.paused=true;state.started=false;
     window.FrostlineTest={
       snapshot:()=>({level:state.level,phase:state.phase,score:state.score,hearts:state.hearts,time:Math.ceil(state.time),collected:state.collected,total:state.pennants.length}),
-      setLevel(level){state.started=true;hideStatus();buildLevel(Math.max(1,Math.min(5,level)));},
+      inspect:()=>JSON.parse(JSON.stringify({player:state.player,enemies:state.enemies,cracks:state.cracks.map(t=>({...t,phase:crackPhase(t)})),blocks:state.blocks,pennants:state.pennants,config:LEVELS[state.level-1]})),
+      setLevel(level){state.started=true;hideStatus();buildLevel(Math.max(1,Math.min(LEVELS.length,Math.floor(level)||1)));},
       clearLevel(){state.pennants.forEach(item=>{item.revealed=true;item.collected=true;});state.collected=state.pennants.length;finishLevel();},
       hit(){if(state.player){state.player.invulnerable=0;const e=state.enemies[0];if(e){e.x=state.player.x;e.y=state.player.y;e.stunned=0;checkEnemyCollision();}}}
     };
+    window.addEventListener('resize',()=>{needsDraw=true;});
     requestAnimationFrame(frame);
     if(sessionStorage.getItem(instructionKey)==='1'&&!params.has('instructions')){
       modal.classList.remove('is-visible');document.body.classList.remove('instructions-open');state.started=true;resetCampaign();
