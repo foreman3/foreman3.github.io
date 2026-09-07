@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Frostline | VibeCade</title>
+  <link rel="stylesheet" href="../flyout.css" />
+  <script src="../flyout.js" defer></script>
+  <style>
+    :root {
+      --ink: #152940;
+      --night: #10233a;
+      --paper: #f7f1df;
+      --ice: #9fd9dc;
+      --coral: #e76b51;
+      --gold: #e6ad42;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      margin: 0;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(160, 221, 220, .2), transparent 30%),
+        linear-gradient(155deg, #183957, #0c1b2f 68%);
+      color: var(--paper);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      user-select: none;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .14;
+      background-image: repeating-linear-gradient(12deg, transparent 0 8px, rgba(255,255,255,.12) 9px, transparent 10px);
+    }
+    #flyout-nav { z-index: 80; }
+    #game-shell {
+      position: relative;
+      width: min(100vw, calc(100vh * 1.6));
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      border: 3px solid rgba(247, 241, 223, .38);
+      border-radius: 24px;
+      background: #dce8df;
+      box-shadow: 0 28px 80px rgba(0,0,0,.48), inset 0 0 0 7px rgba(21,41,64,.14);
+    }
+    canvas { display: block; width: 100%; height: 100%; outline: none; }
+    canvas:focus-visible { outline: 4px solid var(--gold); outline-offset: -7px; }
+    #help-button {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 60;
+      width: 46px;
+      height: 46px;
+      border: 2px solid rgba(247,241,223,.55);
+      border-radius: 50%;
+      background: rgba(16,35,58,.56);
+      color: var(--paper);
+      font: 900 22px/1 Georgia, serif;
+      opacity: .62;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+    #help-button:hover, #help-button:focus-visible { opacity: 1; outline: 3px solid var(--gold); outline-offset: 3px; }
+    #instruction-modal, #status-panel, #portrait-note {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(8,22,37,.76);
+      backdrop-filter: blur(8px);
+    }
+    #instruction-modal.is-visible, #status-panel.is-visible { display: grid; }
+    .modal-card {
+      width: min(610px, 94vw);
+      max-height: calc(100dvh - 32px);
+      overflow-y: auto;
+      padding: clamp(24px, 4vw, 42px);
+      border: 3px solid var(--ink);
+      border-radius: 8px 34px 10px 28px;
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: 12px 14px 0 rgba(7,20,34,.5);
+      transform: rotate(-.25deg);
+    }
+    .eyebrow { color: #b64d3b; font-size: .78rem; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
+    h1, h2 { margin: 6px 0 12px; font-family: Georgia, serif; line-height: .95; letter-spacing: -.035em; }
+    h1 { font-size: clamp(2.6rem, 8vw, 5.4rem); }
+    h2 { font-size: clamp(2rem, 5vw, 3.4rem); }
+    .lead { margin: 0 0 18px; color: #40556a; font-size: 1.02rem; line-height: 1.52; }
+    .instruction-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin: 18px 0; }
+    .tip { padding: 12px; border: 2px solid rgba(21,41,64,.18); background: rgba(159,217,220,.28); line-height: 1.35; }
+    .tip strong { display: block; margin-bottom: 4px; color: #b64d3b; text-transform: uppercase; letter-spacing: .06em; }
+    .start-button {
+      width: 100%;
+      min-height: 52px;
+      margin-top: 4px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--coral);
+      color: white;
+      font: 900 1rem/1 "Trebuchet MS", sans-serif;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      box-shadow: 0 6px 0 #9e4033;
+      cursor: pointer;
+    }
+    .start-button:active { transform: translateY(3px); box-shadow: 0 3px 0 #9e4033; }
+    .start-button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
+    .touch-controls { display: none; }
+    .control-cluster { pointer-events: none; }
+    .control-button {
+      pointer-events: auto;
+      width: 82px;
+      min-height: 62px;
+      border: 2px solid rgba(247,241,223,.66);
+      border-radius: 22px;
+      background: rgba(231,107,81,.78);
+      color: white;
+      font: 900 .8rem/1.05 "Trebuchet MS", sans-serif;
+      letter-spacing: .04em;
+      box-shadow: 0 7px 0 rgba(94,39,35,.7);
+      touch-action: none;
+    }
+    .control-button.sound { min-height: 48px; background: rgba(21,41,64,.72); }
+    .control-button.is-pressed { transform: translateY(5px); box-shadow: 0 2px 0 rgba(94,39,35,.7); }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    #portrait-note { z-index: 75; text-align: center; }
+    #portrait-note div { max-width: 28ch; padding: 28px; border: 2px solid var(--paper); border-radius: 24px; background: var(--night); font-weight: 800; line-height: 1.5; }
+    @media (max-width: 900px), (pointer: coarse) {
+      #game-shell { width: 100vw; border-width: 0; border-radius: 0; }
+      #help-button, #flyout-nav { display: none !important; }
+      .touch-controls { display: flex; }
+    }
+    @media (max-width: 599px) and (orientation: portrait) {
+      body:not(.instructions-open) #portrait-note { display: grid; }
+      body:not(.instructions-open) #game-shell,
+      body:not(.instructions-open) .touch-controls { visibility: hidden !important; }
+    }
+    body.instructions-open .touch-controls { visibility: hidden !important; pointer-events: none !important; }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body class="instructions-open">
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu"><span></span><span></span><span></span></button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+
+  <button id="help-button" type="button" aria-label="How to play Frostline">?</button>
+
+  <main id="game-shell">
+    <canvas id="game" width="960" height="600" tabindex="0" aria-label="Frostline ice-maze game. Recover pennants, push ice blocks, and avoid frostlings."></canvas>
+  </main>
+
+  <div id="touch-controls" class="touch-controls" aria-label="Touch controls">
+    <div class="virtual-joystick" data-joystick data-axis="cardinal" aria-label="Move explorer">
+      <span class="joystick-mark up">▲</span><span class="joystick-mark right">▶</span>
+      <span class="joystick-mark down">▼</span><span class="joystick-mark left">◀</span>
+      <span class="joystick-knob"></span>
+    </div>
+    <div class="control-cluster">
+      <button class="control-button" data-push type="button" aria-label="Push ice block">PUSH<br />ICE</button>
+      <button class="control-button sound" data-sound type="button" aria-label="Toggle sound">SOUND<br />ON</button>
+    </div>
+  </div>
+
+  <div id="portrait-note" aria-live="polite"><div>Turn your device sideways to unfold the expedition map.</div></div>
+
+  <section id="instruction-modal" class="is-visible" role="dialog" aria-modal="true" aria-labelledby="instruction-title">
+    <div class="modal-card">
+      <div class="eyebrow">North Survey • Field Card 01</div>
+      <h1 id="instruction-title">Frostline</h1>
+      <p class="lead">Recover every red survey pennant before the whiteout. Slide ice blocks into prowling frostlings to stun them and open hidden supply markers.</p>
+      <div class="instruction-grid">
+        <div class="tip"><strong>Move</strong>Arrow keys or WASD. On touch, hold and slide the field stick.</div>
+        <div class="tip"><strong>Push</strong>Space or the Push Ice button. A trapped block crumbles instead.</div>
+        <div class="tip"><strong>Recover</strong>Walk over every pennant. Some wait beneath striped ice.</div>
+        <div class="tip"><strong>Field kit</strong>R restarts. M toggles sound. Four warmth hearts absorb mistakes.</div>
+      </div>
+      <button id="instruction-close" class="start-button" type="button">Begin expedition</button>
+    </div>
+  </section>
+
+  <section id="status-panel" role="dialog" aria-modal="true" aria-labelledby="status-title">
+    <div class="modal-card">
+      <div id="status-kicker" class="eyebrow">Expedition report</div>
+      <h2 id="status-title">Route secured</h2>
+      <p id="status-copy" class="lead"></p>
+      <button id="status-action" class="start-button" type="button">Next expedition</button>
+    </div>
+  </section>
+
+  <script src="../mobile-fullscreen.js?v=13"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const modal = document.getElementById('instruction-modal');
+    const closeInstructions = document.getElementById('instruction-close');
+    const helpButton = document.getElementById('help-button');
+    const statusPanel = document.getElementById('status-panel');
+    const statusTitle = document.getElementById('status-title');
+    const statusCopy = document.getElementById('status-copy');
+    const statusAction = document.getElementById('status-action');
+    const soundButton = document.querySelector('[data-sound]');
+    const pushButton = document.querySelector('[data-push]');
+    const instructionKey = 'vibecade-instructions-frostline-v1';
+    const params = new URLSearchParams(location.search);
+    const requestedLevel = Math.max(1, Math.min(5, Number(params.get('level')) || 1));
+    const W = 960, H = 600, COLS = 15, ROWS = 9, CELL = 52, BOARD_X = 90, BOARD_Y = 103;
+    const DIRS = {
+      left: { x: -1, y: 0 }, right: { x: 1, y: 0 }, up: { x: 0, y: -1 }, down: { x: 0, y: 1 }
+    };
+    const LEVELS = [
+      { pennants: 4, covered: 0, enemies: 1, speed: 1.35, bias: .34, time: 82, label: 'First Tracks' },
+      { pennants: 5, covered: 1, enemies: 2, speed: 1.48, bias: .39, time: 76, label: 'Blue Ravine' },
+      { pennants: 6, covered: 2, enemies: 3, speed: 1.62, bias: .46, time: 71, label: 'Crackle Pass' },
+      { pennants: 7, covered: 2, enemies: 4, speed: 1.78, bias: .54, time: 68, label: 'Long Whiteout' },
+      { pennants: 8, covered: 3, enemies: 5, speed: 2.12, bias: .69, time: 58, label: 'Polar Crown' }
+    ];
+    const keys = { left: false, right: false, up: false, down: false };
+    const state = {
+      level: requestedLevel, score: 0, hearts: 4, time: 0, phase: 'instructions', paused: true,
+      muted: false, started: false, collected: 0, combo: 0, comboTime: 0, shake: 0,
+      banner: '', bannerTime: 0, player: null, blocks: [], enemies: [], pennants: [], particles: [], flakes: [], last: performance.now()
+    };
+    let audioContext = null;
+    let resumeAfterHelp = false;
+    let rng = Math.random;
+    let diagnosticTick = -1;
+
+    function seeded(seed) {
+      let value = seed >>> 0;
+      return () => {
+        value += 0x6D2B79F5;
+        let t = value;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function tone(frequency, duration = .08, type = 'triangle', volume = .045) {
+      if (state.muted || state.phase === 'instructions') return;
+      try {
+        audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(volume, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.0001, audioContext.currentTime + duration);
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + duration);
+      } catch (_) {}
+    }
+
+    function cellKey(x, y) { return `${x},${y}`; }
+    function inside(x, y) { return x >= 0 && y >= 0 && x < COLS && y < ROWS; }
+    function blockAt(x, y, except = null) {
+      return state.blocks.find(block => !block.removed && block !== except && block.gx === x && block.gy === y);
+    }
+    function cellOpen(x, y, except = null) { return inside(x, y) && !blockAt(x, y, except); }
+    function ease(t) { return 1 - Math.pow(1 - Math.min(1, t), 3); }
+
+    function makeMover(gx, gy, duration) {
+      return { gx, gy, x: gx, y: gy, fromX: gx, fromY: gy, toX: gx, toY: gy, moveT: 1, moveDuration: duration };
+    }
+
+    function beginMove(actor, dx, dy, duration) {
+      const nx = actor.gx + dx, ny = actor.gy + dy;
+      if (!cellOpen(nx, ny)) return false;
+      actor.fromX = actor.gx; actor.fromY = actor.gy;
+      actor.toX = nx; actor.toY = ny;
+      actor.gx = nx; actor.gy = ny;
+      actor.moveT = 0; actor.moveDuration = duration;
+      return true;
+    }
+
+    function updateMover(actor, dt) {
+      if (actor.moveT >= 1) return false;
+      actor.moveT = Math.min(1, actor.moveT + dt / actor.moveDuration);
+      const t = ease(actor.moveT);
+      actor.x = actor.fromX + (actor.toX - actor.fromX) * t;
+      actor.y = actor.fromY + (actor.toY - actor.fromY) * t;
+      if (actor.moveT === 1) { actor.x = actor.gx; actor.y = actor.gy; return true; }
+      return false;
+    }
+
+    function buildLevel(level) {
+      rng = seeded(7481 + level * 997);
+      const config = LEVELS[level - 1];
+      state.level = level;
+      state.time = config.time;
+      state.collected = 0;
+      state.combo = 0;
+      state.comboTime = 0;
+      state.banner = '';
+      state.bannerTime = 0;
+      state.phase = 'active';
+      state.paused = false;
+      state.hearts = level === requestedLevel ? Math.max(state.hearts, 4) : Math.min(4, Math.max(state.hearts, 3));
+      state.blocks = [];
+      state.enemies = [];
+      state.pennants = [];
+      state.particles = [];
+      const spawn = { x: 7, y: 7 };
+      state.player = { ...makeMover(spawn.x, spawn.y, .115), facing: 'up', invulnerable: 1.1, pushCooldown: 0 };
+
+      const reserved = new Set([cellKey(spawn.x, spawn.y), cellKey(1,1), cellKey(13,1), cellKey(1,7), cellKey(13,7)]);
+      const blockCandidates = [];
+      for (let y = 1; y < ROWS - 1; y++) {
+        for (let x = 1; x < COLS - 1; x++) {
+          if (reserved.has(cellKey(x,y))) continue;
+          if ((x + y * 2 + level) % 3 === 0 || (x % 2 === 0 && y % 2 === 1)) blockCandidates.push({ x, y });
+        }
+      }
+      blockCandidates.sort(() => rng() - .5).slice(0, 23 + Math.min(level, 3)).forEach((cell, index) => {
+        state.blocks.push({ gx: cell.x, gy: cell.y, drawX: cell.x, drawY: cell.y, fromX: cell.x, fromY: cell.y, slideT: 1, removed: false, hiddenMark: false, stripe: index % 4 === 0 });
+      });
+
+      const coveredBlocks = [...state.blocks].sort(() => rng() - .5).slice(0, config.covered);
+      coveredBlocks.forEach(block => {
+        block.hiddenMark = true;
+        state.pennants.push({ x: block.gx, y: block.gy, revealed: false, collected: false, flutter: rng() * 6 });
+      });
+
+      const openCells = [];
+      for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+        if (cellOpen(x,y) && !reserved.has(cellKey(x,y)) && Math.abs(x-spawn.x) + Math.abs(y-spawn.y) > 2) openCells.push({x,y});
+      }
+      openCells.sort(() => rng() - .5);
+      for (let i = config.covered; i < config.pennants; i++) {
+        const cell = openCells.shift();
+        state.pennants.push({ x: cell.x, y: cell.y, revealed: true, collected: false, flutter: rng() * 6 });
+      }
+
+      const starts = [{x:1,y:1},{x:13,y:1},{x:1,y:7},{x:13,y:7},{x:7,y:0}];
+      starts.slice(0, config.enemies).forEach((start, index) => {
+        const enemy = makeMover(start.x, start.y, 1 / config.speed);
+        Object.assign(enemy, { id: index, facing: index % 2 ? 'left' : 'right', stunned: 1.2 + index * .16, think: rng() * .2, scout: level >= 3 && index === config.enemies - 1 });
+        state.enemies.push(enemy);
+      });
+      announce(`${config.label}. ${config.pennants} pennants. ${config.time} seconds.`);
+      updateDiagnostic(performance.now(), true);
+    }
+
+    function resetCampaign() {
+      state.score = 0;
+      state.hearts = 4;
+      hideStatus();
+      buildLevel(requestedLevel);
+      canvas.focus({ preventScroll: true });
+      window.dispatchEvent(new Event('vibecade:reset-input'));
+    }
+
+    function showStatus(title, copy, action) {
+      state.paused = true;
+      statusTitle.textContent = title;
+      statusCopy.textContent = copy;
+      statusAction.textContent = action;
+      statusPanel.classList.add('is-visible');
+      updateDiagnostic(performance.now(), true);
+      statusAction.focus({ preventScroll: true });
+    }
+    function hideStatus() { statusPanel.classList.remove('is-visible'); }
+
+    function finishLevel() {
+      if (state.phase !== 'active') return;
+      state.score += Math.ceil(state.time) * 12 + state.hearts * 150;
+      tone(740, .17, 'triangle', .06);
+      if (state.level >= 5) {
+        state.phase = 'victory';
+        showStatus('Frostline mapped', `All five routes are secure. Final field score: ${state.score.toLocaleString()}.`, 'Start a new survey');
+      } else {
+        state.phase = 'levelComplete';
+        showStatus('Route secured', `${LEVELS[state.level - 1].label} is marked. You carry ${state.hearts} warmth ${state.hearts === 1 ? 'heart' : 'hearts'} onward.`, 'Next expedition');
+      }
+    }
+
+    function gameOver(message) {
+      state.phase = 'gameover';
+      tone(120, .5, 'sawtooth', .05);
+      showStatus('Lost in the whiteout', `${message} Field score: ${state.score.toLocaleString()}.`, 'Try the route again');
+    }
+
+    function selectedDirection() {
+      if (keys.left) return 'left';
+      if (keys.right) return 'right';
+      if (keys.up) return 'up';
+      if (keys.down) return 'down';
+      return '';
+    }
+
+    function movePlayer(dt) {
+      const player = state.player;
+      player.invulnerable = Math.max(0, player.invulnerable - dt);
+      player.pushCooldown = Math.max(0, player.pushCooldown - dt);
+      const arrived = updateMover(player, dt);
+      if (arrived) collectPennant();
+      if (player.moveT < 1) return;
+      const direction = selectedDirection();
+      if (!direction) return;
+      player.facing = direction;
+      const vector = DIRS[direction];
+      beginMove(player, vector.x, vector.y, .115);
+    }
+
+    function collectPennant() {
+      const pennant = state.pennants.find(item => !item.collected && item.revealed && item.x === state.player.gx && item.y === state.player.gy);
+      if (!pennant) return;
+      pennant.collected = true;
+      state.collected++;
+      state.combo = state.comboTime > 0 ? state.combo + 1 : 1;
+      state.comboTime = 4;
+      state.score += 120 * state.combo;
+      burst(pennant.x, pennant.y, '#e76b51', 13);
+      tone(420 + state.combo * 65, .1, 'triangle', .055);
+      if (state.collected === state.pennants.length) finishLevel();
+    }
+
+    function pushIce() {
+      const player = state.player;
+      if (state.phase !== 'active' || state.paused || !player || player.pushCooldown > 0 || player.moveT < 1) return;
+      player.pushCooldown = .22;
+      const vector = DIRS[player.facing];
+      const tx = player.gx + vector.x, ty = player.gy + vector.y;
+      const block = blockAt(tx, ty);
+      if (!inside(tx, ty)) { wallPulse(); return; }
+      if (!block || block.slideT < 1) { puff(tx, ty, '#f7f1df', 4); tone(180, .035, 'square', .018); return; }
+
+      let nx = tx, ny = ty;
+      while (cellOpen(nx + vector.x, ny + vector.y, block)) { nx += vector.x; ny += vector.y; }
+      revealAt(block.gx, block.gy);
+      if (nx === tx && ny === ty) {
+        block.removed = true;
+        state.score += 25;
+        burst(tx, ty, '#9fd9dc', 10);
+        tone(210, .1, 'square', .035);
+        updateDiagnostic(performance.now(), true);
+        return;
+      }
+      block.fromX = block.drawX; block.fromY = block.drawY;
+      block.gx = nx; block.gy = ny; block.slideT = 0;
+      block.slideDuration = Math.max(.13, Math.hypot(nx-tx, ny-ty) * .075);
+      block.hit = new Set();
+      state.shake = .16;
+      tone(310, .12, 'triangle', .04);
+      updateDiagnostic(performance.now(), true);
+    }
+
+    function revealAt(x, y) {
+      const hidden = state.pennants.find(item => !item.revealed && item.x === x && item.y === y);
+      if (hidden) { hidden.revealed = true; state.score += 60; state.banner='SUPPLY MARKER UNCOVERED';state.bannerTime=1.35;burst(x,y,'#e6ad42',12); tone(560,.12,'sine',.05); }
+    }
+
+    function wallPulse() {
+      let hits = 0;
+      const p = state.player;
+      state.enemies.forEach(enemy => {
+        if ((p.gx === enemy.gx && Math.abs(p.gy-enemy.gy) <= 3) || (p.gy === enemy.gy && Math.abs(p.gx-enemy.gx) <= 3)) {
+          enemy.stunned = Math.max(enemy.stunned, 1.45); hits++;
+        }
+      });
+      if (hits) state.score += hits * 40;
+      state.shake = .12;
+      tone(hits ? 260 : 150, .1, 'square', .035);
+    }
+
+    function updateBlocks(dt) {
+      state.blocks.forEach(block => {
+        if (block.removed || block.slideT >= 1) return;
+        block.slideT = Math.min(1, block.slideT + dt / block.slideDuration);
+        const t = ease(block.slideT);
+        block.drawX = block.fromX + (block.gx - block.fromX) * t;
+        block.drawY = block.fromY + (block.gy - block.fromY) * t;
+        state.enemies.forEach(enemy => {
+          if (block.hit.has(enemy.id) || enemy.stunned > 2.4) return;
+          if (Math.hypot(block.drawX - enemy.x, block.drawY - enemy.y) < .68) {
+            block.hit.add(enemy.id);
+            enemy.stunned = 3.25;
+            state.score += 180;
+            state.combo = Math.max(1, state.combo + 1);
+            state.comboTime = 4;
+            state.banner = 'FROSTLING STUNNED  +180';
+            state.bannerTime = 1.1;
+            burst(enemy.x, enemy.y, '#f7f1df', 16);
+            tone(115, .18, 'sawtooth', .045);
+          }
+        });
+        if (block.slideT === 1) { block.drawX = block.gx; block.drawY = block.gy; burst(block.gx, block.gy, '#b8e5e3', 7); }
+      });
+    }
+
+    function enemyDirections(enemy) {
+      const options = Object.entries(DIRS).filter(([,v]) => cellOpen(enemy.gx+v.x, enemy.gy+v.y));
+      if (!options.length) return [];
+      const opposite = { left:'right', right:'left', up:'down', down:'up' }[enemy.facing];
+      const withoutReverse = options.filter(([name]) => name !== opposite);
+      return withoutReverse.length ? withoutReverse : options;
+    }
+
+    function moveEnemies(dt) {
+      const config = LEVELS[state.level - 1];
+      state.enemies.forEach(enemy => {
+        if (enemy.stunned > 0) { enemy.stunned = Math.max(0, enemy.stunned - dt); return; }
+        if (enemy.moveT < 1) { updateMover(enemy, dt); return; }
+        const options = enemyDirections(enemy);
+        if (!options.length) return;
+        let choice;
+        const chaseChance = config.bias + (enemy.scout ? -.12 : 0);
+        if (rng() < chaseChance) {
+          options.sort((a,b) => {
+            const da = Math.abs(enemy.gx+a[1].x-state.player.gx) + Math.abs(enemy.gy+a[1].y-state.player.gy);
+            const db = Math.abs(enemy.gx+b[1].x-state.player.gx) + Math.abs(enemy.gy+b[1].y-state.player.gy);
+            return da - db;
+          });
+          choice = options[0];
+        } else choice = options[Math.floor(rng() * options.length)];
+        enemy.facing = choice[0];
+        const speed = config.speed * (enemy.scout ? 1.12 : 1);
+        beginMove(enemy, choice[1].x, choice[1].y, 1 / speed);
+      });
+    }
+
+    function checkEnemyCollision() {
+      const player = state.player;
+      if (player.invulnerable > 0) return;
+      const enemy = state.enemies.find(item => item.stunned <= 0 && Math.hypot(item.x-player.x, item.y-player.y) < .56);
+      if (!enemy) return;
+      state.hearts--;
+      state.score = Math.max(0, state.score - 80);
+      state.shake = .35;
+      state.banner = `WARMTH LOST · ${state.hearts} ${state.hearts===1?'HEART':'HEARTS'} LEFT`;
+      state.bannerTime = 1.65;
+      burst(player.x, player.y, '#e76b51', 20);
+      tone(95, .35, 'sawtooth', .06);
+      if (state.hearts <= 0) { gameOver('Your last hand-warmer went cold.'); return; }
+      Object.assign(player, makeMover(7,7,.115), { facing:'up', invulnerable: 2.5, pushCooldown: .35 });
+      state.enemies.forEach(item => item.stunned = Math.max(item.stunned, 1.05));
+      announce(`${state.hearts} warmth hearts remain.`);
+      updateDiagnostic(performance.now(),true);
+    }
+
+    function timeout() {
+      state.hearts--;
+      if (state.hearts <= 0) { gameOver('The storm erased your trail.'); return; }
+      const savedScore = state.score;
+      const hearts = state.hearts;
+      buildLevel(state.level);
+      state.score = savedScore;
+      state.hearts = hearts;
+      announce('Whiteout! The route reset with one less warmth heart.');
+      tone(105,.45,'sawtooth',.05);
+    }
+
+    function burst(gx, gy, color, count) {
+      for (let i = 0; i < count && state.particles.length < 90; i++) {
+        const angle = rng() * Math.PI * 2, speed = 1.2 + rng() * 3.3;
+        state.particles.push({ x:gx, y:gy, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, life:.45+rng()*.45, max:.9, color });
+      }
+    }
+    function puff(gx, gy, color, count) { if (inside(gx,gy)) burst(gx,gy,color,count); }
+
+    function updateParticles(dt) {
+      state.particles.forEach(p => { p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= .96; p.vy = p.vy*.96 + .7*dt; p.life -= dt; });
+      state.particles = state.particles.filter(p => p.life > 0);
+    }
+
+    function update(dt) {
+      if (state.phase !== 'active' || state.paused) return;
+      state.time -= dt;
+      if (state.time <= 0) { timeout(); return; }
+      state.comboTime = Math.max(0, state.comboTime - dt);
+      state.bannerTime = Math.max(0, state.bannerTime - dt);
+      if (!state.comboTime) state.combo = 0;
+      state.shake = Math.max(0, state.shake - dt);
+      movePlayer(dt);
+      updateBlocks(dt);
+      moveEnemies(dt);
+      checkEnemyCollision();
+      updateParticles(dt);
+    }
+
+    function roundRect(x,y,w,h,r) {
+      ctx.beginPath(); ctx.roundRect(x,y,w,h,r); return ctx;
+    }
+    function gridToScreen(gx, gy) { return { x: BOARD_X + gx*CELL + CELL/2, y: BOARD_Y + gy*CELL + CELL/2 }; }
+
+    function drawBackground(now) {
+      const touchHud=document.body.classList.contains('touch-device');
+      ctx.fillStyle = '#d7e3d9'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = '#c4d6d2';
+      ctx.beginPath(); ctx.moveTo(0,100); ctx.quadraticCurveTo(125,35,245,92); ctx.quadraticCurveTo(380,8,520,92); ctx.quadraticCurveTo(690,23,960,95); ctx.lineTo(960,0); ctx.lineTo(0,0); ctx.fill();
+      ctx.fillStyle = '#17314a'; ctx.fillRect(0,0,W,72);
+      ctx.fillStyle = '#f7f1df';
+      ctx.font = `900 ${touchHud?31:28}px Georgia`; ctx.fillText('FROSTLINE', touchHud?28:70, 43);
+      ctx.font = `800 ${touchHud?15:11}px Trebuchet MS`; ctx.fillStyle = '#a9dcdc'; ctx.fillText(`${touchHud?'E':'EXP.'} ${state.level} · ${LEVELS[state.level-1].label.toUpperCase()}`, touchHud?310:330, 41);
+      for (let i=0;i<4;i++) {
+        const x=(touchHud?574:626)+i*(touchHud?24:21),y=39,r=touchHud?6:5;
+        ctx.fillStyle = i < state.hearts ? '#e76b51' : 'rgba(247,241,223,.2)';
+        ctx.beginPath(); ctx.arc(x-r*.78,y-2,r,0,Math.PI*2); ctx.arc(x+r*.78,y-2,r,0,Math.PI*2); ctx.lineTo(x,y+r+4); ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle='#f7f1df';ctx.font=`800 ${touchHud?15:11}px Trebuchet MS`;ctx.fillText(`${state.collected}/${state.pennants.length} FLAGS`, touchHud?700:724, 42);
+      const scoreX=touchHud?925:874;
+      ctx.textAlign = 'right'; ctx.fillStyle = '#f7f1df';ctx.font=`800 ${touchHud?14:11}px Trebuchet MS`; ctx.fillText(`SCORE ${String(state.score).padStart(6,'0')}`, scoreX, 28);
+      ctx.fillStyle = state.time < 12 ? '#f08a6f' : '#e6ad42'; ctx.font = `900 ${touchHud?23:19}px Trebuchet MS`; ctx.fillText(`${Math.max(0,Math.ceil(state.time))}s`,scoreX,56);
+      ctx.textAlign = 'left';
+      if (state.combo > 1) { ctx.fillStyle='#b64d3b';ctx.font='800 12px Trebuchet MS';ctx.fillText(`TRAIL CHAIN ×${state.combo}`, BOARD_X,590); }
+      ctx.fillStyle='rgba(21,41,64,.16)'; roundRect(BOARD_X-8,BOARD_Y-8,COLS*CELL+16,ROWS*CELL+16,18).fill();
+      for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) {
+        ctx.fillStyle=(x+y)%2?'#eaf0e5':'#e3ece3';ctx.fillRect(BOARD_X+x*CELL,BOARD_Y+y*CELL,CELL,CELL);
+        const speck=(x*47+y*29)%31;ctx.fillStyle='rgba(43,77,91,.10)';ctx.fillRect(BOARD_X+x*CELL+8+speck%28,BOARD_Y+y*CELL+10+(speck*3)%28,2,2);
+      }
+      ctx.strokeStyle='rgba(37,76,91,.12)';ctx.lineWidth=1;
+      for(let x=0;x<=COLS;x++){ctx.beginPath();ctx.moveTo(BOARD_X+x*CELL,BOARD_Y);ctx.lineTo(BOARD_X+x*CELL,BOARD_Y+ROWS*CELL);ctx.stroke();}
+      for(let y=0;y<=ROWS;y++){ctx.beginPath();ctx.moveTo(BOARD_X,BOARD_Y+y*CELL);ctx.lineTo(BOARD_X+COLS*CELL,BOARD_Y+y*CELL);ctx.stroke();}
+      state.flakes.forEach(flake => {
+        const drift=(now*.012*flake.speed+flake.offset)%W;
+        ctx.globalAlpha=.18;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(drift,flake.y,flake.r,0,Math.PI*2);ctx.fill();
+      });ctx.globalAlpha=1;
+    }
+
+    function drawPennant(item, now) {
+      if (item.collected || !item.revealed) return;
+      const p=gridToScreen(item.x,item.y), wave=Math.sin(now*.005+item.flutter)*3;
+      ctx.strokeStyle='#29465b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x-8,p.y+17);ctx.lineTo(p.x-8,p.y-18);ctx.stroke();
+      ctx.fillStyle='#e76b51';ctx.beginPath();ctx.moveTo(p.x-7,p.y-17);ctx.lineTo(p.x+16+wave,p.y-9);ctx.lineTo(p.x-7,p.y);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#e6ad42';ctx.beginPath();ctx.arc(p.x-8,p.y-20,3,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(230,173,66,.16)';ctx.beginPath();ctx.arc(p.x,p.y,22+Math.sin(now*.004)*2,0,Math.PI*2);ctx.fill();
+    }
+
+    function drawBlock(block) {
+      if(block.removed)return;
+      const p=gridToScreen(block.drawX,block.drawY), size=CELL-8;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate((block.gx*3+block.gy)%2?-.025:.025);
+      ctx.fillStyle='rgba(17,49,69,.18)';roundRect(-size/2+4,-size/2+6,size,size,9).fill();
+      ctx.fillStyle=block.hiddenMark?'#8ccfd2':'#afdfe0';roundRect(-size/2,-size/2,size,size,9).fill();
+      ctx.strokeStyle='#4d8993';ctx.lineWidth=2;roundRect(-size/2,-size/2,size,size,9).stroke();
+      ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-15,-13);ctx.lineTo(-3,-18);ctx.lineTo(12,-12);ctx.stroke();
+      ctx.strokeStyle='rgba(52,102,112,.28)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-9,5);ctx.lineTo(-2,0);ctx.lineTo(4,9);ctx.lineTo(12,3);ctx.stroke();
+      if(block.hiddenMark){ctx.fillStyle='#e76b51';ctx.fillRect(-size/2,-5,size,10);ctx.fillStyle='#f7f1df';for(let x=-18;x<20;x+=12)ctx.fillRect(x,-5,6,10);}
+      ctx.restore();
+    }
+
+    function drawPlayer(now) {
+      const a=state.player,p=gridToScreen(a.x,a.y);
+      const dir=DIRS[a.facing], bob=Math.sin(now*.014)*1.4;
+      ctx.save();ctx.translate(p.x,p.y+bob);
+      if(a.invulnerable>0){
+        ctx.globalAlpha=Math.floor(now/100)%2?.58:.9;
+        ctx.strokeStyle='#e6ad42';ctx.lineWidth=3;ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(0,0,24+Math.sin(now*.012)*2,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+      }
+      ctx.fillStyle='rgba(22,43,61,.18)';ctx.beginPath();ctx.ellipse(0,18,17,7,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#e6ad42';ctx.beginPath();ctx.arc(0,-7,16,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#e76b51';roundRect(-16,-4,32,27,12).fill();
+      ctx.fillStyle='#f7f1df';ctx.beginPath();ctx.arc(0,-9,9,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#17314a';ctx.beginPath();ctx.arc(-3+dir.x*2,-10+dir.y*2,2,0,Math.PI*2);ctx.arc(4+dir.x*2,-10+dir.y*2,2,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#17314a';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-8,20);ctx.lineTo(-11,27);ctx.moveTo(8,20);ctx.lineTo(11,27);ctx.stroke();
+      ctx.fillStyle='#b64d3b';ctx.beginPath();ctx.moveTo(10,-1);ctx.lineTo(17+dir.x*7,5+dir.y*7);ctx.lineTo(9,9);ctx.closePath();ctx.fill();
+      ctx.restore();
+    }
+
+    function drawEnemy(enemy,now) {
+      const p=gridToScreen(enemy.x,enemy.y), stunned=enemy.stunned>0;
+      ctx.save();ctx.translate(p.x,p.y+Math.sin(now*.012+enemy.id)*2);
+      if(stunned)ctx.rotate(Math.sin(now*.02)*.08);
+      ctx.fillStyle='rgba(22,43,61,.17)';ctx.beginPath();ctx.ellipse(0,18,18,7,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=enemy.scout?'#d78953':'#6e98a1';ctx.beginPath();ctx.moveTo(-19,-8);ctx.lineTo(-10,-24);ctx.lineTo(-3,-10);ctx.lineTo(7,-11);ctx.lineTo(15,-24);ctx.lineTo(20,-5);ctx.quadraticCurveTo(22,19,0,22);ctx.quadraticCurveTo(-22,19,-19,-8);ctx.fill();
+      ctx.fillStyle='#f7f1df';ctx.beginPath();ctx.ellipse(0,4,11,9,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#17314a';ctx.fillRect(-14,-9,28,7);ctx.fillStyle='#9fd9dc';ctx.fillRect(-10,-7,7,4);ctx.fillRect(3,-7,7,4);
+      ctx.fillStyle='#17314a';ctx.beginPath();ctx.arc(0,4,3,0,Math.PI*2);ctx.fill();
+      if(stunned){ctx.fillStyle='#fff';ctx.font='900 16px Georgia';ctx.fillText('✦',-5,-27);}
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      state.particles.forEach(p=>{const s=gridToScreen(p.x,p.y);ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.fillRect(s.x-3,s.y-3,6,6);});ctx.globalAlpha=1;
+    }
+
+    function updateDiagnostic(now, force = false) {
+      const nextDiagnosticTick=Math.floor(now/250);
+      if(!force&&nextDiagnosticTick===diagnosticTick)return;
+      diagnosticTick=nextDiagnosticTick;
+      canvas.dataset.testState=JSON.stringify({
+        level:state.level,phase:state.phase,paused:state.paused,hearts:state.hearts,time:Math.ceil(state.time),
+        collected:state.collected,total:state.pennants.length,player:state.player?[state.player.gx,state.player.gy]:null,
+        blocks:state.blocks.filter(block=>!block.removed).length,movingBlocks:state.blocks.filter(block=>!block.removed&&block.slideT<1).length
+      });
+    }
+
+    function draw(now) {
+      ctx.save();
+      if(state.shake>0&&!matchMedia('(prefers-reduced-motion: reduce)').matches)ctx.translate((Math.random()-.5)*7,(Math.random()-.5)*7);
+      drawBackground(now);
+      state.pennants.forEach(item=>drawPennant(item,now));
+      state.blocks.forEach(drawBlock);
+      state.enemies.forEach(enemy=>drawEnemy(enemy,now));
+      if(state.player)drawPlayer(now);
+      drawParticles();
+      ctx.restore();
+      if(state.bannerTime>0){
+        ctx.globalAlpha=Math.min(1,state.bannerTime*2);ctx.fillStyle='rgba(21,41,64,.88)';roundRect(338,76,284,24,12).fill();ctx.fillStyle='#f7f1df';ctx.textAlign='center';ctx.font='900 12px Trebuchet MS';ctx.fillText(state.banner,480,92);ctx.textAlign='left';ctx.globalAlpha=1;
+      }
+      if(state.paused&&state.phase==='active'&&!modal.classList.contains('is-visible')){
+        ctx.fillStyle='rgba(16,35,58,.7)';ctx.fillRect(0,0,W,H);ctx.fillStyle='#f7f1df';ctx.textAlign='center';ctx.font='900 48px Georgia';ctx.fillText('FIELD NOTES OPEN',W/2,H/2);ctx.textAlign='left';
+      }
+      updateDiagnostic(now);
+    }
+
+    function frame(now) {
+      const dt=Math.min(.05,(now-state.last)/1000||0);state.last=now;update(dt);draw(now);requestAnimationFrame(frame);
+    }
+
+    function setKey(key,value) {
+      const map={ArrowLeft:'left',Left:'left',KeyA:'left',a:'left',A:'left',ArrowRight:'right',Right:'right',KeyD:'right',d:'right',D:'right',ArrowUp:'up',Up:'up',KeyW:'up',w:'up',W:'up',ArrowDown:'down',Down:'down',KeyS:'down',s:'down',S:'down'};
+      if(!map[key])return false;
+      const direction=map[key];
+      keys[direction]=value;
+      if(value&&state.phase==='active'&&!state.paused&&state.player&&state.player.moveT>=1){
+        state.player.facing=direction;
+        const vector=DIRS[direction];
+        beginMove(state.player,vector.x,vector.y,.115);
+        updateDiagnostic(performance.now(),true);
+      }
+      return true;
+    }
+    document.addEventListener('keydown',event=>{
+      const key=event.code||event.key;
+      if(setKey(key,true)||setKey(event.key,true)){event.preventDefault();return;}
+      if(event.repeat)return;
+      if(key==='Space'||event.key===' '||event.key==='Spacebar'){event.preventDefault();pushIce();}
+      if(key==='KeyR'||event.key==='r'||event.key==='R'){event.preventDefault();resetCampaign();}
+      if(key==='KeyM'||event.key==='m'||event.key==='M'){event.preventDefault();toggleSound();}
+      if(params.has('test')&&(key==='KeyL'||event.key==='l'||event.key==='L')){
+        event.preventDefault();state.pennants.forEach(item=>{item.revealed=true;item.collected=true;});state.collected=state.pennants.length;finishLevel();
+      }
+      if(params.has('test')&&(key==='KeyH'||event.key==='h'||event.key==='H')){
+        event.preventDefault();state.player.invulnerable=0;const enemy=state.enemies[0];enemy.stunned=0;enemy.x=state.player.x;enemy.y=state.player.y;checkEnemyCollision();
+      }
+    });
+    document.addEventListener('keyup',event=>{if(setKey(event.code||event.key,false)||setKey(event.key,false))event.preventDefault();});
+    window.addEventListener('blur',()=>Object.keys(keys).forEach(key=>keys[key]=false));
+
+    function bindPress(button, action) {
+      const start=event=>{event.preventDefault();button.classList.add('is-pressed');action();};
+      const end=()=>button.classList.remove('is-pressed');
+      button.addEventListener('pointerdown',start);button.addEventListener('pointerup',end);button.addEventListener('pointercancel',end);button.addEventListener('lostpointercapture',end);
+    }
+    bindPress(pushButton,pushIce);
+    bindPress(soundButton,toggleSound);
+
+    function bindJoystick() {
+      if(!window.VibeCadeJoystick||document.documentElement.dataset.frostlineJoystickBound)return;
+      document.documentElement.dataset.frostlineJoystickBound='true';
+      window.VibeCadeJoystick(document.querySelector('[data-joystick]'),{
+        mode:'cardinal',deadZone:7/63,minimumDeadZone:7/63,onChange(x,y){
+          Object.keys(keys).forEach(key=>keys[key]=false);
+          if(Math.abs(x)>.5)keys[x<0?'left':'right']=true;else if(Math.abs(y)>.5)keys[y<0?'up':'down']=true;
+        }
+      });
+    }
+    if(window.VibeCadeJoystick)bindJoystick();else window.addEventListener('vibecade-controls-ready',bindJoystick,{once:true});
+
+    function toggleSound() {
+      state.muted=!state.muted;
+      soundButton.innerHTML=state.muted?'SOUND<br>OFF':'SOUND<br>ON';
+      soundButton.setAttribute('aria-label',state.muted?'Turn sound on':'Turn sound off');
+      if(!state.muted)tone(480,.08,'triangle',.04);
+      updateDiagnostic(performance.now(),true);
+    }
+
+    function showInstructions() {
+      resumeAfterHelp=state.phase==='active'&&!state.paused;
+      state.paused=true;
+      modal.classList.add('is-visible');
+      document.body.classList.add('instructions-open');
+      closeInstructions.textContent=state.started?'Return to expedition':'Begin expedition';
+      updateDiagnostic(performance.now(),true);
+      closeInstructions.focus({preventScroll:true});
+    }
+    function hideInstructions() {
+      modal.classList.remove('is-visible');
+      document.body.classList.remove('instructions-open');
+      sessionStorage.setItem(instructionKey,'1');
+      if(!state.started){state.started=true;resetCampaign();}
+      else if(resumeAfterHelp&&state.phase==='active')state.paused=false;
+      updateDiagnostic(performance.now(),true);
+      state.last=performance.now();canvas.focus({preventScroll:true});
+    }
+    closeInstructions.addEventListener('click',hideInstructions);
+    helpButton.addEventListener('click',showInstructions);
+    statusAction.addEventListener('click',()=>{
+      hideStatus();
+      if(state.phase==='levelComplete')buildLevel(state.level+1);else resetCampaign();
+      state.last=performance.now();canvas.focus({preventScroll:true});
+    });
+    window.addEventListener('vibecade:restart',event=>{event.preventDefault();resetCampaign();});
+
+    const live=document.createElement('div');live.className='visually-hidden';live.setAttribute('aria-live','polite');document.body.appendChild(live);
+    function announce(message){live.textContent='';setTimeout(()=>live.textContent=message,10);}
+
+    state.flakes=Array.from({length:28},(_,i)=>({y:84+(i*67)%490,r:1+(i%3),speed:.35+(i%5)*.11,offset:(i*131)%W}));
+    buildLevel(requestedLevel);state.phase='instructions';state.paused=true;state.started=false;
+    window.FrostlineTest={
+      snapshot:()=>({level:state.level,phase:state.phase,score:state.score,hearts:state.hearts,time:Math.ceil(state.time),collected:state.collected,total:state.pennants.length}),
+      setLevel(level){state.started=true;hideStatus();buildLevel(Math.max(1,Math.min(5,level)));},
+      clearLevel(){state.pennants.forEach(item=>{item.revealed=true;item.collected=true;});state.collected=state.pennants.length;finishLevel();},
+      hit(){if(state.player){state.player.invulnerable=0;const e=state.enemies[0];if(e){e.x=state.player.x;e.y=state.player.y;e.stunned=0;checkEnemyCollision();}}}
+    };
+    requestAnimationFrame(frame);
+    if(sessionStorage.getItem(instructionKey)==='1'&&!params.has('instructions')){
+      modal.classList.remove('is-visible');document.body.classList.remove('instructions-open');state.started=true;resetCampaign();
+    }
+  })();
+  </script>
+</body>
+</html>

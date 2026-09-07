@@ -32,6 +32,7 @@ This repository hosts simple arcade-style video games.
 - [Block Balance](balance/) - Keep the tower steady.
 - [Boxing](boxing/) - Step into a 3D ring and dodge telegraphed punches from varied opponents.
 - [Excitebike](excitebike/) - Race over jumps and dodge obstacles.
+- [Frostline](frostline/) - Slide ice blocks, recover survey pennants, and outmaneuver prowling frostlings.
 - [Joust](joust/) - Fly and defeat rival knights.
 - [Number Munchers](number-munchers/) - Devour correct answers while dodging Troggles.
 - [Pac-Man](pacman/) - Eat pellets and avoid ghosts.
