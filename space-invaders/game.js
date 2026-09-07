@@ -8,7 +8,7 @@
   let autoFire = false;
   const SCALE = MOBILE ? 0.75 : 1;
   const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+  const ctx = canvas.getContext('2d', { alpha: false });
   canvas.width = W * SCALE;
   canvas.height = H * SCALE;
   canvas.dataset.renderScale = SCALE.toFixed(2);
@@ -525,7 +525,8 @@
   }
 
   function update(dt) {
-    for (let i = delayed.length - 1; i >= 0; i--) { delayed[i].time -= dt; if (delayed[i].time <= 0) { const action = delayed[i].action; delayed.splice(i, 1); action(); } }
+    // A wave transition clears this queue; stop before touching discarded callbacks.
+    for (let i = delayed.length - 1; i >= 0 && i < delayed.length; i--) { delayed[i].time -= dt; if (delayed[i].time <= 0) { const action = delayed[i].action; delayed.splice(i, 1); action(); } }
     updateEffects(dt);
     if (!running) return;
     waveTime += dt;
@@ -627,9 +628,15 @@
   function resetInput() { fireHeld = false; joystickX = 0; Object.keys(keys).forEach(key => delete keys[key]); ui.fire.classList.remove('pressed'); }
   function bindHoldButton(button, press, release = () => {}) {
     let pointer = null;
-    button.addEventListener('pointerdown', event => { event.preventDefault(); if (pointer !== null || button.disabled) return; pointer = event.pointerId; button.setPointerCapture(pointer); button.classList.add('pressed'); press(); });
-    const end = event => { if (event.pointerId !== pointer) return; pointer = null; button.classList.remove('pressed'); release(); };
+    button.addEventListener('pointerdown', event => { event.preventDefault(); if (pointer !== null || button.disabled) return; pointer = event.pointerId; try { button.setPointerCapture(pointer); } catch (_) {} button.classList.add('pressed'); press(); });
+    const end = event => {
+      if (event.pointerId !== undefined && event.pointerId !== pointer) return;
+      const captured = pointer; pointer = null;
+      if (captured !== null && button.hasPointerCapture(captured)) button.releasePointerCapture(captured);
+      button.classList.remove('pressed'); release();
+    };
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(name => button.addEventListener(name, end));
+    ['blur', 'resize', 'vibecade:reset-input'].forEach(name => addEventListener(name, end));
     button.addEventListener('contextmenu', event => event.preventDefault());
   }
 
@@ -651,6 +658,9 @@
   });
   addEventListener('keyup', event => { keys[event.key] = false; });
   addEventListener('blur', resetInput);
+  addEventListener('resize', () => { resetInput(); previous = performance.now(); accumulator = 0; draw(); });
+  canvas.addEventListener('contextlost', event => { event.preventDefault(); resetInput(); });
+  canvas.addEventListener('contextrestored', () => { previous = performance.now(); accumulator = 0; draw(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) resetInput(); });
   canvas.addEventListener('contextmenu', event => event.preventDefault());
 

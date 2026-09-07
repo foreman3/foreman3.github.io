@@ -1803,8 +1803,7 @@
     }
     if ((key === ' ' || key === 'f') && !event.repeat) throwPaper();
     if (key === 'r' && !event.repeat && !modal.classList.contains('is-visible')) {
-      if (state.mode === 'failed') retryLevel();
-      else restartGame();
+      restartGame();
     }
     if (key === 'm' && !event.repeat) {
       state.sound = !state.sound;
@@ -1868,8 +1867,7 @@
 
   window.addEventListener('vibecade:restart', event => {
     event.preventDefault();
-    if (state.mode === 'failed') retryLevel();
-    else restartGame();
+    restartGame();
   });
 
   window.__paperRouteDebug = Object.freeze({

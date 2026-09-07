@@ -542,7 +542,7 @@
       else if (e.key === 'ArrowDown') drop();
       else if (e.key === 'ArrowUp') rotate();
       else if (e.key === ' ') hardDrop();
-      else if ((e.key === 'r' || e.key === 'R') && gameOver) resetGame();
+      else if (e.key === 'r' || e.key === 'R') resetGame();
     });
 
     function resetGame() {
@@ -554,8 +554,8 @@
       resetBoard();
       nextType = Math.floor(Math.random()*SHAPES.length);
       newPiece();
-      lastTime = 0;
-      update();
+      lastTime = performance.now();
+      draw();
     }
 
     function resizeCanvas() {
@@ -646,6 +646,7 @@
       gamePaused = false;
       resizeCanvas();
       resetGame();
+      requestAnimationFrame(update);
     }
 
     function showInstructions() {

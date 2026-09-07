@@ -265,7 +265,7 @@
       <div class="stat">Level <span id="level">1</span></div>
       <div class="stat">Grid <span id="grid-size">21 × 21</span></div>
       <div class="stat">Starting obstacles <span id="starting-obstacles">20</span></div>
-      <button id="reset-button" type="button">Restart Level</button>
+      <button id="reset-button" type="button">Restart Game</button>
     </section>
     <canvas id="board" width="640" height="640"></canvas>
     <p id="status">Place an obstacle to keep the mouse from reaching the edge.</p>
@@ -581,7 +581,9 @@
       ctx.restore();
     }
 
+    let pendingTurn = null;
     function startLevel() {
+      clearTimeout(pendingTurn);
       gridSize = Math.max(minGridSize, baseGridSize - (level - 1));
       startingObstacleCount = Math.max(0, baseObstacles - (level - 1) * 2);
       const center = Math.floor(gridSize / 2);
@@ -624,7 +626,7 @@
       if (isMouseTrapped()) {
         statusEl.textContent = `You trapped the mouse! Level ${level + 1} incoming...`;
         waitingForReset = true;
-        setTimeout(() => {
+        pendingTurn = setTimeout(() => {
           level++;
           startLevel();
         }, 1400);
@@ -632,7 +634,7 @@
       }
       playerTurn = false;
       statusEl.textContent = 'The mouse is scampering...';
-      setTimeout(mouseMove, 400);
+      pendingTurn = setTimeout(mouseMove, 400);
     }
 
     function pickCell(px, py) {
@@ -656,7 +658,7 @@
         if (isMouseTrapped()) {
           statusEl.textContent = `You trapped the mouse! Level ${level + 1} incoming...`;
           waitingForReset = true;
-          setTimeout(() => {
+          pendingTurn = setTimeout(() => {
             level++;
             startLevel();
           }, 1400);
@@ -672,7 +674,7 @@
       if (isEdge(mouse.x, mouse.y)) {
         statusEl.textContent = 'Oh no! The mouse escaped. Try again.';
         waitingForReset = true;
-        setTimeout(() => {
+        pendingTurn = setTimeout(() => {
           startLevel();
         }, 1400);
         return;
@@ -687,8 +689,8 @@
       event.preventDefault();
     }, { passive: false });
     resetButton.addEventListener('click', () => {
+      level = 1;
       waitingForReset = false;
-      statusEl.textContent = 'Level restarted. Give it another go!';
       startLevel();
     });
 

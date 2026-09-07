@@ -106,19 +106,26 @@ function resetBall(){
   Object.assign(ball,{x:728,y:918,vx:0,vy:0,ready:true,active:true,skillShotAwarded:false,launcherExited:false,warping:false,warpTimer:0,warpAssist:0,sensorTimes:{}});ball.trail.length=0;
   state.launchCharge=0;state.ballSave=0;state.combo=0;say('HOLD SPACE TO CHARGE',99);
 }
+let ballResetTimer = null;
 function restart(){
+  clearTimeout(ballResetTimer);
+  Object.keys(controls).forEach(k=>controls[k]=false);
+  state.flashes.length=0;state.particles.length=0;state.shake=0;
+  spinner.angle=Math.PI/2;spinner.velocity=0;spinner.lastHit=0;
+  flippers.forEach(f=>{f.angle=f.rest;f.prev=f.rest;});
   Object.assign(state,{score:0,lives:3,multiplier:1,combo:0,gameOver:false,launchCharge:0,ballSave:0,reactorLevel:1,stage:0,bumperHits:0,bumperGoal:8,spinnerHits:0,spinnerGoal:3,jackpotValue:10000});
   state.nova.fill(false);state.targets.fill(false);warpHole.open=false;warpTargets.forEach(t=>t.dropped=false);resetBall();
 }
+window.addEventListener('vibecade:restart',e=>{e.preventDefault();restart();});
 function launchBall(){
   if(!ball.ready||state.gameOver)return;
   const power=.78+state.launchCharge*.22;ball.ready=false;ball.vx=-35*power;ball.vy=-1300*power;
   say(power>.9?'FULL POWER!':'BALL IN PLAY',1.2);tone(150,.14,.055,360);state.launchCharge=0;state.ballSave=5;
 }
 function drainBall(){
-  if(!ball.active)return;ball.active=false;if(state.ballSave>0){state.ballSave=0;say('BALL SAVED!',1.4);tone(420,.18,.05,280);setTimeout(()=>{if(!state.gameOver)resetBall();},500);return;}state.lives--;state.shake=10;tone(190,.35,.055,-120);
+  if(!ball.active)return;ball.active=false;if(state.ballSave>0){state.ballSave=0;say('BALL SAVED!',1.4);tone(420,.18,.05,280);ballResetTimer=setTimeout(()=>{if(!state.gameOver)resetBall();},500);return;}state.lives--;state.shake=10;tone(190,.35,.055,-120);
   if(state.lives<=0){state.gameOver=true;localStorage.setItem('neon-nova-high',String(state.high));say('GAME OVER — PRESS R OR TAP ↻',99);}
-  else{say(`BALL ${4-state.lives} READY`,1.4);setTimeout(()=>{if(!state.gameOver)resetBall();},900);}
+  else{say(`BALL ${4-state.lives} READY`,1.4);ballResetTimer=setTimeout(()=>{if(!state.gameOver)resetBall();},900);}
 }
 function closestPoint(px,py,ax,ay,bx,by){
   const abx=bx-ax,aby=by-ay,t=Math.max(0,Math.min(1,((px-ax)*abx+(py-ay)*aby)/(abx*abx+aby*aby||1)));
@@ -242,7 +249,7 @@ function draw(){
 function frame(now){const elapsed=Math.min(.05,(now-last)/1000);last=now;if(!paused){accumulator+=elapsed;while(accumulator>=1/120){update(1/120);accumulator-=1/120;}}draw();requestAnimationFrame(frame);}
 function setControl(name,down){if(name==='launch'&&controls.launch&&!down)launchBall();controls[name]=down;}
 const keyMap={ArrowLeft:'left',KeyZ:'left',ArrowRight:'right',Slash:'right',Space:'launch',Enter:'launch'};
-window.addEventListener('keydown',e=>{if(keyMap[e.code]){e.preventDefault();setControl(keyMap[e.code],true);}if(e.code==='KeyR'&&state.gameOver)restart();});
+window.addEventListener('keydown',e=>{if(keyMap[e.code]){e.preventDefault();setControl(keyMap[e.code],true);}if(e.code==='KeyR')restart();});
 window.addEventListener('keyup',e=>{if(keyMap[e.code]){e.preventDefault();setControl(keyMap[e.code],false);}});
 window.addEventListener('blur',()=>Object.keys(controls).forEach(k=>controls[k]=false));
 document.querySelectorAll('.touch-key').forEach(button=>{const name=button.dataset.control;const press=e=>{e.preventDefault();button.classList.add('is-down');setControl(name,true);},release=e=>{e.preventDefault();button.classList.remove('is-down');setControl(name,false);};button.addEventListener('pointerdown',press);button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('pointerleave',release);});

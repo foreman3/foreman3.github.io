@@ -1,6 +1,9 @@
 (() => {
   'use strict';
 
+  if (window.__vibecadeMobileInitialized) return;
+  window.__vibecadeMobileInitialized = true;
+
   const root = document.documentElement;
   const narrowViewport = window.matchMedia('(max-width: 900px)');
   const coarsePointer = window.matchMedia('(pointer: coarse)');
@@ -495,7 +498,10 @@
     element.addEventListener('pointercancel', finish);
     element.addEventListener('lostpointercapture', finish);
     element.addEventListener('contextmenu', suppressTouchCallout);
-    window.addEventListener('blur', centerKnob);
+    const releaseInput = () => finish({});
+    window.addEventListener('blur', releaseInput);
+    window.addEventListener('resize', releaseInput);
+    window.addEventListener('vibecade:reset-input', releaseInput);
     centerKnob();
 
     return () => {
@@ -505,7 +511,9 @@
       element.removeEventListener('pointercancel', finish);
       element.removeEventListener('lostpointercapture', finish);
       element.removeEventListener('contextmenu', suppressTouchCallout);
-      window.removeEventListener('blur', centerKnob);
+      window.removeEventListener('blur', releaseInput);
+      window.removeEventListener('resize', releaseInput);
+      window.removeEventListener('vibecade:reset-input', releaseInput);
       centerKnob();
     };
   };
@@ -692,38 +700,22 @@
     }
   };
 
-  const isVisible = (element) => {
-    if (!element) return false;
-    const style = window.getComputedStyle(element);
-    return style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length > 0;
-  };
-
   const restartInPlace = () => {
-    const nativeRestart = [...document.querySelectorAll('#restartBtn, #restartButton, #restart-button, #resetGame, #reset-button, [data-action="restart"]')]
-      .find(isVisible);
-    if (nativeRestart) {
-      nativeRestart.click();
-    } else {
-      const restartEvent = new CustomEvent('vibecade:restart', { cancelable: true });
-      window.dispatchEvent(restartEvent);
-      if (!restartEvent.defaultPrevented) {
-        const restartFunction = ['restartGame', 'resetGame', 'resetCampaign', 'resetRace', 'startLevel']
-          .map((name) => window[name])
-          .find((candidate) => typeof candidate === 'function' && candidate.length === 0);
-        if (restartFunction) {
-          restartFunction();
-        } else {
-          document.dispatchEvent(new KeyboardEvent('keydown', {
-            key: 'r',
-            code: 'KeyR',
-            bubbles: true,
-            cancelable: true
-          }));
-          document.dispatchEvent(new KeyboardEvent('keyup', {
-            key: 'r',
-            code: 'KeyR',
-            bubbles: true,
-            cancelable: true
+    window.dispatchEvent(new Event('vibecade:reset-input'));
+    const restartEvent = new CustomEvent('vibecade:restart', { cancelable: true });
+    window.dispatchEvent(restartEvent);
+    if (!restartEvent.defaultPrevented) {
+      const nativeRestart = [...document.querySelectorAll('#restartBtn, #restartButton, #restart-button, #resetGame, #reset-button, [data-action="restart"]')]
+        .find(button => !button.disabled);
+      const restartFunction = ['restartGame', 'resetGame', 'resetCampaign', 'resetRace']
+        .map(name => window[name])
+        .find(candidate => typeof candidate === 'function' && candidate.length === 0);
+      if (nativeRestart) nativeRestart.click();
+      else if (restartFunction) restartFunction();
+      else {
+        for (const type of ['keydown', 'keyup']) {
+          document.dispatchEvent(new KeyboardEvent(type, {
+            key: 'r', code: 'KeyR', bubbles: true, cancelable: true
           }));
         }
       }

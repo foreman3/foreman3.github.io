@@ -1459,13 +1459,14 @@ function stepGame(dt){
   }
 }
 
+let levelAdvanceTimer = null;
 function handleLevelComplete(){
   if(win) return;
   win = true;
   addScore(1500, player.x + 0.5, player.y - 1, '#ffe27a');
   setLevelMessage('Level Complete!', 600);
   const nextLevelNumber = levelNumber + 1;
-  setTimeout(() => {
+  levelAdvanceTimer = setTimeout(() => {
     const upcomingLabel = `Level ${nextLevelNumber + 1}`;
     loadLevel(nextLevelNumber, {
       label: upcomingLabel,
@@ -1791,6 +1792,15 @@ function syncPlayerDirection(preferredDirection = ''){
   else stopPlayerMovement();
 }
 
+function restartGame(){
+  clearTimeout(levelAdvanceTimer);
+  lives = 3;
+  score = 0;
+  Object.keys(keys).forEach(key => { keys[key] = false; });
+  loadLevel(0);
+}
+window.addEventListener('vibecade:restart', event => { event.preventDefault(); restartGame(); });
+
 document.addEventListener('keydown', e => {
   if(e.key.startsWith('Arrow')) e.preventDefault();
   if(e.key === 'ArrowLeft') { keys.left = true; syncPlayerDirection('left'); }
@@ -1802,11 +1812,7 @@ document.addEventListener('keydown', e => {
     usePepper();
   }
   if(e.key === 'r' || e.key === 'R'){
-    if(gameOver){
-      lives = 3;
-      score = 0;
-    }
-    loadLevel(levelNumber);
+    restartGame();
   }
 });
 

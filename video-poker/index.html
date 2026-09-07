@@ -1617,6 +1617,15 @@
       statusMessage.textContent = 'Added 50 credits to your balance.';
     });
 
+    function restartGame() {
+      credits = 100; bet = 1; stage = 'select'; deck = [];
+      currentMachine = null; lastWinHand = null;
+      overlay.classList.add('active');
+      resetHandDisplay(); renderPayoutTable(); updateBet(1); updateCredits(0);
+      statusMessage.textContent = 'Select a machine to begin.';
+    }
+    window.addEventListener('vibecade:restart', event => { event.preventDefault(); restartGame(); });
+
     buildMachineCards();
     resetHandDisplay();
     updateBetButtons();

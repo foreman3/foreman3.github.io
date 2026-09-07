@@ -966,7 +966,7 @@
       if(visited === ROWS*(ROWS+1)/2){
         messageEl.textContent = `Level ${level} complete!`;
         level++;
-        setTimeout(startLevel, 1200);
+        spawnTimeouts.push(setTimeout(startLevel, 1200));
       }
     }
 
@@ -1337,6 +1337,7 @@
     }
 
     document.addEventListener('keydown', e => {
+      if (e.key.toLowerCase() === 'r') restartGame();
       switch(e.key){
         case 'ArrowUp': move(-1,-1); break;
         case 'ArrowRight': move(-1,0); break;
@@ -1357,10 +1358,12 @@
       startLevel();
     }
 
-    window.addEventListener('vibecade:restart', (event) => {
-      event.preventDefault();
+    function restartGame() {
+      level = 1;
+      lives = 3;
       startLevel();
-    });
+    }
+    window.addEventListener('vibecade:restart', event => { event.preventDefault(); restartGame(); });
 
     function showInstructions() {
       started = false;

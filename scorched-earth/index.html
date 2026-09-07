@@ -400,6 +400,7 @@
         <button id="fireBtn">Fire!</button>
         <button id="shopBtn">Field Depot</button>
         <button id="skipFightBtn">End Fight</button>
+        <button id="restartBtn">Restart Campaign</button>
       </div>
     </div>
     <canvas id="gameCanvas" width="1280" height="640"></canvas>
@@ -870,6 +871,13 @@
       setActiveHuman(currentPlayer);
       startRound();
     }
+
+    function restartGame() {
+      document.getElementById('shopOverlay').classList.remove('active');
+      configureRoster(gatherOpponentConfigurations());
+    }
+    document.getElementById('restartBtn').addEventListener('click', restartGame);
+    window.addEventListener('vibecade:restart', event => { event.preventDefault(); restartGame(); });
 
     const opponentCountSelect = document.getElementById('opponentCount');
     if (opponentCountSelect) {
@@ -2281,5 +2289,4 @@
   </script>
 </body>
 </html>
-
 

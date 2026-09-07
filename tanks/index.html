@@ -400,13 +400,13 @@
       window.requestAnimationFrame(resizeCanvas);
     });
 
-    window.addEventListener('load', () => {
-      document.getElementById('restartBtn').addEventListener('click', () => {
-        level = 1;
-        lives = 3;
-        startLevel();
-      });
-    });
+    function restartGame() {
+      level = 1;
+      lives = 3;
+      startLevel();
+    }
+    document.getElementById('restartBtn').addEventListener('click', restartGame);
+    window.addEventListener('vibecade:restart', event => { event.preventDefault(); restartGame(); });
 
     if (hasSeenInstructions) {
       if (instructionModal) instructionModal.classList.remove('is-visible');
@@ -416,4 +416,3 @@
 <script src="battle-controls.js"></script>
 </body>
 </html>
-

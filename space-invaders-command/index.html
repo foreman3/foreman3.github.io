@@ -469,6 +469,10 @@
     }
 
     function resetGame() {
+      stopFiring();
+      missiles.length = 0;
+      explosions.length = 0;
+      player.x = canvas.width / 2;
       score = 0;
       wave = 1;
       gameOver = false;

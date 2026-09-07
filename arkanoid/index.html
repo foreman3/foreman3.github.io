@@ -1377,7 +1377,7 @@
       burst(canvas.width / 2, canvas.height / 2, '#ffe066', 80, 8);
       tone(480, 0.45, 0.06, 650);
       showMessage(`SECTOR CLEAR · BONUS ${totalBonus}${perfectBonus ? ' · PERFECT!' : ''}`, 1800);
-      setTimeout(() => {
+      levelAdvanceTimer = setTimeout(() => {
         levelIndex += 1;
         transitionTimer = 0;
         if (levelIndex >= levelMaps.length) {
@@ -1391,7 +1391,10 @@
       }, 1500);
     }
 
+    let levelAdvanceTimer = null;
     function resetLevel(resetScore = false, announce = true, spawnBall = true) {
+      clearTimeout(levelAdvanceTimer);
+      transitionTimer = 0;
       waitingForRestart = false;
       powerups.length = 0;
       bullets.length = 0;

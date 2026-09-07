@@ -398,18 +398,18 @@
       releaseControls();
     }
 
-    function startRun() {
+    function startRun(level = requestedLevel) {
       state.score = 0;
       state.hull = 3;
       state.started = true;
       state.paused = false;
-      spawnLevel(requestedLevel, false);
+      spawnLevel(level, false);
       canvas.focus({ preventScroll: true });
     }
 
     function restartRun() {
       tone(330, .08, .025);
-      startRun();
+      startRun(1);
     }
 
     function releaseControls() {
@@ -840,7 +840,8 @@
       button.addEventListener('pointercancel', release);
       button.addEventListener('lostpointercapture', release);
     });
-    document.querySelector('[data-action="restart"]').addEventListener('pointerdown', function (event) { event.preventDefault(); restartRun(); });
+    document.querySelector('[data-action="restart"]').addEventListener('click', restartRun);
+    window.addEventListener('vibecade:restart', function (event) { event.preventDefault(); restartRun(); });
     document.querySelector('[data-action="sound"]').addEventListener('pointerdown', function (event) { event.preventDefault(); toggleSound(); });
 
     closeButton.addEventListener('click', hideInstructions);
