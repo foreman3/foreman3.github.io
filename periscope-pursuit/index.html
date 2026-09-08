@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#171d22">
+  <title>Periscope Pursuit | VibeCade</title>
+  <link rel="stylesheet" href="../flyout.css">
+  <script src="../flyout.js" defer></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f3e3bb;
+      --paper: #d4a851;
+      --signal: #e95f3c;
+      --sea: #245d68;
+      --deep: #101b21;
+      --brass: #b68a3c;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body {
+      display: grid;
+      place-items: center;
+      background:
+        repeating-linear-gradient(112deg, rgba(255,255,255,.018) 0 1px, transparent 1px 9px),
+        radial-gradient(circle at 50% 38%, #344149 0, #171d22 57%, #0b0f12 100%);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .18;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.28'/%3E%3C/svg%3E");
+    }
+    #flyout-nav { z-index: 75; }
+    #game-shell {
+      position: relative;
+      width: min(97vw, calc(94vh * 1.6));
+      max-height: 94vh;
+      aspect-ratio: 8 / 5;
+      overflow: hidden;
+      border: 2px solid #7c6337;
+      border-radius: 18px;
+      background: #11191e;
+      box-shadow: 0 28px 80px #000b, inset 0 0 0 5px #1d2529, inset 0 0 0 7px #7c633766;
+    }
+    canvas { display: block; width: 100%; height: 100%; outline: none; }
+    canvas:focus-visible { box-shadow: inset 0 0 0 4px #fff3c8; }
+    #help-button {
+      position: fixed;
+      z-index: 70;
+      top: 18px;
+      right: 18px;
+      display: grid;
+      width: 46px;
+      height: 46px;
+      place-items: center;
+      border: 1px solid #d6b26a88;
+      border-radius: 50%;
+      background: #10181dcc;
+      color: var(--paper);
+      font: 900 23px/1 Georgia, serif;
+      cursor: pointer;
+      opacity: .78;
+      backdrop-filter: blur(7px);
+    }
+    #help-button:hover, #help-button:focus-visible { opacity: 1; outline: 3px solid #fff3c8; outline-offset: 3px; }
+    .modal {
+      position: fixed;
+      z-index: 100;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 16px;
+      overflow: auto;
+      background: #090d10df;
+      backdrop-filter: blur(8px);
+    }
+    .modal.is-visible { display: grid; }
+    .briefing {
+      width: min(650px, 95vw);
+      max-height: calc(100dvh - 32px);
+      overflow: auto;
+      border: 3px double #9a773e;
+      padding: clamp(19px, 4vw, 38px);
+      background:
+        linear-gradient(115deg, transparent 0 48%, #a0783922 49% 51%, transparent 52%) 0 0 / 42px 42px,
+        #e4d2a5;
+      color: #25241f;
+      box-shadow: 0 24px 80px #000d;
+      transform: rotate(-.2deg);
+    }
+    .eyebrow { margin: 0 0 8px; color: #8d3e2c; font: 800 12px/1.2 "Courier New", monospace; letter-spacing: .18em; }
+    h1 { margin: 0; color: #172d33; font: 900 clamp(34px, 7vw, 62px)/.86 Impact, Haettenschweiler, sans-serif; letter-spacing: .035em; text-transform: uppercase; }
+    .briefing > p { line-height: 1.45; }
+    .orders {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .order { border-left: 4px solid #2d6267; padding: 8px 11px; font: 700 13px/1.35 "Courier New", monospace; }
+    .order b { display: block; color: #8d3e2c; }
+    .recognition { font: 700 12px/1.45 "Courier New", monospace; color: #4c3929; }
+    #instruction-close {
+      width: 100%;
+      min-height: 52px;
+      border: 2px solid #16272c;
+      background: #c24c32;
+      color: #fff4d5;
+      font: 900 15px/1 "Courier New", monospace;
+      letter-spacing: .1em;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 #172d33;
+    }
+    #instruction-close:hover, #instruction-close:focus-visible { background: #a53d2a; outline: 3px solid white; outline-offset: 3px; }
+    .touch-controls { display: none; }
+    .control-cluster { pointer-events: none; }
+    .control-button {
+      pointer-events: auto;
+      width: 92px;
+      min-height: 58px;
+      border: 2px solid #d6b26a99;
+      border-radius: 50%;
+      background: #1a292fcc;
+      color: #f4d991;
+      font: 900 11px/1.08 "Courier New", monospace;
+      letter-spacing: .04em;
+      touch-action: none;
+      box-shadow: inset 0 0 0 3px #10191d, 0 5px 0 #0b1114;
+    }
+    .control-button.fire { min-height: 84px; border-color: #e86a47; color: #fff2ce; background: #a43c2bcf; font-size: 14px; }
+    .control-button.is-pressed { transform: translateY(4px); box-shadow: inset 0 0 9px #0008, 0 1px 0 #0b1114; }
+    .control-button.sound { min-height: 44px; font-size: 9px; }
+    #portrait-note {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      place-items: center;
+      padding: 28px;
+      background: #121b20;
+      color: #f2d89b;
+      text-align: center;
+      font: 800 17px/1.5 "Courier New", monospace;
+    }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 900px), (pointer: coarse) {
+      #game-shell { width: 100vw; border: 0; border-radius: 0; }
+      #help-button, #flyout-nav { display: none !important; }
+      .touch-controls { display: flex; }
+    }
+    @media (max-width: 599px) and (orientation: portrait) {
+      body:not(.instructions-open) #portrait-note { display: grid; }
+      body:not(.instructions-open) #game-shell,
+      body:not(.instructions-open) .touch-controls { visibility: hidden !important; }
+    }
+    body.instructions-open .touch-controls { visibility: hidden !important; pointer-events: none !important; }
+    @media (max-height: 440px) {
+      .briefing { padding: 14px 20px; }
+      .briefing > p { margin: 7px 0; font-size: 12px; }
+      .orders { margin: 10px 0; }
+      h1 { font-size: 34px; }
+    }
+    @media (prefers-reduced-motion: reduce) { body::before { display: none; } }
+  </style>
+</head>
+<body class="instructions-open">
+  <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
+    <button class="flyout-toggle" type="button" aria-label="Arcade menu"><span></span><span></span><span></span></button>
+    <div id="flyout-panel" class="flyout-panel"></div>
+  </div>
+  <button id="help-button" type="button" aria-label="How to play Periscope Pursuit">?</button>
+
+  <main id="game-shell" aria-label="Periscope Pursuit game cabinet">
+    <canvas id="game" width="960" height="600" tabindex="0" aria-label="Periscope Pursuit. Sweep the sight, fire torpedoes at hostile ships, and intercept depth charges."></canvas>
+  </main>
+
+  <div id="touch-controls" class="touch-controls" aria-label="Touch controls">
+    <div class="virtual-joystick" data-joystick data-axis="horizontal" aria-label="Sweep the periscope left or right">
+      <span class="joystick-mark right">▶</span><span class="joystick-mark left">◀</span><span class="joystick-knob"></span>
+    </div>
+    <div class="control-cluster">
+      <button class="control-button fire" data-action="fire" type="button" aria-label="Fire torpedo">FIRE</button>
+      <button class="control-button" data-action="reload" type="button" aria-label="Reload torpedoes">RELOAD</button>
+      <button class="control-button sound" data-action="sound" type="button" aria-label="Turn sound off">SOUND<br>ON</button>
+    </div>
+  </div>
+
+  <div id="portrait-note" role="status">ROTATE TO LANDSCAPE<br><small>The periscope needs a wide horizon.</small></div>
+
+  <section id="instruction-modal" class="modal is-visible" role="dialog" aria-modal="true" aria-labelledby="instruction-title">
+    <div class="briefing">
+      <p class="eyebrow">FLEET RECOGNITION ORDER No. 27</p>
+      <h1 id="instruction-title">Periscope<br>Pursuit</h1>
+      <p>Sweep the sight across three sea lanes and lead your torpedoes into hostile silhouettes. Protect the white relief boats and shoot falling depth charges before they reach you.</p>
+      <div class="orders">
+        <div class="order"><b>AIM</b>← → or A / D<br>Touch: slide the scope</div>
+        <div class="order"><b>FIRE</b>Space or ↑ / W<br>Touch: FIRE</div>
+        <div class="order"><b>RELOAD</b>S or ↓<br>Touch: RELOAD</div>
+        <div class="order"><b>RESTART / SOUND</b>R restarts · M mutes</div>
+      </div>
+      <p class="recognition">HOSTILES wear striped funnels. RELIEF boats are white, fly a cross flag, and never drop charges. Empty racks reload automatically; a manual reload is faster.</p>
+      <button id="instruction-close" type="button">MAN THE SCOPE</button>
+    </div>
+  </section>
+  <div id="diagnostic" class="sr-only" aria-live="polite"></div>
+
+  <script src="../mobile-fullscreen.js?v=17"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const shell = document.getElementById('game-shell');
+    const modal = document.getElementById('instruction-modal');
+    const closeButton = document.getElementById('instruction-close');
+    const helpButton = document.getElementById('help-button');
+    const diagnostic = document.getElementById('diagnostic');
+    const fireButton = document.querySelector('[data-action="fire"]');
+    const reloadButton = document.querySelector('[data-action="reload"]');
+    const soundButton = document.querySelector('[data-action="sound"]');
+    const W = 960;
+    const H = 600;
+    const TAU = Math.PI * 2;
+    const instructionKey = 'vibecade-instructions-periscope-pursuit-v1';
+    const params = new URLSearchParams(location.search);
+    let requestedLevel = Math.max(1, Math.min(5, Number(params.get('level')) || 1));
+    const demoMode = params.get('demo') === 'active';
+    const testMode = params.get('test') === '1';
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const mobileProfile = matchMedia('(max-width: 900px), (pointer: coarse)');
+
+    const patrols = [
+      { name: 'CALM SOUND', quota: 5, time: 62, speed: 58, interval: 1.65, traffic: 3, charge: 0, relief: .12, magazine: 6, hulls: 4 },
+      { name: 'COLD CURRENT', quota: 7, time: 59, speed: 67, interval: 1.43, traffic: 4, charge: .055, relief: .13, magazine: 6, hulls: 4 },
+      { name: 'NARROW STRAIT', quota: 9, time: 57, speed: 77, interval: 1.24, traffic: 5, charge: .10, relief: .14, magazine: 5, hulls: 4 },
+      { name: 'IRON CONVOY', quota: 11, time: 56, speed: 88, interval: 1.08, traffic: 6, charge: .16, relief: .15, magazine: 5, hulls: 4 },
+      { name: 'WOLF PACK', quota: 15, time: 50, speed: 108, interval: .84, traffic: 7, charge: .27, relief: .17, magazine: 4, hulls: 3 }
+    ];
+
+    const keys = { left: false, right: false, fire: false };
+    const state = {
+      started: false, paused: true, phase: 'instructions', level: requestedLevel,
+      score: 0, best: Number(localStorage.getItem('vibecade-periscope-best') || 0),
+      aimX: W / 2, joystickX: 0, time: 0, sunk: 0, hulls: 4, ammo: 6,
+      spawnTimer: .3, reloadTimer: 0, fireCooldown: 0, invulnerable: 0,
+      transition: 0, message: '', submessage: '', flash: 0, shake: 0,
+      combo: 0, muted: false, elapsed: 0,
+      ships: [], torpedoes: [], charges: [], particles: [], wakes: []
+    };
+    let audioContext = null;
+    let lastTime = performance.now();
+    let accumulator = 0;
+    let diagnosticTimer = 0;
+
+    function tone(frequency, duration, volume = .035, type = 'square', slide = 0) {
+      if (state.muted) return;
+      try {
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(30, frequency + slide), audioContext.currentTime + duration);
+        gain.gain.setValueAtTime(volume, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.0001, audioContext.currentTime + duration);
+        osc.connect(gain).connect(audioContext.destination);
+        osc.start();
+        osc.stop(audioContext.currentTime + duration);
+      } catch (_) { /* Sound is optional. */ }
+    }
+
+    function config() { return patrols[state.level - 1]; }
+    function clearInput() {
+      keys.left = keys.right = keys.fire = false;
+      state.joystickX = 0;
+      document.querySelectorAll('.control-button.is-pressed').forEach(button => button.classList.remove('is-pressed'));
+      window.dispatchEvent(new Event('vibecade:reset-input'));
+    }
+
+    function startPatrol(level, keepScore = false) {
+      state.level = Math.max(1, Math.min(5, level));
+      const cfg = config();
+      if (!keepScore) state.score = 0;
+      state.phase = 'playing';
+      state.paused = false;
+      state.aimX = W / 2;
+      state.time = cfg.time;
+      state.sunk = 0;
+      state.hulls = cfg.hulls;
+      state.ammo = cfg.magazine;
+      state.spawnTimer = .28;
+      state.reloadTimer = 0;
+      state.fireCooldown = 0;
+      state.invulnerable = 0;
+      state.transition = 0;
+      state.message = '';
+      state.submessage = '';
+      state.combo = 0;
+      state.ships.length = 0;
+      state.torpedoes.length = 0;
+      state.charges.length = 0;
+      state.particles.length = 0;
+      state.wakes.length = 0;
+      state.elapsed = 0;
+      state.flash = 0;
+      state.shake = 0;
+      clearInput();
+      if (demoMode) {
+        for (let i = 0; i < Math.min(4, cfg.traffic); i += 1) spawnShip(i === 2 ? 'relief' : null, i);
+      }
+      canvas.focus({ preventScroll: true });
+      updateDiagnostic(true);
+    }
+
+    function resetCampaign() {
+      state.started = true;
+      requestedLevel = 1;
+      startPatrol(1, false);
+      tone(310, .08, .025, 'triangle');
+    }
+
+    function beginRun() {
+      state.started = true;
+      startPatrol(requestedLevel, false);
+    }
+
+    function showInstructions() {
+      state.paused = true;
+      clearInput();
+      modal.classList.add('is-visible');
+      document.body.classList.add('instructions-open');
+      closeButton.focus();
+      updateDiagnostic(true);
+    }
+
+    function hideInstructions() {
+      modal.classList.remove('is-visible');
+      document.body.classList.remove('instructions-open');
+      sessionStorage.setItem(instructionKey, '1');
+      if (!state.started) beginRun();
+      else {
+        state.paused = false;
+        lastTime = performance.now();
+        canvas.focus({ preventScroll: true });
+      }
+      updateDiagnostic(true);
+    }
+
+    function shipSpec(kind) {
+      if (kind === 'destroyer') return { width: 88, height: 24, points: 180, scale: 1, color: '#26343a' };
+      if (kind === 'skiff') return { width: 55, height: 17, points: 240, scale: 1.34, color: '#422d27' };
+      if (kind === 'relief') return { width: 77, height: 25, points: 0, scale: .88, color: '#e6dfc8' };
+      return { width: 104, height: 28, points: 120, scale: .82, color: '#35464a' };
+    }
+
+    function spawnShip(forcedKind, forcedLane) {
+      const cfg = config();
+      let kind = forcedKind;
+      if (!kind) {
+        const roll = Math.random();
+        if (roll < cfg.relief) kind = 'relief';
+        else if (state.level >= 2 && roll > .72) kind = 'destroyer';
+        else if (state.level >= 3 && roll > .51) kind = 'skiff';
+        else kind = 'cargo';
+      }
+      const lane = forcedLane == null ? Math.floor(Math.random() * 3) : forcedLane % 3;
+      const spec = shipSpec(kind);
+      const direction = Math.random() < .5 ? -1 : 1;
+      const laneScale = [1, .85, .72][lane];
+      const y = [252, 210, 174][lane];
+      const speedJitter = .82 + Math.random() * .3;
+      state.ships.push({
+        kind, lane, x: direction > 0 ? -spec.width : W + spec.width, y, direction,
+        speed: cfg.speed * spec.scale * speedJitter * laneScale,
+        width: spec.width * laneScale, height: spec.height * laneScale,
+        points: spec.points, color: spec.color, hit: false,
+        chargeTimer: kind === 'destroyer' ? 1.7 + Math.random() * 2.4 : 99,
+        bob: Math.random() * TAU
+      });
+    }
+
+    function beginReload(manual) {
+      const cfg = config();
+      if (state.reloadTimer > 0 || state.ammo >= cfg.magazine || state.phase !== 'playing') return;
+      state.reloadTimer = manual ? .72 : 1.35;
+      tone(155, .12, .018, 'triangle', 45);
+    }
+
+    function fire() {
+      if (state.paused || state.phase !== 'playing' || state.fireCooldown > 0 || state.reloadTimer > 0) return;
+      if (state.ammo <= 0) { beginReload(false); return; }
+      state.ammo -= 1;
+      state.fireCooldown = .23;
+      state.torpedoes.push({ x: state.aimX, y: 523, speed: 365, trail: 0, live: true });
+      state.shake = reducedMotion ? 0 : .05;
+      tone(92, .22, .045, 'sawtooth', 110);
+      burst(state.aimX, 520, 5, '#e8d39c', 36);
+      if (state.ammo === 0) beginReload(false);
+      updateDiagnostic(true);
+    }
+
+    function reload() { beginReload(true); }
+
+    function burst(x, y, count, color, speed = 70) {
+      const total = reducedMotion ? Math.ceil(count * .4) : count;
+      for (let i = 0; i < total && state.particles.length < (mobileProfile.matches ? 55 : 100); i += 1) {
+        const a = Math.random() * TAU;
+        const s = speed * (.35 + Math.random() * .7);
+        state.particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: .3 + Math.random() * .55, color, size: 1.5 + Math.random() * 3 });
+      }
+    }
+
+    function hitShip(ship) {
+      ship.hit = true;
+      burst(ship.x, ship.y, ship.kind === 'relief' ? 12 : 22, ship.kind === 'relief' ? '#f3e4b8' : '#e96843', 105);
+      if (ship.kind === 'relief') {
+        state.score = Math.max(0, state.score - 180);
+        state.time = Math.max(0, state.time - 5);
+        state.combo = 0;
+        state.message = 'HOLD FIRE — RELIEF BOAT';
+        state.submessage = '5 SECONDS LOST';
+        state.transition = .85;
+        state.flash = .22;
+        tone(120, .38, .055, 'sawtooth', -45);
+      } else {
+        state.sunk += 1;
+        state.combo += 1;
+        const award = ship.points + Math.min(5, state.combo) * 25 + state.level * 20;
+        state.score += award;
+        state.best = Math.max(state.best, state.score);
+        localStorage.setItem('vibecade-periscope-best', String(state.best));
+        state.message = state.combo >= 3 ? 'FIRING SOLUTION ×' + state.combo : 'DIRECT HIT';
+        state.submessage = '+' + award;
+        state.transition = .48;
+        tone(185, .18, .045, 'square', 130);
+        setTimeout(() => tone(265, .12, .025, 'triangle', 75), 80);
+        if (state.sunk >= config().quota) completePatrol();
+      }
+      updateDiagnostic(true);
+    }
+
+    function interceptCharge(index) {
+      const charge = state.charges[index];
+      burst(charge.x, charge.y, 14, '#d6b25f', 85);
+      state.charges.splice(index, 1);
+      state.score += 90;
+      state.message = 'DEPTH CHARGE INTERCEPTED';
+      state.submessage = '+90';
+      state.transition = .55;
+      tone(230, .16, .04, 'triangle', 150);
+    }
+
+    function damageSub() {
+      if (state.invulnerable > 0 || state.phase !== 'playing') return;
+      state.hulls -= 1;
+      state.invulnerable = 2.2;
+      state.combo = 0;
+      state.charges.length = 0;
+      state.flash = .42;
+      state.shake = reducedMotion ? 0 : .48;
+      burst(W / 2, 515, 34, '#e96440', 145);
+      tone(78, .55, .07, 'sawtooth', -32);
+      if (state.hulls <= 0) endRun('SUBMARINE LOST', 'PRESS R OR RESET TO RETURN TO PATROL 1');
+      else {
+        state.message = 'PRESSURE HULL HIT';
+        state.submessage = state.hulls + ' HULL SECTIONS REMAIN — SCOPE RECOVERED';
+        state.transition = 1.25;
+      }
+      updateDiagnostic(true);
+    }
+
+    function completePatrol() {
+      if (state.phase !== 'playing') return;
+      const bonus = Math.round(state.time) * 20 + state.hulls * 120;
+      state.score += bonus;
+      state.best = Math.max(state.best, state.score);
+      localStorage.setItem('vibecade-periscope-best', String(state.best));
+      state.torpedoes.length = 0;
+      state.charges.length = 0;
+      clearInput();
+      if (state.level === 5) {
+        state.phase = 'won';
+        state.message = 'THE SEA LANES ARE SECURE';
+        state.submessage = 'FINAL SCORE ' + state.score + ' — PRESS R OR RESET FOR A NEW WATCH';
+        tone(330, .12, .04, 'triangle');
+        setTimeout(() => tone(494, .18, .04, 'triangle'), 130);
+        setTimeout(() => tone(659, .28, .04, 'triangle'), 280);
+      } else {
+        state.phase = 'levelComplete';
+        state.transition = 2.25;
+        state.message = 'PATROL ' + state.level + ' CLEARED';
+        state.submessage = '+' + bonus + ' WATCH BONUS — NEXT: ' + patrols[state.level].name;
+        tone(294, .12, .035, 'triangle');
+        setTimeout(() => tone(440, .2, .04, 'triangle'), 120);
+      }
+      updateDiagnostic(true);
+    }
+
+    function endRun(message, submessage) {
+      state.phase = 'gameover';
+      state.message = message;
+      state.submessage = submessage;
+      clearInput();
+      updateDiagnostic(true);
+    }
+
+    function update(dt) {
+      state.particles.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 22 * dt; p.life -= dt; });
+      state.particles = state.particles.filter(p => p.life > 0);
+      state.wakes.forEach(w => { w.life -= dt; });
+      state.wakes = state.wakes.filter(w => w.life > 0);
+      state.flash = Math.max(0, state.flash - dt);
+      state.shake = Math.max(0, state.shake - dt);
+      if (state.paused || !state.started) return;
+
+      if (state.phase === 'levelComplete') {
+        state.transition -= dt;
+        if (state.transition <= 0) startPatrol(state.level + 1, true);
+        return;
+      }
+      if (state.phase !== 'playing') return;
+
+      state.elapsed += dt;
+      state.time = Math.max(0, state.time - dt);
+      state.fireCooldown = Math.max(0, state.fireCooldown - dt);
+      state.invulnerable = Math.max(0, state.invulnerable - dt);
+      if (state.transition > 0) state.transition -= dt;
+      else { state.message = ''; state.submessage = ''; }
+      if (state.time <= 0) { endRun('WATCH EXPIRED', state.sunk + ' OF ' + config().quota + ' TARGETS — PRESS R OR RESET'); return; }
+
+      let movement = state.joystickX;
+      if (keys.left) movement -= 1;
+      if (keys.right) movement += 1;
+      movement = Math.max(-1, Math.min(1, movement));
+      state.aimX += movement * 315 * dt;
+      state.aimX = Math.max(92, Math.min(W - 92, state.aimX));
+      if (keys.fire && state.fireCooldown <= 0) fire();
+
+      if (state.reloadTimer > 0) {
+        state.reloadTimer -= dt;
+        if (state.reloadTimer <= 0) {
+          state.reloadTimer = 0;
+          state.ammo = config().magazine;
+          tone(410, .08, .025, 'triangle', 90);
+        }
+      }
+
+      state.spawnTimer -= dt;
+      if (state.spawnTimer <= 0 && state.ships.length < config().traffic) {
+        spawnShip();
+        state.spawnTimer = config().interval * (.82 + Math.random() * .4);
+      }
+
+      for (const ship of state.ships) {
+        ship.x += ship.direction * ship.speed * dt;
+        ship.bob += dt * (1.2 + ship.lane * .2);
+        if (Math.random() < dt * 8 && !mobileProfile.matches) state.wakes.push({ x: ship.x - ship.direction * ship.width * .43, y: ship.y + 5, direction: -ship.direction, life: .45 });
+        if (ship.kind === 'destroyer' && !ship.hit) {
+          ship.chargeTimer -= dt;
+          if (ship.chargeTimer <= 0) {
+            if (Math.random() < config().charge) {
+              state.charges.push({ x: ship.x, y: ship.y + 13, vy: 68 + state.level * 9, spin: 0 });
+              tone(135, .11, .018, 'triangle', -30);
+            }
+            ship.chargeTimer = 1.7 + Math.random() * 2.4;
+          }
+        }
+      }
+      state.ships = state.ships.filter(ship => !ship.hit && ship.x > -150 && ship.x < W + 150);
+
+      for (const torpedo of state.torpedoes) {
+        torpedo.y -= torpedo.speed * dt;
+        torpedo.trail += dt;
+      }
+      for (let ti = state.torpedoes.length - 1; ti >= 0; ti -= 1) {
+        const torpedo = state.torpedoes[ti];
+        let consumed = false;
+        for (let ci = state.charges.length - 1; ci >= 0; ci -= 1) {
+          const charge = state.charges[ci];
+          if (Math.abs(torpedo.x - charge.x) < 18 && Math.abs(torpedo.y - charge.y) < 23) {
+            interceptCharge(ci); consumed = true; break;
+          }
+        }
+        if (!consumed) {
+          for (const ship of state.ships) {
+            if (ship.hit) continue;
+            const forgiveness = 9;
+            if (torpedo.x > ship.x - ship.width / 2 - forgiveness && torpedo.x < ship.x + ship.width / 2 + forgiveness &&
+                torpedo.y > ship.y - ship.height - forgiveness && torpedo.y < ship.y + 12) {
+              hitShip(ship); consumed = true; break;
+            }
+          }
+        }
+        if (consumed || torpedo.y < 130) state.torpedoes.splice(ti, 1);
+      }
+
+      for (let ci = state.charges.length - 1; ci >= 0; ci -= 1) {
+        const charge = state.charges[ci];
+        charge.y += charge.vy * dt;
+        charge.vy += 19 * dt;
+        charge.spin += dt * 5;
+        if (charge.y > 518) { state.charges.splice(ci, 1); damageSub(); }
+      }
+
+      diagnosticTimer -= dt;
+      if (diagnosticTimer <= 0) updateDiagnostic();
+    }
+
+    function drawPaperSky() {
+      const sky = ctx.createLinearGradient(0, 82, 0, 270);
+      sky.addColorStop(0, '#d2a95e');
+      sky.addColorStop(.6, '#e3c77f');
+      sky.addColorStop(1, '#b77d43');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 70, W, 235);
+      ctx.fillStyle = '#f4df9c22';
+      for (let i = 0; i < 11; i += 1) {
+        const x = (i * 149 + 43) % W;
+        const y = 102 + (i * 47) % 84;
+        ctx.beginPath();
+        ctx.ellipse(x, y, 36 + (i % 3) * 14, 6 + (i % 2) * 3, -.08, 0, TAU);
+        ctx.fill();
+      }
+    }
+
+    function drawSea() {
+      const sea = ctx.createLinearGradient(0, 250, 0, H);
+      sea.addColorStop(0, '#397985');
+      sea.addColorStop(.38, '#245563');
+      sea.addColorStop(1, '#10242c');
+      ctx.fillStyle = sea;
+      ctx.fillRect(0, 250, W, H - 250);
+      ctx.strokeStyle = '#e5cf9150';
+      ctx.lineWidth = 2;
+      for (let row = 0; row < (mobileProfile.matches ? 6 : 10); row += 1) {
+        const y = 262 + row * 27;
+        ctx.beginPath();
+        for (let x = -20; x <= W + 20; x += 24) {
+          const wave = Math.sin(x * .036 + state.elapsed * (.6 + row * .03) + row) * (3 + row * .22);
+          if (x === -20) ctx.moveTo(x, y + wave); else ctx.lineTo(x, y + wave);
+        }
+        ctx.stroke();
+      }
+    }
+
+    function drawShip(ship) {
+      ctx.save();
+      ctx.translate(ship.x, ship.y + Math.sin(ship.bob) * 1.6);
+      ctx.scale(ship.direction, 1);
+      ctx.fillStyle = '#10171a55';
+      ctx.beginPath();
+      ctx.ellipse(0, 8, ship.width * .58, ship.height * .24, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = ship.color;
+      ctx.strokeStyle = '#182125';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-ship.width / 2, 0);
+      ctx.lineTo(ship.width * .4, 0);
+      ctx.lineTo(ship.width * .52, -ship.height * .28);
+      ctx.lineTo(ship.width * .34, ship.height * .45);
+      ctx.lineTo(-ship.width * .38, ship.height * .45);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      if (ship.kind === 'skiff') {
+        ctx.fillStyle = '#35251f'; ctx.fillRect(-9, -9, 26, 9);
+        ctx.fillStyle = '#d6a34c'; ctx.fillRect(10, -15, 4, 7);
+      } else {
+        ctx.fillStyle = ship.kind === 'relief' ? '#f0e6cb' : '#28373c';
+        ctx.fillRect(-ship.width * .18, -ship.height * .55, ship.width * .36, ship.height * .55);
+        ctx.fillRect(-ship.width * .04, -ship.height * .92, ship.width * .08, ship.height * .38);
+        ctx.fillStyle = ship.kind === 'relief' ? '#b94832' : '#d59b43';
+        ctx.fillRect(ship.width * .2, -ship.height * .7, ship.width * .09, ship.height * .7);
+        if (ship.kind !== 'relief') {
+          ctx.fillStyle = '#172126';
+          ctx.fillRect(ship.width * .205, -ship.height * .65, ship.width * .08, ship.height * .12);
+          ctx.fillRect(ship.width * .205, -ship.height * .38, ship.width * .08, ship.height * .12);
+        }
+      }
+      if (ship.kind === 'relief') {
+        ctx.strokeStyle = '#9d352b'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(-5, -10); ctx.lineTo(-5, -24); ctx.stroke();
+        ctx.fillStyle = '#efe6cc'; ctx.fillRect(-4, -24, 20, 13);
+        ctx.fillStyle = '#ad3f2f'; ctx.fillRect(3, -22, 5, 9); ctx.fillRect(0, -19, 11, 4);
+      }
+      ctx.restore();
+    }
+
+    function drawTorpedo(torpedo) {
+      ctx.save();
+      ctx.strokeStyle = '#f1e3bd99';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(torpedo.x, torpedo.y + 9);
+      ctx.lineTo(torpedo.x, torpedo.y + 35);
+      ctx.stroke();
+      ctx.fillStyle = '#f3d36d';
+      ctx.beginPath(); ctx.moveTo(torpedo.x, torpedo.y - 9); ctx.lineTo(torpedo.x - 5, torpedo.y + 6); ctx.lineTo(torpedo.x + 5, torpedo.y + 6); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawCharge(charge) {
+      ctx.save();
+      ctx.translate(charge.x, charge.y);
+      ctx.rotate(charge.spin);
+      ctx.fillStyle = '#171d20';
+      ctx.strokeStyle = '#d4a74f';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, 10, 0, TAU); ctx.fill(); ctx.stroke();
+      for (let a = 0; a < TAU; a += Math.PI / 2) {
+        ctx.beginPath(); ctx.moveTo(Math.cos(a) * 9, Math.sin(a) * 9); ctx.lineTo(Math.cos(a) * 15, Math.sin(a) * 15); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawScope() {
+      ctx.save();
+      ctx.strokeStyle = '#172226cc';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([11, 8]);
+      ctx.beginPath(); ctx.moveTo(state.aimX, 116); ctx.lineTo(state.aimX, 506); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = '#f1d783cc';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(state.aimX, 255, 34, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(state.aimX - 50, 255); ctx.lineTo(state.aimX + 50, 255); ctx.moveTo(state.aimX, 207); ctx.lineTo(state.aimX, 303); ctx.stroke();
+      ctx.fillStyle = '#172226';
+      ctx.font = '800 11px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(Math.round((state.aimX - 480) / 4)).padStart(4, '0'), state.aimX, 316);
+      ctx.restore();
+    }
+
+    function drawHud() {
+      const cfg = config();
+      ctx.fillStyle = '#141d21';
+      ctx.fillRect(0, 0, W, 76);
+      ctx.fillStyle = '#202b2f';
+      ctx.fillRect(0, 542, W, 58);
+      ctx.strokeStyle = '#a47c38';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, 75); ctx.lineTo(W, 75); ctx.moveTo(0, 542); ctx.lineTo(W, 542); ctx.stroke();
+      ctx.font = '900 14px Courier New';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = '#e8ca83';
+      ctx.textAlign = 'left';
+      ctx.fillText('PATROL ' + state.level + '/5  ' + cfg.name, 22, 17);
+      ctx.font = '700 12px Courier New';
+      ctx.fillStyle = '#ae9b70';
+      ctx.fillText('TARGETS ' + state.sunk + '/' + cfg.quota + '   HULL ' + '◆'.repeat(state.hulls) + '◇'.repeat(cfg.hulls - state.hulls), 22, 43);
+      ctx.textAlign = 'right';
+      ctx.font = '900 14px Courier New';
+      ctx.fillStyle = state.time < 12 ? '#ef7150' : '#e8ca83';
+      ctx.fillText('WATCH ' + Math.ceil(state.time).toString().padStart(2, '0'), W - 22, 17);
+      ctx.fillStyle = '#ae9b70';
+      ctx.font = '700 12px Courier New';
+      ctx.fillText('SCORE ' + String(state.score).padStart(6, '0') + '  BEST ' + String(state.best).padStart(6, '0'), W - 22, 43);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#e8ca83';
+      ctx.font = '900 13px Courier New';
+      const racks = '●'.repeat(state.ammo) + '○'.repeat(cfg.magazine - state.ammo);
+      ctx.fillText(state.reloadTimer > 0 ? 'TORPEDO RACK  RELOADING ' + Math.max(0, state.reloadTimer).toFixed(1) : 'TORPEDO RACK  ' + racks, 22, 563);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = state.combo >= 3 ? '#f07a52' : '#ae9b70';
+      ctx.fillText(state.combo >= 2 ? 'SOLUTION ×' + state.combo : 'LEAD THE TARGET', W - 22, 563);
+    }
+
+    function drawVignette() {
+      const vignette = ctx.createRadialGradient(W / 2, 310, 190, W / 2, 310, 520);
+      vignette.addColorStop(.45, '#0000');
+      vignette.addColorStop(.78, '#0810144a');
+      vignette.addColorStop(1, '#020608dc');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 76, W, 466);
+      ctx.strokeStyle = '#070d10aa';
+      ctx.lineWidth = 22;
+      ctx.beginPath(); ctx.arc(W / 2, 310, 390, 0, TAU); ctx.stroke();
+    }
+
+    function drawMessage() {
+      if (!state.message) return;
+      const terminal = state.phase === 'gameover' || state.phase === 'won' || state.phase === 'levelComplete';
+      const width = terminal ? 590 : 440;
+      ctx.fillStyle = '#10181de8';
+      ctx.fillRect(W / 2 - width / 2, terminal ? 330 : 352, width, terminal ? 112 : 82);
+      ctx.strokeStyle = state.phase === 'gameover' ? '#e95f3c' : '#c59a4e';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(W / 2 - width / 2 + .5, (terminal ? 330 : 352) + .5, width - 1, (terminal ? 112 : 82) - 1);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f4dfa5';
+      ctx.font = '900 23px Courier New';
+      ctx.fillText(state.message, W / 2, terminal ? 370 : 382);
+      ctx.fillStyle = '#c5ad75';
+      ctx.font = '700 12px Courier New';
+      ctx.fillText(state.submessage, W / 2, terminal ? 406 : 411);
+    }
+
+    function render() {
+      ctx.save();
+      if (state.shake > 0 && !reducedMotion) ctx.translate((Math.random() - .5) * 9, (Math.random() - .5) * 7);
+      ctx.fillStyle = '#131b20'; ctx.fillRect(-10, -10, W + 20, H + 20);
+      drawPaperSky();
+      drawSea();
+      state.wakes.forEach(w => {
+        ctx.globalAlpha = Math.max(0, w.life);
+        ctx.strokeStyle = '#f0dfa8'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(w.x, w.y); ctx.lineTo(w.x + w.direction * 18, w.y + 2); ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+      [...state.ships].sort((a, b) => a.lane - b.lane).forEach(drawShip);
+      state.torpedoes.forEach(drawTorpedo);
+      state.charges.forEach(drawCharge);
+      state.particles.forEach(p => {
+        ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2));
+        ctx.fillStyle = p.color; ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+      });
+      ctx.globalAlpha = 1;
+      drawScope();
+      drawVignette();
+      drawHud();
+      drawMessage();
+      ctx.restore();
+      if (state.flash > 0) { ctx.fillStyle = 'rgba(228,83,53,' + Math.min(.28, state.flash) + ')'; ctx.fillRect(0, 0, W, H); }
+    }
+
+    function updateDiagnostic(force = false) {
+      diagnosticTimer = .28;
+      diagnostic.textContent = 'Patrol ' + state.level + ' of 5. ' + state.phase + '. ' + state.sunk + ' of ' + config().quota + ' targets. ' + Math.ceil(state.time) + ' seconds. ' + state.hulls + ' hull. ' + state.ammo + ' torpedoes. ' + state.charges.length + ' depth charges. Score ' + state.score + '. Aim ' + Math.round(state.aimX) + '.';
+      if (force) diagnostic.dataset.updated = String(Date.now());
+    }
+
+    function frame(now) {
+      const delta = Math.min(.1, Math.max(0, (now - lastTime) / 1000));
+      lastTime = now;
+      if (!state.paused || state.particles.length) {
+        accumulator = Math.min(.12, accumulator + delta);
+        while (accumulator >= 1 / 60) { update(1 / 60); accumulator -= 1 / 60; }
+      }
+      render();
+      requestAnimationFrame(frame);
+    }
+
+    function keyControl(event) {
+      const key = event.key.toLowerCase();
+      if (key === 'arrowleft' || key === 'a') return 'left';
+      if (key === 'arrowright' || key === 'd') return 'right';
+      if (event.code === 'Space' || key === 'arrowup' || key === 'w') return 'fire';
+      return '';
+    }
+
+    window.addEventListener('keydown', event => {
+      const control = keyControl(event);
+      if (control) {
+        event.preventDefault();
+        keys[control] = true;
+        if (!event.repeat && control === 'left') state.aimX = Math.max(92, state.aimX - 15);
+        if (!event.repeat && control === 'right') state.aimX = Math.min(W - 92, state.aimX + 15);
+        if (control === 'fire' && !event.repeat) fire();
+      }
+      const key = event.key.toLowerCase();
+      if (!event.repeat && (key === 's' || key === 'arrowdown')) { event.preventDefault(); reload(); }
+      if (!event.repeat && key === 'r' && !modal.classList.contains('is-visible')) resetCampaign();
+      if (!event.repeat && key === 'm') toggleSound();
+      if (testMode && !event.repeat && /^[1-5]$/.test(key)) { state.started = true; startPatrol(Number(key), false); }
+      if (testMode && !event.repeat && key === 'l' && state.phase === 'playing') { state.sunk = config().quota; completePatrol(); }
+      if (testMode && !event.repeat && key === 'h' && state.phase === 'playing') damageSub();
+      if (testMode && !event.repeat && key === 't' && state.phase === 'playing') {
+        const spec = shipSpec('cargo');
+        state.ships.push({ kind: 'cargo', lane: 0, x: state.aimX, y: 252, direction: 1, speed: 0,
+          width: spec.width, height: spec.height, points: spec.points, color: spec.color,
+          hit: false, chargeTimer: 99, bob: 0 });
+      }
+      if (testMode && !event.repeat && key === 'c' && state.phase === 'playing') {
+        state.charges.push({ x: state.aimX, y: 395, vy: 52, spin: 0 });
+      }
+      if (!event.repeat && event.key === 'Escape' && !modal.classList.contains('is-visible')) showInstructions();
+    });
+    window.addEventListener('keyup', event => {
+      const control = keyControl(event);
+      if (control) { event.preventDefault(); keys[control] = false; }
+    });
+    window.addEventListener('blur', clearInput);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) clearInput(); });
+    document.addEventListener('contextmenu', event => {
+      if (event.target.closest('#touch-controls') || event.target === canvas) event.preventDefault();
+    });
+
+    function bindPress(button, onPress, hold) {
+      const press = event => {
+        event.preventDefault();
+        try { button.setPointerCapture(event.pointerId); } catch (_) {}
+        button.classList.add('is-pressed');
+        onPress();
+        if (hold) keys.fire = true;
+      };
+      const release = event => {
+        if (event) event.preventDefault();
+        button.classList.remove('is-pressed');
+        if (hold) keys.fire = false;
+      };
+      button.addEventListener('pointerdown', press);
+      button.addEventListener('pointerup', release);
+      button.addEventListener('pointercancel', release);
+      button.addEventListener('lostpointercapture', release);
+    }
+    bindPress(fireButton, fire, true);
+    bindPress(reloadButton, reload, false);
+
+    function toggleSound() {
+      state.muted = !state.muted;
+      soundButton.innerHTML = state.muted ? 'SOUND<br>OFF' : 'SOUND<br>ON';
+      soundButton.setAttribute('aria-label', state.muted ? 'Turn sound on' : 'Turn sound off');
+      soundButton.setAttribute('aria-pressed', String(state.muted));
+      if (!state.muted) tone(480, .08, .025, 'triangle');
+      updateDiagnostic(true);
+    }
+    bindPress(soundButton, toggleSound, false);
+
+    function bindJoystick() {
+      if (!window.VibeCadeJoystick || document.documentElement.dataset.periscopeJoystickBound) return;
+      document.documentElement.dataset.periscopeJoystickBound = 'true';
+      let lastJoystickX = 0;
+      window.VibeCadeJoystick(document.querySelector('[data-joystick]'), {
+        mode: 'horizontal', profile: 'precision',
+        onChange(x) {
+          const next = Math.abs(x) < .015 ? 0 : x;
+          if (next && !lastJoystickX) state.aimX = Math.max(92, Math.min(W - 92, state.aimX + Math.sign(next) * 15));
+          state.joystickX = next;
+          lastJoystickX = next;
+        }
+      });
+    }
+    if (window.VibeCadeJoystick) bindJoystick();
+    else window.addEventListener('vibecade-controls-ready', bindJoystick, { once: true });
+
+    closeButton.addEventListener('click', hideInstructions);
+    modal.addEventListener('click', event => { if (event.target === modal) hideInstructions(); });
+    helpButton.addEventListener('click', showInstructions);
+    window.addEventListener('vibecade:restart', event => { event.preventDefault(); resetCampaign(); });
+
+    window.PeriscopePursuitTest = {
+      snapshot() {
+        return {
+          level: state.level, phase: state.phase, paused: state.paused, score: state.score,
+          sunk: state.sunk, quota: config().quota, time: Number(state.time.toFixed(1)),
+          hulls: state.hulls, magazine: config().magazine, ammo: state.ammo,
+          ships: state.ships.length, charges: state.charges.length,
+          curve: { speed: config().speed, interval: config().interval, traffic: config().traffic, charge: config().charge }
+        };
+      },
+      jumpToLevel(level) { requestedLevel = Math.max(1, Math.min(5, Number(level) || 1)); state.started = true; startPatrol(requestedLevel, false); return this.snapshot(); },
+      clearLevel() { state.sunk = config().quota; completePatrol(); return this.snapshot(); },
+      spawnCharge() { state.charges.push({ x: state.aimX, y: 320, vy: 82, spin: 0 }); return this.snapshot(); },
+      damage() { damageSub(); return this.snapshot(); },
+      setTime(seconds) { state.time = Math.max(0, Number(seconds) || 0); return this.snapshot(); },
+      configurations: patrols.map(item => ({ ...item }))
+    };
+
+    startPatrol(requestedLevel, false);
+    state.started = false;
+    state.paused = true;
+    state.phase = 'instructions';
+    render();
+    if (sessionStorage.getItem(instructionKey) === '1') {
+      modal.classList.remove('is-visible');
+      document.body.classList.remove('instructions-open');
+      beginRun();
+    } else showInstructions();
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>

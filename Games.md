@@ -36,6 +36,7 @@ This repository hosts simple arcade-style video games.
 - [Joust](joust/) - Fly and defeat rival knights.
 - [Number Munchers](number-munchers/) - Devour correct answers while dodging Troggles.
 - [Pac-Man](pacman/) - Eat pellets and avoid ghosts.
+- [Periscope Pursuit](periscope-pursuit/) - Lead rising torpedoes into hostile ships and intercept incoming depth charges.
 - [Pinball](pinball/) - A treasure hunt pinball adventure with mini-tables and unlocks.
 - [Pitfall](pitfall/) - Run, jump, and avoid pits.
 - [Pole Position](pole/) - Steer and dodge rival racers.
