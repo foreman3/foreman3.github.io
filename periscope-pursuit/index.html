@@ -110,7 +110,7 @@
     .order { border-left: 4px solid #2d6267; padding: 8px 11px; font: 700 13px/1.35 "Courier New", monospace; }
     .order b { display: block; color: #8d3e2c; }
     .recognition { font: 700 12px/1.45 "Courier New", monospace; color: #4c3929; }
-    #instruction-close {
+    #instruction-close, #gameover-restart {
       width: 100%;
       min-height: 52px;
       border: 2px solid #16272c;
@@ -121,7 +121,12 @@
       cursor: pointer;
       box-shadow: 4px 4px 0 #172d33;
     }
-    #instruction-close:hover, #instruction-close:focus-visible { background: #a53d2a; outline: 3px solid white; outline-offset: 3px; }
+    #instruction-close:hover, #instruction-close:focus-visible,
+    #gameover-restart:hover, #gameover-restart:focus-visible { background: #a53d2a; outline: 3px solid white; outline-offset: 3px; }
+    #gameover-modal { z-index: 110; }
+    .result-briefing { width: min(520px, 94vw); text-align: center; transform: rotate(.15deg); }
+    .result-briefing h2 { margin: 4px 0 14px; color: #172d33; font: 900 clamp(34px, 7vw, 56px)/.95 Impact, Haettenschweiler, sans-serif; letter-spacing: .035em; text-transform: uppercase; }
+    .result-briefing p:not(.eyebrow) { margin: 0 auto 22px; max-width: 38ch; font: 700 14px/1.5 "Courier New", monospace; }
     .touch-controls { display: none; }
     .control-cluster { pointer-events: none; }
     .control-button {
@@ -163,7 +168,9 @@
       body:not(.instructions-open) #game-shell,
       body:not(.instructions-open) .touch-controls { visibility: hidden !important; }
     }
-    body.instructions-open .touch-controls { visibility: hidden !important; pointer-events: none !important; }
+    body.instructions-open .touch-controls,
+    body.gameover-open .touch-controls { visibility: hidden !important; pointer-events: none !important; }
+    body.gameover-open .vibecade-mobile-options { visibility: hidden !important; }
     @media (max-height: 440px) {
       .briefing { padding: 14px 20px; }
       .briefing > p { margin: 7px 0; font-size: 12px; }
@@ -208,8 +215,17 @@
         <div class="order"><b>RELOAD</b>S or ↓<br>Touch: RELOAD</div>
         <div class="order"><b>RESTART / SOUND</b>R restarts · M mutes</div>
       </div>
-      <p class="recognition">HOSTILES wear striped funnels. RELIEF boats are white, fly a cross flag, and never drop charges. Empty racks reload automatically; a manual reload is faster.</p>
+      <p class="recognition">HOSTILES wear striped funnels. From patrol 3, they answer your torpedoes with ringed orange counter-shots—intercept those before impact. RELIEF boats are white, fly a cross flag, and never return fire. Patrol 1 carries 15 torpedoes, with 5 more added each patrol. Empty racks reload automatically; a manual reload is faster.</p>
       <button id="instruction-close" type="button">MAN THE SCOPE</button>
+    </div>
+  </section>
+
+  <section id="gameover-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
+    <div class="briefing result-briefing">
+      <p class="eyebrow">CONTACT WITH SUBMARINE LOST</p>
+      <h2 id="gameover-title">Patrol over</h2>
+      <p id="gameover-summary">The watch has ended.</p>
+      <button id="gameover-restart" type="button">RETURN TO PATROL 1</button>
     </div>
   </section>
   <div id="diagnostic" class="sr-only" aria-live="polite"></div>
@@ -225,6 +241,10 @@
     const modal = document.getElementById('instruction-modal');
     const closeButton = document.getElementById('instruction-close');
     const helpButton = document.getElementById('help-button');
+    const gameoverModal = document.getElementById('gameover-modal');
+    const gameoverTitle = document.getElementById('gameover-title');
+    const gameoverSummary = document.getElementById('gameover-summary');
+    const gameoverRestart = document.getElementById('gameover-restart');
     const diagnostic = document.getElementById('diagnostic');
     const fireButton = document.querySelector('[data-action="fire"]');
     const reloadButton = document.querySelector('[data-action="reload"]');
@@ -232,6 +252,12 @@
     const W = 960;
     const H = 600;
     const TAU = Math.PI * 2;
+    const TORPEDO_SPEED = 60;
+    const INITIAL_TORPEDO_LIMIT = 15;
+    const TORPEDO_LIMIT_STEP = 5;
+    const MANUAL_RELOAD_TIME = 1.44;
+    const AUTO_RELOAD_TIME = 2.7;
+    const FINAL_HIT_DELAY = 1.05;
     const instructionKey = 'vibecade-instructions-periscope-pursuit-v1';
     const params = new URLSearchParams(location.search);
     let requestedLevel = Math.max(1, Math.min(5, Number(params.get('level')) || 1));
@@ -241,11 +267,11 @@
     const mobileProfile = matchMedia('(max-width: 900px), (pointer: coarse)');
 
     const patrols = [
-      { name: 'CALM SOUND', quota: 5, time: 62, speed: 58, interval: 1.65, traffic: 3, charge: 0, relief: .12, magazine: 6, hulls: 4 },
-      { name: 'COLD CURRENT', quota: 7, time: 59, speed: 67, interval: 1.43, traffic: 4, charge: .055, relief: .13, magazine: 6, hulls: 4 },
-      { name: 'NARROW STRAIT', quota: 9, time: 57, speed: 77, interval: 1.24, traffic: 5, charge: .10, relief: .14, magazine: 5, hulls: 4 },
-      { name: 'IRON CONVOY', quota: 11, time: 56, speed: 88, interval: 1.08, traffic: 6, charge: .16, relief: .15, magazine: 5, hulls: 4 },
-      { name: 'WOLF PACK', quota: 15, time: 50, speed: 108, interval: .84, traffic: 7, charge: .27, relief: .17, magazine: 4, hulls: 3 }
+      { name: 'CALM SOUND', quota: 5, time: 62, speed: 58, interval: 1.65, traffic: 3, charge: 0, returnFire: 0, shellSpeed: 0, relief: .12, magazine: 6, hulls: 4 },
+      { name: 'COLD CURRENT', quota: 7, time: 59, speed: 67, interval: 1.43, traffic: 4, charge: .055, returnFire: 0, shellSpeed: 0, relief: .13, magazine: 6, hulls: 4 },
+      { name: 'NARROW STRAIT', quota: 9, time: 57, speed: 77, interval: 1.24, traffic: 5, charge: .10, returnFire: .24, shellSpeed: 92, relief: .14, magazine: 5, hulls: 4 },
+      { name: 'IRON CONVOY', quota: 11, time: 56, speed: 88, interval: 1.08, traffic: 6, charge: .16, returnFire: .36, shellSpeed: 108, relief: .15, magazine: 5, hulls: 4 },
+      { name: 'WOLF PACK', quota: 15, time: 50, speed: 108, interval: .84, traffic: 7, charge: .27, returnFire: .52, shellSpeed: 128, relief: .17, magazine: 4, hulls: 3 }
     ];
 
     const keys = { left: false, right: false, fire: false };
@@ -253,10 +279,11 @@
       started: false, paused: true, phase: 'instructions', level: requestedLevel,
       score: 0, best: Number(localStorage.getItem('vibecade-periscope-best') || 0),
       aimX: W / 2, joystickX: 0, time: 0, sunk: 0, hulls: 4, ammo: 6,
+      torpedoesRemaining: INITIAL_TORPEDO_LIMIT + (requestedLevel - 1) * TORPEDO_LIMIT_STEP,
       spawnTimer: .3, reloadTimer: 0, fireCooldown: 0, invulnerable: 0,
-      transition: 0, message: '', submessage: '', flash: 0, shake: 0,
+      transition: 0, patrolEndTimer: 0, message: '', submessage: '', flash: 0, shake: 0,
       combo: 0, muted: false, elapsed: 0,
-      ships: [], torpedoes: [], charges: [], particles: [], wakes: []
+      ships: [], torpedoes: [], charges: [], enemyShots: [], particles: [], wakes: []
     };
     let audioContext = null;
     let lastTime = performance.now();
@@ -281,6 +308,10 @@
     }
 
     function config() { return patrols[state.level - 1]; }
+    function torpedoLimit(level = state.level) {
+      const patrol = Math.max(1, Math.min(5, Number(level) || 1));
+      return INITIAL_TORPEDO_LIMIT + (patrol - 1) * TORPEDO_LIMIT_STEP;
+    }
     function clearInput() {
       keys.left = keys.right = keys.fire = false;
       state.joystickX = 0;
@@ -289,6 +320,7 @@
     }
 
     function startPatrol(level, keepScore = false) {
+      hideGameover();
       state.level = Math.max(1, Math.min(5, level));
       const cfg = config();
       if (!keepScore) state.score = 0;
@@ -298,18 +330,21 @@
       state.time = cfg.time;
       state.sunk = 0;
       state.hulls = cfg.hulls;
-      state.ammo = cfg.magazine;
+      state.torpedoesRemaining = torpedoLimit();
+      state.ammo = Math.min(cfg.magazine, state.torpedoesRemaining);
       state.spawnTimer = .28;
       state.reloadTimer = 0;
       state.fireCooldown = 0;
       state.invulnerable = 0;
       state.transition = 0;
+      state.patrolEndTimer = 0;
       state.message = '';
       state.submessage = '';
       state.combo = 0;
       state.ships.length = 0;
       state.torpedoes.length = 0;
       state.charges.length = 0;
+      state.enemyShots.length = 0;
       state.particles.length = 0;
       state.wakes.length = 0;
       state.elapsed = 0;
@@ -324,6 +359,7 @@
     }
 
     function resetCampaign() {
+      hideGameover();
       state.started = true;
       requestedLevel = 1;
       startPatrol(1, false);
@@ -386,31 +422,65 @@
         width: spec.width * laneScale, height: spec.height * laneScale,
         points: spec.points, color: spec.color, hit: false,
         chargeTimer: kind === 'destroyer' ? 1.7 + Math.random() * 2.4 : 99,
+        returnCooldown: .8 + Math.random() * .8,
         bob: Math.random() * TAU
       });
     }
 
     function beginReload(manual) {
       const cfg = config();
-      if (state.reloadTimer > 0 || state.ammo >= cfg.magazine || state.phase !== 'playing') return;
-      state.reloadTimer = manual ? .72 : 1.35;
+      const reloadCapacity = Math.min(cfg.magazine, state.torpedoesRemaining);
+      if (state.reloadTimer > 0 || state.ammo >= reloadCapacity || reloadCapacity <= 0 || state.phase !== 'playing') return;
+      state.reloadTimer = manual ? MANUAL_RELOAD_TIME : AUTO_RELOAD_TIME;
       tone(155, .12, .018, 'triangle', 45);
     }
 
     function fire() {
       if (state.paused || state.phase !== 'playing' || state.fireCooldown > 0 || state.reloadTimer > 0) return;
+      if (state.torpedoesRemaining <= 0) {
+        state.fireCooldown = .5;
+        state.message = 'TORPEDO SUPPLY EXHAUSTED';
+        state.submessage = torpedoLimit() + ' SHOTS EXPENDED — HOLD THE WATCH';
+        state.transition = .8;
+        tone(105, .16, .025, 'square', -25);
+        updateDiagnostic(true);
+        return;
+      }
       if (state.ammo <= 0) { beginReload(false); return; }
       state.ammo -= 1;
+      state.torpedoesRemaining -= 1;
       state.fireCooldown = .23;
-      state.torpedoes.push({ x: state.aimX, y: 523, speed: 365, trail: 0, live: true });
+      state.torpedoes.push({ x: state.aimX, y: 523, speed: TORPEDO_SPEED, trail: 0, live: true });
       state.shake = reducedMotion ? 0 : .05;
       tone(92, .22, .045, 'sawtooth', 110);
       burst(state.aimX, 520, 5, '#e8d39c', 36);
-      if (state.ammo === 0) beginReload(false);
+      maybeReturnFire();
+      if (state.ammo === 0 && state.torpedoesRemaining > 0) beginReload(false);
       updateDiagnostic(true);
     }
 
     function reload() { beginReload(true); }
+
+    function maybeReturnFire(force = false) {
+      const cfg = config();
+      if (!cfg.returnFire) return false;
+      const candidates = state.ships.filter(ship => !ship.hit && ship.kind !== 'relief' && ship.returnCooldown <= 0 && ship.x > 60 && ship.x < W - 60);
+      if (!candidates.length || (!force && Math.random() >= cfg.returnFire)) return false;
+      const ship = candidates[Math.floor(Math.random() * candidates.length)];
+      const startX = ship.x;
+      const startY = ship.y - ship.height * .55;
+      const dx = W / 2 - startX;
+      const dy = 520 - startY;
+      const distance = Math.hypot(dx, dy) || 1;
+      state.enemyShots.push({ x: startX, y: startY, vx: dx / distance * cfg.shellSpeed, vy: dy / distance * cfg.shellSpeed, spin: 0 });
+      ship.returnCooldown = 1.8 + Math.random() * 1.4;
+      burst(startX, startY, 8, '#f17a42', 52);
+      state.message = 'ENEMY RETURN FIRE';
+      state.submessage = 'INTERCEPT THE RINGED ROUND';
+      state.transition = .72;
+      tone(315, .16, .035, 'sawtooth', -90);
+      return true;
+    }
 
     function burst(x, y, count, color, speed = 70) {
       const total = reducedMotion ? Math.ceil(count * .4) : count;
@@ -445,9 +515,21 @@
         state.transition = .48;
         tone(185, .18, .045, 'square', 130);
         setTimeout(() => tone(265, .12, .025, 'triangle', 75), 80);
-        if (state.sunk >= config().quota) completePatrol();
+        if (state.sunk >= config().quota) beginPatrolEnding(award);
       }
       updateDiagnostic(true);
+    }
+
+    function beginPatrolEnding(award) {
+      state.phase = 'patrolEnding';
+      state.patrolEndTimer = FINAL_HIT_DELAY;
+      state.transition = FINAL_HIT_DELAY;
+      state.message = 'FINAL TARGET SUNK';
+      state.submessage = '+' + award + ' — CONFIRMING THE SINK';
+      state.reloadTimer = 0;
+      state.charges.length = 0;
+      state.enemyShots.length = 0;
+      clearInput();
     }
 
     function interceptCharge(index) {
@@ -461,12 +543,24 @@
       tone(230, .16, .04, 'triangle', 150);
     }
 
+    function interceptEnemyShot(index) {
+      const shot = state.enemyShots[index];
+      burst(shot.x, shot.y, 16, '#f4b45d', 92);
+      state.enemyShots.splice(index, 1);
+      state.score += 110;
+      state.message = 'COUNTER-SHOT BROKEN';
+      state.submessage = '+110';
+      state.transition = .58;
+      tone(285, .15, .04, 'triangle', 170);
+    }
+
     function damageSub() {
       if (state.invulnerable > 0 || state.phase !== 'playing') return;
       state.hulls -= 1;
       state.invulnerable = 2.2;
       state.combo = 0;
       state.charges.length = 0;
+      state.enemyShots.length = 0;
       state.flash = .42;
       state.shake = reducedMotion ? 0 : .48;
       burst(W / 2, 515, 34, '#e96440', 145);
@@ -481,13 +575,15 @@
     }
 
     function completePatrol() {
-      if (state.phase !== 'playing') return;
+      if (state.phase !== 'playing' && state.phase !== 'patrolEnding') return;
       const bonus = Math.round(state.time) * 20 + state.hulls * 120;
       state.score += bonus;
       state.best = Math.max(state.best, state.score);
       localStorage.setItem('vibecade-periscope-best', String(state.best));
       state.torpedoes.length = 0;
       state.charges.length = 0;
+      state.enemyShots.length = 0;
+      state.patrolEndTimer = 0;
       clearInput();
       if (state.level === 5) {
         state.phase = 'won';
@@ -509,10 +605,21 @@
 
     function endRun(message, submessage) {
       state.phase = 'gameover';
+      state.paused = true;
       state.message = message;
       state.submessage = submessage;
       clearInput();
+      gameoverTitle.textContent = message;
+      gameoverSummary.textContent = 'Patrol ' + state.level + ' ended with ' + state.sunk + ' of ' + config().quota + ' targets and a score of ' + state.score + '. Restart to return to patrol 1.';
+      gameoverModal.classList.add('is-visible');
+      document.body.classList.add('gameover-open');
+      gameoverRestart.focus({ preventScroll: true });
       updateDiagnostic(true);
+    }
+
+    function hideGameover() {
+      gameoverModal.classList.remove('is-visible');
+      document.body.classList.remove('gameover-open');
     }
 
     function update(dt) {
@@ -527,6 +634,24 @@
       if (state.phase === 'levelComplete') {
         state.transition -= dt;
         if (state.transition <= 0) startPatrol(state.level + 1, true);
+        return;
+      }
+      if (state.phase === 'patrolEnding') {
+        state.elapsed += dt;
+        state.patrolEndTimer -= dt;
+        for (const ship of state.ships) {
+          ship.x += ship.direction * ship.speed * dt;
+          ship.bob += dt * (1.2 + ship.lane * .2);
+        }
+        state.ships = state.ships.filter(ship => !ship.hit && ship.x > -150 && ship.x < W + 150);
+        for (const torpedo of state.torpedoes) {
+          torpedo.y -= torpedo.speed * dt;
+          torpedo.trail += dt;
+        }
+        state.torpedoes = state.torpedoes.filter(torpedo => torpedo.y >= 130);
+        diagnosticTimer -= dt;
+        if (diagnosticTimer <= 0) updateDiagnostic();
+        if (state.patrolEndTimer <= 0) completePatrol();
         return;
       }
       if (state.phase !== 'playing') return;
@@ -551,7 +676,7 @@
         state.reloadTimer -= dt;
         if (state.reloadTimer <= 0) {
           state.reloadTimer = 0;
-          state.ammo = config().magazine;
+          state.ammo = Math.min(config().magazine, state.torpedoesRemaining);
           tone(410, .08, .025, 'triangle', 90);
         }
       }
@@ -565,6 +690,7 @@
       for (const ship of state.ships) {
         ship.x += ship.direction * ship.speed * dt;
         ship.bob += dt * (1.2 + ship.lane * .2);
+        ship.returnCooldown = Math.max(0, ship.returnCooldown - dt);
         if (Math.random() < dt * 8 && !mobileProfile.matches) state.wakes.push({ x: ship.x - ship.direction * ship.width * .43, y: ship.y + 5, direction: -ship.direction, life: .45 });
         if (ship.kind === 'destroyer' && !ship.hit) {
           ship.chargeTimer -= dt;
@@ -579,6 +705,18 @@
       }
       state.ships = state.ships.filter(ship => !ship.hit && ship.x > -150 && ship.x < W + 150);
 
+      for (let si = state.enemyShots.length - 1; si >= 0; si -= 1) {
+        const shot = state.enemyShots[si];
+        shot.x += shot.vx * dt;
+        shot.y += shot.vy * dt;
+        shot.spin += dt * 8;
+        if (shot.y > 518) {
+          state.enemyShots.splice(si, 1);
+          damageSub();
+          break;
+        }
+      }
+
       for (const torpedo of state.torpedoes) {
         torpedo.y -= torpedo.speed * dt;
         torpedo.trail += dt;
@@ -586,7 +724,13 @@
       for (let ti = state.torpedoes.length - 1; ti >= 0; ti -= 1) {
         const torpedo = state.torpedoes[ti];
         let consumed = false;
-        for (let ci = state.charges.length - 1; ci >= 0; ci -= 1) {
+        for (let si = state.enemyShots.length - 1; si >= 0; si -= 1) {
+          const shot = state.enemyShots[si];
+          if (Math.hypot(torpedo.x - shot.x, torpedo.y - shot.y) < 22) {
+            interceptEnemyShot(si); consumed = true; break;
+          }
+        }
+        for (let ci = state.charges.length - 1; ci >= 0 && !consumed; ci -= 1) {
           const charge = state.charges[ci];
           if (Math.abs(torpedo.x - charge.x) < 18 && Math.abs(torpedo.y - charge.y) < 23) {
             interceptCharge(ci); consumed = true; break;
@@ -603,6 +747,11 @@
           }
         }
         if (consumed || torpedo.y < 130) state.torpedoes.splice(ti, 1);
+        if (state.phase === 'patrolEnding') {
+          state.ships = state.ships.filter(candidate => !candidate.hit && candidate.x > -150 && candidate.x < W + 150);
+          updateDiagnostic(true);
+          return;
+        }
       }
 
       for (let ci = state.charges.length - 1; ci >= 0; ci -= 1) {
@@ -725,6 +874,21 @@
       ctx.restore();
     }
 
+    function drawEnemyShot(shot) {
+      ctx.save();
+      ctx.translate(shot.x, shot.y);
+      ctx.rotate(shot.spin);
+      ctx.strokeStyle = '#f4a052';
+      ctx.fillStyle = '#e64f2f';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#f47b3d';
+      ctx.shadowBlur = mobileProfile.matches ? 3 : 8;
+      ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, 15, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-9, 0); ctx.stroke();
+      ctx.restore();
+    }
+
     function drawScope() {
       ctx.save();
       ctx.strokeStyle = '#172226cc';
@@ -772,7 +936,8 @@
       ctx.fillStyle = '#e8ca83';
       ctx.font = '900 13px Courier New';
       const racks = '●'.repeat(state.ammo) + '○'.repeat(cfg.magazine - state.ammo);
-      ctx.fillText(state.reloadTimer > 0 ? 'TORPEDO RACK  RELOADING ' + Math.max(0, state.reloadTimer).toFixed(1) : 'TORPEDO RACK  ' + racks, 22, 563);
+      const supply = '  TOTAL ' + String(state.torpedoesRemaining).padStart(2, '0');
+      ctx.fillText(state.reloadTimer > 0 ? 'TORPEDO RACK  RELOADING ' + Math.max(0, state.reloadTimer).toFixed(1) + supply : 'TORPEDO RACK  ' + racks + supply, 22, 563);
       ctx.textAlign = 'right';
       ctx.fillStyle = state.combo >= 3 ? '#f07a52' : '#ae9b70';
       ctx.fillText(state.combo >= 2 ? 'SOLUTION ×' + state.combo : 'LEAD THE TARGET', W - 22, 563);
@@ -823,6 +988,7 @@
       [...state.ships].sort((a, b) => a.lane - b.lane).forEach(drawShip);
       state.torpedoes.forEach(drawTorpedo);
       state.charges.forEach(drawCharge);
+      state.enemyShots.forEach(drawEnemyShot);
       state.particles.forEach(p => {
         ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2));
         ctx.fillStyle = p.color; ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
@@ -838,7 +1004,7 @@
 
     function updateDiagnostic(force = false) {
       diagnosticTimer = .28;
-      diagnostic.textContent = 'Patrol ' + state.level + ' of 5. ' + state.phase + '. ' + state.sunk + ' of ' + config().quota + ' targets. ' + Math.ceil(state.time) + ' seconds. ' + state.hulls + ' hull. ' + state.ammo + ' torpedoes. ' + state.charges.length + ' depth charges. Score ' + state.score + '. Aim ' + Math.round(state.aimX) + '.';
+      diagnostic.textContent = 'Patrol ' + state.level + ' of 5. ' + state.phase + '. ' + state.sunk + ' of ' + config().quota + ' targets. ' + Math.ceil(state.time) + ' seconds. ' + state.hulls + ' hull. ' + state.ammo + ' torpedoes loaded. ' + state.torpedoesRemaining + ' total shots remain. Reloading ' + Math.max(0, state.reloadTimer).toFixed(1) + ' seconds. ' + state.charges.length + ' depth charges. ' + state.enemyShots.length + ' return shots. Score ' + state.score + '. Aim ' + Math.round(state.aimX) + '.';
       if (force) diagnostic.dataset.updated = String(Date.now());
     }
 
@@ -877,14 +1043,37 @@
       if (testMode && !event.repeat && /^[1-5]$/.test(key)) { state.started = true; startPatrol(Number(key), false); }
       if (testMode && !event.repeat && key === 'l' && state.phase === 'playing') { state.sunk = config().quota; completePatrol(); }
       if (testMode && !event.repeat && key === 'h' && state.phase === 'playing') damageSub();
+      if (testMode && !event.repeat && key === 'g' && state.phase === 'playing') { state.hulls = 1; damageSub(); }
+      if (testMode && !event.repeat && key === 'x' && state.phase === 'playing') {
+        state.torpedoesRemaining = 2;
+        state.ammo = 1;
+        state.reloadTimer = 0;
+        updateDiagnostic(true);
+      }
+      if (testMode && !event.repeat && key === 'f' && state.phase === 'playing') {
+        state.sunk = Math.max(0, config().quota - 1);
+        state.ships.length = 0;
+        state.torpedoes.length = 0;
+        updateDiagnostic(true);
+      }
       if (testMode && !event.repeat && key === 't' && state.phase === 'playing') {
         const spec = shipSpec('cargo');
         state.ships.push({ kind: 'cargo', lane: 0, x: state.aimX, y: 252, direction: 1, speed: 0,
           width: spec.width, height: spec.height, points: spec.points, color: spec.color,
-          hit: false, chargeTimer: 99, bob: 0 });
+          hit: false, chargeTimer: 99, returnCooldown: 0, bob: 0 });
       }
       if (testMode && !event.repeat && key === 'c' && state.phase === 'playing') {
         state.charges.push({ x: state.aimX, y: 395, vy: 52, spin: 0 });
+      }
+      if (testMode && !event.repeat && key === 'e' && state.phase === 'playing') {
+        if (!state.ships.some(ship => ship.kind !== 'relief' && ship.x > 60 && ship.x < W - 60 && ship.returnCooldown <= 0)) {
+          const spec = shipSpec('destroyer');
+          state.ships.push({ kind: 'destroyer', lane: 1, x: state.aimX, y: 210, direction: 1, speed: 0,
+            width: spec.width * .85, height: spec.height * .85, points: spec.points, color: spec.color,
+            hit: false, chargeTimer: 99, returnCooldown: 0, bob: 0 });
+        }
+        maybeReturnFire(true);
+        updateDiagnostic(true);
       }
       if (!event.repeat && event.key === 'Escape' && !modal.classList.contains('is-visible')) showInstructions();
     });
@@ -949,6 +1138,7 @@
     closeButton.addEventListener('click', hideInstructions);
     modal.addEventListener('click', event => { if (event.target === modal) hideInstructions(); });
     helpButton.addEventListener('click', showInstructions);
+    gameoverRestart.addEventListener('click', resetCampaign);
     window.addEventListener('vibecade:restart', event => { event.preventDefault(); resetCampaign(); });
 
     window.PeriscopePursuitTest = {
@@ -957,14 +1147,20 @@
           level: state.level, phase: state.phase, paused: state.paused, score: state.score,
           sunk: state.sunk, quota: config().quota, time: Number(state.time.toFixed(1)),
           hulls: state.hulls, magazine: config().magazine, ammo: state.ammo,
-          ships: state.ships.length, charges: state.charges.length,
-          curve: { speed: config().speed, interval: config().interval, traffic: config().traffic, charge: config().charge }
+          torpedoesRemaining: state.torpedoesRemaining, torpedoLimit: torpedoLimit(),
+          ships: state.ships.length, charges: state.charges.length, enemyShots: state.enemyShots.length,
+          torpedoes: state.torpedoes.length, patrolEndTimer: Number(state.patrolEndTimer.toFixed(2)),
+          curve: { speed: config().speed, interval: config().interval, traffic: config().traffic, charge: config().charge,
+            returnFire: config().returnFire, shellSpeed: config().shellSpeed, torpedoSpeed: TORPEDO_SPEED,
+            manualReloadTime: MANUAL_RELOAD_TIME, autoReloadTime: AUTO_RELOAD_TIME }
         };
       },
       jumpToLevel(level) { requestedLevel = Math.max(1, Math.min(5, Number(level) || 1)); state.started = true; startPatrol(requestedLevel, false); return this.snapshot(); },
       clearLevel() { state.sunk = config().quota; completePatrol(); return this.snapshot(); },
+      primeFinalTarget() { state.sunk = Math.max(0, config().quota - 1); return this.snapshot(); },
       spawnCharge() { state.charges.push({ x: state.aimX, y: 320, vy: 82, spin: 0 }); return this.snapshot(); },
       damage() { damageSub(); return this.snapshot(); },
+      gameOver() { state.hulls = 1; damageSub(); return this.snapshot(); },
       setTime(seconds) { state.time = Math.max(0, Number(seconds) || 0); return this.snapshot(); },
       configurations: patrols.map(item => ({ ...item }))
     };
