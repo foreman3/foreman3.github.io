@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#231e38"><title>Prism Panic | VibeCade</title>
+<link rel="icon" href="data:,"><link rel="stylesheet" href="../flyout.css"><link rel="stylesheet" href="style.css">
+<script src="../flyout.js" defer></script>
+</head>
+<body class="instructions-open">
+<div id="flyout-nav" class="flyout-nav" aria-hidden="true"><button class="flyout-toggle" aria-label="Arcade menu"><span></span><span></span><span></span></button><div id="flyout-panel" class="flyout-panel"></div></div>
+<button id="help-button" aria-label="How to play">?</button>
+<main id="game-shell"><canvas id="game" width="960" height="600" tabindex="0" aria-label="Prism Panic. Move beneath bouncing glass bubbles and fire upward threads to split them."></canvas></main>
+<div id="mobile-hud" aria-label="Room status"><span id="mobile-room"></span><span id="mobile-health"></span></div>
+<div id="touch-controls" class="touch-controls" aria-label="Touch controls">
+<div class="virtual-joystick" data-joystick data-axis="horizontal" aria-label="Move left or right"><span class="joystick-mark left">◀</span><span class="joystick-mark right">▶</span><span class="joystick-knob"></span></div>
+<div class="control-cluster"><button class="control-button fire" id="fire" aria-label="Fire thread">THREAD<br>↑</button><button class="control-button" id="sound" aria-label="Mute sound" aria-pressed="false">SOUND ON</button></div></div>
+<div id="portrait-note" role="status"><div>Turn the glasshouse sideways.<br><small>Rotate to landscape to move and fire.</small></div></div>
+<div id="instruction-modal" class="modal is-visible" role="dialog" aria-modal="true" aria-labelledby="title">
+<div class="modal-card"><p class="eyebrow">THE GLASSHOUSE · A BUBBLE-SPLITTING ARCADE</p><h1 id="title">PRISM <em>PANIC</em></h1><p>The conservatory’s glass orbs have come alive. Stitch a thread into the ceiling, split the big ones, and clear every last shard.</p>
+<div class="orders"><p><b>MOVE</b> ← → / A D<br>Touch: slide the left control.</p><p><b>SPLIT</b> Space / hold THREAD<br>Large → medium → small → gone.</p><p><b>RECOVER</b> Four hearts through room 4.<br>A hit grants a shield and clears nearby danger.</p><p><b>FIVE ROOMS</b> Hearts refill each room.<br>R restarts · M sound · ? pauses.</p></div>
+<p class="tip">Fire ahead of a landing bubble, then move away. Only two threads may hang at once.</p><button id="instruction-close">OPEN THE GLASSHOUSE</button></div></div>
+<div id="result-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="modal-card result"><p class="eyebrow">PRISM PANIC</p><h2 id="result-title"></h2><p id="result-text"></p><button id="restart">PLAY AGAIN · ROOM 1</button></div></div>
+<script src="../mobile-fullscreen.js?v=17"></script><script src="game.js"></script>
+</body></html>
