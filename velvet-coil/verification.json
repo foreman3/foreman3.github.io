@@ -1,0 +1,210 @@
+{
+  "curve": [
+    {
+      "level": 1,
+      "gems": 6,
+      "lives": 4,
+      "seconds": 20.78,
+      "length": 17,
+      "won": true,
+      "profile": {
+        "quota": 6,
+        "interval": 0.24,
+        "growth": 2,
+        "lives": 4,
+        "time": 95
+      }
+    },
+    {
+      "level": 2,
+      "gems": 8,
+      "lives": 4,
+      "seconds": 21.12,
+      "length": 21,
+      "won": true,
+      "profile": {
+        "quota": 8,
+        "interval": 0.22,
+        "growth": 2,
+        "lives": 4,
+        "time": 105
+      }
+    },
+    {
+      "level": 3,
+      "gems": 10,
+      "lives": 4,
+      "seconds": 32.5,
+      "length": 25,
+      "won": true,
+      "profile": {
+        "quota": 10,
+        "interval": 0.2,
+        "growth": 2,
+        "lives": 4,
+        "time": 115
+      }
+    },
+    {
+      "level": 4,
+      "gems": 12,
+      "lives": 2,
+      "seconds": 32.02,
+      "length": 16,
+      "won": true,
+      "profile": {
+        "quota": 12,
+        "interval": 0.18,
+        "growth": 3,
+        "lives": 4,
+        "time": 125
+      }
+    },
+    {
+      "level": 5,
+      "gems": 16,
+      "lives": 2,
+      "seconds": 26.63,
+      "length": 67,
+      "won": true,
+      "profile": {
+        "quota": 16,
+        "interval": 0.115,
+        "growth": 4,
+        "lives": 2,
+        "time": 115
+      }
+    }
+  ],
+  "layouts": [
+    {
+      "width": 667,
+      "height": 375,
+      "field": {
+        "x": 136,
+        "y": 39.5,
+        "width": 395,
+        "height": 296
+      },
+      "overlap": false,
+      "overflow": false,
+      "helpHidden": true,
+      "actionsStacked": true
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "field": {
+        "x": 148,
+        "y": 28.5,
+        "width": 444,
+        "height": 333
+      },
+      "overlap": false,
+      "overflow": false,
+      "helpHidden": true,
+      "actionsStacked": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "field": {
+        "x": 167.5,
+        "y": 4,
+        "width": 509,
+        "height": 382
+      },
+      "overlap": false,
+      "overflow": false,
+      "helpHidden": true,
+      "actionsStacked": true
+    }
+  ],
+  "errors": [],
+  "delayedDecisions": [
+    {
+      "level": 1,
+      "gems": 6,
+      "lives": 4,
+      "seconds": 19.58,
+      "length": 17,
+      "won": true,
+      "profile": {
+        "quota": 6,
+        "interval": 0.24,
+        "growth": 2,
+        "lives": 4,
+        "time": 95
+      }
+    },
+    {
+      "level": 2,
+      "gems": 8,
+      "lives": 4,
+      "seconds": 31.02,
+      "length": 21,
+      "won": true,
+      "profile": {
+        "quota": 8,
+        "interval": 0.22,
+        "growth": 2,
+        "lives": 4,
+        "time": 105
+      }
+    },
+    {
+      "level": 3,
+      "gems": 10,
+      "lives": 4,
+      "seconds": 25.9,
+      "length": 25,
+      "won": true,
+      "profile": {
+        "quota": 10,
+        "interval": 0.2,
+        "growth": 2,
+        "lives": 4,
+        "time": 115
+      }
+    },
+    {
+      "level": 4,
+      "gems": 12,
+      "lives": 2,
+      "seconds": 31.12,
+      "length": 16,
+      "won": true,
+      "profile": {
+        "quota": 12,
+        "interval": 0.18,
+        "growth": 3,
+        "lives": 4,
+        "time": 125
+      }
+    },
+    {
+      "level": 5,
+      "gems": 0,
+      "lives": 0,
+      "seconds": 11.02,
+      "length": 6,
+      "won": false,
+      "profile": {
+        "quota": 16,
+        "interval": 0.115,
+        "growth": 4,
+        "lives": 2,
+        "time": 115
+      }
+    }
+  ],
+  "mobileFrames": {
+    "mean": 17.510169491525428,
+    "p95": 18.300000000000182
+  },
+  "frames": {
+    "mean": 17.631460674157303,
+    "p95": 18.400000000000034
+  },
+  "arcadeErrors": []
+}

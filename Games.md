@@ -29,6 +29,8 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Velvet Coil](velvet-coil/) - Steer a living necklace, gather rubies, and escape five Art Deco jewel vaults.
+
 - [Orchard Watch](orchard-watch/) - Chase apple-stealing marmots, spare the gardeners, and protect five autumn harvests.
 - [Prism Panic](prism-panic/) - Split bouncing glass orbs and restore five stained-glass conservatories.
 - [Block Balance](balance/) - Keep the tower steady.
