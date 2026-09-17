@@ -29,6 +29,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Orchard Watch](orchard-watch/) - Chase apple-stealing marmots, spare the gardeners, and protect five autumn harvests.
 - [Prism Panic](prism-panic/) - Split bouncing glass orbs and restore five stained-glass conservatories.
 - [Block Balance](balance/) - Keep the tower steady.
 - [Boxing](boxing/) - Step into a 3D ring and dodge telegraphed punches from varied opponents.
