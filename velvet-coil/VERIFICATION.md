@@ -35,3 +35,9 @@ Final timings and detailed observations are in `verification.json`. The active s
 ## Scope
 
 Only `velvet-coil/` was modified. Unrelated Orchard Watch edits encountered at the start of the revision were preserved; their separate commit is not part of this game's change.
+
+## Scanner clarification — 2026-09-18
+
+Replaced the lethal-laser presentation with a security inspection strip and paired optical readers. The masked living head is the thief; the trailing links are inert stolen jewelry. A warning reticle targets only the head inside the strip, while jewelry inside an active scan gets a harmless glint. Head detection produces an alarm chirp, HEAD DETECTED recovery message, and a retained-position reticle instead of a red damage flash. HUD, vault briefs, instructions, and shed copy now describe scanning and head detection. Timing, head-only collision, and all five difficulty profiles remain unchanged. The instruction-session key is versioned so returning players see the clarified rule once.
+
+Added explicit browser assertions that an active scan through the body preserves lives and tail length, and that head detection creates the correct feedback. Diagnostic screenshots cover both cases; the natural vault-3 screenshot shows normal scanner gameplay. Re-ran the five-vault browser suite, desktop/mobile layouts and controls, session return, and clean-console checks.
