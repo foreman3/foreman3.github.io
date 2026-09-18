@@ -40,9 +40,3 @@ let pointer=null;const drag=$('drag');function position(e){const r=drag.getBound
 match(level);resume='serve';phase='instructions';try{if(sessionStorage.getItem('rally-club-instructions-v1')){phase='serve';$('instruction-modal').classList.remove('is-visible');}}catch{}if(phase==='instructions')$('instruction-close').focus();hud();draw();let last=performance.now();function frame(now){const dt=Math.min(.04,(now-last)/1000);last=now;if(phase==='play'||phase==='serve'){for(let t=0;t<dt;t+=.008)step(Math.min(.008,dt-t));draw();$('thumb').style.left=player/10+'%';}requestAnimationFrame(frame);}requestAnimationFrame(frame);
 if(testing)window.rallyTest={state:()=>({level,phase,score,points,against,player,opponent,ball:{...ball},rally,elapsed,profiles,muted}),jump:n=>{match(n);},step:dt=>{for(let t=0;t<dt;t+=.008)step(Math.min(.008,dt-t));draw();},target:x=>{target=x;},serve,point,ball:b=>{Object.assign(ball,b);},draw};
 })();
-
-
-
-
-
-
