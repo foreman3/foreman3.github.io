@@ -29,6 +29,8 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Rally Club](rally-club/) - Place spinning shots and beat five table-tennis club opponents.
+
 - [Velvet Coil](velvet-coil/) - Steer a living necklace, gather rubies, and escape five Art Deco jewel vaults.
 
 - [Orchard Watch](orchard-watch/) - Chase apple-stealing marmots, spare the gardeners, and protect five autumn harvests.
