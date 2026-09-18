@@ -1,36 +1,37 @@
-# Velvet Coil verification — 2026-09-17
+# Velvet Coil: heist revision — 2026-09-18
 
-A classic Snake arcade with a living gold necklace and Art Deco jewel vaults. Canvas was chosen for the tile board, moving chain, and short collection effects. All art and sound are local or generated; there are no game asset network dependencies.
+User feedback drove this revision: the original numeric difficulty ramp felt slow and vaults 3–4 did not feel distinct. This replaces repeated collection quotas with five routing problems, an explicit getaway, optional bonus theft, and a score-for-survival tail-shedding action.
 
-## Five-vault curve
+## Five distinct vaults
 
-| Vault | Rubies | Seconds per cell | Growth per ruby | Lives | Time limit |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 1: Foyer | 6 | .240 | 2 | 4 | 95s |
-| 2: Silk Gallery | 8 | .220 | 2 | 4 | 105s |
-| 3: Ruby Salon | 10 | .200 | 2 | 4 | 115s |
-| 4: Crown Treasury | 12 | .180 | 3 | 4 | 125s |
-| 5: Midnight Vault | 16 | .115 | 4 | 2 | 115s |
+| Vault | Required rubies | Step interval | Lives | Time | New decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 1 — Grab & Go | 3 | .19 s | 4 | 50 s | Short open-board introduction; physically reach the exit. |
+| 2 — Split Decision | 4 | .18 s | 4 | 65 s | Alternate thefts between chambers through two passages. |
+| 3 — Watch the Sweep | 5 | .18 s | 4 | 75 s | Aimed beams force turns and timed crossings. Speed stays unchanged. |
+| 4 — Changing Routes | 6 | .17 s | 4 | 85 s | Alternating shutters require circulation, commitment, and escape planning. |
+| 5 — The Perfect Heist | 8 | .14 s | 2 | 85 s | Combine beams and shutters, with shorter warnings and more tail growth. |
 
-The first three vaults retain the same obstacles, growth rate, and lives; quotas and speed increase gradually, with more time to compensate for the larger quota. Vault 4 adds tail pressure while retaining four lives. A collision preserves every collected ruby, resets the tail to six segments, restores at least two seconds of slow charge, and allows a 1.6-second route-planning pause. The timer also pauses during recovery. Vault 5 combines higher speed, more tail growth, a larger quota, and fewer lives as the first mastery benchmark. Slow motion halves movement speed; four seconds of charge are available and each gem restores one second.
+Collecting the quota opens a physical exit at the right edge instead of immediately ending the level. Up to three optional bonus jewels then offer 500 / 600 / 700 points, each costing four seconds and raising alarm pressure. Bonus jewels have a plus marking as well as a different color. Alarm gradually accelerates security cycles, not the snake's movement.
 
-## Browser observations
+X or the mobile SHED button removes every tail link beyond the first six, deducts 25 points per removed link (never below zero), keeps collected rubies, and provides 1.4 seconds of beam protection. It has a six-second cooldown. Space / SLOW still halves movement speed with rechargeable charge. Four lives through vault 4, collected-gem preservation, short post-crash tails, and recovery pauses remain intact.
 
-The reproducible Playwright suite serves the repository over HTTP and uses diagnostic hooks enabled only by `?test` to advance simulation and inspect state. A shortest-route controller completed vaults 1–5 in 20.78 / 21.12 / 32.50 / 32.02 / 26.63 simulated seconds. Vault 4 included two actual wall collisions after gems 4 and 8, retained its progress, and cleared with two lives. A separate controller delaying each decision by 160 ms cleared vaults 1–4 (vault 4 with the same two mistakes) but failed vault 5; the immediate planner cleared vault 5 with both lives. Neither controller used slow motion. These are mechanical timing and recovery benchmarks, not human difficulty-study results.
+Beams telegraph the row or column before firing and only damage the head. Vault 3 starts with a 2.4-second warning; vault 5 starts with 1.5 seconds. Warning duration is affected by alarm pressure. Shutters warn before switching and defer closing if either the head or tail occupies the doorway, so they cannot crush a passing coil. Vault 4's base passage cycle is 7.5 seconds; vault 5's is 5.6 seconds.
 
-Verified keyboard directions and reversal rejection, modal keyboard activation and focus wrap, instruction/session gate, help freeze, pause/resume, reset, sound toggles, slow press/release, shared joystick hold/slide/neutral/release, button preference persistence, direct swipe, blur reset, context-menu suppression, mobile reset, returning fullscreen launch, graceful fullscreen refusal, wall/pillar/self collision, moving-tail-cell fairness, gem collection and growth, level 4-to-5 transition, victory, loss, timeout, and in-place restart.
+## Verification and limits
 
-Visually inspected 1440×900 desktop, 667×375 / 740×390 / 844×390 mobile landscape, and the 390×844 portrait rotation prompt. Mobile controls use the shared side rails, actions stack vertically, and no controls overlap the board. Portrait deliberately pauses simulation and requests landscape. Short-screen instructions scroll to their launch button. Game desktop/mobile console errors and arcade script errors: none. The arcade's existing external assets are outside this game's scope. Registration card count and navigation passed; both canonical registrations point to `velvet-coil/`.
+`verify.cjs` serves the repository over HTTP in Chromium. Diagnostic hooks are present only with `?test`; adding `&manual` freezes automatic simulation advancement for reproducible step-by-step browser tests. Production links `?vault=3` and `?vault=4` start directly at the named vault while preserving the normal instruction gate.
 
-Measured animation-frame intervals on this machine: desktop mean 17.63 ms / p95 18.40 ms; mobile emulation mean 17.51 ms / p95 18.30 ms. This is browser emulation, not physical-phone profiling. The static vault is cached, transient effects are capped at eight, frame delta is capped, and blocked overlays stop drawing. Decorative gem pulsing and expanding effects respect reduced motion.
+A controller that replans around the visible board and impending security states cleared all five vaults in 13.01 / 14.94 / 18.54 / 37.71 / 46.74 simulated seconds. Vault 4 cleared with one life after two deliberate recovery-test mistakes plus one naturally incurred collision. Vault 5 used one tail shed and handled eleven beam warnings. These are mechanical feasibility observations, not estimates of human enjoyment or completion times.
 
-## Two improvement passes after the functional build
+Matched-seed comparisons: accounting for beams preserved all four lives in vault 3, while ignoring them lost one; both cleared that introductory security vault. Accounting for shutters cleared vault 4 with two lives, while ignoring them failed after two rubies. In vault 5, accounting for combined security cleared with two lives and one shed; ignoring security failed after three rubies. An earlier overly conservative controller stalled by treating every warning as an already-active wall; the final controller allows safe crossing during the early warning window. No gameplay rule was relaxed to accommodate that controller.
 
-1. Reviewed all five vaults, opening, end states, restart, and required layouts. Added connected gold necklace links and gem inlays, a next-step danger marker, and footer spacing; corrected the per-vault scoring timer and allowed normal keyboard activation of modal buttons. Repeated the full browser suite and visual review.
-2. Fresh review of the same complete experience. Added chain shadows, more distinct pillar bases, a numeric slow-charge readout, last-life and low-time emphasis, an explicit recovery countdown, clearer post-recovery text, and modal focus wrapping. Repeated the full suite, added swipe/button/blur/collision edge cases and the delayed-decision benchmark, then visually inspected the final artifacts. No further material changes were identified.
+Verified instruction and session gates, help/pause freeze, keyboard directions and reverse rejection, slow hold/release, shed keyboard/touch/cooldown/cost, quota-to-exit behavior, bonus scoring/time cost, actual exit contact and progression, warning versus active beam damage, occupied-doorway grace, closed-shutter collision, game over, timeout, restart, joystick hold/slide/neutral, button preference, swipes, blur release, context-menu prevention, fullscreen refusal and returning mobile launch. Fresh desktop/browser-console checks passed without errors.
 
-## Reproduction and artifacts
+Visually inspected 1440×900 desktop, 667×375 / 740×390 / 844×390 landscape, and 390×844 portrait rotation guidance. Four touch actions stack in the right rail; each is at least 44 pixels high. Controls and board do not overlap. A measured mobile HUD/security-label overlap was fixed and is now explicitly asserted in the browser suite. The smaller screen omits the decorative vault subtitle to preserve status readability.
 
-With Playwright on `NODE_PATH`, run `node velvet-coil/verify.cjs`. Optional `BROWSER_EXE` selects Chromium and `SHOT_DIR` selects screenshot/report output. `verification.json` records the final measured run. The release screenshot shows naturally generated active vault-4 play at 8 / 12 rubies; actors were not arranged for that shot.
+Final timings and detailed observations are in `verification.json`. The active screenshots show naturally generated play in the beam and shutter vaults, with no arranged actors. Physics, hazards, and timers freeze behind blocking overlays. Static art remains cached, effects capped, and reduced-motion preferences respected.
 
-Only `velvet-coil/`, `Games.md`, and `index.html` are part of this release. No existing game or shared file was modified.
+## Scope
+
+Only `velvet-coil/` was modified. Unrelated Orchard Watch edits encountered at the start of the revision were preserved; their separate commit is not part of this game's change.

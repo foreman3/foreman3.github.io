@@ -5,3 +5,13 @@
 
 /* Review pass 2: make resources legible without relying on meter color. */
 #charge{display:inline-block;min-width:35px;margin-left:2px;font:12px system-ui}.urgent{text-decoration:underline;text-underline-offset:3px;color:#ffac99!important}body.touch-device #charge{min-width:24px;font-size:9px}
+
+/* Heist HUD and four-action mobile rail. */
+#security-note{position:absolute;top:15.5%;left:5%;right:5%;text-align:center;font:11px system-ui;letter-spacing:.06em;color:#f2c791}
+#shed-state{font:10px system-ui;align-self:center;color:#e3c586}button:disabled{opacity:.45;cursor:default}
+body.touch-device #security-note{font-size:8px;letter-spacing:0;top:15.3%}body.touch-device #shed-state{font-size:8px}
+body.touch-device #slow{height:62px;font-size:13px}body.touch-device .control-cluster{gap:6px!important}#shed{background:#60443f}
+
+body.touch-device .hud{top:10.3%}body.touch-device #security-note{top:15%;line-height:1}
+body.touch-device .hud{top:9.7%}
+body.touch-device .hud{height:14px;line-height:14px}body.touch-device .hud span{display:flex;align-items:baseline;line-height:14px}body.touch-device .hud b{line-height:14px}

@@ -2,77 +2,112 @@
   "curve": [
     {
       "level": 1,
-      "gems": 6,
+      "gems": 3,
+      "bonus": 0,
       "lives": 4,
-      "seconds": 20.78,
-      "length": 17,
+      "seconds": 13.01,
+      "moves": 59,
+      "sheds": 0,
+      "chamberCrossings": 3,
+      "beamWarnings": 0,
       "won": true,
+      "phase": "result",
       "profile": {
-        "quota": 6,
-        "interval": 0.24,
-        "growth": 2,
+        "quota": 3,
+        "interval": 0.19,
+        "growth": 3,
         "lives": 4,
-        "time": 95
+        "time": 50,
+        "beam": false,
+        "gates": false
       }
     },
     {
       "level": 2,
-      "gems": 8,
+      "gems": 4,
+      "bonus": 0,
       "lives": 4,
-      "seconds": 21.12,
-      "length": 21,
+      "seconds": 14.94,
+      "moves": 73,
+      "sheds": 0,
+      "chamberCrossings": 5,
+      "beamWarnings": 0,
       "won": true,
+      "phase": "result",
       "profile": {
-        "quota": 8,
-        "interval": 0.22,
-        "growth": 2,
+        "quota": 4,
+        "interval": 0.18,
+        "growth": 3,
         "lives": 4,
-        "time": 105
+        "time": 65,
+        "beam": false,
+        "gates": false
       }
     },
     {
       "level": 3,
-      "gems": 10,
+      "gems": 5,
+      "bonus": 0,
       "lives": 4,
-      "seconds": 32.5,
-      "length": 25,
+      "seconds": 18.54,
+      "moves": 93,
+      "sheds": 0,
+      "chamberCrossings": 5,
+      "beamWarnings": 3,
       "won": true,
+      "phase": "result",
       "profile": {
-        "quota": 10,
-        "interval": 0.2,
-        "growth": 2,
+        "quota": 5,
+        "interval": 0.18,
+        "growth": 3,
         "lives": 4,
-        "time": 115
+        "time": 75,
+        "beam": true,
+        "gates": false
       }
     },
     {
       "level": 4,
-      "gems": 12,
-      "lives": 2,
-      "seconds": 32.02,
-      "length": 16,
+      "gems": 6,
+      "bonus": 0,
+      "lives": 1,
+      "seconds": 37.71,
+      "moves": 183,
+      "sheds": 0,
+      "chamberCrossings": 7,
+      "beamWarnings": 0,
       "won": true,
+      "phase": "result",
       "profile": {
-        "quota": 12,
-        "interval": 0.18,
-        "growth": 3,
+        "quota": 6,
+        "interval": 0.17,
+        "growth": 4,
         "lives": 4,
-        "time": 125
+        "time": 85,
+        "beam": false,
+        "gates": true
       }
     },
     {
       "level": 5,
-      "gems": 16,
+      "gems": 8,
+      "bonus": 0,
       "lives": 2,
-      "seconds": 26.63,
-      "length": 67,
+      "seconds": 46.74,
+      "moves": 322,
+      "sheds": 1,
+      "chamberCrossings": 11,
+      "beamWarnings": 11,
       "won": true,
+      "phase": "result",
       "profile": {
-        "quota": 16,
-        "interval": 0.115,
-        "growth": 4,
+        "quota": 8,
+        "interval": 0.14,
+        "growth": 5,
         "lives": 2,
-        "time": 115
+        "time": 85,
+        "beam": true,
+        "gates": true
       }
     }
   ],
@@ -80,131 +115,202 @@
     {
       "width": 667,
       "height": 375,
-      "field": {
-        "x": 136,
-        "y": 39.5,
-        "width": 395,
-        "height": 296
-      },
       "overlap": false,
       "overflow": false,
-      "helpHidden": true,
-      "actionsStacked": true
+      "minAction": 44,
+      "actionsBottom": 296.5,
+      "hudBottom": 83.015625,
+      "securityTop": 84.59375
     },
     {
       "width": 740,
       "height": 390,
-      "field": {
-        "x": 148,
-        "y": 28.5,
-        "width": 444,
-        "height": 333
-      },
       "overlap": false,
       "overflow": false,
-      "helpHidden": true,
-      "actionsStacked": true
+      "minAction": 44,
+      "actionsBottom": 304,
+      "hudBottom": 75.59375,
+      "securityTop": 79.140625
     },
     {
       "width": 844,
       "height": 390,
-      "field": {
-        "x": 167.5,
-        "y": 4,
-        "width": 509,
-        "height": 382
-      },
       "overlap": false,
       "overflow": false,
-      "helpHidden": true,
-      "actionsStacked": true
+      "minAction": 44,
+      "actionsBottom": 304,
+      "hudBottom": 55.859375,
+      "securityTop": 62
     }
   ],
   "errors": [],
-  "delayedDecisions": [
-    {
-      "level": 1,
-      "gems": 6,
+  "greed": {
+    "level": 3,
+    "gems": 5,
+    "bonus": 1,
+    "lives": 4,
+    "seconds": 25.02,
+    "moves": 129,
+    "sheds": 0,
+    "chamberCrossings": 7,
+    "beamWarnings": 5,
+    "won": true,
+    "phase": "result",
+    "profile": {
+      "quota": 5,
+      "interval": 0.18,
+      "growth": 3,
       "lives": 4,
-      "seconds": 19.58,
-      "length": 17,
-      "won": true,
-      "profile": {
-        "quota": 6,
-        "interval": 0.24,
-        "growth": 2,
-        "lives": 4,
-        "time": 95
-      }
-    },
-    {
-      "level": 2,
-      "gems": 8,
-      "lives": 4,
-      "seconds": 31.02,
-      "length": 21,
-      "won": true,
-      "profile": {
-        "quota": 8,
-        "interval": 0.22,
-        "growth": 2,
-        "lives": 4,
-        "time": 105
-      }
-    },
+      "time": 75,
+      "beam": true,
+      "gates": false
+    }
+  },
+  "securityComparison": [
     {
       "level": 3,
-      "gems": 10,
-      "lives": 4,
-      "seconds": 25.9,
-      "length": 25,
-      "won": true,
-      "profile": {
-        "quota": 10,
-        "interval": 0.2,
-        "growth": 2,
+      "aware": {
+        "level": 3,
+        "gems": 5,
+        "bonus": 0,
         "lives": 4,
-        "time": 115
+        "seconds": 21.78,
+        "moves": 111,
+        "sheds": 0,
+        "chamberCrossings": 5,
+        "beamWarnings": 4,
+        "won": true,
+        "phase": "result",
+        "profile": {
+          "quota": 5,
+          "interval": 0.18,
+          "growth": 3,
+          "lives": 4,
+          "time": 75,
+          "beam": true,
+          "gates": false
+        }
+      },
+      "blind": {
+        "level": 3,
+        "gems": 5,
+        "bonus": 0,
+        "lives": 3,
+        "seconds": 21.4,
+        "moves": 100,
+        "sheds": 0,
+        "chamberCrossings": 5,
+        "beamWarnings": 3,
+        "won": true,
+        "phase": "result",
+        "profile": {
+          "quota": 5,
+          "interval": 0.18,
+          "growth": 3,
+          "lives": 4,
+          "time": 75,
+          "beam": true,
+          "gates": false
+        }
       }
     },
     {
       "level": 4,
-      "gems": 12,
-      "lives": 2,
-      "seconds": 31.12,
-      "length": 16,
-      "won": true,
-      "profile": {
-        "quota": 12,
-        "interval": 0.18,
-        "growth": 3,
-        "lives": 4,
-        "time": 125
+      "aware": {
+        "level": 4,
+        "gems": 6,
+        "bonus": 0,
+        "lives": 2,
+        "seconds": 32.03,
+        "moves": 159,
+        "sheds": 0,
+        "chamberCrossings": 7,
+        "beamWarnings": 0,
+        "won": true,
+        "phase": "result",
+        "profile": {
+          "quota": 6,
+          "interval": 0.17,
+          "growth": 4,
+          "lives": 4,
+          "time": 85,
+          "beam": false,
+          "gates": true
+        }
+      },
+      "blind": {
+        "level": 4,
+        "gems": 2,
+        "bonus": 0,
+        "lives": 0,
+        "seconds": 17.48,
+        "moves": 64,
+        "sheds": 0,
+        "chamberCrossings": 2,
+        "beamWarnings": 0,
+        "won": false,
+        "phase": "result",
+        "profile": {
+          "quota": 6,
+          "interval": 0.17,
+          "growth": 4,
+          "lives": 4,
+          "time": 85,
+          "beam": false,
+          "gates": true
+        }
       }
     },
     {
       "level": 5,
-      "gems": 0,
-      "lives": 0,
-      "seconds": 11.02,
-      "length": 6,
-      "won": false,
-      "profile": {
-        "quota": 16,
-        "interval": 0.115,
-        "growth": 4,
+      "aware": {
+        "level": 5,
+        "gems": 8,
+        "bonus": 0,
         "lives": 2,
-        "time": 115
+        "seconds": 33.86,
+        "moves": 230,
+        "sheds": 1,
+        "chamberCrossings": 9,
+        "beamWarnings": 8,
+        "won": true,
+        "phase": "result",
+        "profile": {
+          "quota": 8,
+          "interval": 0.14,
+          "growth": 5,
+          "lives": 2,
+          "time": 85,
+          "beam": true,
+          "gates": true
+        }
+      },
+      "blind": {
+        "level": 5,
+        "gems": 3,
+        "bonus": 0,
+        "lives": 0,
+        "seconds": 13.62,
+        "moves": 73,
+        "sheds": 0,
+        "chamberCrossings": 3,
+        "beamWarnings": 3,
+        "won": false,
+        "phase": "result",
+        "profile": {
+          "quota": 8,
+          "interval": 0.14,
+          "growth": 5,
+          "lives": 2,
+          "time": 85,
+          "beam": true,
+          "gates": true
+        }
       }
     }
   ],
-  "mobileFrames": {
-    "mean": 17.510169491525428,
-    "p95": 18.300000000000182
-  },
   "frames": {
-    "mean": 17.631460674157303,
-    "p95": 18.400000000000034
-  },
-  "arcadeErrors": []
+    "mean": 16.665168539325848,
+    "p95": 16.899999999999977
+  }
 }
