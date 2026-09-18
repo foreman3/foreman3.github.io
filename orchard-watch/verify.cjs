@@ -33,7 +33,7 @@ const server = http.createServer((req, res) => {
     assert.equal((await state()).time, 35);
     assert.equal((await state()).phase, 'instructions');
     await page.locator('#instruction-close').click();
-    for (const [i,key] of [...'qweasdzxc'].entries()) {
+    for (const [i,key] of [...'qwerasdfzxcv'].entries()) {
       await page.evaluate(i => {orchardTest.jump(1);orchardTest.clear();orchardTest.setActor(i);},i);
       await page.keyboard.press(key);
       assert.equal((await state()).hits,1);
@@ -45,7 +45,7 @@ const server = http.createServer((req, res) => {
     await page.locator('#instruction-close').click();
     await page.locator('#pause').click();
     assert.equal((await state()).phase,'paused');
-    await page.keyboard.press('r');
+    await page.keyboard.press('Backspace');
     assert.equal((await state()).score,0);
     assert.equal(await page.locator('#pause').innerText(),'Pause');
     await page.keyboard.press('m');
@@ -53,6 +53,17 @@ const server = http.createServer((req, res) => {
     await page.evaluate(() => {orchardTest.clear();orchardTest.setActor(0,true);});
     await page.locator('.hole').nth(0).click();
     assert.equal((await state()).baskets,5);
+    report.overlap = await page.evaluate(()=>{
+      const peaks=[];
+      for(let n=1;n<=5;n++){
+        orchardTest.jump(n);let peak=0;
+        const r=orchardTest.state().rounds[n-1];
+        for(let t=0;t<.92+(r.group-1)*r.burstGap;t+=.01){orchardTest.step(.01);peak=Math.max(peak,orchardTest.state().actors.filter(Boolean).length);}
+        peaks.push(peak);
+      }
+      return peaks;
+    });
+    assert.deepEqual(report.overlap,[1,2,3,4,5]);
     report.curve = await page.evaluate(() => {
       const results=[];
       for (let n=1;n<=5;n++) {
@@ -61,22 +72,22 @@ const server = http.createServer((req, res) => {
         while (orchardTest.state().phase==='playing' && ticks<5000) {
           orchardTest.step(.02);
           const s=orchardTest.state();
-          for(let i=0;i<9;i++) {
+          for(let i=0;i<12;i++) {
             const a=s.actors[i];
-            if(a&&!a.friend&&a.age>.45&&s.elapsed>=next) {
+            if(a&&!a.friend&&a.age>(n===5?.25:.45)&&s.elapsed>=next) {
               if(misses>0&&!skipped.has(i)){skipped.add(i);misses--;}
-              else if(!skipped.has(i)){orchardTest.thump(i);next=s.elapsed+.22;}
+              else if(!skipped.has(i)){orchardTest.thump(i);next=s.elapsed+(n===5?.13:.22);}
             }
           }
           for(const i of [...skipped])if(!s.actors[i])skipped.delete(i);
           ticks++;
         }
         const s=orchardTest.state();
-        results.push({level:n,hits:s.hits,baskets:s.baskets,seconds:+s.elapsed.toFixed(2),won:s.hits===s.rounds[n-1].quota});
+        results.push({level:n,reaction:n===5?.25:.45,actionGap:n===5?.13:.22,hits:s.hits,baskets:s.baskets,seconds:+s.elapsed.toFixed(2),won:s.hits===s.rounds[n-1].quota});
       }
       return results;
     });
-    assert(report.curve.every(r=>r.won));
+    assert(report.curve.every(r=>r.won),JSON.stringify(report.curve));
     assert.equal(report.curve[3].baskets,4);
     assert.match(await page.locator('#result-title').innerText(),/Master/);
     await page.locator('#restart').click();
@@ -96,7 +107,7 @@ const server = http.createServer((req, res) => {
     await page.evaluate(()=>{orchardTest.setTime(.01);orchardTest.step(.02);});
     assert.match(await page.locator('#result-text').innerText(),/bell rang/);
     await page.locator('#restart').click();
-    await page.evaluate(()=>{orchardTest.jump(4);for(let i=0;i<22;i++){orchardTest.setActor(0);orchardTest.thump(0);orchardTest.step(.1);}});
+    await page.evaluate(()=>{orchardTest.jump(4);for(let i=0;i<32;i++){orchardTest.setActor(0);orchardTest.thump(0);orchardTest.step(.1);}});
     await page.locator('#continue').click();
     assert.equal((await state()).level,5);
     await page.evaluate(()=>{orchardTest.jump(4);orchardTest.clear();orchardTest.setActor(0,false,.35);orchardTest.setActor(4,true,.45);orchardTest.setActor(8,false,.65);orchardTest.draw();});
@@ -112,9 +123,11 @@ const server = http.createServer((req, res) => {
       await mp.goto(base+'/orchard-watch/?test');
       await mp.locator('#instruction-close').click();
       await mp.waitForFunction(()=>document.documentElement.dataset.vibecadeLaunch==='playing');
-      await mp.evaluate(()=>{orchardTest.clear();orchardTest.setActor(4,false,.3);});
-      await mp.locator('.hole').nth(4).tap();
-      assert.equal(await mp.evaluate(()=>orchardTest.state().hits),1);
+      for(let i=0;i<12;i++){
+        await mp.evaluate(i=>{orchardTest.jump(1);orchardTest.clear();orchardTest.setActor(i,false,.3);},i);
+        await mp.locator('.hole').nth(i).tap();
+        assert.equal(await mp.evaluate(()=>orchardTest.state().hits),1);
+      }
       await mp.locator('#pause').tap();
       assert.equal(await mp.evaluate(()=>orchardTest.state().phase),'paused');
       await mp.locator('#pause').tap();
@@ -126,12 +139,17 @@ const server = http.createServer((req, res) => {
         const field=document.querySelector('#field').getBoundingClientRect();
         const header=document.querySelector('header').getBoundingClientRect();
         const buttons=[...document.querySelectorAll('.hole')].map(b=>b.getBoundingClientRect());
-        return {field:{x:field.x,y:field.y,width:field.width,height:field.height,bottom:field.bottom},minTarget:Math.min(...buttons.map(b=>Math.min(b.width,b.height))),overlap:header.bottom>field.top,overflow:document.documentElement.scrollWidth>innerWidth};
+        return {field:{x:field.x,y:field.y,width:field.width,height:field.height,bottom:field.bottom},rows:new Set(buttons.map(b=>Math.round(b.y))).size,columns:new Set(buttons.map(b=>Math.round(b.x))).size,minTarget:Math.min(...buttons.map(b=>Math.min(b.width,b.height))),overlap:header.bottom>field.top,overflow:document.documentElement.scrollWidth>innerWidth};
       });
-      assert(!layout.overlap&&!layout.overflow);assert(layout.minTarget>=44);assert(layout.field.bottom<=height);
+      assert.equal(await mp.locator('.hole').count(),12);assert.equal(layout.rows,3);assert.equal(layout.columns,4);if(width>height)assert(layout.field.width>=width*.95);assert(!layout.overlap&&!layout.overflow);assert(layout.minTarget>=44);assert(layout.field.bottom<=height);
       report.layouts.push({width,height,...layout});
-      await mp.evaluate(()=>{orchardTest.jump(4);orchardTest.clear();orchardTest.setActor(0,false,.4);orchardTest.setActor(4,true,.4);orchardTest.setActor(8,false,.4);orchardTest.draw();});
+      await mp.evaluate(()=>{orchardTest.jump(4);orchardTest.clear();orchardTest.setActor(0,false,.4);orchardTest.setActor(4,true,.4);orchardTest.setActor(11,false,.4);orchardTest.draw();});
       await mp.screenshot({path:path.join(output,`orchard-watch-${width}x${height}.png`)});
+      await mp.setViewportSize({width:height,height:width});
+      await mp.waitForTimeout(100);
+      await mp.evaluate(()=>{orchardTest.jump(1);orchardTest.clear();orchardTest.setActor(11,false,.3);});
+      await mp.locator('.hole').nth(11).tap();
+      assert.equal(await mp.evaluate(()=>orchardTest.state().hits),1);
       await mp.reload();
       await mp.locator('.vibecade-mobile-play').click();
       await mp.waitForFunction(()=>document.documentElement.dataset.vibecadeLaunch==='playing');
