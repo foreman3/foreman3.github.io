@@ -1,33 +1,37 @@
-# Rally Club verification
+# Rally Club — curved-spin revision
 
-Classic Pong/table-tennis concept, absent from the arcade inventory. Self-contained Canvas game with keyboard movement and a direct touch strip. Registered under In Work. No existing game or shared assets modified.
+## Rules and controls
 
-## Final five-court curve
+Ball spin applies continuous sideways acceleration. No side-wall reflection remains. Crossing a sideline awards the point to the opponent of the last striker; missing the receiving paddle awards the striker the point.
 
-| Court | Ball speed | Opponent speed | Aim error | Player width | Match |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Warm-up | 310 | 175 | 95 | 165 | First to 3 |
-| Steady hand | 335 | 215 | 75 | 165 | First to 5 |
-| Angle artist | 350 | 230 | 65 | 165 | First to 5 |
-| Counterpuncher | 385 | 275 | 48 | 165 | First to 5 |
-| Club champion | 530 | 395 | 18 | 125 | First to 5 |
+Move with arrows/A-D or the mobile drag strip. Hold Q/E for a left/right brush, or select the left/flat/right touch buttons. Touch choices latch deliberately; keyboard brushes release on key-up. All input clears on pause, blur, reset and hidden-page transitions.
 
-Court 2 primarily improves return coverage. Court 3 introduces wide randomized angles with only a small speed increase. Court 4 deliberately attacks the open side, retaining the full paddle and four lost-point allowance. Court 5 combines much faster play, tighter paddle coverage, accurate returns and wider attacks. Rally speed rises gradually and caps at 1.65 times starting speed.
+The incoming spin indicator describes curvature, not current travel direction. Opposite brush cancels incoming spin and earns 25 points. Flat contact preserves it; matching-direction brush doubles it. Residual spin causes a sideways kick on contact and continued curvature, so incorrect compensation can send a return out. Edge contact aims the intended shot. Brush strength is assisted to match incoming spin magnitude; this is an accessible arcade model rather than a full table-tennis simulator.
 
-A predictive placement controller cleared courts 1–5 in 36/102/68/103/133 simulated seconds. Court 4 started with two deliberately lost points and won 5–2. A reactive controller sampling current ball position every 320 ms won 3–0, 5–0, 5–1, 5–2, then lost 1–5. These are reproducible mechanical benchmarks, not human enjoyment or difficulty studies; angled shots can shorten rallies, so match length is not expected to rise monotonically.
+## Five courts
 
-## Iteration
+| Court | Ball speed | AI speed | Spin | Paddle width | Goal | Character |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 310 | 145 | .35 | 165 | 3 | Short opening; always right spin |
+| 2 | 335 | 175 | .50 | 165 | 5 | Alternates spin predictably |
+| 3 | 350 | 200 | .65 | 165 | 5 | Varied spin and wider placement |
+| 4 | 385 | 225 | .80 | 165 | 5 | Attacks the open side; four-point mistake margin |
+| 5 | 450 | 285 | 1.00 | 125 | 5 | Faster, stronger spin and narrower contact |
 
-Initial complete build: instruction gating, desktop/touch controls, scoring, spin, five matches, win/loss/retry and registration. Fixed test jumps retaining result overlays and allowed fullscreen layout changes to settle before touch tests.
+Rally speed grows by 14 per return, capped at 1.3 times starting speed. Opponent recovery gradually slows after four player returns to prevent endless defensive exchanges. AI predicts curved trajectories and uses the same sideline fault rule.
 
-Whole-game pass 1: reviewed opening and all later matches, endings and desktop/mobile screenshots. Added explicit point-winner feedback and a capped ball trail respecting reduced motion. Moved portrait controls adjacent to the table.
+## Verification
 
-Whole-game pass 2: fresh full review found countershots too central and mastery insufficiently differentiated. Corrected open-side aiming and tuned the champion. Added paddle zone markers, disabled-serve styling and appropriate keyboard focus on final/lost matches. Replayed all five courts and repeated layout/control checks.
+Run `node rally-club/verify.cjs` with Playwright on NODE_PATH. SHOT_DIR selects the screenshot/report destination. The suite uses installed Edge and a local HTTP server. Diagnostic hooks require `?test`; public `?court=1` through `?court=5` links retain normal instruction gating. A new session key forces returning players to see the changed rules.
 
-## Browser coverage
+Passed browser checks:
 
-Run `node rally-club/verify.cjs` with Playwright on NODE_PATH; set SHOT_DIR for outputs. Local HTTP server and installed Edge are used. Diagnostic hooks exist only with `?test`; `?court=1` through `?court=5` allow direct normal-play trials.
+- Continuous curvature: spin .8 moves a stationary lateral shot 16 units sideways and increases lateral velocity by 80 over 0.4 seconds.
+- Mirrored counterspin cancellation; correct brush removes spin and awards the bonus. Flat contact preserves .8 spin; wrong-way contact produces 1.6. Both uncancelled test returns went wide.
+- Both player and club sideline faults credit the correct receiver, without bouncing.
+- A predictive positioning/counterspin controller cleared courts 1–5 in approximately 14/48/60/74/55 simulated seconds. Court 4 began with two deliberate lost points and won 5–2. The same placement approach without counterspin lost each match. These mechanical benchmarks do not measure human enjoyment or prove perceived difficulty.
+- Keyboard movement, Q/E press/release, serve, help freeze, pause, reset, sound; real mobile drag hold/slide/release and touch brush selection; progression, loss retry and shared reset.
+- Fullscreen refusal, returning mobile launch, session instructions, arcade link, clean game console and root script-error checks. External root-page font loading is excluded.
+- 1440×900 desktop; 667×375, 740×390, 844×390 mobile landscape; 390×844 portrait. Spin buttons and drag strip stay outside the table. Landscape spin buttons stack in the left rail. Desktop frame p95 approximately 16.9 ms in headless testing, not physical-device profiling.
 
-Suite checks first-load freeze, keyboard movement/serve/help/pause/reset/sound, real touch hold/slide/release, shared restart, graceful fullscreen refusal, returning sessions, actual paddle collision/miss scoring, all five opponents, fourth-to-fifth progression, loss retry, responsive 1440×900 / 667×375 / 740×390 / 844×390 / 390×844 layouts, no control overlap or horizontal overflow, arcade card navigation, and clean game console. Existing root-page external resource console messages are excluded; root script errors are still checked. Desktop frame p95 was approximately 16.9 ms in local headless testing, not a physical mobile-device benchmark.
-
-Gameplay screenshot and measured report are saved in the automation artifact directory; no generated screenshots are committed.
+Active curved-shot screenshot: automation artifact folder `spin/rally-club-spin-gameplay.png`; mobile captures and verification.json alongside. Only rally-club files changed in this revision.
