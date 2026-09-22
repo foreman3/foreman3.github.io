@@ -29,6 +29,8 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Kiln Cascade](kiln-cascade/) - Cycle falling ceramic columns, chain three-in-a-row matches, and master seven kiln firings.
+
 - [Rally Club](rally-club/) - Place spinning shots and beat five table-tennis club opponents.
 
 - [Velvet Coil](velvet-coil/) - Steer a living necklace, gather rubies, and escape five Art Deco jewel vaults.
