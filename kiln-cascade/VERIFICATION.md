@@ -1,41 +1,23 @@
-# Kiln Cascade release verification
+# Kiln Cascade — endless-run verification
 
-Verified September 22, 2026 in local HTTP-served Microsoft Edge through Playwright. The user-requested seven-stage curve supersedes the older five-stage mastery wording in the repository standards.
+Verified September 22, 2026 using locally served Microsoft Edge with Playwright.
 
-## Curve
+The user's continuous-play revision replaces the original seven-stage campaign. One board and one score persist until overflow. No quota completion, intermission, victory screen, or automatic board reset remains.
 
-| Firing | Tile quota | Seconds per row | Glazes | Emergency clears |
-| --- | ---: | ---: | ---: | ---: |
-| 1 | 18 | 1.05 | 4 | 3 |
-| 2 | 27 | .88 | 4 | 3 |
-| 3 | 33 | .78 | 5 | 3 |
-| 4 | 42 | .64 | 5 | 3 |
-| 5 | 48 | .54 | 6 | 3 |
-| 6 | 60 | .37 | 6 | 1 |
-| 7 | 75 | .23 | 6 | 0 |
+- Falling interval is `max(0.16, 1.05 / (1 + matchedTiles / 90))` seconds per row: 1.05 at the opening, .70 at 45 tiles, .45 at 120, .30 at 225, and a .16-second safety floor. Acceleration depends on matching, so idle time and pauses never raise difficulty.
+- Four opening glazes expand to five after 45 matches and six after 120. The existing preview stays authoritative as new columns enter. Three emergency clears last the entire run; they remove tiles without score or speed credit.
+- Speed multiplier and cumulative matched tiles replace level and quota labels. Restart restores the empty board, zero score/matches, opening speed and three clears. Instructions use a new session key so returning players see the changed rules.
 
-An action-based placement planner with 1.2 seconds of decision delay and 80–120 ms per control action cleared levels 1–6 in 19/23/26/32/41/43 simulated seconds. Level 5 included three deliberately poor placements and finished with two clears remaining. That controller failed 7 at 37/75 tiles; a 650 ms decision controller cleared 7 at 77 tiles in 38 seconds without emergency clears. A slower 2.6-second controller cleared 1–5 and failed 6–7. These are mechanical benchmarks, not human play times or enjoyment ratings. Fixed per-level tile seeds make retries learnable and results reproducible.
+## Checks
 
-## Browser coverage
+The browser suite verifies matching in all four directions, cascading gravity/scoring, rescue behavior, keyboard and actual touch controls (including hold/cancel/blur), pause/help, sound, shared reset, first-load and returning-session gates, fullscreen refusal, game-over restart, and arcade navigation. No game console errors or page exceptions; root external Google Fonts requests are excluded.
 
-- Instructions freeze simulation; session return and shared mobile launch work, including fullscreen refusal.
-- Keyboard movement/cycling/drop, sound toggle, pause/help, in-place reset, progression, failure retry, and final victory restart.
-- Horizontal, vertical and both diagonal matches; cascading gravity and score multiplier; emergency clears remove three rows without quota credit.
-- Real touch taps, held directional input, cancellation, blur pause, cycle/drop/clear, and shared restart.
-- Visual inspection at 1440×900, 667×375, 740×390, 844×390, and 390×844. Controls stay outside the playfield; portrait retains next-column preview. Landscape actions stack vertically.
-- Arcade card navigates to the game; both canonical registrations match. No game console errors or page exceptions. Root-page external Google Fonts requests were excluded; its scripts and card navigation passed.
-- Desktop animation frame p95 approximately 18 ms. Small bounded Canvas scene, no particles or decorative animations, capped delta time, suspended gameplay rendering behind overlays.
-- Active level-5 screenshot captured at 23/48 naturally matched tiles.
+Continuity assertions cross the former quotas and new glaze thresholds from 17 through 1,003 matched tiles. Each clear preserves a sentinel board tile, accumulates score, retains the spent-clear count, keeps play active, and monotonically increases or caps speed. No next-stage button remains.
 
-## Refinement passes
+An action-driven planner with 1.2-second decisions reached 212 tiles over 140 simulated seconds; a faster 650 ms planner reached 476 tiles over 224 seconds and used all three rescues. These are mechanical benchmarks, not human play-time or enjoyment ratings. Active screenshot captures 134 matches at 2.49× speed.
 
-The initial full suite caught a shared CSS collision in touch controls and an insufficient wait for the returning fullscreen gate. Both were resolved before refinement.
-
-1. Reviewed opening, all later stages, endings, and all layouts. Spawned all three falling tiles visibly, retained next preview in portrait, improved workshop background, and moved feedback toward the frame. Re-ran the full suite and inspected desktop, landscape, and portrait captures. The visible spawn tightened level 7's timing; verified it remains clearable with faster planning.
-2. Fresh review found that crowded boards lacked explicit warnings, exhausted clears looked usable, and feedback could cover tiles. Added a danger outline/text, disabled exhausted clears, moved callouts into the unused bottom frame, and normalized uppercase key release. Rechecked the full experience, added cascade and held-touch cancellation assertions, and recaptured final screenshots.
+Responsive checks: 1440×900 desktop, 667×375 / 740×390 / 844×390 landscape, and 390×844 portrait. Controls do not overlap the board; portrait keeps the next preview. Desktop frame p95 was 16.9 ms.
 
 ## Reproduce
 
-Install or expose Playwright in `NODE_PATH`, then run `node kiln-cascade/verify.cjs` from the repository. The suite uses the standard Windows Edge executable path. Set `SHOT_DIR` to an artifact directory outside the repository; otherwise it writes to `kiln-cascade/qa`. Add `?level=5` for a normal instruction-gated trial. Diagnostic state/actions exist only with `?test`.
-
-Scope: one new directory plus Games.md and index.html. No existing game or shared file was changed.
+Expose Playwright through NODE_PATH and run `node kiln-cascade/verify.cjs`. Set SHOT_DIR to an artifact directory outside the repository. The suite uses the standard Windows Edge executable path. Diagnostic state/actions are only present with `?test`; old `?level=` links now start the ordinary endless run.
