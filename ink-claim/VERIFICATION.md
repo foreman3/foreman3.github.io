@@ -1,27 +1,26 @@
 # Ink Claim verification
 
-Ink Claim is a Qix-style territory game. Move a pen around printed land, arm DRAW, cross blank paper, and reconnect to claim regions without ink moths. The game is self-contained apart from the arcade's shared flyout and mobile helper.
+Ink Claim is a Qix-style territory game. Move on printed land, arm DRAW, then reconnect a line to claim regions that contain no moth. The September 23 difficulty update raises the opening target to 60%, adds numbered registration marks from poster 2, and applies the same movement timing to taps and held input.
 
 ## Challenge curve
 
-| Poster | Target | Moths | Moth speed | Line time | Pens | Browser observation |
+| Poster | Target | Marks | Moths | Line time | Pens | Observation |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| 1 | 34% | 1 | 2.5 | 10 s | 5 | One broad cut claimed 50%; forgiving opening. |
-| 2 | 52% | 1 | 3.0 | 9 s | 5 | A broad cut reached 50%; a second cut cleared at 66% with five pens. |
-| 3 | 54% | 2 | 3.3 | 8.5 s | 5 | Moths occupied both sides of the first cut. Three cuts reached 55% with five pens. |
-| 4 | 55% | 2 | 3.8 | 8 s | 5 | A line timeout and a moth hit left three pens; an alternate cut reached 55%. |
-| 5 | 55% | 3 | 4.2 | 7.5 s | 5 | Three moths forced smaller pockets. A browser run cleared at 55% with four pens. |
-| 6 | 62% | 3 | 5.2 | 6 s | 2 | First cut gained only 5%; speed, timer, and reserve make this the first mastery test. |
-| 7 | 68% | 4 | 6.3 | 4.7 s | 1 | A moth caught the opening line and immediately ended the run; a clean route is essential. |
+| 1 | 60% | 0 | 1 | 10 s | 5 | Browser: a broad cut stopped at 55% without clearing; a second cut reached 64% with four pens left. |
+| 2 | 64% | 1 | 1 | 9.5 s | 5 | Browser: first cut reached 55% and printed the mark without clearing; second cut reached 86% with five pens. |
+| 3 | 68% | 2 | 2 | 8.5 s | 5 | Browser: two attempted broad cuts were intercepted, leaving three pens; both marks remained visible. |
+| 4 | 72% | 3 | 2 | 7.8 s | 5 | Browser: direct-stage load showed three marks and the 72% target. A deterministic opening route claimed only 3% with both moths in the remaining regions. |
+| 5 | 76% | 4 | 3 | 7 s | 5 | Browser: the first attempted broad cut was intercepted; all four marks stayed unprinted and four pens remained. |
+| 6 | 80% | 4 | 3 | 6.3 s | 2 | Browser: direct-stage load showed two pens, four marks, and the 80% target. |
+| 7 | 84% | 4 | 4 | 5.5 s | 1 | Browser: direct-stage load showed one pen, four marks, and the 84% target. |
 
-These observations are play-test traces, not human difficulty ratings. `?poster=1` through `?poster=7` permit direct stage trials while preserving the normal instruction gate.
+These are observed play-test traces, not human difficulty ratings. Posters 3–7 were loaded or played directly with `?poster=N`; their full completion under the revised curve is not yet established. Poster 5 retains four recoverable misses; poster 6 is the first two-pen mastery stage, and poster 7 allows none.
 
 ## Browser checks
 
-- First-load instructions blocked play. After dismissal, a new navigation in the same tab resumed without repeating instructions.
-- Keyboard DRAW, directional movement, area capture, moth collisions, line timeout, scoring, stage transition, help pause/resume, sound toggle, and restart worked.
-- Mobile cardinal joystick drag started a line and returned to neutral. The shared Options popup switched to four direction buttons; a direction tap and DRAW tap started a cut. Shared mobile restart returned to poster 1.
-- At 667×375, 740×390, and 844×390, the playfield stayed between 136 px control rails without horizontal overflow. At 1440×900, the playfield expanded and desktop help appeared. Portrait showed the rotation prompt.
-- The `Games.md` entry and In Work arcade card both resolve to `ink-claim/`. Local arcade and game browser logs had no JavaScript errors.
+- First-load instructions explain the new target and mark rule. Session-scoped dismissal, help pause/resume, keyboard pause, and restart to poster 1 worked.
+- Repeated direction taps no longer bypass movement timing. A 31-tap burst moved only a few cells; paced input advanced the pen.
+- At 667×375, 740×390, 844×390, and 1440×900, the game had no horizontal or vertical overflow. The 667×375 screenshot showed the board, HUD, marks, and mobile direction/DRAW controls together.
+- Direct links for posters 1–7 loaded the expected targets. The local browser console had no JavaScript errors after the revised gameplay checks.
 
-Active poster-five screenshot: `C:/Users/forem/.codex/visualizations/2026/09/23/01a0cda8-94b7-7e32-a1b9-dfe2e30c41af/ink-claim-poster-5.png`.
+Active poster-five screenshot: `C:/Users/forem/.codex/visualizations/2026/09/23/01a0cda8-94b7-7e32-a1b9-dfe2e30c41af/ink-claim-harder-poster-5.png`.
