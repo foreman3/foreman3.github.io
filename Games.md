@@ -29,6 +29,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Fuse Catch](fuse-catch/) - Roll a safety cart under falling bombs and survive seven rooftop patrol shifts.
 - [Ink Claim](ink-claim/) - Draw claim lines, dodge ink moths, and finish seven printed posters.
 - [Kiln Cascade](kiln-cascade/) - Cycle falling ceramic columns, chain three-in-a-row matches, and survive an ever-faster endless kiln.
 
