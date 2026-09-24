@@ -123,7 +123,7 @@ const fs=require('node:fs');
     }
     document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft',bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowRight',bubbles:true}));
   });
-  const screenshot='C:/Users/forem/.codex/visualizations/2026/09/24/01a0d201-bdee-7d62-b88c-ecc3808a13c9/fuse-catch-routing-gameplay.png';
+  const screenshot='C:/Users/forem/.codex/visualizations/2026/09/24/01a0d201-bdee-7d62-b88c-ecc3808a13c9/fuse-catch-no-arrows-gameplay.png';
   await page.screenshot({path:screenshot});
   const frameTiming=await page.evaluate(()=>new Promise(resolve=>{const samples=[];let previous=0;const step=now=>{if(previous)samples.push(now-previous);previous=now;if(samples.length<120)requestAnimationFrame(step);else{samples.sort((a,b)=>a-b);resolve({mean:+(samples.reduce((a,b)=>a+b,0)/samples.length).toFixed(2),p95:+samples[Math.floor(samples.length*.95)].toFixed(2)})}};requestAnimationFrame(step)}));
   console.log('FRAMES',JSON.stringify(frameTiming));
@@ -157,7 +157,7 @@ const fs=require('node:fs');
   await touch.dispatchEvent('.vibecade-direction-pad [data-direction="left"]','pointerup',{pointerId:8,pointerType:'touch'});
   assert.ok(await touch.evaluate(()=>window.__fuseTest.state.cartX)<buttonStart);
   await touch.locator('.vibecade-mobile-restart').click();assert.equal(await touch.evaluate(()=>window.__fuseTest.state.stage),1);
-  const mobileScreenshot='C:/Users/forem/.codex/visualizations/2026/09/24/01a0d201-bdee-7d62-b88c-ecc3808a13c9/fuse-catch-routing-mobile.png';
+  const mobileScreenshot='C:/Users/forem/.codex/visualizations/2026/09/24/01a0d201-bdee-7d62-b88c-ecc3808a13c9/fuse-catch-no-arrows-mobile.png';
   await touch.screenshot({path:mobileScreenshot});
   await touch.close();
   assert.deepEqual(errors,[]);
