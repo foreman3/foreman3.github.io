@@ -32,30 +32,36 @@ const fs=require('node:fs');
   await page.evaluate(()=>{const t=window.__fuseTest;t.state.bombs.push({x:t.state.cartX,y:400,vx:0,vy:170,type:'normal',phase:0,spin:0})});
   await page.keyboard.press('Space');assert.equal(await page.evaluate(()=>window.__fuseTest.state.water),1);
   assert.equal(await page.evaluate(()=>window.__fuseTest.state.caught),1);
-  await page.evaluate(()=>{const t=window.__fuseTest;t.jump(1);t.state.caught=7;t.state.bombs.push({x:t.state.cartX,y:515,vx:0,vy:170,type:'normal',phase:0,spin:0});t.tick(1/60)});
+  await page.evaluate(()=>{const t=window.__fuseTest;t.state.bombs.push({x:40,y:400,vx:0,vy:170,type:'normal',phase:0,spin:0})});
+  await page.keyboard.press('Space');assert.equal(await page.evaluate(()=>window.__fuseTest.state.water),1);
+  await page.evaluate(()=>{const t=window.__fuseTest;t.jump(1);t.state.caught=t.profiles[0].quota-1;t.state.bombs.push({x:t.state.cartX,y:515,vx:0,vy:170,type:'normal',phase:0,spin:0});t.tick(1/60)});
   assert.equal(await page.locator('#result-modal').isVisible(),true);
   await page.locator('#next').click();assert.equal(await page.evaluate(()=>window.__fuseTest.state.stage),2);
   await page.evaluate(()=>{const t=window.__fuseTest;t.state.buckets=1;t.state.bombs.push({x:50,y:559,vx:0,vy:170,type:'normal',phase:0,spin:0});t.tick(1/60)});
   assert.equal(await page.evaluate(()=>window.__fuseTest.state.mode),'over');
   await page.locator('#again').click();assert.equal(await page.evaluate(()=>window.__fuseTest.state.stage),1);
   await page.reload();assert.equal(await page.locator('#instruction-modal').isVisible(),false);assert.equal(await page.evaluate(()=>window.__fuseTest.state.mode),'playing');
+  const mechanics=await page.evaluate(()=>{const t=window.__fuseTest;t.jump(1);t.spawn();const arc=Math.abs(t.predictLanding(t.state.bombs[0])-t.state.bombs[0].x);t.jump(2);for(let i=0;i<4;i++)t.spawn();const pair=t.state.bombs.length===5;const spaced=Math.abs(t.predictLanding(t.state.bombs[3])-t.predictLanding(t.state.bombs[4]));t.jump(5);for(let i=0;i<60;i++)t.spawn();const types=[...new Set(t.state.bombs.map(b=>b.type))];return {arc,pair,spaced,types}});
+  console.log('MECHANICS',JSON.stringify(mechanics));assert.ok(mechanics.arc>50);assert.equal(mechanics.pair,true);assert.ok(mechanics.spaced>120);assert.ok(mechanics.types.includes('quick')&&mechanics.types.includes('zig'));
   const curve=await page.evaluate(()=>{
     const t=window.__fuseTest,out=[];
     for(let n=1;n<=7;n++){
-      t.jump(n);let elapsed=0,misses=0,lastBuckets=t.state.buckets;
+      t.jump(n);let elapsed=0,misses=0,lastBuckets=t.state.buckets;const missed=[];
       const interval= n<=5?.21:n===6?.13:.075;
       let decision=0,target=t.state.cartX;
       while(t.state.mode==='playing'&&elapsed<125){
-        const b=t.state.bombs.reduce((a,v)=>!a||v.y>a.y?v:a,null);
-        if(decision<=0&&b){target=Math.max(28,Math.min(932,b.x+b.vx*(515-b.y)/b.vy));decision=interval}
+        const threats=t.state.bombs.map(v=>({v,x:t.predictLanding(v),eta:(515-v.y)/v.vy})).sort((a,b)=>a.eta-b.eta);
+        const threat=threats.find(q=>Math.max(0,Math.abs(q.x-t.state.cartX)-t.profiles[n-1].width/2)/(590+Math.max(0,n-4)*35)+.08<q.eta)||threats[0];
+        if(threats.some(q=>q.eta<.24&&Math.abs(q.v.x-t.state.cartX)<210&&Math.abs(q.x-t.state.cartX)>t.profiles[n-1].width/2+10)&&t.state.water>0)t.sweep();
+        if(decision<=0&&threat){target=threat.x;decision=interval}
         const dx=target-t.state.cartX;
         document.dispatchEvent(new KeyboardEvent('keydown',{key:dx>10?'ArrowRight':'ArrowLeft',bubbles:true}));
         document.dispatchEvent(new KeyboardEvent('keyup',{key:dx>10?'ArrowLeft':'ArrowRight',bubbles:true}));
         if(Math.abs(dx)<=10){document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft',bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowRight',bubbles:true}))}
         t.tick(1/60);elapsed+=1/60;decision-=1/60;
-        if(t.state.buckets<lastBuckets){misses+=lastBuckets-t.state.buckets;lastBuckets=t.state.buckets}
+        if(t.state.buckets<lastBuckets){misses+=lastBuckets-t.state.buckets;lastBuckets=t.state.buckets;if(n>=5)missed.push({time:+elapsed.toFixed(1),cart:Math.round(t.state.cartX),target:Math.round(target),threats:threats.map(q=>({x:Math.round(q.x),eta:+q.eta.toFixed(2)}))})}
       }
-      out.push({level:n,mode:t.state.mode,caught:t.state.caught,quota:t.profiles[n-1].quota,misses,buckets:t.state.buckets,seconds:+elapsed.toFixed(1)});
+      out.push({level:n,mode:t.state.mode,caught:t.state.caught,quota:t.profiles[n-1].quota,misses,buckets:t.state.buckets,seconds:+elapsed.toFixed(1),missed});
     }
     document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft',bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowRight',bubbles:true}));
     return out;
@@ -64,6 +70,8 @@ const fs=require('node:fs');
   for(const item of curve.slice(0,5))assert.equal(item.mode,'clear',`level ${item.level}`);
   assert.equal(await page.locator('#result-title').textContent(),'SEVEN SHIFTS SAFE!');
   await page.locator('#again').click();assert.equal(await page.evaluate(()=>window.__fuseTest.state.stage),1);
+  const follower=await page.evaluate(()=>{const t=window.__fuseTest,out=[];for(const n of [1,2,3,5,6,7]){t.jump(n);let elapsed=0;while(t.state.mode==='playing'&&elapsed<110){const dx=t.state.bomberX-t.state.cartX;document.dispatchEvent(new KeyboardEvent('keydown',{key:dx>9?'ArrowRight':'ArrowLeft',bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{key:dx>9?'ArrowLeft':'ArrowRight',bubbles:true}));if(Math.abs(dx)<=9){document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft',bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowRight',bubbles:true}))}t.tick(1/60);elapsed+=1/60}out.push({level:n,mode:t.state.mode,caught:t.state.caught,buckets:t.state.buckets})}document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft',bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowRight',bubbles:true}));return out});
+  console.log('FOLLOWER',JSON.stringify(follower));
   const slower=await page.evaluate(()=>{
     const t=window.__fuseTest,out=[];
     for(let n=5;n<=7;n++){
@@ -84,13 +92,14 @@ const fs=require('node:fs');
   });
   console.log('SLOWER',JSON.stringify(slower));
   const recovery=await page.evaluate(()=>{
-    const t=window.__fuseTest;t.jump(5);t.state.cartX=75;
-    for(let i=0;i<900&&t.state.buckets===4;i++)t.tick(1/60);
-    const lost=4-t.state.buckets;
+    const t=window.__fuseTest;t.jump(5);t.state.bombs.push({x:900,y:559,vx:0,vy:270,type:'normal',phase:0,spin:0});t.tick(1/60);
+    const lost=t.profiles[4].buckets-t.state.buckets;
     let target=t.state.cartX,decision=0,elapsed=0;
     while(t.state.mode==='playing'&&elapsed<90){
-      const b=t.state.bombs.reduce((a,v)=>!a||v.y>a.y?v:a,null);
-      if(decision<=0&&b){target=Math.max(28,Math.min(932,b.x+b.vx*(515-b.y)/b.vy));decision=.08}
+      const threats=t.state.bombs.map(v=>({v,x:t.predictLanding(v),eta:(515-v.y)/v.vy})).sort((a,b)=>a.eta-b.eta);
+      const threat=threats.find(q=>Math.max(0,Math.abs(q.x-t.state.cartX)-t.profiles[4].width/2)/625+.08<q.eta)||threats[0];
+      if(threats.some(q=>q.eta<.24&&Math.abs(q.v.x-t.state.cartX)<210&&Math.abs(q.x-t.state.cartX)>t.profiles[4].width/2+10)&&t.state.water>0)t.sweep();
+      if(decision<=0&&threat){target=threat.x;decision=.08}
       const dx=target-t.state.cartX;
       document.dispatchEvent(new KeyboardEvent('keydown',{key:dx>9?'ArrowRight':'ArrowLeft',bubbles:true}));
       document.dispatchEvent(new KeyboardEvent('keyup',{key:dx>9?'ArrowLeft':'ArrowRight',bubbles:true}));
@@ -104,8 +113,8 @@ const fs=require('node:fs');
   await page.evaluate(()=>{
     const t=window.__fuseTest;t.jump(5);let target=480,decision=0;
     for(let i=0;i<750&&t.state.mode==='playing';i++){
-      const b=t.state.bombs.reduce((a,v)=>!a||v.y>a.y?v:a,null);
-      if(decision<=0&&b){target=Math.max(28,Math.min(932,b.x+b.vx*(515-b.y)/b.vy));decision=.13}
+      const b=t.state.bombs.reduce((a,v)=>!a||(515-v.y)/v.vy<(515-a.y)/a.vy?v:a,null);
+      if(decision<=0&&b){target=t.predictLanding(b);decision=.13}
       const dx=target-t.state.cartX;
       document.dispatchEvent(new KeyboardEvent('keydown',{key:dx>9?'ArrowRight':'ArrowLeft',bubbles:true}));
       document.dispatchEvent(new KeyboardEvent('keyup',{key:dx>9?'ArrowLeft':'ArrowRight',bubbles:true}));
@@ -114,8 +123,10 @@ const fs=require('node:fs');
     }
     document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft',bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowRight',bubbles:true}));
   });
-  const screenshot='C:/Users/forem/.codex/visualizations/2026/09/24/01a0d201-bdee-7d62-b88c-ecc3808a13c9/fuse-catch-gameplay.png';
+  const screenshot='C:/Users/forem/.codex/visualizations/2026/09/24/01a0d201-bdee-7d62-b88c-ecc3808a13c9/fuse-catch-routing-gameplay.png';
   await page.screenshot({path:screenshot});
+  const frameTiming=await page.evaluate(()=>new Promise(resolve=>{const samples=[];let previous=0;const step=now=>{if(previous)samples.push(now-previous);previous=now;if(samples.length<120)requestAnimationFrame(step);else{samples.sort((a,b)=>a-b);resolve({mean:+(samples.reduce((a,b)=>a+b,0)/samples.length).toFixed(2),p95:+samples[Math.floor(samples.length*.95)].toFixed(2)})}};requestAnimationFrame(step)}));
+  console.log('FRAMES',JSON.stringify(frameTiming));
   const layouts=[];
   for(const [width,height] of [[1440,900],[667,375],[740,390],[844,390],[390,844]]){
     await page.setViewportSize({width,height});await page.waitForTimeout(250);
@@ -146,7 +157,7 @@ const fs=require('node:fs');
   await touch.dispatchEvent('.vibecade-direction-pad [data-direction="left"]','pointerup',{pointerId:8,pointerType:'touch'});
   assert.ok(await touch.evaluate(()=>window.__fuseTest.state.cartX)<buttonStart);
   await touch.locator('.vibecade-mobile-restart').click();assert.equal(await touch.evaluate(()=>window.__fuseTest.state.stage),1);
-  const mobileScreenshot='C:/Users/forem/.codex/visualizations/2026/09/24/01a0d201-bdee-7d62-b88c-ecc3808a13c9/fuse-catch-mobile.png';
+  const mobileScreenshot='C:/Users/forem/.codex/visualizations/2026/09/24/01a0d201-bdee-7d62-b88c-ecc3808a13c9/fuse-catch-routing-mobile.png';
   await touch.screenshot({path:mobileScreenshot});
   await touch.close();
   assert.deepEqual(errors,[]);
