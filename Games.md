@@ -29,6 +29,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Lift Heist](lift-heist/) - Ride the lifts, recover marked files, and escape seven guarded tower shifts.
 - [Fuse Catch](fuse-catch/) - Read arcing bomb paths, route between double drops, and survive seven rooftop shifts.
 - [Ink Claim](ink-claim/) - Draw claim lines, dodge ink moths, and finish seven printed posters.
 - [Kiln Cascade](kiln-cascade/) - Cycle falling ceramic columns, chain three-in-a-row matches, and survive an ever-faster endless kiln.
