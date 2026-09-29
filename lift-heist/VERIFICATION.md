@@ -26,3 +26,9 @@ All threats are introduced by shift 5. A separate shift-5 run began after two fo
 - Active desktop frame timing: 17.67ms mean, 18.2ms p95 over 120 frames. This is a local headless Chrome measurement.
 
 Active shift-5 screenshot: `C:/Users/forem/.codex/visualizations/2026/09/29/01a0ebc0-bfc3-7332-af64-7f522a3654b6/lift-heist-gameplay.png`. Mobile capture: `C:/Users/forem/.codex/visualizations/2026/09/29/01a0ebc0-bfc3-7332-af64-7f522a3654b6/lift-heist-mobile.png`.
+
+## Graphics revision — 2026-09-29
+
+- Replaced the primitive renderer with a cached office cutaway: furnished departments, city windows, overhead lighting, paneled walls, brass lifts and animated doors. New outlined agents, guards, armor, walking poses, crouching, stun stars, dossiers, pulse effects and camera lighting make actors and objectives distinct.
+- Added a brass and glass HUD, smaller footer status messages, and compact landscape instructions. Desktop uses a double-resolution canvas; mobile uses native resolution. The static scene is cached, blocked gameplay stops redraw work, and decorative motion respects reduced-motion preferences.
+- Full browser suite passed after the renderer change with unchanged seven-shift outcomes, controls, restart, layout checks and clean game console. Active frame p95 was 16.8ms desktop and 16.9ms at 667x375 touch mobile. Immediate mobile Start click passed after compacting the instruction card. Desktop and mobile screenshots were visually reviewed.

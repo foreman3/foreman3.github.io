@@ -37,21 +37,10 @@ function tick(dt){if(state.mode!=='playing')return;dt=Math.min(dt,.05);const p=p
   for(let i=state.bullets.length-1;i>=0;i--){const b=state.bullets[i];b.x+=b.vx*dt;if(b.x<35||b.x>925){state.bullets.splice(i,1);continue}if(b.floor===pl.floor&&Math.abs(b.x-pl.x)<14){state.bullets.splice(i,1);if(!pl.crouch)damage('bullet')}}
   for(const c of state.cameras){c.phase+=dt*(1.15+state.stage*.11);const beamX=c.x+Math.sin(c.phase)*85;if(c.floor===pl.floor&&Math.abs(pl.x-beamX)<18)damage('camera')}
   hud()}
-function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x,y,w,h)}
-function label(str,x,y,size=14,color='#e9dcbf',align='left'){ctx.fillStyle=color;ctx.font=`900 ${size}px Georgia,serif`;ctx.textAlign=align;ctx.fillText(str,x,y)}
-function draw(){ctx.save();if(state.shake>0)ctx.translate(Math.sin(performance.now()*.1)*state.shake*7,0);rect(0,0,W,H,'#10282c');
-  // Built as a night-time cutaway: warm offices against a cool exterior.
-  rect(30,30,900,520,'#244045');rect(48,44,864,495,'#2f4b4d');
-  for(let i=0;i<5;i++){const y=FLOOR_Y[i];rect(47,y+11,866,12,'#a7835e');rect(47,y+23,866,5,'#20373a');rect(48,y-69,864,79,i%2?'#314d4e':'#365354');for(let j=0;j<9;j++){let x=185+j*68;rect(x,y-57,43,50,(i+j)%3?'#465d57':'#53635a');rect(x+6,y-49,31,31,(i+j)%4?'#baaa80':'#7f987f');rect(x+13,y-46,17,29,'#d6c6a0')}label(`0${5-i}`,152,y-52,15,'#eedbb7')}
-  for(const x of SHAFTS){rect(x-39,36,78,490,'#16383c');for(let i=0;i<5;i++){const y=FLOOR_Y[i];rect(x-31,y-62,62,73,'#34595b');rect(x-25,y-57,50,62,'#b99e73');rect(x-20,y-52,40,56,'#24494a');rect(x-2,y-52,4,56,'#d9ba78');rect(x-25,y+5,50,5,'#e2c48b');label('◆',x,y-66,12,'#f0ce80','center')}}
-  for(const f of state.files)if(!f.taken){const y=FLOOR_Y[f.floor];rect(f.x-17,y-50,34,35,'#a44443');rect(f.x-12,y-45,24,26,'#e7d8bb');rect(f.x-8,y-40,16,3,'#a44443');rect(f.x-8,y-32,13,2,'#a44443');label('!',f.x,y-55,14,'#ffe4a7','center')}
-  for(const c of state.cameras){const y=FLOOR_Y[c.floor],bx=c.x+Math.sin(c.phase)*85;ctx.fillStyle='#eac77528';ctx.beginPath();ctx.moveTo(c.x,y-68);ctx.lineTo(bx-20,y+5);ctx.lineTo(bx+20,y+5);ctx.fill();rect(c.x-13,y-70,26,11,'#e5b772');rect(bx-5,y+5,10,3,'#f4d78d')}
-  for(const g of state.guards){const y=FLOOR_Y[g.floor];if(g.stun>0){label('✦',g.x,y-37,18,'#f4d584','center');rect(g.x-14,y-20,28,8,'#8a6258');continue}rect(g.x-12,y-39,24,30,g.armor?'#5b6f75':'#a8524e');rect(g.x-9,y-49,18,13,g.armor?'#839a9b':'#c27461');rect(g.x-14,y-13,9,15,'#273d3e');rect(g.x+5,y-13,9,15,'#273d3e');rect(g.x-13,y-29,26,5,'#edd0a0');if(g.armor)rect(g.x-16,y-33,32,12,'#91a5a0')}
-  for(const b of state.bullets){rect(b.x-6,b.y-2,12,4,'#f6ca86')}
-  const pl=state.player,py=FLOOR_Y[pl.floor];if(state.beam>0){rect(pl.face>0?pl.x+15:pl.x-235,py-32,220,4,'#f6deb0');rect(pl.face>0?pl.x+15:pl.x-235,py-31,220,2,'#fff8dc')}if(pl.inv<=0||Math.floor(pl.inv*9)%2===0){if(pl.crouch){rect(pl.x-14,py-22,28,15,'#b9d0b2');rect(pl.x-7,py-33,17,13,'#e4c39c');rect(pl.x-17,py-10,34,9,'#233b3c')}else{rect(pl.x-12,py-43,24,30,'#b9d0b2');rect(pl.x-9,py-53,18,14,'#e4c39c');rect(pl.x-13,py-14,9,16,'#233b3c');rect(pl.x+4,py-14,9,16,'#233b3c');rect(pl.x+pl.face*8,py-35,pl.face*17,5,'#d4e1c4');rect(pl.x-5,py-49,10,3,'#203c3d')}}
-  rect(895,FLOOR_Y[4]-59,29,70,state.files.every(f=>f.taken)?'#6eb9a7':'#496b69');label('EXIT',907,FLOOR_Y[4]-64,13,state.files.every(f=>f.taken)?'#d4f4df':'#9aaeb0','center');
-  rect(48,548,864,30,'#162d30');label(`LIFT HEIST  /  SHIFT ${state.stage}`,64,569,13,'#d9c596');label(state.files.every(f=>f.taken)?'ALL FILES FOUND — REACH THE GROUND EXIT':'FIND THE RED FILES · USE THE LIFTS',896,569,13,'#d9c596','right');if(state.flash>0)rect(0,0,W,H,`rgba(255,239,191,${state.flash*.35})`);ctx.restore()}
-function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;tick(dt);draw();requestAnimationFrame(frame)}
+const artwork=window.LiftHeistArt.create(canvas);
+function draw(){artwork.draw(state)}
+let lastDrawMode='';
+function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;tick(dt);if(state.mode==='playing'||state.mode!==lastDrawMode){draw();lastDrawMode=state.mode}requestAnimationFrame(frame)}
 document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowleft','arrowright','arrowup','arrowdown',' '].includes(k))e.preventDefault();if(state.mode==='intro'||state.mode==='help')return;if(k==='arrowleft'||k==='a')keys.left=true;if(k==='arrowright'||k==='d')keys.right=true;if(k==='arrowup'||k==='w')keys.up=true;if(k==='arrowdown'||k==='s')keys.down=true;if(k===' ')keys.fire=true;if(k==='p')togglePause();if(k==='r')reset();if(k==='m')toggleSound()});
 document.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')keys.left=false;if(k==='arrowright'||k==='d')keys.right=false;if(k==='arrowup'||k==='w')keys.up=false;if(k==='arrowdown'||k==='s')keys.down=false;if(k===' ')keys.fire=false});
 function togglePause(){if(state.mode==='playing'){state.mode='paused';clearInput();$('pause').textContent='Resume';notice('PAUSED',999)}else if(state.mode==='paused'){state.mode='playing';$('pause').textContent='Pause';notice('',0);last=performance.now()}}
