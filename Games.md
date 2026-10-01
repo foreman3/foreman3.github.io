@@ -29,6 +29,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Alpine Line](alpine-line/) - Carve numbered slalom gates, manage your brake reserve, and master seven alpine descents.
 - [Clockwork Blast](clockwork-blast/) - Wind charges, kick them through lanes, and outwit seven rooms of tin robots.
 - [Lift Heist](lift-heist/) - Ride the lifts, recover marked files, and escape seven guarded tower shifts.
 - [Fuse Catch](fuse-catch/) - Read arcing bomb paths, route between double drops, and survive seven rooftop shifts.
