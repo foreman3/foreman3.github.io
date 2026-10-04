@@ -1,0 +1,20 @@
+{
+  "checks": [
+    "Instructions and story gate simulation; sanctuary saves; keyboard movement, jump, upward fire, help cancellation and restart passed.",
+    "Lens discovery, charge without firing, release blast, persistent resonance seal and connected transition passed.",
+    "Guardian projectile defeat releases Spindle; physical low tunnel blocks standing and admits rolling form.",
+    "Folded mine breaks amber gate; Matron releases Wing; second jump changes aerial trajectory.",
+    "Both optional weapons are recoverable; Frost freezes a surviving enemy.",
+    "Phase beam opens the Engine and the Echo Chamber shortcut back to the original ruins.",
+    "Furnace guardian releases Thermal; hot basin is harmless with the mantle.",
+    "All 30 connected rooms, five sanctuaries, eight witnesses, suit reserves and five biome renders passed.",
+    "Atlas pauses, sanctuary travel works, and discoveries/journal survive reload.",
+    "Final guardian, both informed choices, timed escape, disabled escape travel, launch and post-ending exploration passed.",
+    "Death retains progression; New Expedition requires a second confirming click.",
+    "667×375: reachable instructions, fullscreen refusal, clear rails/portrait, joystick neutral/release, jump cancel, charge/release, joystick Fold, atlas, lost capture, restart and blur passed.",
+    "740×390: reachable instructions, fullscreen refusal, clear rails/portrait, joystick neutral/release, jump cancel, charge/release, joystick Fold, atlas, lost capture, restart and blur passed.",
+    "844×390: reachable instructions, fullscreen refusal, clear rails/portrait, joystick neutral/release, jump cancel, charge/release, joystick Fold, atlas, lost capture, restart and blur passed.",
+    "390×844: reachable instructions, fullscreen refusal, clear rails/portrait, joystick neutral/release, jump cancel, charge/release, joystick Fold, atlas, lost capture, restart and blur passed."
+  ],
+  "errors": []
+}

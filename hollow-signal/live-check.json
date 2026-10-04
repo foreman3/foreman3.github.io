@@ -1,0 +1,34 @@
+{
+  "timings": [
+    {
+      "label": "opening, real-time keyboard play",
+      "median": 16.699999999999818,
+      "p95": 16.800000000000182,
+      "frames": 119
+    },
+    {
+      "label": "Custodian, projectiles and living Heart art",
+      "median": 16.699999999999818,
+      "p95": 16.800000000000182,
+      "frames": 119
+    },
+    {
+      "label": "Engine vertical chamber and moving lift",
+      "median": 16.699999999999818,
+      "p95": 16.900000000000546,
+      "frames": 119
+    },
+    {
+      "label": "740×390 mobile profile, Custodian",
+      "median": 16.699999999999818,
+      "p95": 16.90000000000009,
+      "frames": 119
+    }
+  ],
+  "errors": [],
+  "failed": [],
+  "arcadeExternalResources": [
+    "https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap: net::ERR_NETWORK_ACCESS_DENIED"
+  ],
+  "arcadeLink": true
+}

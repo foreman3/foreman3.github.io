@@ -1,0 +1,57 @@
+[
+  {
+    "guardian": 1,
+    "weapon": 0,
+    "result": "story",
+    "seconds": 9.433333333333334,
+    "remainingIntegrity": 135,
+    "maxIntegrity": 135,
+    "minIntegrity": 115,
+    "recoveries": 0,
+    "bossHP": 0
+  },
+  {
+    "guardian": 2,
+    "weapon": 0,
+    "result": "story",
+    "seconds": 19.35,
+    "remainingIntegrity": 170,
+    "maxIntegrity": 170,
+    "minIntegrity": 138,
+    "recoveries": 0,
+    "bossHP": 0
+  },
+  {
+    "guardian": 3,
+    "weapon": 2,
+    "result": "story",
+    "seconds": 14.716666666666667,
+    "remainingIntegrity": 180,
+    "maxIntegrity": 180,
+    "minIntegrity": 144,
+    "recoveries": 0,
+    "bossHP": 0
+  },
+  {
+    "guardian": 4,
+    "weapon": 2,
+    "result": "story",
+    "seconds": 26.55,
+    "remainingIntegrity": 190,
+    "maxIntegrity": 190,
+    "minIntegrity": 92,
+    "recoveries": 0,
+    "bossHP": 0
+  },
+  {
+    "guardian": 5,
+    "weapon": 2,
+    "result": "story",
+    "seconds": 39.1,
+    "remainingIntegrity": 190,
+    "maxIntegrity": 190,
+    "minIntegrity": 58,
+    "recoveries": 0,
+    "bossHP": 0
+  }
+]

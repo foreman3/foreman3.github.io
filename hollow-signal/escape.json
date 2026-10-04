@@ -1,0 +1,70 @@
+{
+  "legs": [
+    {
+      "from": 29,
+      "to": 25,
+      "arrived": 25,
+      "seconds": 27.75
+    },
+    {
+      "from": 25,
+      "to": 24,
+      "arrived": 24,
+      "seconds": 35.7
+    },
+    {
+      "from": 24,
+      "to": 23,
+      "arrived": 23,
+      "seconds": 19.75
+    },
+    {
+      "from": 23,
+      "to": 20,
+      "arrived": 20,
+      "seconds": 27
+    },
+    {
+      "from": 20,
+      "to": 18,
+      "arrived": 18,
+      "seconds": 28.95
+    },
+    {
+      "from": 18,
+      "to": 16,
+      "arrived": 16,
+      "seconds": 21.75
+    },
+    {
+      "from": 16,
+      "to": 15,
+      "arrived": 15,
+      "seconds": 26.25
+    },
+    {
+      "from": 15,
+      "to": 17,
+      "arrived": 17,
+      "seconds": 5.9
+    },
+    {
+      "from": 17,
+      "to": 2,
+      "arrived": 2,
+      "seconds": 33.85
+    },
+    {
+      "from": 2,
+      "to": 0,
+      "arrived": 0,
+      "seconds": 26.15
+    }
+  ],
+  "result": "ending",
+  "complete": true,
+  "seconds": 274.53333333338776,
+  "remainingIntegrity": 190,
+  "deaths": 0,
+  "shortcutOpened": true
+}

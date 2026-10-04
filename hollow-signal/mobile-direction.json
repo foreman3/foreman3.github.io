@@ -1,0 +1,53 @@
+{
+  "rows": [
+    {
+      "width": 667,
+      "height": 375,
+      "upAimUnfold": true,
+      "downFold": true,
+      "diagonalFire": true,
+      "holdFireChangesForm": true,
+      "lowClearance": true,
+      "cancelReset": true,
+      "buttons": true,
+      "layout": true
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "upAimUnfold": true,
+      "downFold": true,
+      "diagonalFire": true,
+      "holdFireChangesForm": true,
+      "lowClearance": true,
+      "cancelReset": true,
+      "buttons": true,
+      "layout": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "upAimUnfold": true,
+      "downFold": true,
+      "diagonalFire": true,
+      "holdFireChangesForm": true,
+      "lowClearance": true,
+      "cancelReset": true,
+      "buttons": true,
+      "layout": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "upAimUnfold": true,
+      "downFold": true,
+      "diagonalFire": true,
+      "holdFireChangesForm": true,
+      "lowClearance": true,
+      "cancelReset": true,
+      "buttons": true,
+      "layout": true
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,33 @@
+{
+  "rows": [
+    {
+      "width": 667,
+      "height": 375,
+      "chain": 4,
+      "climbHeight": 812.1250000000098,
+      "cancelClears": true
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "chain": 4,
+      "climbHeight": 812.1250000000098,
+      "cancelClears": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "chain": 4,
+      "climbHeight": 812.1250000000098,
+      "cancelClears": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "chain": 4,
+      "climbHeight": 812.1250000000098,
+      "cancelClears": true
+    }
+  ],
+  "errors": []
+}

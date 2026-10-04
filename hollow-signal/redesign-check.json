@@ -1,0 +1,329 @@
+{
+  "geometry": [
+    {
+      "id": 0,
+      "w": 7800,
+      "h": 700,
+      "fields": 2,
+      "guards": 4,
+      "bounds": true,
+      "mainExitDistance": 7530
+    },
+    {
+      "id": 1,
+      "w": 9000,
+      "h": 800,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 8730
+    },
+    {
+      "id": 2,
+      "w": 8400,
+      "h": 900,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 8130
+    },
+    {
+      "id": 3,
+      "w": 8400,
+      "h": 800,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 7780
+    },
+    {
+      "id": 4,
+      "w": 6600,
+      "h": 800,
+      "fields": 2,
+      "guards": 6,
+      "bounds": true,
+      "mainExitDistance": 6330
+    },
+    {
+      "id": 5,
+      "w": 8600,
+      "h": 850,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 8330
+    },
+    {
+      "id": 6,
+      "w": 7000,
+      "h": 850,
+      "fields": 1,
+      "guards": 2,
+      "bounds": true,
+      "mainExitDistance": 6730
+    },
+    {
+      "id": 7,
+      "w": 9200,
+      "h": 1000,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 8930
+    },
+    {
+      "id": 8,
+      "w": 8200,
+      "h": 1100,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 7780
+    },
+    {
+      "id": 9,
+      "w": 6200,
+      "h": 1900,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 5680
+    },
+    {
+      "id": 10,
+      "w": 6900,
+      "h": 1000,
+      "fields": 2,
+      "guards": 6,
+      "bounds": true,
+      "mainExitDistance": 6600
+    },
+    {
+      "id": 11,
+      "w": 8600,
+      "h": 1200,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 2130
+    },
+    {
+      "id": 12,
+      "w": 7200,
+      "h": 1100,
+      "fields": 1,
+      "guards": 2,
+      "bounds": true,
+      "mainExitDistance": 6930
+    },
+    {
+      "id": 13,
+      "w": 6000,
+      "h": 2300,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 5680
+    },
+    {
+      "id": 14,
+      "w": 9200,
+      "h": 1300,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 8880
+    },
+    {
+      "id": 15,
+      "w": 6200,
+      "h": 2000,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 5930
+    },
+    {
+      "id": 16,
+      "w": 7000,
+      "h": 1100,
+      "fields": 2,
+      "guards": 6,
+      "bounds": true,
+      "mainExitDistance": 6730
+    },
+    {
+      "id": 17,
+      "w": 8600,
+      "h": 1300,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 8230
+    },
+    {
+      "id": 18,
+      "w": 7200,
+      "h": 1000,
+      "fields": 1,
+      "guards": 2,
+      "bounds": true,
+      "mainExitDistance": 6930
+    },
+    {
+      "id": 19,
+      "w": 6200,
+      "h": 2200,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 5880
+    },
+    {
+      "id": 20,
+      "w": 9600,
+      "h": 1200,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 9330
+    },
+    {
+      "id": 21,
+      "w": 9000,
+      "h": 1300,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 8730
+    },
+    {
+      "id": 22,
+      "w": 7200,
+      "h": 1100,
+      "fields": 2,
+      "guards": 6,
+      "bounds": true,
+      "mainExitDistance": 6930
+    },
+    {
+      "id": 23,
+      "w": 9200,
+      "h": 1200,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 8930
+    },
+    {
+      "id": 24,
+      "w": 7600,
+      "h": 1100,
+      "fields": 1,
+      "guards": 2,
+      "bounds": true,
+      "mainExitDistance": 7330
+    },
+    {
+      "id": 25,
+      "w": 9000,
+      "h": 1500,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 8680
+    },
+    {
+      "id": 26,
+      "w": 6400,
+      "h": 2100,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 6080
+    },
+    {
+      "id": 27,
+      "w": 9400,
+      "h": 1300,
+      "fields": 3,
+      "guards": 9,
+      "bounds": true,
+      "mainExitDistance": 9130
+    },
+    {
+      "id": 28,
+      "w": 7600,
+      "h": 1300,
+      "fields": 2,
+      "guards": 6,
+      "bounds": true,
+      "mainExitDistance": 165
+    },
+    {
+      "id": 29,
+      "w": 8200,
+      "h": 1300,
+      "fields": 2,
+      "guards": 6,
+      "bounds": true,
+      "mainExitDistance": 7830
+    }
+  ],
+  "mechanics": {
+    "resisted": 0.6000000000000014,
+    "vent": 4,
+    "charged": 22.4,
+    "crustPulse": 0,
+    "mined": true,
+    "phasePulse": 0,
+    "phaseBeam": 36.75,
+    "ball": {
+      "maxHeight": 1176.916666666674,
+      "maxChain": 6,
+      "fold": true
+    },
+    "standing": {
+      "fold": false,
+      "vy": 0,
+      "chain": 0
+    }
+  },
+  "persistence": {
+    "zone": "0:sector:0",
+    "checkpoint": {
+      "room": 0,
+      "x": 3590,
+      "y": 578
+    },
+    "sectors": [
+      "8:sector:2",
+      "9:sector:0",
+      "9:sector:1",
+      "9:sector:2",
+      "0:sector:0"
+    ]
+  },
+  "foldedCheckpoint": {
+    "fold": true,
+    "y": 578,
+    "expected": 578
+  },
+  "migration": {
+    "powers": [
+      "lens",
+      "fold",
+      "bomb"
+    ],
+    "records": [
+      0,
+      1
+    ],
+    "guardian": [
+      0
+    ],
+    "escape": 480
+  },
+  "errors": []
+}
