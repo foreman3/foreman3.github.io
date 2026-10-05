@@ -1,0 +1,132 @@
+{
+  "geometry": [
+    {
+      "stage": 1,
+      "length": 12000,
+      "fields": 4,
+      "midpoints": 1,
+      "caches": 2,
+      "safeTunnels": true,
+      "bounds": true,
+      "safeCheckpoint": true,
+      "wallsClear": true
+    },
+    {
+      "stage": 2,
+      "length": 13200,
+      "fields": 4,
+      "midpoints": 1,
+      "caches": 2,
+      "safeTunnels": true,
+      "bounds": true,
+      "safeCheckpoint": true,
+      "wallsClear": true
+    },
+    {
+      "stage": 3,
+      "length": 14000,
+      "fields": 4,
+      "midpoints": 1,
+      "caches": 2,
+      "safeTunnels": true,
+      "bounds": true,
+      "safeCheckpoint": true,
+      "wallsClear": true
+    },
+    {
+      "stage": 4,
+      "length": 14800,
+      "fields": 4,
+      "midpoints": 1,
+      "caches": 2,
+      "safeTunnels": true,
+      "bounds": true,
+      "safeCheckpoint": true,
+      "wallsClear": true
+    },
+    {
+      "stage": 5,
+      "length": 15600,
+      "fields": 4,
+      "midpoints": 1,
+      "caches": 2,
+      "safeTunnels": true,
+      "bounds": true,
+      "safeCheckpoint": true,
+      "wallsClear": true
+    }
+  ],
+  "motion": [
+    {
+      "stage": 2,
+      "patterns": 5,
+      "tells": 5,
+      "width": 745,
+      "height": 208.98862330147261,
+      "maxStep": 12.693333333333605,
+      "chained": false
+    },
+    {
+      "stage": 3,
+      "patterns": 5,
+      "tells": 5,
+      "width": 745,
+      "height": 208.98862330147261,
+      "maxStep": 12.693333333333605,
+      "chained": false
+    },
+    {
+      "stage": 4,
+      "patterns": 5,
+      "tells": 5,
+      "width": 745,
+      "height": 208.98862330147261,
+      "maxStep": 12.693333333333605,
+      "chained": false
+    },
+    {
+      "stage": 5,
+      "patterns": 5,
+      "tells": 5,
+      "width": 745,
+      "height": 224,
+      "maxStep": 13.813333333334024,
+      "chained": true
+    }
+  ],
+  "armor": {
+    "pellet": 0.15000000000000568,
+    "closedCharge": 1.75,
+    "ventCharge": 7,
+    "matched": 12
+  },
+  "cleared": [
+    0,
+    2
+  ],
+  "mid": {
+    "hp": 28,
+    "checkpoint": 7050
+  },
+  "entry": {
+    "hp": 7,
+    "checkpoint": 7050,
+    "energyDifference": 0.0833333333333286
+  },
+  "retry": {
+    "x": 7050,
+    "hp": 28,
+    "checkpoint": 7050,
+    "fields": [
+      0,
+      2
+    ],
+    "cacheIds": [
+      "armor"
+    ]
+  },
+  "revisitHP": 8,
+  "frostDeflect": true,
+  "beltBlocked": true,
+  "errors": []
+}

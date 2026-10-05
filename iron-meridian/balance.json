@@ -1,0 +1,208 @@
+{
+  "rows": [
+    {
+      "stage": 1,
+      "dodge": false,
+      "cores": false,
+      "result": "lost attempt",
+      "seconds": 26.35,
+      "minArmor": 4,
+      "armor": 28,
+      "lives": 2,
+      "bossHP": 30,
+      "shots": 21,
+      "trace": []
+    },
+    {
+      "stage": 1,
+      "dodge": true,
+      "cores": false,
+      "result": "clear",
+      "seconds": 38.9,
+      "minArmor": 12,
+      "armor": 12,
+      "lives": 3,
+      "bossHP": 0,
+      "shots": 31,
+      "trace": []
+    },
+    {
+      "stage": 2,
+      "dodge": true,
+      "cores": true,
+      "result": "clear",
+      "seconds": 31.483333333333334,
+      "minArmor": 20,
+      "armor": 20,
+      "lives": 3,
+      "bossHP": -4,
+      "shots": 23,
+      "trace": []
+    },
+    {
+      "stage": 3,
+      "dodge": true,
+      "cores": true,
+      "result": "clear",
+      "seconds": 28.266666666666666,
+      "minArmor": 24,
+      "armor": 24,
+      "lives": 3,
+      "bossHP": 0,
+      "shots": 23,
+      "trace": []
+    },
+    {
+      "stage": 4,
+      "dodge": true,
+      "cores": true,
+      "result": "clear",
+      "seconds": 28.516666666666666,
+      "minArmor": 24,
+      "armor": 24,
+      "lives": 3,
+      "bossHP": -8,
+      "shots": 22,
+      "trace": []
+    },
+    {
+      "stage": 5,
+      "dodge": true,
+      "cores": true,
+      "result": "clear",
+      "seconds": 29.75,
+      "minArmor": 14,
+      "armor": 14,
+      "lives": 3,
+      "bossHP": -3.1999999999999247,
+      "shots": 23,
+      "trace": [
+        {
+          "seconds": 3.933333333333333,
+          "hp": 25,
+          "x": 14988.349342147263,
+          "y": 369.24999999999994,
+          "bx": 14734.411246007418,
+          "by": 263.1979421884723,
+          "pattern": 2,
+          "phase": "attack"
+        },
+        {
+          "seconds": 10.283333333333333,
+          "hp": 22,
+          "x": 14825.236373095713,
+          "y": 400,
+          "bx": 14715.446410240673,
+          "by": 279.9300324142494,
+          "pattern": 0,
+          "phase": "attack"
+        },
+        {
+          "seconds": 16.8,
+          "hp": 17,
+          "x": 14749.10845492275,
+          "y": 418,
+          "bx": 14732.064263242715,
+          "by": 323.25530415006415,
+          "pattern": 4,
+          "phase": "attack"
+        },
+        {
+          "seconds": 22.6,
+          "hp": 14,
+          "x": 15032.487996466974,
+          "y": 381.09722222222223,
+          "bx": 14753.382881978167,
+          "by": 311.3194094908038,
+          "pattern": 3,
+          "phase": "attack"
+        }
+      ]
+    },
+    {
+      "stage": 5,
+      "dodge": true,
+      "cores": false,
+      "result": "lost attempt",
+      "seconds": 37.75,
+      "minArmor": 5,
+      "armor": 28,
+      "lives": 2,
+      "bossHP": 280,
+      "shots": 30,
+      "trace": [
+        {
+          "seconds": 3.5833333333333335,
+          "hp": 25,
+          "x": 14990.994474115028,
+          "y": 364.41666666666663,
+          "bx": 14737.090795542785,
+          "by": 265.6324019606785,
+          "pattern": 2,
+          "phase": "attack"
+        },
+        {
+          "seconds": 5.516666666666667,
+          "hp": 22,
+          "x": 14685.766293383238,
+          "y": 400,
+          "bx": 15429.956249540339,
+          "by": 218.09991796781372,
+          "pattern": 2,
+          "phase": "attack"
+        },
+        {
+          "seconds": 9.616666666666667,
+          "hp": 19,
+          "x": 14826.737183595726,
+          "y": 400,
+          "bx": 14715.446410240673,
+          "by": 279.9300324142494,
+          "pattern": 0,
+          "phase": "attack"
+        },
+        {
+          "seconds": 15.5,
+          "hp": 14,
+          "x": 14753.498396990795,
+          "y": 418,
+          "bx": 14733.512264510886,
+          "by": 320.6691110087959,
+          "pattern": 4,
+          "phase": "attack"
+        },
+        {
+          "seconds": 21.483333333333334,
+          "hp": 11,
+          "x": 15063.694385188244,
+          "y": 400,
+          "bx": 14705,
+          "by": 309,
+          "pattern": 3,
+          "phase": "attack"
+        },
+        {
+          "seconds": 28.55,
+          "hp": 8,
+          "x": 15189.437768422866,
+          "y": 400,
+          "bx": 14705,
+          "by": 344,
+          "pattern": 1,
+          "phase": "recover"
+        },
+        {
+          "seconds": 32.083333333333336,
+          "hp": 5,
+          "x": 15165.212207508283,
+          "y": 400,
+          "bx": 15193.90625,
+          "by": 259,
+          "pattern": 4,
+          "phase": "attack"
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

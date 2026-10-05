@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-05",
+  "checks": [
+    "First-load instructions gate simulation; final sector gated by four cores.",
+    "Keyboard movement, variable jump, dash, exclusive hold-to-charge and release blast verified.",
+    "Help pauses and resumes; keyboard sound toggle works.",
+    "Sector 1: gaps, checkpoint, boss attack/recovery cycle, projectile defeat, reward, mission-control transition passed.",
+    "Sector 2: gaps, checkpoint, boss attack/recovery cycle, projectile defeat, reward, mission-control transition passed.",
+    "Sector 3: gaps, checkpoint, boss attack/recovery cycle, projectile defeat, reward, mission-control transition passed.",
+    "Sector 4: gaps, checkpoint, boss attack/recovery cycle, projectile defeat, reward, mission-control transition passed.",
+    "Sector 5: gaps, checkpoint, boss attack/recovery cycle, projectile defeat, reward, mission-control transition passed.",
+    "Energy consumption/regeneration, acquired weapon selection, three-attempt game over, unlimited continue and sector restart passed.",
+    "All acquired cores persist across reload.",
+    "Arcade registration resolves.",
+    "667px touch: fullscreen refusal, clear rails, joystick hold/slide/neutral/release, jump/cancel, fire/lost capture, touch charge/release, crouch, dash, context-menu suppression, mobile restart and saved direction-button preference passed.",
+    "740px touch: fullscreen refusal, clear rails, joystick hold/slide/neutral/release, jump/cancel, fire/lost capture, touch charge/release, crouch, dash, context-menu suppression, mobile restart and saved direction-button preference passed.",
+    "844px touch: fullscreen refusal, clear rails, joystick hold/slide/neutral/release, jump/cancel, fire/lost capture, touch charge/release, crouch, dash, context-menu suppression, mobile restart and saved direction-button preference passed.",
+    "390×844 portrait: reachable instructions, controls below playfield, mission-control sound toggle and resume passed.",
+    "No browser page errors."
+  ],
+  "errors": []
+}

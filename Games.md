@@ -12,6 +12,7 @@ This repository hosts simple arcade-style video games.
 - [Deep Core](deep-core/) - Dig tactical tunnels, pressure-pop threats, and weaponize falling boulders.
 - [Flappy](flappy/) - Navigate obstacles and collect coins.
 - [Galactic Wing](galactic-wing/) - Break alien formations, intercept diving squadrons, and chase precision chains.
+- [Iron Meridian](iron-meridian/) - Dash through five robot-guarded sectors, defeat their guardians, and claim their weapons.
 - [Lunar Lander](lunar-lander/) - Feather a survey module onto five increasingly unforgiving lunar sites.
 - [Missile Command](missile-command/) - Defend your base from incoming missiles.
 - [Mushroom Moon](mushroom-moon/) - Split star-worms and defend a mutating lunar garden.

@@ -1,0 +1,51 @@
+{
+  "checks": [
+    "A tap entirely between frames fires exactly one normal shot.",
+    "Holding emits no shots, reaches full charge, and releasing emits one charged shot.",
+    "Special-weapon energy is spent on release only.",
+    "Help cancels a held charge without a stray shot on resume.",
+    "Down/S crouches, preserves foot position, lowers muzzle, and jump stands up.",
+    "A high projectile misses crouched armor and hits the same standing player.",
+    "Standing is blocked safely under a low ceiling.",
+    "All six announced patterns run, cover the arena horizontally and vertically, exceed 500 px/s, and remain continuous.",
+    "Overdrive runs all six patterns faster, with continuous movement."
+  ],
+  "bossMotion": {
+    "patterns": [
+      1,
+      0,
+      2,
+      4,
+      3,
+      5
+    ],
+    "telegraphs": [
+      "VAULT & POUNCE",
+      "BREAKWATER RUN",
+      "HARBOR ORBIT",
+      "TIDAL SLAM",
+      "PINCER CROSSFIRE",
+      "FIGURE-EIGHT"
+    ],
+    "minX": 11075,
+    "maxX": 11888,
+    "minY": 135,
+    "maxY": 345.9997607647625,
+    "maxSpeed": 760.0000000000131,
+    "maxStep": 12.666666666666885,
+    "arena": 11040
+  },
+  "overdrive": {
+    "speed": 864.9591946524773,
+    "delta": 14.333333333333343,
+    "patterns": [
+      5,
+      1,
+      3,
+      2,
+      4,
+      0
+    ]
+  },
+  "errors": []
+}

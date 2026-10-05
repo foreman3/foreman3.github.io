@@ -1,0 +1,16 @@
+{
+  "checks": [
+    "Up aims without jumping; a between-frame tap retains its release direction.",
+    "Space jumps while W aims and fires overhead in the air.",
+    "Both diagonal directions preserve projectile speed.",
+    "Normal horizontal fire follows a turn made immediately before release.",
+    "All six charged weapons fire upward; Thorn spreads across the aim direction.",
+    "An actual upward charge destroys an overhead drone through normal projectile collision.",
+    "Help clears aim and cancels a held charge safely.",
+    "667px touch: upward charge, diagonal aim, down crouch, neutral/cancel, simultaneous direction buttons, Options cancellation, blur and clear control rails.",
+    "740px touch: upward charge, diagonal aim, down crouch, neutral/cancel, simultaneous direction buttons, Options cancellation, blur and clear control rails.",
+    "844px touch: upward charge, diagonal aim, down crouch, neutral/cancel, simultaneous direction buttons, Options cancellation, blur and clear control rails.",
+    "390px touch: upward charge, diagonal aim, down crouch, neutral/cancel, simultaneous direction buttons, Options cancellation, blur and clear control rails."
+  ],
+  "errors": []
+}
