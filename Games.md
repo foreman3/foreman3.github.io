@@ -30,6 +30,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Harbor Bastion](harbor-bastion/) - Fit broken ramparts, lead cannon shots, and defend seven coasts against a sailing armada.
 - [Hollow Signal](hollow-signal/) - Explore thirty connected chambers, recover eight abilities, and uncover the voices of a lost colony.
 - [Alpine Line](alpine-line/) - Accelerate through seven slalom races, brake for tight turns, and beat qualifying times with missed-gate penalties.
 - [Clockwork Blast](clockwork-blast/) - Wind charges, kick them through lanes, and outwit seven rooms of tin robots.
