@@ -76,6 +76,45 @@ async function main(){
    const r=fight();curve.push(r);if(r.mode!=='won')break;
   }
  });
+ report.repeatable=await page.evaluate(()=>{
+  const t=__harborTest,s=t.state,R=t.rules,result={};
+  // Ample enclosed land isolates repeat purchases from campaign layout choices.
+  t.fresh();t.prepare(13);s.supplies=600;s.walls=ring(1,1,13,14);
+  for(const [type,x,y]of [['tower',7,3],['tower',9,3],['tower',11,3],['tower',7,5],['mage',9,5],['mage',11,5],['mage',9,7],['captain',2,11],['captain',11,7],['captain',7,9],['workshop',9,9],['workshop',11,9],['workshop',7,11]]){
+   const bank=s.supplies,patches=s.patches;put(type,x,y);check(s.supplies===bank-R.upgrades[type].cost,'repeat purchase price '+type);if(type==='workshop')check(s.patches===patches+3,'new workshop patches');
+  }
+  result.built=Object.fromEntries(['tower','mage','captain','workshop'].map(type=>[type,s.buildings.filter(b=>b.type===type).length]));
+  const full=JSON.stringify(R.snapshot(s));t.select('tower');t.setCursor(7,3);check(!t.place()&&full===JSON.stringify(R.snapshot(s)),'repeat overlap mutated');t.setCursor(2,2);s.supplies=13;const broke=JSON.stringify(R.snapshot(s));check(!t.place()&&broke===JSON.stringify(R.snapshot(s)),'repeat budget mutated');s.supplies=300;
+  s.buildings[0].hp=7;for(const size of [3,4,5]){put('keep',2,5);check(s.buildings[0].w===size&&s.buildings[0].h===size&&s.buildings[0].hp===7&&s.buildings[0].maxHp===10+(size-2)*6,'repeat keep expansion');}
+  result.keep={size:s.buildings[0].w,maxHp:s.buildings[0].maxHp,hp:s.buildings[0].hp};
+  t.select('keep');t.setCursor(1,5);check(!t.place(),'keep overlap with wall allowed');t.setCursor(8,10);check(!t.place(),'keep out of bounds allowed');t.setCursor(2,2);check(!t.place(),'keep relocation without containing old allowed');
+  window.repeatedCastle=R.snapshot(s);t.prepare(13);check(s.patches===12,'stacked workshop preparation');t.startBattle();t.aim(800,320);check(t.fire(),'stacked reload fire');const reload=t.guns().find(g=>g.b.type==='keep').b.cooldown;check(Math.abs(reload-.512)<1e-9,'three workshops reload');result.reload=reload;result.patches=12;
+  const workshops=s.buildings.filter(b=>b.type==='workshop');workshops[0].hp=0;t.startBattle();check(t.fire(),'disabled workshop fire');check(Math.abs(s.buildings[0].cooldown-.64)<1e-9,'disabled workshop still applies');workshops[0].hp=3;
+  const g=t.guns();check(g.filter(v=>v.auto).length===3&&g.filter(v=>!v.auto).length===2,'captains do not command distinct towers');check(!g.find(v=>v.b.type==='keep').auto,'keep must stay manual');check(new Set(g.filter(v=>v.auto).map(v=>v.captain.id)).size===3,'captain assigned twice');
+  t.startBattle();s.spawned=t.profiles[12].ships;s.spawnTime=100;s.ships=[0,1,2].map(id=>({id,type:'sloop',x:800,baseX:800,y:100+id*150,dir:1,hp:1,speed:0,fire:10+id,vx:0}));t.tick(1/60);check(s.captainShots===3&&new Set(s.shots.map(q=>q.targetId)).size===3,'captains did not fire at separate targets');result.captainGuns=3;
+  const captains=s.buildings.filter(b=>b.type==='captain'),towers=s.buildings.filter(b=>b.type==='tower');captains[0].hp=0;check(t.guns().filter(v=>v.auto).length===2,'disabled captain still commanding');captains[0].hp=3;towers.slice(0,2).forEach(b=>b.hp=0);check(t.guns().filter(v=>v.auto).length===2&&!t.guns().find(v=>v.b.type==='keep').auto,'standby captain stole keep gun');towers.forEach(b=>b.hp=3);
+  const mages=s.buildings.filter(b=>b.type==='mage');t.startBattle();s.spawned=t.profiles[12].ships;s.spawnTime=100;s.ships=[];
+  // Shells overlap all three ranges, but are over empty land so ordinary collisions cannot remove them.
+  s.shells=[0,1,2,3].map(i=>({x:350+i,y:350,vx:0,vy:0,delay:0}));t.tick(1/60);check(s.mageBlocks===3&&s.shells.length===1&&mages.every(b=>b.cooldown===5),'mages not independent');t.tick(.1);check(s.mageBlocks===3,'mage cooldown bypass');mages[1].cooldown=0;t.tick(1/60);check(s.mageBlocks===4&&s.shells.length===0&&mages[1].cooldown===5,'ready second mage ignored');
+  t.startBattle();s.spawned=t.profiles[12].ships;s.spawnTime=100;mages[0].hp=0;s.shells=[0,1,2].map(i=>({x:350+i,y:350,vx:0,vy:0,delay:0}));t.tick(1/60);check(s.mageBlocks===2&&s.shells.length===1,'disabled mage still blocks');result.mageBlocks=3;
+  // Save/restore and undo preserve every duplicate and the enlarged keep.
+  R.restore(s,repeatedCastle);t.prepare(13);const snap=JSON.stringify(R.snapshot(s));put('salvage',11,3);t.undo();check(snap===JSON.stringify(R.snapshot(s)),'duplicate salvage undo');return result;
+ });
+ report.growingCampaign=await page.evaluate(()=>{
+  const t=__harborTest,s=t.state,R=t.rules,results=[];t.fresh();
+  for(let level=1;level<=13;level++){
+   if(level>1){t.prepare(level);if(level<6)equip();
+    else{const desired=ring(1,1,13,14);fitRing(desired);for(const n of [...s.walls])if(!desired.has(n)){const [x,y]=R.xy(n);put('salvage',x,y);}
+     for(const [type,unlock,x,y]of [['tower',6,5,4],['mage',7,7,5],['captain',9,5,9],['workshop',11,7,9]])if(level>=unlock&&!s.buildings.some(b=>b.type===type&&b.x===x&&b.y===y))put(type,x,y);
+     for(const b of s.buildings)while(b.hp<b.maxHp&&s.supplies>=2)put('repair',b.x,b.y);
+    }
+    const extras=[['tower',6,7,7],['mage',8,9,5],['captain',10,9,9],['workshop',12,7,11]];
+    for(const [type,unlock,x,y]of extras)if(level>=unlock&&!s.buildings.some(b=>b.type===type&&b.x===x&&b.y===y))put(type,x,y);
+    check(s.supplies>=0,'campaign overspent');t.startBattle();
+   }
+   const r=fight();results.push({...r,buildings:Object.fromEntries(['tower','mage','captain','workshop'].map(type=>[type,s.buildings.filter(b=>b.type===type).length]))});check(r.mode==='won','growing campaign failed level '+level);
+  }return results;
+ });
  report.curve=await page.evaluate(()=>curve);console.log(JSON.stringify(report.curve,null,2));
  assert.equal(report.curve.length,13);assert.ok(report.curve.every(r=>r.mode==='won'));
  report.margin=await page.evaluate(()=>{const t=__harborTest;t.rules.restore(t.state,starts[4]);t.startBattle();return fight({forced:6,missEvery:4,delay:.5});});
@@ -130,9 +169,10 @@ async function main(){
  }
  await page.evaluate(()=>{const t=__harborTest;t.rules.restore(t.state,starts[8]);t.state.buildings=t.state.buildings.filter(b=>b.type!=='mage');t.prepare(9);});await page.locator('canvas').focus();await page.keyboard.press('b');await page.locator('[data-upgrade="mage"]').click();assert.equal(await page.evaluate(()=>__harborTest.state.tool),'mage');
  await page.evaluate(()=>__harborTest.setCursor(7,5));await page.locator('#place').click();assert.equal(await page.evaluate(()=>__harborTest.state.buildings.some(b=>b.type==='mage')),true);
- await page.evaluate(()=>__harborTest.prepare(10));await page.locator('canvas').focus();await page.keyboard.press('b');assert.equal(await page.locator('[data-upgrade="mage"]').isEnabled(),true);await page.locator('[data-upgrade="mage"]').click();assert.equal(await page.evaluate(()=>__harborTest.state.tool),'repair');assert.match(await page.locator('#toast').textContent(),/already active/);
- await page.evaluate(()=>{const t=__harborTest;t.state.buildings.find(b=>b.type==='mage').hp=0;t.render();});await page.locator('canvas').focus();await page.keyboard.press('b');assert.match(await page.locator('[data-upgrade="mage"]').textContent(),/needs repair/);await page.locator('[data-upgrade="mage"]').click();const repairBank=await page.evaluate(()=>__harborTest.state.supplies);await page.locator('#place').click();assert.equal(await page.evaluate(()=>__harborTest.state.buildings.find(b=>b.type==='mage').hp),1);assert.equal(await page.evaluate(()=>__harborTest.state.supplies),repairBank-2);
- await page.locator('canvas').focus();await page.keyboard.press('b');await page.screenshot({path:out+'/unlocked-plans.png'});await page.locator('#plans-close').click();report.delayedUpgradePurchase=true;
+ await page.evaluate(()=>__harborTest.prepare(10));await page.locator('canvas').focus();await page.keyboard.press('b');assert.equal(await page.locator('[data-upgrade="mage"]').isEnabled(),true);assert.match(await page.locator('[data-upgrade="mage"]').textContent(),/1 built · add another/);await page.locator('[data-upgrade="mage"]').click();assert.equal(await page.evaluate(()=>__harborTest.state.tool),'mage');
+ await page.evaluate(()=>__harborTest.setCursor(7,7));const repeatBank=await page.evaluate(()=>__harborTest.state.supplies);await page.locator('#place').click();assert.equal(await page.evaluate(()=>__harborTest.state.buildings.filter(b=>b.type==='mage').length),2);assert.equal(await page.evaluate(()=>__harborTest.state.supplies),repeatBank-20);
+ await page.evaluate(()=>{const t=__harborTest;t.state.buildings.find(b=>b.type==='mage').hp=0;t.render();});await page.locator('canvas').focus();await page.keyboard.press('b');assert.match(await page.locator('[data-upgrade="mage"]').textContent(),/1 needs repair/);await page.locator('[data-tool="repair"]').click();await page.evaluate(()=>__harborTest.setCursor(7,5));const repairBank=await page.evaluate(()=>__harborTest.state.supplies);await page.locator('#place').click();assert.equal(await page.evaluate(()=>__harborTest.state.buildings.find(b=>b.type==='mage').hp),1);assert.equal(await page.evaluate(()=>__harborTest.state.supplies),repairBank-2);
+ await page.locator('canvas').focus();await page.keyboard.press('b');await page.screenshot({path:out+'/repeatable-plans.png'});await page.locator('#plans-close').click();report.delayedUpgradePurchase=true;
  // Real keyboard, mouse, modal and restart controls.
  await page.evaluate(()=>{const t=__harborTest;t.fresh();t.tick(1/60);t.state.buildings[0].cooldown=0;});await page.locator('canvas').focus();await page.keyboard.press('Space');assert.equal(await page.evaluate(()=>__harborTest.inputs().keyFire),false);
  await page.keyboard.press('p');assert.equal(await page.evaluate(()=>__harborTest.state.mode),'paused');await page.keyboard.press('p');await page.locator('#help-button').click();const helpTime=await page.evaluate(()=>__harborTest.state.time);await page.evaluate(()=>__harborTest.tick(1));assert.equal(await page.evaluate(()=>__harborTest.state.time),helpTime);await page.locator('#instruction-close').click();
@@ -142,7 +182,7 @@ async function main(){
  assert.equal(await page.locator('#mend').count(),0);await page.keyboard.press('e');assert.equal(await page.evaluate(()=>__harborTest.state.walls.size),0);
  const box=await page.locator('canvas').boundingBox();await page.mouse.click(box.x+box.width*.1,box.y+box.height*.4);await page.keyboard.press('r');assert.equal(await page.evaluate(()=>__harborTest.state.level),2);assert.equal(await page.evaluate(()=>__harborTest.state.phase),'build');
  // Desktop active late-campaign screenshot with natural shells, not a static victory screen.
- await page.evaluate(()=>{const t=__harborTest;t.rules.restore(t.state,starts[12]);t.startBattle();for(let i=0;i<600;i++)t.tick(1/60);t.aim(845,390);t.fire();t.render();});
+ await page.evaluate(()=>{const t=__harborTest;t.rules.restore(t.state,repeatedCastle);t.startBattle();for(let i=0;i<600;i++)t.tick(1/60);t.aim(845,390);t.fire();t.render();});
  assert.equal(await page.evaluate(()=>__harborTest.state.mode),'playing');await page.screenshot({path:out+'/harbor-bastion-campaign.png'});
  await page.evaluate(()=>{__harborTest.manual(false);});report.desktopFrames=await frames(page);await page.evaluate(()=>{__harborTest.manual(true);__harborTest.state.mode='paused';__harborTest.render();});
  report.layouts=[];
@@ -160,7 +200,11 @@ async function main(){
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(.2,.2)]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(.35,.4)]});assert.equal(await p.evaluate(()=>__harborTest.state.cursor.x),8);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
     await p.evaluate(()=>{__harborTest.fresh();__harborTest.manual(false);});await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(.7,.5)]});await p.waitForTimeout(1200);assert.ok(await p.evaluate(()=>__harborTest.state.shotsFired)>=2);await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(.85,.6)]});assert.ok(await p.evaluate(()=>__harborTest.state.aim.x)>800);await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});assert.equal(await p.evaluate(()=>__harborTest.inputs().pointerFire),false);
     await p.evaluate(()=>window.dispatchEvent(new Event('blur')));assert.equal(await p.evaluate(()=>__harborTest.state.mode),'paused');await p.locator('#pause').tap();
-    report.mobileFrames=await frames(p);assert.equal(await p.evaluate(()=>document.documentElement.dataset.mobileFullscreenAttempted),'true');
+    assert.equal(await p.evaluate(()=>document.documentElement.dataset.mobileFullscreenAttempted),'true');
+    const repeated=await page.evaluate(()=>repeatedCastle);await p.evaluate(v=>{const t=__harborTest;t.manual(true);t.rules.restore(t.state,v);t.prepare(13);},repeated);
+    await p.locator('#plans').tap();assert.match(await p.locator('[data-upgrade="tower"]').textContent(),/4 built · add another/);await p.locator('[data-upgrade="tower"]').tap();assert.equal(await p.evaluate(()=>__harborTest.state.tool),'tower');await p.evaluate(()=>__harborTest.setCursor(2,2));const bank=await p.evaluate(()=>__harborTest.state.supplies);await p.locator('#place').tap();assert.equal(await p.evaluate(()=>__harborTest.state.buildings.filter(b=>b.type==='tower').length),5);assert.equal(await p.evaluate(()=>__harborTest.state.supplies),bank-14);
+    await p.locator('#plans').tap();await p.locator('[data-upgrade="keep"]').scrollIntoViewIfNeeded();assert.match(await p.locator('[data-upgrade="keep"]').textContent(),/next 6 × 6/);await p.locator('#plans-close').tap();
+    await p.evaluate(()=>{const t=__harborTest;t.startBattle();for(let i=0;i<600;i++)t.tick(1/60);t.manual(false);});report.mobileFrames=await frames(p);report.mobileRepeatPurchase=true;
    }
    await p.screenshot({path:out+'/mobile-'+width+'.png'});await p.reload();await p.locator('.vibecade-mobile-play').click();await p.waitForFunction(()=>__harborTest.state.mode==='playing');assert.equal(await p.locator('#instruction-modal').isVisible(),false);
   }else {assert.equal(await p.locator('#orientation').isVisible(),true);report.layouts.push({width,height,orientation:true});await p.screenshot({path:out+'/portrait.png'});}
@@ -176,6 +220,8 @@ async function main(){
  const genuineSave=await savePage.evaluate(()=>JSON.parse(localStorage.getItem('harbor-bastion-campaign-v3')));assert.equal(genuineSave.castle.walls.length,1);assert.equal(genuineSave.castle.level,2);
  await savePage.reload();assert.equal(await savePage.locator('#health').textContent(),damagedHealth);assert.equal(await savePage.locator('#level').textContent(),'2 / 13');const reloadedSave=await savePage.evaluate(()=>JSON.parse(localStorage.getItem('harbor-bastion-campaign-v3')));assert.deepEqual(reloadedSave,genuineSave);
  report.liveOpening={health:damagedHealth,savedWalls:genuineSave.castle.walls.length,supplies:genuineSave.castle.supplies};
+ const repeated=await page.evaluate(()=>repeatedCastle);
+ await savePage.evaluate(v=>{localStorage.setItem('harbor-bastion-campaign-v3',JSON.stringify({version:3,phase:'build',castle:v,checkpoint:v}));},repeated);await savePage.reload();assert.equal(await savePage.locator('#health').textContent(),'7 / 28');await savePage.locator('#plans').click();assert.match(await savePage.locator('[data-upgrade="tower"]').textContent(),/4 built/);assert.match(await savePage.locator('[data-upgrade="keep"]').textContent(),/next 6 × 6 · 34 max health/);await savePage.locator('#plans-close').click();await savePage.reload();const repeatedSave=await savePage.evaluate(()=>JSON.parse(localStorage.getItem('harbor-bastion-campaign-v3')));assert.deepEqual(repeatedSave.castle,repeated);report.repeatedSave=true;
  const state=await page.evaluate(()=>starts[12]);state.supplies=123;
  await savePage.evaluate(v=>{localStorage.setItem('harbor-bastion-campaign-v3',JSON.stringify({version:3,phase:'won',castle:v,checkpoint:v}));sessionStorage.removeItem('harbor-bastion-instructions-v3');},state);
  await savePage.reload();await savePage.locator('#instruction-close').click();assert.equal(await savePage.locator('#result-title').textContent(),'Your bastion endures.');assert.equal(await savePage.locator('#supplies').textContent(),'123');await savePage.reload();assert.equal(await savePage.locator('#supplies').textContent(),'123');

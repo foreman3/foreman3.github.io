@@ -8,7 +8,8 @@
   const s={level:1,phase:'battle',mode:'intro',supplies:16,score:0,walls:new Set(),rubble:new Set(),buildings:[],hand:[0,1,2],deck:3,patches:3,tool:'wall',slot:0,rotation:0,cursor:{x:2,y:6},aim:{x:760,y:300},muted:false,ships:[],shots:[],shells:[],fx:[]};
   let checkpoint=null,history=[],manual=false,held=new Set(),pointerFire=false,keyFire=false,last=0,acc=0,dirty=true,fortDirty=true,hudWait=0,inputWait=0,toastTime=0,fireGap=0,exposedUntil=0,previousMode='playing',audio=null;
   const fort=document.createElement('canvas');fort.width=1000;fort.height=640;const fc=fort.getContext('2d');
-  const keep=()=>s.buildings.find(b=>b.type==='keep'),alive=type=>s.buildings.find(b=>b.type===type&&b.hp>0);
+  const keep=()=>s.buildings.find(b=>b.type==='keep'),aliveAll=type=>s.buildings.filter(b=>b.type===type&&b.hp>0);
+  const manualReload=()=>.8**aliveAll('workshop').length;
   const center=b=>({x:(b.x+b.w/2)*R.C,y:(b.y+b.h/2)*R.C});
   const touch=()=>document.body.classList.contains('touch-device'),portrait=()=>touch()&&matchMedia('(orientation:portrait)').matches;
   const active=()=>s.mode==='playing'&&!portrait(),cfg=()=>profiles[s.level-1];
@@ -25,7 +26,7 @@
     checkpoint=R.snapshot(s);history=[];s.tool='wall';s.slot=0;s.rotation=0;s.cursor={x:2,y:6};startBattle();message('Bare keep · hold on the sea to fire. Red shells can be shot down.',5);
   }
   function prepare(nextLevel){
-    closeModals();resetInput();s.level=nextLevel;s.phase='build';s.mode='playing';s.time=0;s.elapsed=0;s.ships=[];s.shots=[];s.shells=[];s.fx=[];s.patches=3+(alive('workshop')?3:0);s.tool='wall';s.rotation=0;s.slot=0;
+    closeModals();resetInput();s.level=nextLevel;s.phase='build';s.mode='playing';s.time=0;s.elapsed=0;s.ships=[];s.shots=[];s.shells=[];s.fx=[];s.patches=3+aliveAll('workshop').length*3;s.tool='wall';s.rotation=0;s.slot=0;
     history=[];checkpoint=R.snapshot(s);changed();persist();
     const unlock=Object.values(R.upgrades).find(u=>u.level===nextLevel);
     message(unlock?'NEW PLAN: '+unlock.name+' · open PLANS':cfg().name+' · repair or expand your surviving castle.',5);
@@ -62,7 +63,7 @@
       message('Salvaged. Close the new perimeter before adding buildings.',2);
     }else if(R.upgrades[s.tool]){
       const u=R.upgrades[s.tool];
-      if(s.tool==='keep'){const b=keep();b.x=s.cursor.x;b.y=s.cursor.y;b.w=3;b.h=3;b.maxHp=16;message('Keep expanded. Existing health stays '+b.hp+'; repair it to fill the new capacity.',4);}
+      if(s.tool==='keep'){const b=keep(),size=R.upgradeSize(s,'keep');b.x=s.cursor.x;b.y=s.cursor.y;b.w=size.w;b.h=size.h;b.maxHp+=6;message('Keep expanded to '+b.w+' × '+b.h+' · '+b.hp+'/'+b.maxHp+' health. Repair to fill the new capacity.',4);}
       else{s.buildings.push({id:Math.max(...s.buildings.map(b=>b.id))+1,type:s.tool,x:s.cursor.x,y:s.cursor.y,w:u.w,h:u.h,hp:u.hp,maxHp:u.hp,cooldown:0});if(s.tool==='workshop')s.patches+=3;message(u.name+' built. '+u.description,4);}
     }else{
       for(const [x,y]of p.points){const n=R.id(x,y);s.walls.add(n);s.rubble.delete(n);}
@@ -77,35 +78,30 @@
   function pieceIcon(index){return '<span class="piece-icon" aria-hidden="true">'+R.pieces[index].map(([x,y])=>'<i style="grid-column:'+(x+1)+';grid-row:'+(y+1)+'"></i>').join('')+'</span>';}
   function populatePlans(){
     text('plan-summary','Level '+s.level+' · '+s.supplies+' supplies · '+s.patches+' patch stones · '+R.enclosure(s).free+' protected empty squares');
-    text('plan-detail','Wall pieces cost 1 supply per stone; single patch stones cost 2. Repairs cost 2 per health. Salvage returns 1 per stone. Unlocked plans stay available for the rest of the campaign.');
+    text('plan-detail','Build as many unlocked upgrades as fit your enclosed land and supplies. Their benefits add together. Repair damaged buildings with REPAIR BUILDING. Walls cost 1 per stone; patches cost 2. Repairs cost 2 per health. Salvage returns 1 per stone.');
     $('wall-choices').innerHTML=s.hand.map((p,i)=>'<button type="button" data-slot="'+i+'" class="'+(s.tool==='wall'&&s.slot===i?'selected':'')+'">'+pieceIcon(p)+(i+1)+' · '+R.pieceNames[p]+'<span>'+R.pieces[p].length+' supplies · rotate with X</span></button>').join('');
     $('wall-choices').querySelectorAll('button').forEach(b=>b.onclick=()=>select('wall',Number(b.dataset.slot)));
     $('upgrade-choices').innerHTML=Object.entries(R.upgrades).map(([type,u])=>{
-      const built=s.buildings.filter(b=>b.type===type),maxed=type==='keep'?keep().w===3:built.length>=u.cap,locked=s.level<u.level,damaged=built.some(b=>b.hp<b.maxHp);
-      const status=locked?'LOCKED · unlocks at '+u.level:maxed?(damaged?'UNLOCKED · needs repair · select to repair':'UNLOCKED · active · select to inspect'):'UNLOCKED · '+(type==='tower'?built.length+' / '+u.cap+' towers built · ':'')+u.w+' × '+u.h;
-      return '<button type="button" data-upgrade="'+type+'" '+(locked?'disabled':'')+'>'+u.name+' · '+(maxed?'Built':u.cost+' supplies')+'<span>'+status+'</span><span>'+u.description+'</span></button>';
+      const built=s.buildings.filter(b=>b.type===type),locked=s.level<u.level,size=R.upgradeSize(s,type),damaged=built.filter(b=>b.hp<b.maxHp).length;
+      const status=locked?'LOCKED · unlocks at '+u.level:'UNLOCKED · '+(type==='keep'?'next '+size.w+' × '+size.h+' · '+(keep().maxHp+6)+' max health':built.length+' built · add another '+size.w+' × '+size.h)+(damaged?' · '+damaged+(damaged===1?' needs repair':' need repair'):'');
+      return '<button type="button" data-upgrade="'+type+'" '+(locked?'disabled':'')+'>'+u.name+' · '+u.cost+' supplies<span>'+status+'</span><span>'+u.description+'</span></button>';
     }).join('');
-    $('upgrade-choices').querySelectorAll('button').forEach(b=>b.onclick=()=>{
-      const type=b.dataset.upgrade,u=R.upgrades[type],built=s.buildings.filter(v=>v.type===type),maxed=type==='keep'?keep().w===3:built.length>=u.cap;
-      if(!maxed){select(type);return;}
-      const target=built.find(v=>v.hp<v.maxHp)||built[0];select('repair');s.cursor={x:target.x,y:target.y};
-      message(target.hp<target.maxHp?u.name+' · '+target.hp+'/'+target.maxHp+' health · PLACE repairs 1 health for 2 supplies.':u.name+' is already active. Its benefits carry into every later level.',5);sync();dirty=true;
-    });
+    $('upgrade-choices').querySelectorAll('button').forEach(b=>b.onclick=()=>select(b.dataset.upgrade));
     $('exchange').disabled=s.supplies<2;
   }
   function openPlans(){if(!active()||s.phase!=='build')return;resetInput();s.mode='plans';populatePlans();$('plans-modal').classList.add('is-visible');$('plans-close').focus();}
   function closePlans(){s.mode='playing';$('plans-modal').classList.remove('is-visible');canvas.focus({preventScroll:true});sync();dirty=true;}
   function guns(){
-    const gunBuildings=s.buildings.filter(b=>b.hp>0&&(b.type==='keep'||b.type==='tower')),captain=alive('captain'),assigned=captain?(gunBuildings.find(b=>b.type==='tower')||gunBuildings[0]):null;
-    return gunBuildings.map(b=>({...center(b),b,auto:b===assigned}));
+    const gunBuildings=s.buildings.filter(b=>b.hp>0&&(b.type==='keep'||b.type==='tower')),captains=aliveAll('captain');let nextCaptain=0;
+    return gunBuildings.map(b=>{const captain=b.type==='tower'?captains[nextCaptain++]:null;return{...center(b),b,auto:Boolean(captain),captain};});
   }
   function shoot(g,aim,automatic=false){
     const dx=aim.x-g.x,dy=aim.y-g.y,distance=Math.max(1,Math.hypot(dx,dy));
     s.shots.push({x:g.x,y:g.y,sx:g.x,sy:g.y,tx:aim.x,ty:aim.y,t:0,duration:distance/620,automatic,targetId:aim.targetId});
-    g.b.cooldown=automatic?1.25:(alive('workshop')?.8:1);s.shotsFired++;if(automatic)s.captainShots++;
+    g.b.cooldown=automatic?1.25:manualReload();s.shotsFired++;if(automatic)s.captainShots++;
     burst(g.x+15,g.y,'#ffe5af',3);tone(110,.07);dirty=true;
   }
-  function fire(){if(!active()||s.phase!=='battle'||fireGap>0)return false;const g=guns().filter(g=>!g.auto&&g.b.cooldown<=0)[0];if(!g)return false;shoot(g,s.aim);fireGap=.14;return true;}
+  function fire(){if(!active()||s.phase!=='battle'||fireGap>0)return false;const g=guns().filter(g=>!g.auto&&g.b.cooldown<=0)[0];if(!g)return false;shoot(g,s.aim);fireGap=.14*manualReload();return true;}
   function spawn(){
     const id=s.spawned++,type=s.level>=6&&id%5===4?'galleon':s.level>=4&&id%3===2?'armor':s.level>=8&&id%4===1?'cutter':'sloop';
     const baseX=680+(id%3)*115,y=90+(id*137%450);
@@ -166,14 +162,14 @@
       if(s.level>=12)ship.x=ship.baseX+Math.sin(s.elapsed*.65+ship.id)*20;ship.vx=(ship.x-oldX)/dt;
       ship.fire-=dt;if(ship.fire<=0){enemyFire(ship);ship.fire=cfg().fire;}
     }
-    const auto=guns().find(g=>g.auto&&g.b.cooldown<=0);
-    if(auto&&s.ships.length){
-      const target=[...s.ships].sort((a,b)=>a.fire-b.fire)[0],travel=Math.hypot(target.x-auto.x,target.y-auto.y)/620;
+    for(const auto of guns().filter(g=>g.auto&&g.b.cooldown<=0)){
+      const target=s.ships.filter(v=>s.shots.filter(q=>q.targetId===v.id).length<v.hp).sort((a,b)=>a.fire-b.fire)[0];if(!target)continue;
+      const travel=Math.hypot(target.x-auto.x,target.y-auto.y)/620;
       let y=target.y+target.dir*target.speed*travel*.88;if(y>555)y=1110-y;if(y<85)y=170-y;
       shoot(auto,{x:target.x,y:y+Math.sin(s.elapsed*1.3)*9,targetId:target.id},true);
     }
-    const mage=alive('mage');
-    if(mage&&mage.cooldown<=0){const c=center(mage),q=s.shells.filter(q=>q.delay<=0&&Math.hypot(q.x-c.x,q.y-c.y)<=190).sort((a,b)=>a.x-b.x)[0];
+    for(const mage of aliveAll('mage')){
+      if(mage.cooldown>0)continue;const c=center(mage),q=s.shells.filter(q=>q.delay<=0&&Math.hypot(q.x-c.x,q.y-c.y)<=190).sort((a,b)=>a.x-b.x)[0];
       if(q){s.shells.splice(s.shells.indexOf(q),1);mage.cooldown=5;s.mageBlocks++;s.fx.push({kind:'beam',x:c.x,y:c.y,tx:q.x,ty:q.y,color:'#b2dfd9',life:.35,max:.35});burst(q.x,q.y,'#beeedb',7);tone(700,.08);}}
     for(let i=s.shots.length-1;i>=0;i--){
       const shot=s.shots[i];shot.t+=dt;const a=Math.min(1,shot.t/shot.duration);shot.x=shot.sx+(shot.tx-shot.sx)*a;shot.y=shot.sy+(shot.ty-shot.sy)*a;
@@ -197,7 +193,7 @@
     $('hand').hidden=!build;const handKey=s.hand.join(',')+':'+s.slot+':'+s.tool;
     if($('hand').dataset.key!==handKey){$('hand').dataset.key=handKey;$('hand').innerHTML=s.hand.map((p,i)=>'<button type="button" data-slot="'+i+'" class="'+(s.tool==='wall'&&s.slot===i?'selected':'')+'">'+pieceIcon(p)+(i+1)+' '+R.pieceNames[p]+'</button>').join('');$('hand').querySelectorAll('button').forEach(b=>b.onclick=()=>select('wall',Number(b.dataset.slot)));}
     if(build){const e=R.enclosure(s);text('status',toolName()+' · '+(e.sealed?'KEEP PROTECTED':'KEEP EXPOSED')+' · '+e.free+' empty squares · '+s.patches+' patches');}
-    else{const g=guns(),mage=alive('mage');text('status',g.filter(v=>!v.auto).length+' manual gun'+(g.filter(v=>!v.auto).length===1?'':'s')+(alive('captain')?' · CAPTAIN ACTIVE':'')+(mage?' · MAGICIAN '+(mage.cooldown>0?mage.cooldown.toFixed(1)+'s':'READY'):'')+(alive('workshop')?' · WORKSHOP ACTIVE':''));}
+    else{const g=guns(),manualCount=g.filter(v=>!v.auto).length,commanded=g.filter(v=>v.auto).length,standby=aliveAll('captain').length-commanded,mages=aliveAll('mage'),workshops=aliveAll('workshop').length;text('status',manualCount+' manual gun'+(manualCount===1?'':'s')+(commanded?' · '+commanded+' captain gun'+(commanded===1?'':'s'):'')+(standby?' · '+standby+' captain waiting':'')+(mages.length?' · '+mages.filter(v=>v.cooldown<=0).length+'/'+mages.length+' magicians ready':'')+(workshops?' · reload '+manualReload().toFixed(2)+'s':''));}
     text('pause',s.mode==='paused'?'Resume':'Pause');
   }
   function toolName(){return s.tool==='wall'?R.pieceNames[s.hand[s.slot]]:s.tool==='patch'?'Patch stone':s.tool==='repair'?'Repair building':s.tool==='salvage'?'Salvage':R.upgrades[s.tool].name;}
@@ -208,7 +204,7 @@
     ctx.drawImage(fort,0,0);
     if(s.phase==='build'){const p=R.placement(s);ctx.fillStyle=p.ok?'#fff0ab70':'#c2584d70';ctx.strokeStyle=p.ok?'#fff6b5':'#ffad94';ctx.lineWidth=2;for(const [x,y]of p.points){ctx.fillRect(x*R.C+2,y*R.C+2,R.C-4,R.C-4);ctx.strokeRect(x*R.C+2,y*R.C+2,R.C-4,R.C-4);}if(s.tool==='mage'){const c={x:(s.cursor.x+1)*R.C,y:(s.cursor.y+1)*R.C};ctx.setLineDash([6,5]);ctx.beginPath();ctx.arc(c.x,c.y,190,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}}
     for(const g of guns()){A.cannon(ctx,g.x,g.y,Math.atan2(s.aim.y-g.y,s.aim.x-g.x),g.b.cooldown<=0,g.auto);if(g.auto){ctx.fillStyle='#ffdeb2';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText('CAPTAIN',g.x,g.y+29);ctx.textAlign='left';}}
-    const mage=alive('mage');if(mage&&s.phase==='battle'){const c=center(mage);ctx.strokeStyle='#b2e9dc60';ctx.lineWidth=2;ctx.beginPath();ctx.arc(c.x,c.y,190,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#f4e5bd';ctx.beginPath();ctx.arc(c.x,c.y-18,16,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-mage.cooldown/5));ctx.stroke();}
+    if(s.phase==='battle')for(const mage of aliveAll('mage')){const c=center(mage);ctx.strokeStyle='#b2e9dc60';ctx.lineWidth=2;ctx.beginPath();ctx.arc(c.x,c.y,190,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#f4e5bd';ctx.beginPath();ctx.arc(c.x,c.y-18,16,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-mage.cooldown/5));ctx.stroke();}
     for(const ship of s.ships){A.ship(ctx,ship,s.elapsed);if(ship.fire<1){ctx.strokeStyle='#ffbd78';ctx.lineWidth=3;ctx.beginPath();ctx.arc(ship.x,ship.y,49,-Math.PI/2,-Math.PI/2+Math.PI*2*(1-ship.fire));ctx.stroke();}}
     for(const q of s.shells){if(q.delay>0)continue;ctx.strokeStyle='#f9ae8050';ctx.setLineDash([7,7]);ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(q.tx,q.ty);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#ff805c';ctx.beginPath();ctx.arc(q.x,q.y,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#692d26';ctx.lineWidth=2;ctx.stroke();}
     for(const q of s.shots){ctx.fillStyle=q.automatic?'#d9e8cf':'#fff4cc';ctx.beginPath();ctx.arc(q.x,q.y-Math.sin(q.t/q.duration*Math.PI)*18,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#1b3a3e';ctx.stroke();}
