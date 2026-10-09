@@ -6,7 +6,7 @@
   const speeds=[0,22,32,40,48,55,60,66,70,76,82,89,96],counts=[3,6,8,10,12,14,16,18,20,22,24,27,30];
   const profiles=names.map((name,i)=>({name,ships:counts[i],speed:speeds[i],interval:[4,3,2.4,1.8,1.6,1.45,1.3,1.2,1.1,1,.95,.85,.75][i],first:[7,6,4.8,3.8,3.4,3.2,3,2.8,2.7,2.6,2.5,2.4,2.3][i],fire:[9,8,7,5.5,5,4.8,4.5,4.3,4.1,3.9,3.7,3.5,3.3][i],shellSpeed:145+i*8,time:60+i*3}));
   const s={level:1,phase:'battle',mode:'intro',supplies:16,score:0,walls:new Set(),rubble:new Set(),buildings:[],hand:[0,1,2],deck:3,patches:3,tool:'wall',slot:0,rotation:0,cursor:{x:2,y:6},aim:{x:760,y:300},muted:false,ships:[],shots:[],shells:[],fx:[]};
-  let checkpoint=null,history=[],manual=false,held=new Set(),pointerFire=false,keyFire=false,last=0,acc=0,dirty=true,fortDirty=true,hudWait=0,inputWait=0,toastTime=0,fireGap=0,exposedUntil=0,previousMode='playing',audio=null;
+  let checkpoint=null,history=[],manual=false,held=new Set(),pointerFire=false,keyFire=false,last=0,acc=0,dirty=true,fortDirty=true,hudWait=0,inputWait=0,toastTime=0,fireGap=0,exposedUntil=0,previousMode='playing',campaignReturn='plans',audio=null;
   const fort=document.createElement('canvas');fort.width=1000;fort.height=640;const fc=fort.getContext('2d');
   const keep=()=>s.buildings.find(b=>b.type==='keep'),aliveAll=type=>s.buildings.filter(b=>b.type===type&&b.hp>0);
   const manualReload=()=>.8**aliveAll('workshop').length;
@@ -19,7 +19,7 @@
   function unlockAudio(){try{audio ||=new(window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch(_){}}
   function message(value,time=3){text('toast',value);toastTime=time;dirty=true;}
   function changed(){fortDirty=true;dirty=true;exposedUntil=0;sync();}
-  function closeModals(){for(const id of ['plans-modal','result-modal'])$(id).classList.remove('is-visible');}
+  function closeModals(){for(const id of ['plans-modal','result-modal','campaign-modal'])$(id).classList.remove('is-visible');}
   function persist(phase=s.phase){if(testing)return;try{localStorage.setItem(saveKey,JSON.stringify({version:3,phase,castle:R.snapshot(s),checkpoint}));}catch(_){}}
   function fresh(){
     closeModals();R.restore(s,{level:1,supplies:16,score:0,walls:[],rubble:[],buildings:[{id:0,type:'keep',x:3,y:6,w:2,h:2,hp:10,maxHp:10,cooldown:0}],hand:[0,1,2],deck:3,patches:3});
@@ -91,6 +91,18 @@
   }
   function openPlans(){if(!active()||s.phase!=='build')return;resetInput();s.mode='plans';populatePlans();$('plans-modal').classList.add('is-visible');$('plans-close').focus();}
   function closePlans(){s.mode='playing';$('plans-modal').classList.remove('is-visible');canvas.focus({preventScroll:true});sync();dirty=true;}
+  function requestNewCampaign(){
+    if(!['plans','won','lost'].includes(s.mode))return;
+    campaignReturn=s.mode;resetInput();closeModals();s.mode='confirm';$('campaign-modal').classList.add('is-visible');$('campaign-cancel').focus();sync();dirty=true;
+  }
+  function cancelNewCampaign(){
+    if(s.mode!=='confirm')return;
+    closeModals();s.mode=campaignReturn;
+    if(s.mode==='plans'){populatePlans();$('plans-modal').classList.add('is-visible');$('new-campaign').focus();}
+    else{$('result-modal').classList.add('is-visible');$('again').focus();}
+    sync();dirty=true;
+  }
+  function confirmNewCampaign(){if(s.mode!=='confirm')return;fresh();persist();canvas.focus({preventScroll:true});}
   function guns(){
     const gunBuildings=s.buildings.filter(b=>b.hp>0&&(b.type==='keep'||b.type==='tower')),captains=aliveAll('captain');let nextCaptain=0;
     return gunBuildings.map(b=>{const captain=b.type==='tower'?captains[nextCaptain++]:null;return{...center(b),b,auto:Boolean(captain),captain};});
@@ -225,7 +237,7 @@
   function sound(){s.muted=!s.muted;unlockAudio();text('sound',s.muted?'Sound off':'Sound on');$('sound').setAttribute('aria-pressed',String(!s.muted));}
   window.addEventListener('keydown',e=>{
     const k=e.key.length===1?e.key.toLowerCase():e.key,modal=document.querySelector('.modal.is-visible');
-    if(modal){if(k==='Escape'){if(s.mode==='plans')closePlans();else if(s.mode==='help')closeInstructions();}if(k==='Tab'){const buttons=[...modal.querySelectorAll('button:not([hidden]):not(:disabled)')];if(e.shiftKey&&document.activeElement===buttons[0]){e.preventDefault();buttons.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===buttons.at(-1)){e.preventDefault();buttons[0].focus();}}return;}
+    if(modal){if(k==='Escape'){if(s.mode==='plans')closePlans();else if(s.mode==='help')closeInstructions();else if(s.mode==='confirm')cancelNewCampaign();}if(k==='Tab'){const buttons=[...modal.querySelectorAll('button:not([hidden]):not(:disabled)')];if(e.shiftKey&&document.activeElement===buttons[0]){e.preventDefault();buttons.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===buttons.at(-1)){e.preventDefault();buttons[0].focus();}}return;}
     if(e.target.closest('button')&&(k===' '||k==='Enter'))return;
     if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','w','a','s','d','x','b','z','r','p','m','1','2','3','4'].includes(k))e.preventDefault();
     if(k==='r'){retry();return;}if(k==='p'){pause();return;}if(k==='m'){sound();return;}if(!active())return;
@@ -242,7 +254,7 @@
   window.addEventListener('resize',()=>{resetInput();fit();});
   $('sound').onclick=sound;$('pause').onclick=pause;$('help-button').onclick=help;$('instruction-close').onclick=closeInstructions;$('restart-button').onclick=retry;$('place').onclick=place;$('rotate').onclick=rotate;$('plans').onclick=openPlans;$('plans-close').onclick=closePlans;$('undo').onclick=undo;$('launch').onclick=launch;$('exchange').onclick=exchange;
   document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>select(b.dataset.tool));
-  $('next').onclick=()=>prepare(s.level+1);$('retry').onclick=retry;$('again').onclick=()=>{fresh();persist();canvas.focus({preventScroll:true});};
+  $('next').onclick=()=>prepare(s.level+1);$('retry').onclick=retry;$('again').onclick=requestNewCampaign;$('new-campaign').onclick=requestNewCampaign;$('campaign-cancel').onclick=cancelNewCampaign;$('campaign-confirm').onclick=confirmNewCampaign;
   let loaded=false;
   if(!testing){try{
     const saved=JSON.parse(localStorage.getItem(saveKey)||'null');

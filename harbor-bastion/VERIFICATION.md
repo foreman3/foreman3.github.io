@@ -74,6 +74,13 @@ Full suite passes:
 
 ## Reproduce and evidence
 
+Confirmed campaign restart follow-up, 2026-10-09:
+
+- NEW CAMPAIGN is available at the bottom of Plans. It opens a separate confirmation dialog explaining that level, castle, upgrades, supplies and score will restart. The results screen's existing NEW CAMPAIGN action uses the same confirmation.
+- CANCEL is focused by default. Enter on the default button and Escape both return to Plans without changing the castle, bank, checkpoint or saved campaign. Keyboard focus stays inside the dialog; cancellation restores focus to the initiating action. Gameplay stays paused while confirmation is open.
+- Explicit confirmation resets to level 1, the bare 2 × 2 keep at 10/10 health, sixteen supplies, zero score and no walls/upgrades. It replaces the save and checkpoint; reload and Retry cannot restore the prior campaign. Normal-page localStorage checks cover both cancelled and confirmed resets, and cancellation from a completed campaign preserves its ending and supplies.
+- Desktop keyboard and actual mobile taps cover cancellation and confirmation. At 667 × 375 the Plans action scrolls into view and both confirmation buttons fit inside the viewport. Confirmation screenshots and the full regression report are in the restart/ evidence directory beside repeatable/. Game script URL advances to v6; rules remain v5 and saves remain v3.
+
 Repeatable-upgrade and pricing checks:
 
 - Real browser checks inspect every upgrade card at levels 2–13. A magician bought at 9 is purchased again through the same card at 10. Its disabled copy is repaired through REPAIR BUILDING at the normal price. Cards show owned counts, repeat-purchase footprint/cost and damaged-building counts.
