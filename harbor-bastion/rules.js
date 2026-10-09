@@ -21,16 +21,16 @@
   }
   function rotate(points,r){let p=points.map(a=>a.slice());for(let i=0;i<r;i++)p=p.map(([x,y])=>[-y,x]);const minX=Math.min(...p.map(a=>a[0])),minY=Math.min(...p.map(a=>a[1]));return p.map(([x,y])=>[x-minX,y-minY]);}
   function selection(s){if(s.tool==='wall')return rotate(pieces[s.hand[s.slot]],s.rotation);if(s.tool==='patch')return [[0,0]];const u=upgrades[s.tool];if(u)return Array.from({length:u.w*u.h},(_,i)=>[i%u.w,Math.floor(i/u.w)]);return [[0,0]];}
-  function placement(s,x=s.cursor.x,y=s.cursor.y){const points=selection(s).map(([dx,dy])=>[x+dx,y+dy]),u=upgrades[s.tool],e=enclosure(s);
+  function placement(s,x=s.cursor.x,y=s.cursor.y){const points=selection(s).map(([dx,dy])=>[x+dx,y+dy]),u=upgrades[s.tool],e=enclosure(s),wallCost=points.length*(s.tool==='patch'?2:1);
     if(s.tool==='repair'){const b=buildingAt(s,x,y);return{ok:Boolean(b&&b.hp<b.maxHp&&s.supplies>=2),points,cost:2,reason:'Select a damaged building. Repairs cost 2 per health.'};}
     if(s.tool==='salvage'){const b=buildingAt(s,x,y);return{ok:s.walls.has(id(x,y))||Boolean(b&&b.type!=='keep'),points,cost:0,reason:'Select a wall stone or an upgrade. The keep cannot be salvaged.'};}
     if(points.some(([a,b])=>!inside(a,b)))return{ok:false,points,cost:0,reason:'The entire piece must fit on buildable land.'};
     if(u){const count=s.buildings.filter(b=>b.type===s.tool).length;if(s.level<u.level)return{ok:false,points,cost:u.cost,reason:u.name+' unlocks at level '+u.level+'.'};if(s.tool==='keep'){const keep=s.buildings.find(b=>b.type==='keep');if(keep.w===3)return{ok:false,points,cost:u.cost,reason:'The keep is already expanded.'};if(!footprint(keep).every(n=>points.some(([a,b])=>id(a,b)===n)))return{ok:false,points,cost:u.cost,reason:'Expansion must contain the existing keep.'};}else if(count>=u.cap)return{ok:false,points,cost:u.cost,reason:'Maximum '+u.cap+' '+u.name+' already built.'};}
-    if(points.some(([a,b])=>s.walls.has(id(a,b))||Boolean(buildingAt(s,a,b)&&!(s.tool==='keep'&&buildingAt(s,a,b).type==='keep'))))return{ok:false,points,cost:u?u.cost:points.length*2,reason:'No overlap. Every new stone needs an empty square.'};
+    if(points.some(([a,b])=>s.walls.has(id(a,b))||Boolean(buildingAt(s,a,b)&&!(s.tool==='keep'&&buildingAt(s,a,b).type==='keep'))))return{ok:false,points,cost:u?u.cost:wallCost,reason:'No overlap. Every new stone needs an empty square.'};
     if(u&&!points.every(([a,b])=>e.protectedCells.has(id(a,b))))return{ok:false,points,cost:u.cost,reason:'Enclose the entire footprint with walls first.'};
-    if(!u&&!points.some(([a,b])=>[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>occupied(s,a+dx,b+dy))))return{ok:false,points,cost:points.length*2,reason:'Join the piece to a wall or building by an edge.'};
+    if(!u&&!points.some(([a,b])=>[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>occupied(s,a+dx,b+dy))))return{ok:false,points,cost:wallCost,reason:'Join the piece to a wall or building by an edge.'};
     if(s.tool==='patch'&&s.patches<=0)return{ok:false,points,cost:2,reason:'No patch stones left. Choose or exchange a wall piece.'};
-    const cost=u?u.cost:points.length*2;return{ok:s.supplies>=cost,points,cost,reason:s.supplies<cost?'Not enough supplies. Salvage old walls or choose a smaller plan.':'Fits perfectly · '+cost+' supplies'};
+    const cost=u?u.cost:wallCost;return{ok:s.supplies>=cost,points,cost,reason:s.supplies<cost?'Not enough supplies. Salvage old walls or choose a smaller plan.':'Fits perfectly · '+cost+' supplies'};
   }
   function snapshot(s){return{level:s.level,supplies:s.supplies,score:s.score,walls:[...s.walls],rubble:[...s.rubble],buildings:s.buildings.map(b=>({...b})),hand:[...s.hand],deck:s.deck,patches:s.patches};}
   function restore(s,p){s.level=p.level;s.supplies=p.supplies;s.score=p.score;s.walls=new Set(p.walls);s.rubble=new Set(p.rubble||[]);s.buildings=p.buildings.map(b=>({...b}));s.hand=[...p.hand];s.deck=p.deck;s.patches=p.patches;}

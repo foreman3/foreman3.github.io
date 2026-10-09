@@ -5,7 +5,7 @@ async function main(){
  const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',args:['--no-sandbox']});globalThis.browser=browser;fs.mkdirSync(out,{recursive:true});
  const report={},errors=[],watch=p=>{p.on('pageerror',e=>errors.push(e.message));p.on('console',e=>{if(e.type()==='error')errors.push(e.text());});};
  const page=await browser.newPage({viewport:{width:1440,height:900}});watch(page);await page.goto(base+'/harbor-bastion/?test=1');
- await page.waitForTimeout(200);assert.equal(await page.locator('#instruction-modal').isVisible(),true);const time=await page.evaluate(()=>__harborTest.state.time);await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__harborTest.state.time),time);
+ await page.waitForTimeout(200);assert.deepEqual(errors,[]);assert.equal(await page.locator('#instruction-modal').isVisible(),true);const time=await page.evaluate(()=>__harborTest.state.time);await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__harborTest.state.time),time);
  await page.locator('#instruction-close').focus();await page.keyboard.press('Space');await page.waitForFunction(()=>__harborTest.state.mode==='playing');await page.evaluate(()=>__harborTest.manual(true));
  await page.evaluate(()=>{
   const t=__harborTest,s=t.state,R=t.rules;
@@ -112,6 +112,27 @@ async function main(){
   R.restore(s,starts[10]);t.prepare(11);flags.workshopPatches=s.patches===6;t.startBattle();const manualGun=t.guns().find(g=>!g.auto);t.aim(760,320);check(t.fire(),'workshop shot');flags.workshopReload=manualGun.b.cooldown===.8;t.tick(.2);const second=t.guns().find(g=>!g.auto&&g.b.cooldown<=0);check(t.fire(),'second independent cannon');flags.independentGuns=second.b.cooldown===.8&&manualGun.b.cooldown>0;
   return flags;
  });console.log('MECHANICS',report.mechanics);assert.ok(Object.values(report.mechanics).every(Boolean));
+ report.stonePricing=await page.evaluate(()=>{
+  const t=__harborTest,s=t.state,R=t.rules,anchors=[[1,6],[1,5],[2,5],[1,5]],result=[];
+  for(let i=0;i<4;i++){
+   t.fresh();t.prepare(2);s.hand[0]=i;t.select('wall',0);t.setCursor(...anchors[i]);const cost=R.pieces[i].length;s.supplies=cost-1;
+   check(!t.place()&&s.walls.size===0&&s.supplies===cost-1,'insufficient wall budget mutated state');s.supplies=cost;
+   check(t.place(),'wall shape '+i+' failed');check(s.supplies===0&&s.walls.size===cost,'wall piece not one supply per stone');result.push({shape:R.pieceNames[i],cost,stones:s.walls.size});t.undo();check(s.supplies===cost&&s.walls.size===0,'wall price undo mismatch');
+  }
+  t.fresh();t.prepare(2);t.select('patch');t.setCursor(2,6);const bank=s.supplies,patches=s.patches;check(t.place(),'patch failed');check(s.supplies===bank-2&&s.patches===patches-1,'patch price mismatch');return {pieces:result,patchCost:2};
+ });
+ report.planAvailability=[];
+ for(let level=2;level<=13;level++){
+  await page.evaluate(n=>{const t=__harborTest;t.rules.restore(t.state,starts[n-1]);t.prepare(n);},level);await page.locator('canvas').focus();await page.keyboard.press('b');
+  const cards=await page.locator('[data-upgrade]').evaluateAll(nodes=>nodes.map(n=>({type:n.dataset.upgrade,disabled:n.disabled,text:n.textContent})));
+  const unlocks={tower:3,keep:5,mage:7,captain:9,workshop:11};for(const card of cards){assert.equal(card.disabled,level<unlocks[card.type]);if(level>=unlocks[card.type])assert.match(card.text,/UNLOCKED/);}
+  report.planAvailability.push({level,cards});await page.locator('#plans-close').click();
+ }
+ await page.evaluate(()=>{const t=__harborTest;t.rules.restore(t.state,starts[8]);t.state.buildings=t.state.buildings.filter(b=>b.type!=='mage');t.prepare(9);});await page.locator('canvas').focus();await page.keyboard.press('b');await page.locator('[data-upgrade="mage"]').click();assert.equal(await page.evaluate(()=>__harborTest.state.tool),'mage');
+ await page.evaluate(()=>__harborTest.setCursor(7,5));await page.locator('#place').click();assert.equal(await page.evaluate(()=>__harborTest.state.buildings.some(b=>b.type==='mage')),true);
+ await page.evaluate(()=>__harborTest.prepare(10));await page.locator('canvas').focus();await page.keyboard.press('b');assert.equal(await page.locator('[data-upgrade="mage"]').isEnabled(),true);await page.locator('[data-upgrade="mage"]').click();assert.equal(await page.evaluate(()=>__harborTest.state.tool),'repair');assert.match(await page.locator('#toast').textContent(),/already active/);
+ await page.evaluate(()=>{const t=__harborTest;t.state.buildings.find(b=>b.type==='mage').hp=0;t.render();});await page.locator('canvas').focus();await page.keyboard.press('b');assert.match(await page.locator('[data-upgrade="mage"]').textContent(),/needs repair/);await page.locator('[data-upgrade="mage"]').click();const repairBank=await page.evaluate(()=>__harborTest.state.supplies);await page.locator('#place').click();assert.equal(await page.evaluate(()=>__harborTest.state.buildings.find(b=>b.type==='mage').hp),1);assert.equal(await page.evaluate(()=>__harborTest.state.supplies),repairBank-2);
+ await page.locator('canvas').focus();await page.keyboard.press('b');await page.screenshot({path:out+'/unlocked-plans.png'});await page.locator('#plans-close').click();report.delayedUpgradePurchase=true;
  // Real keyboard, mouse, modal and restart controls.
  await page.evaluate(()=>{const t=__harborTest;t.fresh();t.tick(1/60);t.state.buildings[0].cooldown=0;});await page.locator('canvas').focus();await page.keyboard.press('Space');assert.equal(await page.evaluate(()=>__harborTest.inputs().keyFire),false);
  await page.keyboard.press('p');assert.equal(await page.evaluate(()=>__harborTest.state.mode),'paused');await page.keyboard.press('p');await page.locator('#help-button').click();const helpTime=await page.evaluate(()=>__harborTest.state.time);await page.evaluate(()=>__harborTest.tick(1));assert.equal(await page.evaluate(()=>__harborTest.state.time),helpTime);await page.locator('#instruction-close').click();

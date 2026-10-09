@@ -77,14 +77,20 @@
   function pieceIcon(index){return '<span class="piece-icon" aria-hidden="true">'+R.pieces[index].map(([x,y])=>'<i style="grid-column:'+(x+1)+';grid-row:'+(y+1)+'"></i>').join('')+'</span>';}
   function populatePlans(){
     text('plan-summary','Level '+s.level+' · '+s.supplies+' supplies · '+s.patches+' patch stones · '+R.enclosure(s).free+' protected empty squares');
-    text('plan-detail','Stones cost 2 supplies each; repairs cost 2 per health. Salvage returns 1 per stone. Out of patches? Salvage a neighboring stone to reshape the gap, then fit a complete piece.');
-    $('wall-choices').innerHTML=s.hand.map((p,i)=>'<button type="button" data-slot="'+i+'" class="'+(s.tool==='wall'&&s.slot===i?'selected':'')+'">'+pieceIcon(p)+(i+1)+' · '+R.pieceNames[p]+'<span>'+R.pieces[p].length*2+' supplies · rotate with X</span></button>').join('');
+    text('plan-detail','Wall pieces cost 1 supply per stone; single patch stones cost 2. Repairs cost 2 per health. Salvage returns 1 per stone. Unlocked plans stay available for the rest of the campaign.');
+    $('wall-choices').innerHTML=s.hand.map((p,i)=>'<button type="button" data-slot="'+i+'" class="'+(s.tool==='wall'&&s.slot===i?'selected':'')+'">'+pieceIcon(p)+(i+1)+' · '+R.pieceNames[p]+'<span>'+R.pieces[p].length+' supplies · rotate with X</span></button>').join('');
     $('wall-choices').querySelectorAll('button').forEach(b=>b.onclick=()=>select('wall',Number(b.dataset.slot)));
     $('upgrade-choices').innerHTML=Object.entries(R.upgrades).map(([type,u])=>{
-      const count=s.buildings.filter(b=>b.type===type).length,maxed=type==='keep'?keep().w===3:count>=u.cap,locked=s.level<u.level;
-      return '<button type="button" data-upgrade="'+type+'" '+(locked||maxed?'disabled':'')+'>'+u.name+' · '+u.cost+'<span>'+(locked?'Unlocks at '+u.level:maxed?'Built · repair or salvage on the board':u.w+' × '+u.h+' · '+u.description)+'</span></button>';
+      const built=s.buildings.filter(b=>b.type===type),maxed=type==='keep'?keep().w===3:built.length>=u.cap,locked=s.level<u.level,damaged=built.some(b=>b.hp<b.maxHp);
+      const status=locked?'LOCKED · unlocks at '+u.level:maxed?(damaged?'UNLOCKED · needs repair · select to repair':'UNLOCKED · active · select to inspect'):'UNLOCKED · '+(type==='tower'?built.length+' / '+u.cap+' towers built · ':'')+u.w+' × '+u.h;
+      return '<button type="button" data-upgrade="'+type+'" '+(locked?'disabled':'')+'>'+u.name+' · '+(maxed?'Built':u.cost+' supplies')+'<span>'+status+'</span><span>'+u.description+'</span></button>';
     }).join('');
-    $('upgrade-choices').querySelectorAll('button').forEach(b=>b.onclick=()=>select(b.dataset.upgrade));
+    $('upgrade-choices').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      const type=b.dataset.upgrade,u=R.upgrades[type],built=s.buildings.filter(v=>v.type===type),maxed=type==='keep'?keep().w===3:built.length>=u.cap;
+      if(!maxed){select(type);return;}
+      const target=built.find(v=>v.hp<v.maxHp)||built[0];select('repair');s.cursor={x:target.x,y:target.y};
+      message(target.hp<target.maxHp?u.name+' · '+target.hp+'/'+target.maxHp+' health · PLACE repairs 1 health for 2 supplies.':u.name+' is already active. Its benefits carry into every later level.',5);sync();dirty=true;
+    });
     $('exchange').disabled=s.supplies<2;
   }
   function openPlans(){if(!active()||s.phase!=='build')return;resetInput();s.mode='plans';populatePlans();$('plans-modal').classList.add('is-visible');$('plans-close').focus();}
@@ -187,7 +193,7 @@
     text('health',keep().hp+' / '+keep().maxHp);text('supplies',s.supplies);$('health').classList.toggle('danger',keep().hp<=3);$('clock').classList.toggle('danger',s.phase==='battle'&&s.time<12);
     const build=s.phase==='build';for(const id of ['place','rotate','plans','undo','launch'])$(id).hidden=!build;
     $('undo').disabled=!history.length;$('rotate').disabled=s.tool!=='wall';
-    text('order',build?toolName()+' · '+(s.tool==='wall'?R.pieces[s.hand[s.slot]].length*2+' supplies':s.tool==='patch'?s.patches+' left':'select a footprint'):'Aim ahead. Shoot red shells to protect your castle.');
+    text('order',build?toolName()+' · '+(s.tool==='wall'?R.pieces[s.hand[s.slot]].length+' supplies':s.tool==='patch'?'2 supplies · '+s.patches+' left':'select a footprint'):'Aim ahead. Shoot red shells to protect your castle.');
     $('hand').hidden=!build;const handKey=s.hand.join(',')+':'+s.slot+':'+s.tool;
     if($('hand').dataset.key!==handKey){$('hand').dataset.key=handKey;$('hand').innerHTML=s.hand.map((p,i)=>'<button type="button" data-slot="'+i+'" class="'+(s.tool==='wall'&&s.slot===i?'selected':'')+'">'+pieceIcon(p)+(i+1)+' '+R.pieceNames[p]+'</button>').join('');$('hand').querySelectorAll('button').forEach(b=>b.onclick=()=>select('wall',Number(b.dataset.slot)));}
     if(build){const e=R.enclosure(s);text('status',toolName()+' · '+(e.sealed?'KEEP PROTECTED':'KEEP EXPOSED')+' · '+e.free+' empty squares · '+s.patches+' patches');}

@@ -6,7 +6,7 @@ Verified 2026-10-06 in local Chrome over HTTP. This approved follow-up replaces 
 
 - Level 1 starts with a 2 × 2 keep, ten health, one gun and no walls. Building begins after victory.
 - Walls, rubble, building positions, health, supplies and score carry forward. Construction is untimed and spends a finite bank. Victory guarantees 26 + twice the fleet size in supplies, with six extra for keeping at least 70% health.
-- Every wall-piece square must be empty and inside buildable land. Pieces join an existing wall/building by an edge. Three selectable pieces, four rotations, limited single-square patches, paid exchanges, partial-refund salvage and free preparation undo support different layouts.
+- Every wall-piece square must be empty and inside buildable land. Pieces join an existing wall/building by an edge. Three selectable pieces, four rotations, limited single-square patches, paid exchanges, salvage and free preparation undo support different layouts. Wall pieces cost one supply per stone; single-square patches cost two. Salvage returns one supply per wall stone and a partial refund for buildings.
 - Every upgrade square must lie inside a closed wall area. Expanding the keep must contain its old footprint; it grows physically to 3 × 3 without restoring existing health. Buildings continue working through a breach and stop only when direct damage disables them.
 - Repair is a construction tool, costs two supplies per health, and works on disabled upgrades. There is no MEND button, E shortcut, emergency repair or player ability that clears incoming fire.
 - Enemy shells collide with the first wall or live building along their actual path. Destroying a wall leaves a visible breach and rubble. Only a real keep hit lowers keep health; missed shots and open walls alone do not. A timed failure explicitly reports remaining raiders. Once all ships are sunk, remaining shells resolve before victory.
@@ -69,6 +69,13 @@ Full suite passes:
 - JS parsing and whitespace checks pass. Game console/page errors are empty. Arcade card loads the correct game; the pre-existing root favicon 404 remains outside scope.
 
 ## Reproduce and evidence
+
+Upgrade-access and pricing follow-up verified 2026-10-08:
+
+- Previously built upgrade cards are selectable after unlocking, rather than disabled like locked plans. Cards explicitly show UNLOCKED with active or needs-repair status. Selecting a completed plan focuses its existing building for inspection/repair; tower slots still permit another tower when available. Existing construction caps and saved campaigns are preserved.
+- Real browser checks inspect every upgrade card at levels 2–13. A magician plan first bought at level 9 is selectable and works at level 10. Selecting its disabled building through the card repairs it at the normal price. These checks distinguish delayed purchase, ongoing benefits and repair from the one-time new-plan announcement.
+- All four wall shapes were placed with exactly their stone count in supplies: domino 2, beam 3, corner 3, square 4. Insufficient funds leave the castle unchanged; undo returns the exact price. Single-square patch placement still charges two supplies and consumes a patch stone. Displayed hand/HUD/Plans prices match the debit.
+- Full thirteen-level regression, desktop/mobile controls, responsive layouts, saves, retry and clean-game-console checks pass. Latest sampled desktop mean/p95 16.51/16.8 ms; touch emulation 16.61/16.9 ms. Evidence is in the pricing/ directory beside the original campaign/ captures, including unlocked-plans.png and verification.json. Rules and game script URLs advance to v4 while the campaign save key remains v3 to retain existing progress.
 
 Serve the repo root over HTTP and run node harbor-bastion/verify.cjs with Playwright and local Chrome available. HARBOR_BASE_URL overrides the default http://127.0.0.1:8766; HARBOR_REPORT_DIR chooses an output directory; HARBOR_CURVE_ONLY=1 runs the campaign benchmarks.
 
