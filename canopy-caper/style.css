@@ -4,3 +4,13 @@ body #hud .low{color:#ffb4a0;text-decoration:underline;text-underline-offset:3px
 body #playfield{aspect-ratio:auto}body canvas{flex:0 0 auto;height:auto;aspect-ratio:5/3}
 body.touch-device.vibecade-joystick-rails #playfield{width:min(calc(100vw - var(--vibecade-control-rail)*2),calc((100dvh - 67px)*var(--garden-ratio)))!important;max-width:min(calc(100vw - var(--vibecade-control-rail)*2),calc((100dvh - 67px)*var(--garden-ratio)))!important;height:min(calc((100vw - var(--vibecade-control-rail)*2)*.6 + 59px),calc(100dvh - 8px))!important;max-height:min(calc((100vw - var(--vibecade-control-rail)*2)*.6 + 59px),calc(100dvh - 8px))!important}
 body.touch-device.vibecade-joystick-rails #playfield canvas{height:calc(100% - 59px)!important;flex:1 1 auto;aspect-ratio:5/3}
+/* Garden revision: parchment instruments around the scrolling illustration. */
+body{background:radial-gradient(ellipse at 30% 15%,#477665,#243f3c 80%)}
+body #hud{grid-template-columns:repeat(5,minmax(0,1fr)) 70px;background:#29493e;color:#fff2d3;border-bottom-color:#879a6c}
+body #map{width:64px;height:30px;display:block;margin:auto;border-radius:3px;background:#153b32;overflow:hidden}
+body.touch-device #map{height:23px;width:60px}body.touch-device #hud{grid-template-columns:repeat(5,minmax(0,1fr)) 65px}
+body #message{background:#29493e;color:#f5ebcb}
+body .touch-actions #dig{min-height:58px;background:#e7c78e;color:#3b4939;border-color:#f4e0b3;font-size:15px}
+body .touch-actions button{border-color:#a8b386;background:#3a6250;color:#f4edcf}
+body .tools button{border-color:#b8c59b66;background:#28483eaa}
+body .brand b{color:#e6d59c}body .modal-card{background:linear-gradient(130deg,#faf0d6,#e3e5bc);border-color:#b5bd8a}
