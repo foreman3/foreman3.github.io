@@ -30,6 +30,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Canopy Caper](canopy-caper/) - Rescue golden seed pods, climb vines and ropes, and dig beetle traps through seven rainforest gardens.
 - [Copper Spire](copper-spire/) - Rotate around twelve spokes, silence climbing machines, and defend the rim through seven observatory depths.
 - [Harbor Bastion](harbor-bastion/) - Build one persistent castle, unlock five upgrades, and defend thirteen sieges with fitted walls and cannon fire.
 - [Hollow Signal](hollow-signal/) - Explore thirty connected chambers, recover eight abilities, and uncover the voices of a lost colony.
