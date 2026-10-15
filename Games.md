@@ -30,6 +30,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Marble Circuit](marble-circuit/) - Roll glass marbles, brake into bends, and light checkpoints through seven suspended miniature courses.
 - [Canopy Caper](canopy-caper/) - Rescue golden seed pods, climb vines and ropes, and dig beetle traps through seven rainforest gardens.
 - [Copper Spire](copper-spire/) - Rotate around twelve spokes, silence climbing machines, and defend the rim through seven observatory depths.
 - [Harbor Bastion](harbor-bastion/) - Build one persistent castle, unlock five upgrades, and defend thirteen sieges with fitted walls and cannon fire.
