@@ -1,6 +1,8 @@
 (() => {
   'use strict';
 
+  import('./pwa.js').catch(() => {});
+
   if (window.__vibecadeMobileInitialized) return;
   window.__vibecadeMobileInitialized = true;
 
@@ -731,13 +733,13 @@
 
   const fullscreenElement = () => document.fullscreenElement
     || document.webkitFullscreenElement
-    || document.msFullscreenElement;
+    || document.msFullscreenElement
+    // Manifest fullscreen does not set document.fullscreenElement.
+    || window.matchMedia('(display-mode: fullscreen)').matches;
   const request = root.requestFullscreen
     || root.webkitRequestFullscreen
     || root.msRequestFullscreen;
-  root.dataset.mobileFullscreen = request
-    ? (fullscreenElement() ? 'entered' : 'ready')
-    : 'unsupported';
+  root.dataset.mobileFullscreen = fullscreenElement() ? 'entered' : request ? 'ready' : 'unsupported';
   let requestInFlight = false;
 
   const onFullscreenChange = () => {
@@ -868,8 +870,8 @@
     readyScreen.innerHTML = `
       <div class="vibecade-mobile-ready-card">
         <h2>Ready when you are</h2>
-        <p>The game is paused. Play will begin after fullscreen and the playfield finishes resizing.</p>
-        <button class="vibecade-mobile-play" type="button">Play fullscreen</button>
+        <p>The game is paused. Play will begin after the playfield finishes resizing.</p>
+        <button class="vibecade-mobile-play" type="button">${fullscreenElement() ? 'Play' : 'Play fullscreen'}</button>
         <button class="vibecade-mobile-instructions" type="button">Review controls</button>
       </div>`;
     readyScreen.querySelector('.vibecade-mobile-play').addEventListener('click', () => beginLaunch(launchButton));

@@ -222,6 +222,7 @@ At minimum:
 - Add one matching card to the **In Work** section of `index.html` unless instructed otherwise.
 - Verify both links resolve to the new game.
 - Before committing, fetch the configured remote and confirm the branch can be synchronized safely.
+- After changing a game or shared runtime file, run `node scripts/build-offline.cjs` and include the regenerated `offline-assets.js` so installed arcades receive a complete offline release. Verify it with `node scripts/build-offline.cjs --check`.
 - Do not discard unrelated changes, rewrite history, or force-push.
 - Stage only the new directory and intended registration files.
 - Use a descriptive commit message and push only when the user or automation explicitly requests publishing.

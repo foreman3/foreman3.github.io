@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>VibeCade Arcade</title>
+  <meta name="theme-color" content="#0b1020" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="./images/app/icon-192.png" />
+  <script type="module" src="./pwa.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -480,6 +484,32 @@
       }
     }
 
+    .install-card {
+      margin: 0 0 24px;
+      padding: 16px 18px;
+      border: 1px solid rgba(102, 242, 214, 0.35);
+      border-radius: 15px;
+      background: rgba(9, 19, 34, 0.82);
+    }
+
+    .install-card[hidden] { display: none; }
+    .install-card p { margin: 8px 0 12px; color: var(--muted); line-height: 1.5; }
+    .install-card button {
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 1px solid var(--accent-2);
+      border-radius: 10px;
+      background: rgba(102, 242, 214, 0.14);
+      color: var(--text);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .install-card button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .install-card p:last-child { margin-bottom: 0; }
+    .install-card progress { width: 100%; height: 8px; accent-color: var(--accent-2); }
+
     @media (prefers-reduced-motion: reduce) {
       .card {
         animation: none;
@@ -497,6 +527,21 @@
         A pocket arcade of one-page classics. Pick a cabinet, chase a high score, and dive right back out.
       </div>
     </header>
+
+    <section class="install-card" id="install-card" aria-label="Install VibeCade" hidden>
+      <strong>Your arcade, one tap away</strong>
+      <p>Install VibeCade on your home screen to launch straight into fullscreen.</p>
+      <button id="install-app" type="button" aria-describedby="install-help">Install VibeCade</button>
+      <p id="install-help" role="status" aria-live="polite" hidden></p>
+    </section>
+
+    <section class="install-card" id="offline-card" aria-label="Offline games" hidden>
+      <strong>Take your arcade anywhere</strong>
+      <p id="offline-status" role="status" aria-live="polite">Preparing the offline arcade…</p>
+      <progress id="offline-progress" aria-label="Downloading offline games" max="100" value="0"></progress>
+      <button id="offline-retry" type="button" hidden>Retry download</button>
+      <p id="offline-detail">Keep this page open until the download finishes. Audio Assault opens a separate website and needs internet.</p>
+    </section>
 
     <div class="mobile-hub" aria-label="Find a game">
       <div class="hub-row">
