@@ -2,6 +2,14 @@
 
 Repeatable-upgrade follow-up verified 2026-10-09 in local Chrome over HTTP. The castle carries through thirteen sieges; unlocked plans now permit repeated purchases with stacking effects. This follow-up changes only harbor-bastion/. No new game directory or registration entry was created.
 
+## Mobile controls follow-up — 2026-10-17
+
+- Battle now shows a 64px-tall FIRE button with a visible held state and guidance to drag on the sea to aim. Holding directly on the sea still aims and fires; a second finger can aim while FIRE remains held.
+- FIRE uses pointer capture and clears on release, cancellation, lost capture, blur, pause, retry, and phase transitions. Its state is independent of playfield and keyboard fire. Instructions and other modals hide the command rail.
+- Mobile construction and tool buttons are at least 44px tall. The existing PLANS, PLACE, ROTATE, UNDO, and BATTLE controls remain outside the playfield. Desktop keeps its existing mouse and keyboard controls.
+- The full browser suite passes, including all thirteen campaign levels, mechanics, saves, desktop input, actual CDP touch hold/slide/two-finger aim/cancel, and returning-session launch. Visually inspected 667 × 375, 740 × 390, 844 × 390, 390 × 844 portrait guidance, and 1440 × 900 desktop. No game console errors.
+- Active mobile gameplay and build screenshots plus `verification.json` are in `C:/Users/forem/.codex/visualizations/2026/10/17/01a149e3-e41b-7890-a376-d550fa35ea4b/harbor-mobile/`. The shared offline inventory was regenerated with this fix.
+
 ## Player contract
 
 - Level 1 starts with a 2 × 2 keep, ten health, one gun and no walls. Building begins after victory.

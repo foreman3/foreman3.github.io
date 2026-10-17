@@ -9,15 +9,24 @@ This repository hosts simple arcade-style video games.
 - [Audio Assault](https://audio.vibe-cade.com) - Intense music trivia.
 - [Barrel Brigade](barrel-brigade/) - Climb crooked girders, leap runaway barrels, and ring the shift bell.
 - [Burger Time](burger/) - Assemble towering burgers while avoiding enemies.
+- [Canopy Caper](canopy-caper/) - Rescue golden seed pods, climb vines and ropes, and dig beetle traps through seven rainforest gardens.
+- [Clockwork Blast](clockwork-blast/) - Wind charges, kick them through lanes, and outwit seven rooms of tin robots.
+- [Copper Spire](copper-spire/) - Rotate around twelve spokes, silence climbing machines, and defend the rim through seven observatory depths.
 - [Deep Core](deep-core/) - Dig tactical tunnels, pressure-pop threats, and weaponize falling boulders.
 - [Flappy](flappy/) - Navigate obstacles and collect coins.
+- [Fuse Catch](fuse-catch/) - Read arcing bomb paths, route between double drops, and survive seven rooftop shifts.
 - [Galactic Wing](galactic-wing/) - Break alien formations, intercept diving squadrons, and chase precision chains.
+- [Ink Claim](ink-claim/) - Draw claim lines, dodge ink moths, and finish seven printed posters.
 - [Iron Meridian](iron-meridian/) - Dash through five robot-guarded sectors, defeat their guardians, and claim their weapons.
+- [Kiln Cascade](kiln-cascade/) - Cycle falling ceramic columns, chain three-in-a-row matches, and survive an ever-faster endless kiln.
+- [Lift Heist](lift-heist/) - Ride the lifts, recover marked files, and escape seven guarded tower shifts.
 - [Lunar Lander](lunar-lander/) - Feather a survey module onto five increasingly unforgiving lunar sites.
+- [Marble Circuit](marble-circuit/) - Roll glass marbles, brake into bends, and light checkpoints through seven suspended miniature courses.
 - [Missile Command](missile-command/) - Defend your base from incoming missiles.
 - [Mushroom Moon](mushroom-moon/) - Split star-worms and defend a mutating lunar garden.
 - [Neon Flight](neon-flight/) - Dodge wireframe skyscrapers in a glowing city.
 - [Neon River Run](river-run/) - Cross traffic, ride a living river, and claim five shifting home bays.
+- [Orchard Watch](orchard-watch/) - Chase apple-stealing marmots, spare the gardeners, and protect five autumn harvests.
 - [Paper Route Rush](paper-route-rush/) - Dodge morning hazards and land newspapers at marked mailboxes.
 - [Qbert Clone](qbert/) - Hop across pyramids and change block colors.
 - [Space Invaders](space-invaders/) - Battle waves of alien foes.
@@ -26,27 +35,17 @@ This repository hosts simple arcade-style video games.
 - [Tetris](tetris/) - Arrange falling blocks to clear lines.
 - [Trap the Mouse](trap-the-mouse/) - Outsmart the escape route.
 - [Ultra Tanks](ultra-tanks/) - Bouncing bullets and massive air raids.
+- [Velvet Coil](velvet-coil/) - Steer a living necklace, gather rubies, and escape five Art Deco jewel vaults.
 - [Video Poker Lounge](video-poker/) - Hold cards and chase jackpots.
 
 ## In Work
 
-- [Marble Circuit](marble-circuit/) - Roll glass marbles, brake into bends, and light checkpoints through seven suspended miniature courses.
-- [Canopy Caper](canopy-caper/) - Rescue golden seed pods, climb vines and ropes, and dig beetle traps through seven rainforest gardens.
-- [Copper Spire](copper-spire/) - Rotate around twelve spokes, silence climbing machines, and defend the rim through seven observatory depths.
 - [Harbor Bastion](harbor-bastion/) - Build one persistent castle, unlock five upgrades, and defend thirteen sieges with fitted walls and cannon fire.
 - [Hollow Signal](hollow-signal/) - Explore thirty connected chambers, recover eight abilities, and uncover the voices of a lost colony.
 - [Alpine Line](alpine-line/) - Accelerate through seven slalom races, brake for tight turns, and beat qualifying times with missed-gate penalties.
-- [Clockwork Blast](clockwork-blast/) - Wind charges, kick them through lanes, and outwit seven rooms of tin robots.
-- [Lift Heist](lift-heist/) - Ride the lifts, recover marked files, and escape seven guarded tower shifts.
-- [Fuse Catch](fuse-catch/) - Read arcing bomb paths, route between double drops, and survive seven rooftop shifts.
-- [Ink Claim](ink-claim/) - Draw claim lines, dodge ink moths, and finish seven printed posters.
-- [Kiln Cascade](kiln-cascade/) - Cycle falling ceramic columns, chain three-in-a-row matches, and survive an ever-faster endless kiln.
 
 - [Rally Club](rally-club/) - Place spinning shots and beat five table-tennis club opponents.
 
-- [Velvet Coil](velvet-coil/) - Steer a living necklace, gather rubies, and escape five Art Deco jewel vaults.
-
-- [Orchard Watch](orchard-watch/) - Chase apple-stealing marmots, spare the gardeners, and protect five autumn harvests.
 - [Prism Panic](prism-panic/) - Split bouncing glass orbs and restore five stained-glass conservatories.
 - [Block Balance](balance/) - Keep the tower steady.
 - [Boxing](boxing/) - Step into a 3D ring and dodge telegraphed punches from varied opponents.

@@ -6,14 +6,15 @@
   const speeds=[0,22,32,40,48,55,60,66,70,76,82,89,96],counts=[3,6,8,10,12,14,16,18,20,22,24,27,30];
   const profiles=names.map((name,i)=>({name,ships:counts[i],speed:speeds[i],interval:[4,3,2.4,1.8,1.6,1.45,1.3,1.2,1.1,1,.95,.85,.75][i],first:[7,6,4.8,3.8,3.4,3.2,3,2.8,2.7,2.6,2.5,2.4,2.3][i],fire:[9,8,7,5.5,5,4.8,4.5,4.3,4.1,3.9,3.7,3.5,3.3][i],shellSpeed:145+i*8,time:60+i*3}));
   const s={level:1,phase:'battle',mode:'intro',supplies:16,score:0,walls:new Set(),rubble:new Set(),buildings:[],hand:[0,1,2],deck:3,patches:3,tool:'wall',slot:0,rotation:0,cursor:{x:2,y:6},aim:{x:760,y:300},muted:false,ships:[],shots:[],shells:[],fx:[]};
-  let checkpoint=null,history=[],manual=false,held=new Set(),pointerFire=false,keyFire=false,last=0,acc=0,dirty=true,fortDirty=true,hudWait=0,inputWait=0,toastTime=0,fireGap=0,exposedUntil=0,previousMode='playing',campaignReturn='plans',audio=null;
+  let checkpoint=null,history=[],manual=false,held=new Set(),pointerFire=false,keyFire=false,buttonFire=false,firePointer=null,last=0,acc=0,dirty=true,fortDirty=true,hudWait=0,inputWait=0,toastTime=0,fireGap=0,exposedUntil=0,previousMode='playing',campaignReturn='plans',audio=null;
   const fort=document.createElement('canvas');fort.width=1000;fort.height=640;const fc=fort.getContext('2d');
   const keep=()=>s.buildings.find(b=>b.type==='keep'),aliveAll=type=>s.buildings.filter(b=>b.type===type&&b.hp>0);
   const manualReload=()=>.8**aliveAll('workshop').length;
   const center=b=>({x:(b.x+b.w/2)*R.C,y:(b.y+b.h/2)*R.C});
   const touch=()=>document.body.classList.contains('touch-device'),portrait=()=>touch()&&matchMedia('(orientation:portrait)').matches;
   const active=()=>s.mode==='playing'&&!portrait(),cfg=()=>profiles[s.level-1];
-  const resetInput=()=>{held.clear();pointerFire=false;keyFire=false;inputWait=0;};
+  function releaseFire(){const id=firePointer;firePointer=null;buttonFire=false;$('touch-fire').setAttribute('aria-pressed','false');try{if(id!==null&&$('touch-fire').hasPointerCapture(id))$('touch-fire').releasePointerCapture(id);}catch(_){}}
+  const resetInput=()=>{held.clear();pointerFire=false;keyFire=false;inputWait=0;releaseFire();};
   function text(id,value){const node=$(id),v=String(value);if(node.textContent!==v)node.textContent=v;}
   function tone(f,d=.09){if(!audio||s.muted)return;const o=audio.createOscillator(),g=audio.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(.07,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d);}
   function unlockAudio(){try{audio ||=new(window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch(_){}}
@@ -167,7 +168,7 @@
     s.time-=dt;s.elapsed+=dt;fireGap=Math.max(0,fireGap-dt);
     if(s.time<=0&&s.kills<cfg().ships){finish(false,'Battle time expired with '+(cfg().ships-s.kills)+' raiders afloat. Your castle can be redesigned at the level checkpoint.');return;}
     for(const b of s.buildings)b.cooldown=Math.max(0,(b.cooldown||0)-dt);
-    if(pointerFire||keyFire)fire();
+    if(pointerFire||keyFire||buttonFire)fire();
     s.spawnTime-=dt;if(s.spawned<cfg().ships&&s.spawnTime<=0){spawn();s.spawnTime=cfg().interval;}
     for(const ship of s.ships){
       const oldX=ship.x;ship.y+=ship.dir*ship.speed*dt;if(ship.y>555){ship.y=555;ship.dir=-1;}if(ship.y<85){ship.y=85;ship.dir=1;}
@@ -200,6 +201,7 @@
     text('level',s.level+' / 13');text('phase',s.phase==='build'?'BUILD':(s.kills||0)+' / '+cfg().ships+' SUNK');text('clock',s.phase==='build'?'UNTIMED':Math.max(0,Math.ceil(s.time))+'s');
     text('health',keep().hp+' / '+keep().maxHp);text('supplies',s.supplies);$('health').classList.toggle('danger',keep().hp<=3);$('clock').classList.toggle('danger',s.phase==='battle'&&s.time<12);
     const build=s.phase==='build';for(const id of ['place','rotate','plans','undo','launch'])$(id).hidden=!build;
+    $('touch-fire').hidden=build;$('touch-aim-help').hidden=build;
     $('undo').disabled=!history.length;$('rotate').disabled=s.tool!=='wall';
     text('order',build?toolName()+' · '+(s.tool==='wall'?R.pieces[s.hand[s.slot]].length+' supplies':s.tool==='patch'?'2 supplies · '+s.patches+' left':'select a footprint'):'Aim ahead. Shoot red shells to protect your castle.');
     $('hand').hidden=!build;const handKey=s.hand.join(',')+':'+s.slot+':'+s.tool;
@@ -231,6 +233,14 @@
   canvas.addEventListener('pointermove',e=>{if(active()&&(e.pointerType==='mouse'||canvas.hasPointerCapture(e.pointerId)))locate(e);});
   for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,()=>{pointerFire=false;});
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  $('touch-fire').addEventListener('pointerdown',e=>{
+    e.preventDefault();if(!active()||s.phase!=='battle'||firePointer!==null||(e.pointerType==='mouse'&&e.button!==0))return;
+    unlockAudio();firePointer=e.pointerId;buttonFire=true;$('touch-fire').setAttribute('aria-pressed','true');
+    try{$('touch-fire').setPointerCapture(firePointer);}catch(_){}fire();
+  });
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])$('touch-fire').addEventListener(type,e=>{if(e.pointerId===firePointer)releaseFire();});
+  $('touch-fire').addEventListener('contextmenu',e=>e.preventDefault());
+  $('touch-fire').addEventListener('click',e=>{if(e.detail===0){unlockAudio();fire();}});
   function pause(){if(s.mode==='playing'){s.mode='paused';resetInput();}else if(s.mode==='paused')s.mode='playing';dirty=true;sync();}
   function help(){if(s.mode==='intro')return;previousMode=s.mode;resetInput();s.mode='help';$('instruction-modal').classList.add('is-visible');$('instruction-close').textContent='RETURN TO COMMAND';$('instruction-close').focus();dirty=true;}
   function closeInstructions(){unlockAudio();$('instruction-modal').classList.remove('is-visible');try{sessionStorage.setItem(introKey,'seen');}catch(_){}s.mode=previousMode;canvas.focus({preventScroll:true});sync();dirty=true;}
@@ -269,7 +279,7 @@
   if(!loaded)fresh();
   let seen=false;try{seen=sessionStorage.getItem(introKey)==='seen';}catch(_){}
   if(!seen){previousMode=s.mode;s.mode='intro';$('instruction-close').textContent=loaded?'CONTINUE YOUR CASTLE':'TAKE COMMAND';$('instruction-close').focus();}else $('instruction-modal').classList.remove('is-visible');
-  if(testing)window.__harborTest={state:s,rules:R,profiles,fresh,prepare,launch,startBattle,place,undo,exchange,rotate,select,fire,guns,center,hitAt,impact,moveShell,finish,retry,checkpoint:()=>checkpoint,manual(v){manual=v;},render(){changed();draw();},save:persist,inputs:()=>({pointerFire,keyFire,held:[...held]}),setCursor(x,y){s.cursor={x,y};dirty=true;},aim(x,y){s.aim={x,y};},tick};
+  if(testing)window.__harborTest={state:s,rules:R,profiles,fresh,prepare,launch,startBattle,place,undo,exchange,rotate,select,fire,guns,center,hitAt,impact,moveShell,finish,retry,checkpoint:()=>checkpoint,manual(v){manual=v;},render(){changed();draw();},save:persist,inputs:()=>({pointerFire,keyFire,buttonFire,held:[...held]}),setCursor(x,y){s.cursor={x,y};dirty=true;},aim(x,y){s.aim={x,y};},tick};
   function animate(now){const dt=Math.min(.1,(now-last)/1000||0);last=now;if(!manual&&active()){acc=Math.min(.1,acc+dt);while(acc>=1/60){tick(1/60);acc-=1/60;}}else acc=0;if(dirty)draw();requestAnimationFrame(animate);}
   fit();sync();requestAnimationFrame(animate);
 })();

@@ -4,3 +4,11 @@ body.touch-device header{height:51px;padding:5px 60px 5px 9px}.touch-device .bra
 @media(max-width:900px) and (orientation:portrait){body.touch-device #orientation{display:flex;position:fixed;inset:56px 15px 15px;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:25px;border:1px solid #8da69b;border-radius:15px;font-size:25px}#orientation p{font:16px/1.5 system-ui,sans-serif;max-width:310px}.touch-device main{visibility:hidden}.touch-device nav #sound{display:none}.touch-device .brand{font-size:16px}}
 #hand[hidden]{display:none}#cabinet{width:min(100%,calc((100dvh - 224px)*1.5625))}#instruction-modal{z-index:70}
 @media(prefers-reduced-motion:reduce){button:active{transform:none}}
+#touch-fire,#touch-aim-help{display:none}
+body.touch-device #touch-fire:not([hidden]){display:block;min-height:64px;background:#a8523c;font-size:17px;border:2px solid #ffd191;touch-action:none}
+body.touch-device #touch-fire[aria-pressed="true"]{background:#e69b59;color:#173e40;box-shadow:inset 0 0 0 3px #fff0b2;transform:translateY(2px)}
+body.touch-device #touch-aim-help:not([hidden]){display:block;margin:0 0 5px;text-align:center;font:11px/1.45 system-ui,sans-serif;color:#fff4d9}
+body.touch-device .actions button{min-height:44px;-webkit-touch-callout:none;user-select:none}
+body.touch-device nav button{min-height:44px}
+body.touch-device #command{z-index:39}
+body.touch-device:has(.modal.is-visible) #command{visibility:hidden;pointer-events:none}

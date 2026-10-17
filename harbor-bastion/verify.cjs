@@ -6,6 +6,7 @@ async function main(){
  const report={},errors=[],watch=p=>{p.on('pageerror',e=>errors.push(e.message));p.on('console',e=>{if(e.type()==='error')errors.push(e.text());});};
  const page=await browser.newPage({viewport:{width:1440,height:900}});watch(page);await page.goto(base+'/harbor-bastion/?test=1');
  await page.waitForTimeout(200);assert.deepEqual(errors,[]);assert.equal(await page.locator('#instruction-modal').isVisible(),true);const time=await page.evaluate(()=>__harborTest.state.time);await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__harborTest.state.time),time);
+ assert.equal(await page.locator('#touch-fire').isVisible(),false);
  await page.locator('#instruction-close').focus();await page.keyboard.press('Space');await page.waitForFunction(()=>__harborTest.state.mode==='playing');await page.evaluate(()=>__harborTest.manual(true));
  await page.evaluate(()=>{
   const t=__harborTest,s=t.state,R=t.rules;
@@ -198,7 +199,10 @@ async function main(){
   const context=await browser.newContext({viewport:{width,height},isMobile:true,hasTouch:true}),p=await context.newPage();watch(p);
   await p.addInitScript(()=>{Element.prototype.requestFullscreen=()=>Promise.reject(new Error('Test refusal'));});await p.goto(base+'/harbor-bastion/?test=1');await p.locator('#instruction-close').click();await p.waitForTimeout(500);
   if(width>height){
+   await p.waitForFunction(()=>__harborTest.state.mode==='playing');assert.equal(await p.locator('#touch-fire').isVisible(),true);assert.equal(await p.locator('#touch-aim-help').isVisible(),true);
+   const fireBox=await p.locator('#touch-fire').boundingBox(),boardBox=await p.locator('canvas').boundingBox();assert(fireBox.width>=44&&fireBox.height>=44&&fireBox.x>=boardBox.x+boardBox.width&&fireBox.x+fireBox.width<=width&&fireBox.y+fireBox.height<=height);
    await p.waitForFunction(()=>__harborTest.state.mode==='playing');await p.evaluate(()=>{__harborTest.manual(true);__harborTest.prepare(2);});const c=await p.locator('canvas').boundingBox();
+   assert.equal(await p.locator('#touch-fire').isVisible(),false);
    await p.touchscreen.tap(c.x+c.width*.1,c.y+c.height*.4);await p.locator('#plans').tap();await p.locator('[data-tool="patch"]').tap();await p.locator('#place').tap();assert.equal(await p.evaluate(()=>__harborTest.state.walls.size),1);await p.locator('#undo').tap();assert.equal(await p.evaluate(()=>__harborTest.state.walls.size),0);
    await p.locator('#plans').tap();await p.locator('[data-slot="0"]').last().tap();await p.locator('#rotate').tap();assert.equal(await p.evaluate(()=>__harborTest.state.rotation),1);await p.locator('.vibecade-mobile-restart').tap();assert.equal(await p.evaluate(()=>__harborTest.state.level),2);
    const bounds=await p.evaluate(()=>{const c=document.querySelector('canvas').getBoundingClientRect(),a=document.querySelector('.actions').getBoundingClientRect();return {canvas:{x:c.x,y:c.y,right:c.right,bottom:c.bottom},actions:{x:a.x,y:a.y,right:a.right,bottom:a.bottom},overflow:document.documentElement.scrollWidth>innerWidth};});
@@ -208,6 +212,19 @@ async function main(){
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(.2,.2)]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(.35,.4)]});assert.equal(await p.evaluate(()=>__harborTest.state.cursor.x),8);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
     await p.evaluate(()=>{__harborTest.fresh();__harborTest.manual(false);});await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(.7,.5)]});await p.waitForTimeout(1200);assert.ok(await p.evaluate(()=>__harborTest.state.shotsFired)>=2);await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(.85,.6)]});assert.ok(await p.evaluate(()=>__harborTest.state.aim.x)>800);await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});assert.equal(await p.evaluate(()=>__harborTest.inputs().pointerFire),false);
     await p.evaluate(()=>window.dispatchEvent(new Event('blur')));assert.equal(await p.evaluate(()=>__harborTest.state.mode),'paused');await p.locator('#pause').tap();
+    // A visible fire button supports hold, captured slides, two-thumb aiming,
+    // cancellation, and pause/reset without leaving a held action behind.
+    await p.evaluate(()=>{__harborTest.fresh();__harborTest.manual(false);});
+    const f=await p.locator('#touch-fire').boundingBox(),firePoint={x:f.x+f.width/2,y:f.y+f.height/2,id:2,radiusX:4,radiusY:4,force:1};
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[firePoint]});await p.waitForTimeout(1200);assert.ok(await p.evaluate(()=>__harborTest.state.shotsFired)>=2);assert.equal(await p.locator('#touch-fire').getAttribute('aria-pressed'),'true');
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[firePoint,point(.7,.4)]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[firePoint,point(.85,.6)]});assert.ok(await p.evaluate(()=>__harborTest.state.aim.x)>800);assert.equal(await p.evaluate(()=>__harborTest.inputs().buttonFire),true);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});assert.equal(await p.evaluate(()=>__harborTest.inputs().pointerFire),false);assert.equal(await p.evaluate(()=>__harborTest.inputs().buttonFire),false);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[firePoint]});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...firePoint,x:width-2,y:height-2}]});assert.equal(await p.evaluate(()=>__harborTest.inputs().buttonFire),true);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});assert.equal(await p.evaluate(()=>__harborTest.inputs().buttonFire),false);assert.equal(await p.locator('#touch-fire').getAttribute('aria-pressed'),'false');
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[firePoint]});await cdp.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});assert.equal(await p.evaluate(()=>__harborTest.inputs().buttonFire),false);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[firePoint]});await p.evaluate(()=>window.dispatchEvent(new Event('blur')));assert.equal(await p.evaluate(()=>__harborTest.inputs().buttonFire),false);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.locator('#pause').tap();
+    report.mobileFire=true;
     assert.equal(await p.evaluate(()=>document.documentElement.dataset.mobileFullscreenAttempted),'true');
     const repeated=await page.evaluate(()=>repeatedCastle);await p.evaluate(v=>{const t=__harborTest;t.manual(true);t.rules.restore(t.state,v);t.prepare(13);},repeated);
     await p.locator('#plans').tap();assert.match(await p.locator('[data-upgrade="tower"]').textContent(),/4 built · add another/);await p.locator('[data-upgrade="tower"]').tap();assert.equal(await p.evaluate(()=>__harborTest.state.tool),'tower');await p.evaluate(()=>__harborTest.setCursor(2,2));const bank=await p.evaluate(()=>__harborTest.state.supplies);await p.locator('#place').tap();assert.equal(await p.evaluate(()=>__harborTest.state.buildings.filter(b=>b.type==='tower').length),5);assert.equal(await p.evaluate(()=>__harborTest.state.supplies),bank-14);
