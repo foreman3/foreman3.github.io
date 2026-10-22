@@ -40,6 +40,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Bramble Guard](bramble-guard/) - Ride a fox's cable lift, pop wolf balloons, and protect the pantry through seven woodland watches.
 - [Steamline](steamline/) - Fit brass pipes, route steam through service rings, and keep the city warm through seven timed contracts.
 - [Harbor Bastion](harbor-bastion/) - Build one persistent castle, unlock five upgrades, and defend thirteen sieges with fitted walls and cannon fire.
 - [Hollow Signal](hollow-signal/) - Explore thirty connected chambers, recover eight abilities, and uncover the voices of a lost colony.
