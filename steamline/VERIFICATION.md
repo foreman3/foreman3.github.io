@@ -1,58 +1,42 @@
-# Steamline verification — 2026-10-20
+# Steamline puzzle campaign verification — 2026-10-25
 
-Steamline is a Pipe Dream-style timed routing arcade: fit and rotate straight or elbow pipes, connect every service ring, meet the run-length target, and carry steam from the boiler to the receiver. Dry fittings can be lifted or turned; wet fittings are immutable. Opening the boiler early earns a bonus; optional reversible fast flow reduces waiting after planning. Leaks spend a seal and give five seconds to repair the route. Steam holds buy four seconds each. Retry restores the current contract's starting score.
+The player's feedback supersedes the original seven-stage speed-controller claims. Steamline is now fifty untimed puzzles. No level starts steam automatically, removes lives, awards speed points or requires fast editing. Plan, test, keep the board, revise. Stars reward clean/economical construction; thinking time and failed tests never reduce them.
 
-## Scope and contract
+## Campaign design
 
-Read AGENTS.md, the complete GAME_STANDARDS.md, installed and version-controlled builder skills, Games.md, root registration, directories, history and all supplied automation memory. The concept is absent from the existing inventory. DOM/SVG suits its small, structured board. Local SVG art, semantic HTML controls, 60 Hz delta-time simulation capped after stalls, visual updates around 30 Hz, cached tile artwork, no per-frame SVG reconstruction, and no external game assets. Desktop flyout/shared mobile fullscreen behavior; direct touch board controls need no joystick. Portrait is supported.
+Ten five-level districts progressively introduce route length/anchors (1), service rings (6), one-way valves (11), fitting stock (16), independent bridge lanes (21), paired underground ports (26), switch-operated gates (31), heater/range (36), heat-consuming radiators (41), and ordered deliveries (46). Each introduction reduces the combination burden before combining familiar ideas. Late puzzles combine the mechanics rather than increasing a countdown. The design rationale is in DESIGN.md.
 
-Only steamline/, Games.md and index.html are changed. The new card is under In Work. Initial and pre-release fetches matched origin/main; no merge or discarded work was required. No existing game's files changed.
+Fifty deterministic boards vary endpoints, paths, obstructions, anchored fittings and obligations. Generation uses an explicit seeded shuffle for consistency across browser engines. All routes may be solved differently from the construction witness. Bridges must be crossed on both independent axes and count as one distinct square; tunnels are actual nonadjacent graph edges. Switches must precede gates. Travel consumes one heat per square after reheating, radiators consume three more, and the receiver must remain hot.
 
-The user's seven-level difficulty contract overrides the older level-5-mastery wording in the standards and skills. Their explicit restriction on files outside steamline/ also overrides the newer instruction to regenerate offline-assets.js. `node scripts/build-offline.cjs --check` reports a stale inventory (51 games / 281 files); the generated file is deliberately unchanged. This release requires the online direct link. Existing installed/offline arcade inventories will not include Steamline until a separately authorized inventory regeneration. This is the one explicit release-check exception.
+The known construction witnesses clear all 50 through ordinary shape/rotation/placement inputs and the actual flow demonstration. This proves mechanical solvability, not human route discovery, enjoyment or a measured monotonic difficulty curve. New-mechanic introductions deliberately vary route length and loosen other constraints.
 
-## Observed challenge curve
+## Saving and usability
 
-Each contract has a different obstruction/ring/valve layout. All mechanics appear by contract 4 and combine in 5. Minimum pipes count source, receiver and fixed valves.
+The versioned local save contains unlocked level, stars/best fitting counts, separate unfinished boards, current tools, settings and recent undo history. Edits autosave after 120ms, with immediate saving on completion, manual Save and leaving. Reload returns to untimed planning with the complete layout intact. Fixed machinery is reconstructed from rules; imports cannot inject fixed machinery or arbitrary rotations.
 
-| Contract | Boiler delay | Seconds/pipe | Minimum pipes | Rings | Arrow valves | Seals / holds |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 Apprentice | 24 | 1.80 | 8 | 0 | 0 | 3 / 2 |
-| 2 Laundry | 21 | 1.65 | 12 | 1 | 0 | 3 / 2 |
-| 3 Bathhouse | 18 | 1.50 | 14 | 2 | 0 | 3 / 2 |
-| 4 Glassworks | 16 | 1.35 | 15 | 2 | 1 | 3 / 2 |
-| 5 Night Shift | 14 | 1.20 | 17 | 2 | 1 | 3 / 2 |
-| 6 Chief Engineer | 8 | .86 | 22 | 3 | 2 | 1 / 1 |
-| 7 City Never Sleeps | 4 | .64 | 23 | 3 | 2 | 0 / 0 |
+The level ledger allows replay and resuming saved drafts. Download/import moves a campaign between browsers. Import previews its completion count/current level, requires explicit confirmation, and attempts a recovery copy of the previous campaign. Invalid versions/files are rejected; unreadable stored JSON receives a recovery-copy attempt; storage failure is reported with downloadable backup guidance. These saves are local to the browser/device, not cloud synchronized.
 
-The browser controller uses the known example route and ordinary shape/rotation/fitting actions. It advances the real simulation between fittings; it never teleports steam, injects completed tiles, changes scores or triggers wins. Orientation changes are instantaneous within each fitting decision, so these are optimistic mechanical feasibility checks, not human reaction-time, route-discovery or enjoyment studies.
+Reset clears only the current workbench, can be undone, and preserves campaign progress. Failed flow tests retain every fitting and identify the first problem. Stock is refunded on lifting. Undo/redo are free. Ctrl/Cmd refresh shortcuts do not accidentally reset the puzzle. Full rules remain accessible from the ledger on touch devices. Shared flyout/fullscreen behavior is retained.
 
-- A 1.8-second-per-fitting policy cleared 1–5 in 38.41 / 40.81 / 40.52 / 36.26 / 33.22 simulated seconds, with all three seals. It failed 6 and 7. Different lengths make completion time non-monotonic.
-- A slower 2.8-second policy cleared 1–5 with 0 / 0 / 1 / 1 / 2 repaired leaks respectively. It failed 6–7. Thus the opening has substantial time margin, middle contracts introduce greater route constraints, and 5 permits multiple recoverable mistakes.
-- Contract 5 with an additional deliberate 18-second construction delay cleared in 45.62 seconds after two actual open-end leaks, retaining one seal and both holds. Steam/progress was never repositioned for this recovery test.
-- A .85-second policy cleared mastery contract 6 in 26.92 seconds and contract 7 in 18.09 seconds with no leaks. Adding a 2.5-second stall to that final-contract policy failed at pipe 12, establishing its narrow timing margin. Human judgment of fun, planning pressure and late-contract fairness remains the next useful evidence.
+## Verification
 
-## Iteration and verification
+- 167 Node rule checks pass: all 50 witness completions, all 50 distinct boards, complete goal coverage, clean witnesses, bridge axis separation, reverse valves, fitting caps, tunnel direction, gate order, cold receivers, radiator heat costs, ordered rings, minimum length, save validation/round trip/corruption recovery and storage failure.
+- Full Chrome suite clears all fifty with three stars, unlocks all fifty ledger entries, checks final ledger flow, and validates keyboard selection/rotation/placement, free undo/redo, score/progress retention and undoable reset.
+- A normal page without test hooks completes the opening entirely with real keyboard events, earns three stars, advances through native Enter, and retains contract2 after reload. Automatic draft saving, browser refresh-shortcut safety and normal reload are exercised in that same flow.
+- Real browser save/restore preserves a partial board and undo history. A downloaded save imports after preview/confirmation, makes a recovery copy, restores level6, and invalid imports preserve the campaign. Nested ledger → rules → ledger navigation works.
+- Actual touch taps place/turn/lift, refund stock, undo, save, and restore after reload. Chrome CDP touch cancellation creates no fitting. Shared returning-mobile launch/fullscreen refusal is graceful. Help pauses flow, and ordinary untimed planning remains unchanged after a simulated hour.
+- Visual/geometry checks pass at1440×900,667×375,740×390,844×390 and390×844. Rack/board do not overlap, board keeps4:3 aspect, cells stay square, all controls/cabinet fit and no horizontal overflow occurs. Smallest landscape cells37.41px; portrait44.13px. Short instructions/ledger scroll, with reachable buttons. Mobile hides desktop navigation/help and instruction-time rack.
+- Game console/page errors are empty. Syntax checks and Git whitespace checks pass. The arcade descriptions now advertise fifty untimed puzzles and saves.
+- Final main-suite active-flow sample mean20.58ms/p9518.5ms/max424.7ms; an earlier sample was mean17.0/p9516.9/max33.5ms. Occasional host/browser long-frame outliers remain. Flow is an optional demonstration and planning has no clock; smooth physical-device performance is not established by desktop emulation.
 
-The first functional version passed all seven example routes before two fresh whole-game improvement passes. Baseline fixes restored keyboard focus after restart and compacted the smallest mobile layout. Pass 1 reviewed the opening, all late contracts, failure/retry, endings and every required viewport; it fixed desktop clipping and added boiler/receiver hardware, numbered service medallions, a pressure dial, warming skyline, route-readiness feedback and optional fast flow. Pass 2 freshly reviewed the same experience; it added a visible touch lift tool, meaningful pre-flow fitted length, cached control labels and SVG interiors, and reduced per-frame DOM allocation. Final real-keyboard completion found and fixed Enter's unwanted native cell-button activation. A later performance investigation added per-tile artwork caching and guarded endpoint ornaments against duplication; the full suite passed again afterward.
+## Scope and release
 
-Checks passed:
+Only Steamline runtime/art/save/design/verification files, Games.md, index.html and the required generated offline-assets.js are included. Initial unrelated Marble Circuit changes were left untouched; their separate commit2c6004d appeared and was already synchronized to origin/main during this work. No Marble Circuit file is part of this change.
 
-- JavaScript parsing for all game and verification scripts; Git whitespace and allowed-file scope.
-- First-session instructions freeze simulation, keyboard/native Space dismissal, session return, desktop help with paused simulation, pause/resume, blur, sound, reset and shared mobile reset.
-- Real Chrome keyboard events place/turn/remove pipes, select shapes, move the cursor, hold steam and launch. A normal page without test hooks cleared the entire opening using keyboard controls, fast flow and the physical receiver, then advanced to contract 2 through native Enter activation of Next.
-- Actual touch taps select/rotate/place/lift, hold, pause, sound and restart. Chrome CDP touch cancellation produces no placement; context menus are suppressed. Returning mobile launch remains paused until the shared fullscreen gesture gate settles; deliberate fullscreen refusal is graceful.
-- Wet/source/blocked fittings reject changes. Repair reserves cannot go negative. Actual leaks exhaust seals into failure. Unserved rings, reverse arrow entry and off-board routing fail or recover as specified. The minimum-length failure guard is exercised with a temporarily raised test-only target and restored immediately afterward. Fast flow is reversible. Current-contract retry restores banked score; progression and final campaign restart work; result Help restores the result on return.
-- Visual inspection and geometry at 1440×900, 667×375, 740×390, 844×390 and 390×844. Square board cells and 4:3 board aspect are preserved, no horizontal overflow, rack and board do not overlap. Smallest landscape cells are 40.03 px; portrait cells are 43.88 px. Desktop footer ends at y896.78 in a 900px viewport. Short instructions scroll and their launch button is reachable. Mobile instructions hide the rack; navigation/help are hidden by shared behavior.
-- New arcade card appears exactly once under In Work, links to the game, and both local pages load without script errors. Game console and page errors are empty.
+The offline inventory is regenerated and its check passes:52 games,288 files,15.3MiB. This supersedes the previous scheduled-release offline-inventory exception. Fetch/compare, explicit scoped staging, safe commit/push and production smoke verification are recorded in the chat and automation memory. No follow-up email was requested for this revision.
 
-## Performance limits
+## Reproduce
 
-Final full-suite active contract-5 measurements: desktop mean20.64ms/p9518.6ms/max424.4ms; mobile emulation mean20.46ms/p9518.5ms/max414.9ms. Separate fresh-browser samples also recorded occasional 400–540ms gaps, even with service workers blocked or offline caching settled. A frozen-board control was mean17.90ms/p9518.6ms/max19.1ms; a later blank-page control also had a 334.7ms gap without a reported JavaScript long task. Therefore these emulated tests verify typical frame cost, but do not establish consistently smooth physical-device performance or isolate every outlier. Tile caching removes redundant SVG parsing; it did not eliminate all observed gaps. Simulation caps catch-up at .1 seconds, so a stall does not consume a large surprise portion of the player's planning window. Shared runtime files were not modified.
+Set NODE_PATH to Playwright, run node steamline/serve.cjs, then node steamline/verify.cjs. Rules alone: node steamline/verify.cjs --rules. Active performance: node steamline/profile.cjs. Published normal-keyboard/save smoke check: node steamline/live-smoke.cjs. Test hooks exist only with ?test=1.
 
-## Reproduce and artifacts
-
-With Playwright on NODE_PATH and Chrome installed, run `node steamline/serve.cjs`, then `node steamline/verify.cjs`. `STEAM_PHASE` names each output set. `node steamline/profile.cjs` compares startup/cached/isolated rendering; `STEAM_CONTROL=1` runs only active/frozen/blank desktop controls. Hooks exist only with `?test=1`; normal play has no test API.
-
-Artifacts: `C:/Users/forem/.codex/visualizations/2026/10/20/01a157e0-e1c1-7123-b2cc-9516ad06a225/`. This contains baseline/pass1/pass2/final reports and seven-contract captures, required mobile/portrait captures, fresh performance reports, and the active `steamline-gameplay.png`: contract5, seventeen fitted pipes, ten wet pipes, one serviced ring, the moving steam front, a one-way valve and an unserved ring. No score, steam position or service completion was injected for this screenshot.
-
-Publication SHA, live verification and requested email outcome are recorded by the scheduled release result and automation memory after the final safe push.
+Artifacts are in C:/Users/forem/.codex/visualizations/2026/10/20/01a157e0-e1c1-7123-b2cc-9516ad06a225/puzzle-campaign/: chapter/late-level and mobile captures, verification.json/latest.json, exported campaign, active steamline-puzzle-gameplay.png and the subsequent live report. Screenshot construction uses ordinary fitting inputs and the real flow simulation; it does not inject a win or steam position.

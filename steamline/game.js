@@ -1,109 +1,182 @@
 (()=>{
- 'use strict';
- const $=id=>document.getElementById(id),R=SteamlineRules,D=R.D,key=([x,y])=>y*8+x,xy=k=>[k%8,Math.floor(k/8)],inside=(x,y)=>x>=0&&x<8&&y>=0&&y<6;
- const state={level:1,score:0,bank:0,mode:'instructions',board:[],cursor:0,shape:'I',rotation:1,elapsed:0,clock:0,flow:false,head:0,entry:3,progress:0,visited:[],served:new Set(),seals:3,holds:2,hold:0,leak:0,leaks:0,placed:0,early:0},cells=[];
- let manual=false,dirty=true,last=0,visual=0,muted=false,audio=null,returnMode='playing',sessionSeen=false,previousFocus=null;
- const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- function tone(f=360,d=.07){if(muted||!audio||audio.state!=='running')return;const o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.setValueAtTime(f,audio.currentTime);g.gain.setValueAtTime(.045,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+d);}
- function wake(){try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch(_){} }
- const say=t=>{$('status').textContent=t;};
- function pipeSVG(kind,r,wet=false,amount=1,entry=null,valve=null){
-  const con=R.connections(kind,r),ends=[[40,0],[80,40],[40,80],[0,40]];let a=con[0],b=con[1];if(entry!==null&&con.includes(entry)){a=entry;b=con.find(d=>d!==entry);}const p=ends[a],q=ends[b];const path=kind==='I'?`M${p} L${q}`:`M${p} Q40,40 ${q}`;
-  const bolts=con.map(d=>{const [x,y]=ends[d];return `<g transform="translate(${x},${y}) rotate(${d*90})"><rect x="-16" y="-6" width="32" height="12" rx="3" fill="#5b3c2c"/><rect x="-14" y="-5" width="28" height="9" rx="2" fill="#c9995a"/><circle cx="-9" cy="0" r="2" fill="#f2d094"/><circle cx="9" cy="0" r="2" fill="#f2d094"/></g>`;}).join('');
-  let arrow='';if(valve!==null){const angle=valve*90;arrow=`<g transform="translate(40,40) rotate(${angle})"><circle r="17" fill="#3d3234" stroke="#f0cf93" stroke-width="2"/><path d="M0,-11 L8,1 H3 V11 H-3 V1 H-8 Z" fill="#f5d899"/></g>`;}
-  return `<svg viewBox="0 0 80 80" aria-hidden="true"><path d="${path}" transform="translate(0,3)" fill="none" stroke="#10171b" stroke-width="26"/><path d="${path}" fill="none" stroke="#6a452f" stroke-width="25"/><path d="${path}" fill="none" stroke="#edc480" stroke-width="21"/><path d="${path}" fill="none" stroke="#bc8547" stroke-width="16"/><path d="${path}" fill="none" stroke="#e0ad62" stroke-width="12"/><path d="${path}" fill="none" stroke="#f9dfa0" stroke-opacity=".6" stroke-width="3"/>${wet?`<path d="${path}" pathLength="100" fill="none" stroke="#1c625e" stroke-width="13" stroke-dasharray="${amount*100} 100"/><path d="${path}" pathLength="100" fill="none" stroke="#b6f7df" stroke-width="5" stroke-dasharray="${amount*100} 100"/>`:''}${bolts}${arrow}</svg>`;
- }
- function start(level=1,bank=0){
-  const c=R.contracts[level-1];Object.assign(state,{level,bank,score:bank,mode:'playing',board:Array(48).fill(null),cursor:key(c.route[1]),shape:'I',rotation:1,lift:false,elapsed:0,clock:c.headstart,flow:false,rush:false,head:key(c.route[0]),entry:3,progress:0,visited:[],served:new Set(),seals:c.seals,holds:c.holds,hold:0,leak:0,leaks:0,placed:0,early:0});
-  for(const at of c.blocks)state.board[key(at)]={block:true};
-  for(const v of c.valves){const connections=[v.entry,v.exit];let kind=(v.entry+2)%4===v.exit?'I':'L',r=0;while(r<4&&!connections.every(d=>R.connections(kind,r).includes(d)))r++;state.board[key(v.at)]={kind,r,fixed:true,valve:v.exit,valveEntry:v.entry};}
-  const source=key(c.route[0]),drain=key(c.route.at(-1));state.board[source]={kind:'I',r:1,fixed:true,source:true};state.board[drain]={kind:'I',r:1,fixed:true,drain:true};
-  $('result').classList.remove('is-visible');$('instruction-modal').classList.remove('is-visible');say(level===1?'Start at the boiler arrow. Choose, rotate, then fit a pipe.':`${c.name} · Visit all rings, then reach the receiver.`);dirty=true;render();cells[state.cursor].focus({preventScroll:true});
- }
- function shape(kind){if(state.mode!=='playing')return;state.shape=kind;state.lift=false;dirty=true;tone(240);}
- function rotate(){if(state.mode!=='playing')return;state.rotation=(state.rotation+1)%4;dirty=true;tone(300);}
- function fit(k){
-  if(state.mode!=='playing'||k<0||k>=48)return false;state.cursor=k;const tile=state.board[k];if(tile?.block||tile?.fixed||state.visited.includes(k)){say('That fitting is fixed. Work on a dry square ahead of the steam.');dirty=true;return false;}
-  if(state.lift){remove();state.lift=false;dirty=true;return true;}
-  if(tile){tile.r=(tile.r+1)%4;}else{state.board[k]={kind:state.shape,r:state.rotation};state.placed++;}const plan=inspectRoute(),c=R.contracts[state.level-1];say(plan.ready?'Run ready · every service ring and receiver connected. Use fast flow when ready.':`${plan.pipes}/${c.minimum} fitted pipes · ${plan.rings}/${c.rings.length} rings${plan.end?' · receiver connected; extend the route.':''}`);tone(450+k*3);dirty=true;return true;
- }
- function remove(){if(state.mode!=='playing')return;const k=state.cursor,t=state.board[k];if(t&&!t.fixed&&!t.block&&!state.visited.includes(k)){state.board[k]=null;say('Dry fitting removed. Choose another shape.');tone(190);dirty=true;}}
- function hold(){if(state.mode!=='playing'||!state.holds||state.hold>0)return;state.holds--;state.hold=4;say('Main valve held · 4 seconds to get ahead.');tone(160,.2);dirty=true;}
- function launch(){if(state.mode!=='playing')return;if(state.flow){state.rush=!state.rush;say(state.rush?'Fast flow ×3 · tap again for normal pressure.':'Normal steam flow restored.');return;}state.early=Math.floor(state.clock*10);state.clock=0;beginFlow();dirty=true;}
- function beginFlow(){state.flow=true;state.progress=0;state.visited=[state.head];say('Steam is moving. Stay ahead of the turquoise front.');tone(180,.25);}
- function result(win,reason){
-  state.mode=win?'clear':'failed';state.hold=0;dirty=true;
-  if(win){const bonus=(state.seals*150+state.holds*100+state.early);state.score+=bonus;say('Contract complete.');$('result-title').textContent=state.level===7?'The city is warm.':'Heat on.';$('result-eyebrow').textContent=state.level===7?'ALL SEVEN CONTRACTS COMPLETE':`CONTRACT ${state.level} COMPLETE`;$('result-detail').textContent=`${state.visited.length} connected pipes · ${state.served.size} rings · ${state.leaks} leaks repaired. Reserve bonus ${bonus}. Total score ${state.score}.`;$('next').textContent=state.level===7?'Clock in again':'Next contract';tone(620,.25);
-  }else{say(reason);$('result-title').textContent='Pressure lost.';$('result-eyebrow').textContent=`CONTRACT ${state.level} INCOMPLETE`;$('result-detail').textContent=reason+' Retry restores this contract and its starting score.';$('next').textContent='Retry contract';tone(110,.35);}
-  $('result').classList.add('is-visible');$('next').focus({preventScroll:true});
- }
- function leak(reason){
-  if(!state.seals){result(false,reason+' No repair seals remain.');return;}state.seals--;state.leaks++;state.leak=5;state.progress=0;say(`${reason} Repair seal engaged · fix the open end within 5 seconds.`);tone(125,.2);dirty=true;
- }
- function step(dt){
-  if(state.mode!=='playing'||$('vibecade-options')?.matches(':popover-open'))return;
-  const s=state,c=R.contracts[s.level-1];s.elapsed+=dt;
-  if(s.hold>0){s.hold=Math.max(0,s.hold-dt);return;}
-  if(!s.flow){s.clock=Math.max(0,s.clock-dt);if(s.clock<=0)beginFlow();return;}
-  if(s.leak>0){s.leak=Math.max(0,s.leak-dt);return;}
-  s.progress+=dt*(s.rush?3:1)/c.interval;if(s.progress<1)return;s.progress-=1;
-  const t=s.board[s.head],con=R.connections(t.kind,t.r),exit=t.valve??con.find(d=>d!==s.entry),[x,y]=xy(s.head),nx=x+D[exit][0],ny=y+D[exit][1];
-  if(!inside(nx,ny)){leak('The pipe runs off the board.');return;}const k=ny*8+nx,next=s.board[k],incoming=(exit+2)%4;
-  if(!next||next.block||!R.connections(next.kind,next.r).includes(incoming)){leak('Open end ahead.');return;}
-  if(next.valve!==undefined&&next.valveEntry!==incoming){leak('One-way valve entered against its arrow.');return;}
-  if(s.visited.includes(k)){result(false,'The run loops into a filled pipe. Build a continuous route without revisiting wet fittings.');return;}
-  s.head=k;s.entry=incoming;s.visited.push(k);s.score+=50;
-  if(c.rings.some(at=>key(at)===k)){s.served.add(k);s.score+=200;say(`Service ring connected · ${s.served.size} / ${c.rings.length}.`);tone(680,.12);}
-  if(next.drain){if(s.served.size<c.rings.length){result(false,'The receiver was reached before every service ring. Route through all numbered rings.');}else if(s.visited.length<c.minimum){result(false,`The run needs ${c.minimum} pipes; this route had ${s.visited.length}. Add a detour before reaching the receiver.`);}else result(true);}
-  dirty=true;
- }
- function instructions(){if($('instruction-modal').classList.contains('is-visible'))return;previousFocus=document.activeElement;returnMode=state.mode;state.mode='instructions';$('result').classList.remove('is-visible');$('instruction-modal').classList.add('is-visible');$('instruction-close').textContent=sessionSeen?'Return to workshop':'Clock in · start contract';$('instruction-close').focus({preventScroll:true});dirty=true;}
- function closeInstructions(){wake();sessionSeen=true;try{sessionStorage.setItem('steamline-instructions-v1','seen');}catch(_){}$('instruction-modal').classList.remove('is-visible');state.mode=returnMode;if(['clear','failed'].includes(state.mode))$('result').classList.add('is-visible');dirty=true;render();if(state.mode==='playing')cells[state.cursor].focus({preventScroll:true});else if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});}
- function pause(){if(state.mode==='playing'){state.mode='paused';say('Workshop paused · press Pause or P to resume.');}else if(state.mode==='paused'){state.mode='playing';say('Back on shift. Stay ahead of the steam.');}dirty=true;render();}
- function reset(){const blocked=state.mode==='instructions';start(1,0);if(blocked){returnMode='playing';state.mode='instructions';$('instruction-modal').classList.add('is-visible');}dirty=true;render();}
- function sound(){wake();muted=!muted;$('sound').textContent=muted?'Sound off':'Sound on';$('sound').setAttribute('aria-pressed',String(!muted));tone(480);}
- function inspectRoute(){const s=state,c=R.contracts[s.level-1],seen=new Set();let k=key(c.route[0]),entry=3,rings=0,end=false;while(!seen.has(k)){const t=s.board[k];if(!t||t.block||!R.connections(t.kind,t.r).includes(entry)||(t.valve!==undefined&&t.valveEntry!==entry))break;seen.add(k);if(c.rings.some(at=>key(at)===k))rings++;if(t.drain){end=true;break;}const exit=t.valve??R.connections(t.kind,t.r).find(d=>d!==entry),[x,y]=xy(k),nx=x+D[exit][0],ny=y+D[exit][1];if(!inside(nx,ny))break;k=ny*8+nx;entry=(exit+2)%4;}return{pipes:seen.size,rings,end,ready:end&&rings===c.rings.length&&seen.size>=c.minimum};}
- function render(){
-  const s=state,c=R.contracts[s.level-1];
-  if(dirty){for(let k=0;k<48;k++){
-   const el=cells[k],t=s.board[k],ring=c.rings.findIndex(at=>key(at)===k),wet=s.visited.includes(k),head=s.head===k&&s.flow;
-   el.className='cell'+(t?.block?' block':'')+(t?.source?' source':'')+(t?.drain?' drain':'')+(ring>=0?' ring':'')+(s.served.has(k)?' served':'')+(wet?' wet':'')+(head?' head':'')+(head&&s.leak?' leak':'')+(s.cursor===k?' cursor':'');
-   el.tabIndex=s.cursor===k?0:-1;el.setAttribute('aria-label',`Column ${k%8+1}, row ${Math.floor(k/8)+1}: ${t?.block?'blocked':t?.source?'boiler':t?.drain?'receiver':t?.valve!==undefined?'fixed one-way valve':t?t.kind==='I'?'straight pipe':'elbow pipe':'empty'}${ring>=0?`, service ring ${ring+1}`:''}${wet?', steam filled':''}`);
-   const artKey=[t?.kind,t?.r,t?.block,t?.source,t?.drain,t?.valve,wet,head,ring,s.served.has(k)].join('|');
-   if(el.dataset.artKey===artKey)continue;el.dataset.artKey=artKey;
-   el.innerHTML=t?.block?'<svg viewBox="0 0 80 80" aria-hidden="true"><rect x="13" y="13" width="54" height="54" rx="5" fill="#38363d" stroke="#a78a63"/><path d="M24,24 L56,56 M56,24 L24,56" stroke="#181e26" stroke-width="8"/><circle cx="19" cy="19" r="3" fill="#c9aa79"/><circle cx="61" cy="61" r="3" fill="#c9aa79"/></svg>':(t?pipeSVG(t.kind,t.r,wet,head?Math.max(.1,s.progress):1,head?s.entry:null,t.valve):'')+(ring>=0?`<span class="mark">${s.served.has(k)?'✓':ring+1}</span>`:'')+(t?.source?'<span class="tag">BOILER →</span>':t?.drain?'<span class="tag">RECEIVER →</span>':'');
+  'use strict';
+  const R=SteamlineRules,S=SteamlineSave,A=SteamlineArt,$=id=>document.getElementById(id),cells=[];
+  let storage=null;try{storage=localStorage;}catch(_){}
+  const loaded=S.read(storage);let campaign=loaded.campaign,saveTimer=null,saveOK=!!storage,pendingImport=null;
+  const state={level:1,board:[],mode:'plan',cursor:0,shape:'I',rotation:1,lift:false,undo:[],redo:[],plan:null,flow:null,index:0,progress:0,paused:false,fast:campaign.settings.fast,dirty:true,highlight:null,tests:0};
+  let manual=false,last=0,visual=0,audio=null,returnMode='plan',ledgerReturn='plan',previousFocus=null;
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,c=()=>R.contracts[state.level-1],say=text=>{$('status').textContent=text;},editable=()=>['plan','flow'].includes(state.mode);
+  function tone(f=400){if(campaign.settings.muted||!audio||audio.state!=='running')return;const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.09);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.1);}
+  function wake(){try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});}catch(_){}}
+  function persist(immediate=false){
+    campaign.current=state.level;campaign.drafts[state.level]=S.encode(state.board);campaign.undo=state.undo.slice(-20);campaign.settings.fast=state.fast;
+    campaign.tools={shape:state.shape,rotation:state.rotation,cursor:state.cursor};
+    if(saveTimer)clearTimeout(saveTimer);
+    if(immediate){saveTimer=null;saveOK=S.write(storage,campaign);$('save-state').textContent=saveOK?'Saved':'Not saved';$('save-state').classList.toggle('warning',!saveOK);}
+    else{$('save-state').textContent='Saving…';saveTimer=setTimeout(()=>persist(true),120);}
   }
-  for(const b of $('pieces').children){b.setAttribute('aria-pressed',String(b.dataset.shape===s.shape));label(b,pipeSVG(b.dataset.shape,s.rotation)+`<span>${b.dataset.shape==='I'?'1 · STRAIGHT':'2 · ELBOW'}</span>`);}
-  const plan=inspectRoute();$('route-check').textContent=`${plan.pipes} fitted pipes · ${plan.rings}/${c.rings.length} rings${plan.ready?' · READY':plan.end?' · extend the route':''}`;$('route-check').classList.toggle('ready',plan.ready);document.querySelector('.city').classList.toggle('warm',s.served.size>0||s.mode==='clear');$('lift').setAttribute('aria-pressed',String(s.lift));$('board').classList.toggle('lifting',s.lift);
-  for(const at of [c.route[0],c.route.at(-1)])if(!cells[key(at)].querySelector('.endpoint')){const endpoint=document.createElement('span');endpoint.className='endpoint';cells[key(at)].append(endpoint);}
-  $('level').textContent=`0${s.level} / 07`;$('length').textContent=`${plan.pipes} / ${c.minimum}`;$('rings').textContent=`${s.served.size} / ${c.rings.length}`;$('seals').textContent=s.seals;$('score').textContent=s.score;$('contract-name').textContent=c.name;$('pace').textContent=`${c.interval.toFixed(2)}s / PIPE`;$('pause').textContent=s.mode==='paused'?'Resume':'Pause';dirty=false;
+  function baseStart(level,restore=true,bypass=false){
+    if(!bypass&&level>campaign.unlocked)return;
+    level=Math.max(1,Math.min(50,level));Object.assign(state,{level,board:S.hydrate(R,R.contracts[level-1],restore?campaign.drafts[level]:null),mode:'plan',cursor:R.key(R.contracts[level-1].route[1]),lift:false,undo:[],redo:[],flow:null,index:0,progress:0,paused:false,dirty:true,highlight:null,tests:0});
+    for(const el of document.querySelectorAll('.modal'))el.classList.remove('is-visible');
+    state.plan=R.trace(c(),state.board);say(c().lesson);render();cells[state.cursor].focus({preventScroll:true});
   }
-  $('valve').disabled=!s.holds||s.hold>0||s.mode!=='playing';label($('valve'),`HOLD STEAM <span>${s.hold>0?s.hold.toFixed(1)+'s HELD':s.holds+' × 4s'}</span>`);$('launch').disabled=s.mode!=='playing';label($('launch'),s.flow?(s.rush?'NORMAL FLOW <span>NOW RUNNING ×3</span>':'FAST FLOW ×3 <span>TAP WHEN YOUR RUN IS READY</span>'):'OPEN BOILER <span>EARLY START BONUS</span>');$('launch').setAttribute('aria-pressed',String(s.rush));
-  $('pressure-label').textContent=s.mode==='paused'?'WORKSHOP PAUSED':s.hold>0?`VALVE HELD ${s.hold.toFixed(1)}s`:s.leak>0?`REPAIR ${s.leak.toFixed(1)}s`:s.flow?'STEAM IN TRANSIT':`BOILER IN ${s.clock.toFixed(1)}s`;
-  $('pressure-fill').style.width=`${100*(s.flow?s.progress:1-s.clock/c.headstart)}%`;
-  $('needle').setAttribute('transform',`rotate(${-110+220*(s.flow?(s.leak>0?1:.5+s.progress*.25):1-s.clock/c.headstart)} 75 56)`);
-  // Only the active pipe's interior changes between tile transitions.
-  if(s.flow&&s.mode==='playing')for(const path of cells[s.head].querySelectorAll('[pathLength]'))path.setAttribute('stroke-dasharray',`${Math.max(.1,s.progress)*100} 100`);
- }
- function label(el,html){if(el.dataset.label===html)return;el.dataset.label=html;el.innerHTML=html;}
- for(let k=0;k<48;k++){const el=document.createElement('button');el.type='button';el.className='cell';el.addEventListener('click',()=>{wake();fit(k);render();});el.addEventListener('contextmenu',e=>{e.preventDefault();if(state.mode==='playing'){state.cursor=k;remove();render();}});cells.push(el);$('board').append(el);}
- for(const kind of ['I','L']){const b=document.createElement('button');b.type='button';b.dataset.shape=kind;b.setAttribute('aria-label',kind==='I'?'Select straight pipe':'Select elbow pipe');b.addEventListener('click',()=>{shape(kind);render();});$('pieces').append(b);}
- $('rotate').onclick=()=>{rotate();render();};$('lift').onclick=()=>{if(state.mode!=='playing')return;state.lift=!state.lift;say(state.lift?'Lift tool ready · tap a dry pipe to remove it.':'Fitting tool ready.');dirty=true;render();};$('valve').onclick=()=>{wake();hold();render();};$('launch').onclick=()=>{wake();launch();render();};$('sound').onclick=sound;$('pause').onclick=pause;$('reset').onclick=reset;$('help-button').onclick=instructions;$('instruction-close').onclick=closeInstructions;$('again').onclick=reset;$('result-help').onclick=instructions;
- $('next').onclick=()=>{wake();if(state.mode==='failed')start(state.level,state.bank);else if(state.level===7)start(1,0);else start(state.level+1,state.score);cells[state.cursor].focus({preventScroll:true});};
- document.addEventListener('keydown',e=>{
-  if($('vibecade-options')?.matches(':popover-open'))return;
-  if(state.mode==='instructions'){if(e.code==='Escape'&&sessionSeen){e.preventDefault();closeInstructions();}if(e.code==='Tab'){const card=$('instruction-modal'),buttons=[...card.querySelectorAll('button')];if(buttons.length===1){e.preventDefault();buttons[0].focus();}}return;}
-  // Leave native Enter/Space activation on toolbar and results buttons intact.
-  if(['Space','Enter'].includes(e.code)&&e.target.closest('button')&&!e.target.classList.contains('cell'))return;
-  if(['Space','Enter','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace'].includes(e.code))e.preventDefault();
-  if(e.repeat)return;wake();if(e.code==='KeyM'){sound();return;}if(e.code==='KeyR'){reset();return;}if(e.code==='KeyP'){pause();return;}if(state.mode!=='playing')return;
-  const dirs={ArrowUp:0,KeyW:0,ArrowRight:1,KeyD:1,ArrowDown:2,KeyS:2,ArrowLeft:3,KeyA:3};
-  if(dirs[e.code]!==undefined){e.preventDefault();const [x,y]=xy(state.cursor),d=D[dirs[e.code]],nx=x+d[0],ny=y+d[1];if(inside(nx,ny)){state.cursor=ny*8+nx;cells[state.cursor].focus({preventScroll:true});dirty=true;}}
-  else if(e.code==='Digit1')shape('I');else if(e.code==='Digit2')shape('L');else if(e.code==='KeyX')rotate();else if(e.code==='Space')fit(state.cursor);else if(e.code==='Backspace')remove();else if(e.code==='KeyV')hold();else if(e.code==='Enter')launch();render();
- });
- window.addEventListener('blur',()=>{if(state.mode==='playing')pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.mode==='playing')pause();});window.addEventListener('vibecade:restart',e=>{e.preventDefault();reset();});
- function frame(t){const dt=Math.min(.1,(t-last)/1000||0);last=t;if(!manual){step(dt);if(state.mode==='playing'||dirty){if(t-visual>=(reduced?66:33)){render();visual=t;}}}requestAnimationFrame(frame);}
- start();try{sessionSeen=sessionStorage.getItem('steamline-instructions-v1')==='seen';}catch(_){}if(!sessionSeen)instructions();
- if(new URLSearchParams(location.search).get('test')==='1')window.__steamTest={state,rules:R,start,step:t=>{for(let n=0;n<t;n+=1/120)step(Math.min(1/120,t-n));dirty=true;render();},manual:v=>{manual=v;},fit,shape,rotate,remove,hold,launch,render:()=>{dirty=true;render();},snapshot:()=>({...state,served:[...state.served]})};
- requestAnimationFrame(frame);
+  function openLevel(level){persist(true);baseStart(level);persist(true);}
+  const snapshot=()=>S.encode(state.board);
+  function editStart(){if(!editable())return false;if(state.mode==='flow')stopTest(false);return true;}
+  function changed(before,message){
+    state.undo.push(before);if(state.undo.length>60)state.undo.shift();state.redo=[];
+    state.plan=R.trace(c(),state.board);state.highlight=null;state.dirty=true;say(message);persist();render();
+  }
+  function shape(kind){if(!editable())return;state.shape=kind;state.lift=false;state.dirty=true;render();}
+  function rotate(){if(!editable())return;state.rotation=(state.rotation+1)%4;state.lift=false;state.dirty=true;render();tone(320);}
+  function fit(k){
+    if(!editStart()||k<0||k>=48)return false;state.cursor=k;const tile=state.board[k];
+    if(tile?.fixed){say('This brass fitting is anchored. Route into its open ends.');state.highlight=k;state.dirty=true;render();return false;}
+    if(state.lift){state.lift=false;return remove(k);}
+    const before=snapshot();
+    if(tile)state.board[k]={...tile,r:(tile.r+1)%4};
+    else{
+      const used=state.board.filter(t=>t&&!t.fixed&&t.kind===state.shape).length;
+      if(c().budget&&used>=c().budget[state.shape]){say('No '+(state.shape==='I'?'straight':'elbow')+' stock remains. Lift another fitting to refund it.');return false;}
+      state.board[k]={kind:state.shape,r:state.rotation};
+    }
+    tone();changed(before,'Planning · '+c().minimum+' pipe squares needed. No timer, no penalty for experiments.');return true;
+  }
+  function remove(k=state.cursor){
+    if(!editStart()||state.board[k]?.fixed)return false;
+    if(!state.board[k]){state.dirty=true;render();return false;}
+    const before=snapshot();state.board[k]=null;changed(before,'Fitting lifted. Its stock is available again.');tone(220);return true;
+  }
+  function undo(redo=false){
+    if(!editStart())return;const from=redo?state.redo:state.undo,to=redo?state.undo:state.redo;
+    if(!from.length)return;to.push(snapshot());state.board=S.hydrate(R,c(),from.pop());state.plan=R.trace(c(),state.board);state.highlight=null;state.dirty=true;persist();say(redo?'Edit restored.':'Edit undone. Take your time.');render();
+  }
+  function reset(){
+    const blocked=!editable(),oldMode=state.mode;if(!blocked)stopTest(false);const before=snapshot();state.board=R.initial(c());state.undo.push(before);state.redo=[];
+    state.plan=R.trace(c(),state.board);state.highlight=null;state.dirty=true;if(blocked){state.mode=oldMode;returnMode='plan';}else state.mode='plan';
+    persist();say('Current board reset. Undo restores your fittings; campaign progress is kept.');render();
+  }
+  function stopTest(message=true){state.mode='plan';state.flow=null;state.index=0;state.progress=0;state.paused=false;state.dirty=true;if(message)say('Back at the workbench. Every fitting is kept.');render();}
+  function launch(){
+    if(!editable())return;wake();if(state.mode==='flow'){stopTest();return;}
+    state.plan=R.trace(c(),state.board);state.flow=state.plan;state.index=0;state.progress=0;state.paused=false;state.mode='flow';state.highlight=null;state.tests++;state.dirty=true;
+    say('Testing your route · return to the plan at any time.');persist();render();
+  }
+  function success(){
+    const result=state.flow,used=state.board.filter(t=>t&&!t.fixed&&!t.block).length,stars=result.unused===0?(used<=c().par?3:2):1,old=campaign.wins[state.level];
+    campaign.wins[state.level]={stars:Math.max(old?.stars||0,stars),best:Math.min(old?.best??Infinity,used)};
+    campaign.unlocked=Math.max(campaign.unlocked,Math.min(50,state.level+1));persist(true);
+    $('result-title').textContent=state.level===50?'The whole city is warm.':'Heat on.';$('result-eyebrow').textContent=state.level===50?'FIFTY CONTRACTS COMPLETE':'CONTRACT '+state.level+' COMPLETE';
+    $('result-stars').textContent='★'.repeat(stars)+'☆'.repeat(3-stars);$('result-stars').setAttribute('aria-label',stars+' stars');
+    $('result-detail').textContent=result.unique.length+' pipe squares · '+c().goals.length+' deliveries · '+used+' loose fittings. '+(stars===3?'An economical route and a clean bench.':result.unused?'Lift unused fittings for another star.':'Try '+c().par+' or fewer loose fittings for the economy star.')+' Attempts and thinking time never cost stars.';
+    $('next').textContent=state.level===50?'Open city ledger':'Next contract';state.mode='result';state.dirty=true;render();$('result').classList.add('is-visible');$('next').focus({preventScroll:true});tone(650);
+  }
+  function step(dt){
+    if(state.mode!=='flow'||state.paused)return;state.progress+=dt*(state.fast?3:1)/.42;
+    while(state.progress>=1&&state.mode==='flow'){
+      state.progress--;state.index++;state.dirty=true;
+      if(state.index>=state.flow.steps.length){if(state.flow.ok)success();else{const failure=state.flow;stopTest(false);state.highlight=failure.at;state.dirty=true;say('Test stopped · '+failure.message+' Your board is kept.');render();tone(140);}}
+    }
+  }
+  function inspect(){if(!editable())return;state.highlight=state.plan.ok?null:state.plan.at;state.dirty=true;say(state.plan.ok?'Route connected. Test the flow to deliver heat and unlock the next contract.':state.plan.message+' '+c().lesson);render();}
+  function guide(){
+    const features=['Plan without a clock. Minimum '+c().minimum+' distinct pipe squares, including fixed fittings.'];
+    if(c().goals.some(g=>g.type==='ring'))features.push(c().ordered?'Numbered rings must be visited 1 → 2 → 3.':'Visit every numbered service ring in any order.');
+    if(c().goals.some(g=>g.type==='valve'))features.push('Every arrow valve must be visited from its tail.');
+    if(c().budget)features.push('Stock: '+c().budget.I+' straights, '+c().budget.L+' elbows. Lifting refunds stock.');
+    if(c().bridge!==null)features.push('Cross the bridge on BOTH axes. Its lanes do not join or turn.');
+    if(c().ports)features.push('Tunnel A is an entrance; A′ is its distant exit. Follow the open ends.');
+    if(c().goals.some(g=>g.type==='gate'))features.push('Visit switch S before passing gate G.');
+    if(c().capacity)features.push('H refills '+c().capacity+' heat. Each later square costs one; receiver needs at least one.');
+    if(c().goals.some(g=>g.type==='radiator'))features.push('Each radiator R additionally needs and consumes three heat.');
+    $('level-guide').replaceChildren(...features.map(text=>{const p=document.createElement('p');p.textContent=text;return p;}));
+  }
+  function dialog(id){
+    if(id==='ledger'&&!['ledger','import'].includes(state.mode))ledgerReturn=state.mode;
+    previousFocus=document.activeElement;returnMode=state.mode;for(const el of document.querySelectorAll('.modal'))el.classList.remove('is-visible');
+    state.mode=id==='instruction-modal'?'instructions':id==='ledger'?'ledger':'import';
+    if(id==='instruction-modal')guide();if(id==='ledger')renderLedger();
+    $(id).classList.add('is-visible');$(id).querySelector('button')?.focus({preventScroll:true});state.dirty=true;render();
+  }
+  function closeDialog(){
+    for(const el of document.querySelectorAll('.modal'))el.classList.remove('is-visible');
+    state.mode=returnMode;if(state.mode==='result')$('result').classList.add('is-visible');if(state.mode==='ledger'){$('ledger').classList.add('is-visible');returnMode=ledgerReturn;}state.dirty=true;render();
+    if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});else cells[state.cursor].focus({preventScroll:true});
+  }
+  const instructions=()=>dialog('instruction-modal');
+  function closeInstructions(){wake();try{sessionStorage.setItem('steamline-puzzle-instructions-v2','seen');}catch(_){}closeDialog();}
+  function toggleSound(){wake();campaign.settings.muted=!campaign.settings.muted;persist();state.dirty=true;render();tone(440);}
+  function pause(){if(state.mode==='flow'){state.paused=!state.paused;state.dirty=true;render();say(state.paused?'Flow paused. Your plan is safe.':'Flow resumed.');}}
+  const starsTotal=()=>Object.values(campaign.wins).reduce((a,w)=>a+w.stars,0);
+  function renderLedger(){
+    $('ledger-summary').textContent=Object.keys(campaign.wins).length+' / 50 districts served · '+starsTotal()+' / 150 stars. Unfinished boards are saved separately.';$('level-list').replaceChildren();
+    for(let chapter=0;chapter<10;chapter++){
+      const section=document.createElement('section'),title=document.createElement('h3');title.textContent=R.districts[chapter][0];section.append(title);const row=document.createElement('div');row.className='level-row';
+      for(let n=chapter*5+1;n<=chapter*5+5;n++){
+        const b=document.createElement('button'),win=campaign.wins[n];b.type='button';b.disabled=n>campaign.unlocked;b.textContent=String(n).padStart(2,'0')+' '+(win?'★'.repeat(win.stars):n>campaign.unlocked?'🔒':campaign.drafts[n]?'· saved':'· new');
+        b.setAttribute('aria-label','Contract '+n+(win?', '+win.stars+' stars':b.disabled?', locked':', available'));b.classList.toggle('current',n===state.level);b.onclick=()=>openLevel(n);row.append(b);
+      }section.append(row);$('level-list').append(section);
+    }
+  }
+  function label(el,html){if(el.dataset.label===html)return;el.dataset.label=html;el.innerHTML=html;}
+  function render(){
+    if(!state.dirty)return;const plan=state.plan,flowing=state.mode==='flow',completed=(flowing||state.mode==='result')&&state.flow?state.flow.steps.slice(0,state.index+1):[],wet=new Map();
+    for(const visit of completed)wet.set(visit.k,(wet.get(visit.k)||0)|(visit.axis===null?3:visit.axis===0?1:2));
+    const head=completed.at(-1),done=flowing?(head?.done||[]):plan.done;
+    for(let k=0;k<48;k++){
+      const el=cells[k],t=state.board[k],mark=c().marks[k],isHead=head?.k===k;
+      el.className='cell'+(t?.block?' block':'')+(t?.fixed?' fixed':'')+(t?.source?' source':'')+(t?.drain?' drain':'')+(mark?' marked':'')+(wet.has(k)?' wet':'')+(state.cursor===k?' cursor':'')+(isHead?' head':'')+(state.highlight===k?' problem':'');el.tabIndex=state.cursor===k?0:-1;
+      const description=t?.block?'obstruction':t?.source?'boiler':t?.drain?'receiver':t?.kind==='B'?'bridge, independent horizontal and vertical lanes':t?.kind==='A'?'tunnel A entrance':t?.kind==='T'?'tunnel A exit':t?.gate?'gate G':t?.valve!==undefined?'one-way valve':t?t.kind==='I'?'straight pipe':'elbow pipe':'empty';
+      el.setAttribute('aria-label','Column '+(k%8+1)+', row '+(Math.floor(k/8)+1)+': '+description+(mark?', '+mark.type+(mark.number?' '+mark.number:''):''));
+      const artKey=JSON.stringify([t,wet.get(k)||0,mark,isHead?head.entry:null]);
+      if(el.dataset.artKey!==artKey){el.dataset.artKey=artKey;let badge='';
+        if(mark)badge='<span class="mark '+mark.type+'">'+(mark.type==='ring'?mark.number:mark.type==='heater'?'H':mark.type==='radiator'?'R':'S')+'</span>';
+        if(t?.kind==='B')badge='<span class="mini-tag">OVERPASS</span>';
+        el.innerHTML=A.pipe(t,wet.get(k)||0,isHead?head.entry:3)+badge+(t?.source?'<span class="tag">BOILER →</span>':t?.drain?'<span class="tag">RECEIVER →</span>':'');
+      }
+      if(isHead)for(const p of el.querySelectorAll('.steam'))p.setAttribute('stroke-dasharray',(p.dataset.axis&&Number(p.dataset.axis)!==head.axis?100:Math.max(10,state.progress*100))+' 100');
+    }
+    for(const b of $('pieces').children){
+      const kind=b.dataset.shape,used=state.board.filter(t=>t&&!t.fixed&&t.kind===kind).length,left=c().budget?c().budget[kind]-used:'∞';b.setAttribute('aria-pressed',String(state.shape===kind&&!state.lift));label(b,A.pipe({kind,r:state.rotation})+'<span>'+(kind==='I'?'1 · STRAIGHT':'2 · ELBOW')+'</span><small>'+left+' left</small>');
+    }
+    $('level').textContent=String(state.level).padStart(2,'0')+' / 50';$('length').textContent=(flowing?new Set(completed.map(s=>s.k)).size:plan.unique.length)+' / '+c().minimum;$('checks').textContent=done.length+' / '+c().goals.length;
+    $('heat-label').textContent=c().capacity?(flowing?'HEAT / CAPACITY':'HEAT AT ROUTE END'):'CITY STARS';$('heat').textContent=c().capacity?(flowing?(head?.heat||0):plan.heat)+' / '+c().capacity:starsTotal();
+    $('district').textContent=c().name;$('lesson').textContent=c().lesson;$('contract-name').textContent=c().ordered?'DELIVER IN NUMERICAL ORDER':'PLAN · CONNECT · TEST';
+    $('stock').textContent=c().budget?'Stock limited · lifting refunds':'Stock unlimited';$('route-check').textContent=flowing?'Delivering heat through your route.':plan.ok?'Route connected. Ready to test.':c().minimum+' squares · '+c().goals.length+' deliveries';
+    $('route-check').classList.toggle('ready',plan.ok);document.querySelector('.city').classList.toggle('warm',flowing&&done.length>0||state.mode==='result');
+    $('lift').setAttribute('aria-pressed',String(state.lift));$('undo').disabled=!state.undo.length||!editable();$('sound').textContent=campaign.settings.muted?'Sound off':'Sound on';$('pause').textContent=state.paused?'Resume':'Pause';$('pause').disabled=!flowing;
+    $('speed').textContent='FLOW ×'+(state.fast?3:1);$('speed').setAttribute('aria-pressed',String(state.fast));label($('launch'),flowing?'BACK TO PLAN <span>EVERY FITTING IS KEPT</span>':'TEST FLOW <span>NO COUNTDOWN</span>');$('launch').disabled=!editable();
+    $('pressure-label').textContent=flowing?(state.paused?'FLOW PAUSED':'TESTING FLOW'):'UNHURRIED PLANNING';$('pressure-fill').style.width=(flowing?100*(state.index+state.progress)/Math.max(1,state.flow.steps.length):0)+'%';state.dirty=false;
+  }
+  for(let k=0;k<48;k++){const b=document.createElement('button');b.type='button';b.className='cell';b.onclick=()=>{wake();fit(k);};b.oncontextmenu=e=>{e.preventDefault();state.cursor=k;remove(k);};cells.push(b);$('board').append(b);}
+  for(const kind of ['I','L']){const b=document.createElement('button');b.type='button';b.dataset.shape=kind;b.setAttribute('aria-label','Select '+(kind==='I'?'straight':'elbow')+' pipe');b.onclick=()=>shape(kind);$('pieces').append(b);}
+  $('rotate').onclick=rotate;$('lift').onclick=()=>{if(!editable())return;state.lift=!state.lift;state.dirty=true;say(state.lift?'Lift tool ready · tap a loose fitting. Anchors stay fixed.':'Fitting tool ready.');render();};
+  $('launch').onclick=launch;$('mission').onclick=inspect;$('undo').onclick=()=>undo();$('reset').onclick=reset;$('save').onclick=()=>{persist(true);say(saveOK?'Board and campaign saved on this device.':'Autosave unavailable. Use Levels → Download save to keep your work.');};
+  $('speed').onclick=()=>{state.fast=!state.fast;state.dirty=true;persist();render();};$('sound').onclick=toggleSound;$('pause').onclick=pause;$('help-button').onclick=instructions;$('instruction-close').onclick=closeInstructions;
+  $('levels').onclick=()=>dialog('ledger');$('ledger-close').onclick=closeDialog;$('result-levels').onclick=()=>dialog('ledger');$('next').onclick=()=>{if(state.level===50)dialog('ledger');else openLevel(state.level+1);};$('result-edit').onclick=()=>{$('result').classList.remove('is-visible');stopTest();};
+  $('download').onclick=()=>{persist(true);const url=URL.createObjectURL(new Blob([JSON.stringify(campaign,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='steamline-save.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+  $('import').onclick=()=>{$('import-file').value='';$('import-file').click();};
+  $('import-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>1000000)throw Error();const candidate=S.validate(JSON.parse(await file.text()));if(!candidate)throw Error();pendingImport=candidate;dialog('import-modal');$('import-detail').textContent='Import '+Object.keys(candidate.wins).length+' completed contracts and return to contract '+candidate.current+'? This replaces the current campaign. A local recovery copy will be attempted.';}catch(_){say('This file is not a valid Steamline puzzle save. Current progress is unchanged.');}};
+  $('import-cancel').onclick=()=>{pendingImport=null;closeDialog();};
+  $('import-confirm').onclick=()=>{if(!pendingImport)return;try{storage?.setItem(S.KEY+'-before-import',JSON.stringify(campaign));}catch(_){}campaign=pendingImport;pendingImport=null;state.fast=campaign.settings.fast;baseStart(campaign.current);state.undo=campaign.undo;Object.assign(state,campaign.tools);state.dirty=true;render();persist(true);say('Campaign imported. Your workbench is ready.');};
+  document.addEventListener('keydown',e=>{
+    if(e.ctrlKey||e.metaKey){if(!document.querySelector('.modal.is-visible')&&['KeyZ','KeyY'].includes(e.code)){e.preventDefault();undo(e.code==='KeyY'||e.shiftKey);}return;}
+    const visible=document.querySelector('.modal.is-visible');
+    if(visible){if(e.code==='Escape'&&visible.id!=='result'){e.preventDefault();if(visible.id==='instruction-modal')closeInstructions();else if(visible.id==='import-modal')$('import-cancel').click();else closeDialog();}
+      if(e.code==='Tab'){const list=[...visible.querySelectorAll('button:not(:disabled),input:not([hidden])')],first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}return;}
+    if(['Space','Enter'].includes(e.code)&&e.target.closest('button')&&!e.target.classList.contains('cell'))return;
+    const dirs={ArrowUp:0,KeyW:0,ArrowRight:1,KeyD:1,ArrowDown:2,KeyS:2,ArrowLeft:3,KeyA:3};
+    if(['Space','Enter','Backspace',...Object.keys(dirs)].includes(e.code))e.preventDefault();if(e.repeat)return;wake();
+    if(dirs[e.code]!==undefined){const p=R.xy(state.cursor),d=R.D[dirs[e.code]],x=p[0]+d[0],y=p[1]+d[1];if(x>=0&&x<8&&y>=0&&y<6){state.cursor=y*8+x;cells[state.cursor].focus({preventScroll:true});state.dirty=true;render();}}
+    else if(e.code==='Digit1')shape('I');else if(e.code==='Digit2')shape('L');else if(e.code==='KeyX')rotate();else if(e.code==='Space')fit(state.cursor);else if(e.code==='Backspace')remove();else if(e.code==='KeyZ')undo(e.shiftKey);else if(e.code==='KeyY')undo(true);else if(e.code==='Enter')launch();else if(e.code==='KeyR')reset();else if(e.code==='KeyM')toggleSound();else if(e.code==='KeyP')pause();
+  });
+  window.addEventListener('vibecade:restart',e=>{e.preventDefault();reset();});
+  const leave=()=>{if(state.mode==='flow'){state.paused=true;state.dirty=true;render();}persist(true);};window.addEventListener('blur',leave);window.addEventListener('pagehide',()=>persist(true));document.addEventListener('visibilitychange',()=>{if(document.hidden)leave();});
+  function frame(time){const dt=Math.min(.1,(time-last)/1000||0);last=time;if(!manual){step(dt);if(state.mode==='flow'&&time-visual>=(reduced?66:33)){state.dirty=true;render();visual=time;}else if(state.dirty)render();}requestAnimationFrame(frame);}
+  $('ledger-help').onclick=instructions;
+  baseStart(campaign.current);state.undo=campaign.undo.slice();Object.assign(state,campaign.tools);state.dirty=true;render();if(loaded.warning)say(loaded.warning);
+  let seen=false;try{seen=sessionStorage.getItem('steamline-puzzle-instructions-v2')==='seen';}catch(_){}if(!seen)instructions();
+  if(new URLSearchParams(location.search).get('test')==='1')window.__steamTest={state,rules:R,get campaign(){return campaign;},start:(n,restore=false)=>baseStart(n,restore,true),manual:v=>{manual=v;},step:seconds=>{for(let t=0;t<seconds;t+=1/120)step(Math.min(1/120,seconds-t));state.dirty=true;render();},fit,shape,rotate,remove,undo,reset,launch,inspect,persist:()=>persist(true),render:()=>{state.dirty=true;render();}};
+  requestAnimationFrame(frame);
 })();
