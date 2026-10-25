@@ -21,7 +21,7 @@ This repository hosts simple arcade-style video games.
 - [Kiln Cascade](kiln-cascade/) - Cycle falling ceramic columns, chain three-in-a-row matches, and survive an ever-faster endless kiln.
 - [Lift Heist](lift-heist/) - Ride the lifts, recover marked files, and escape seven guarded tower shifts.
 - [Lunar Lander](lunar-lander/) - Feather a survey module onto five increasingly unforgiving lunar sites.
-- [Marble Circuit](marble-circuit/) - Roll glass marbles, brake into bends, and light checkpoints through seven suspended miniature courses.
+- [Marble Circuit](marble-circuit/) - Choose scenic roads or risky shortcuts through seven angled, scrolling worlds with rival marbles, acid, elevated rails, and launch cannons.
 - [Missile Command](missile-command/) - Defend your base from incoming missiles.
 - [Mushroom Moon](mushroom-moon/) - Split star-worms and defend a mutating lunar garden.
 - [Neon Flight](neon-flight/) - Dodge wireframe skyscrapers in a glowing city.
