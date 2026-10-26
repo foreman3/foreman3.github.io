@@ -1,0 +1,40 @@
+{
+  "round_trip_meshes": 3,
+  "mesh_names": [
+    "Boiler static body",
+    "Pressure needle",
+    "Valve handwheel"
+  ],
+  "animation_clips": [
+    "Raise pressure",
+    "Open valve"
+  ],
+  "self_contained": true,
+  "preview": "C:/Users/forem/.codex/visualizations/2026/10/20/01a157e0-e1c1-7123-b2cc-9516ad06a225/steamline-boiler-glb-check.png",
+  "sprites": [
+    {
+      "file": "boiler.png",
+      "dimensions": [
+        512,
+        512
+      ],
+      "mode": "RGBA",
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    },
+    {
+      "file": "boiler-idle.png",
+      "dimensions": [
+        512,
+        512
+      ],
+      "mode": "RGBA",
+      "alpha_extrema": [
+        0,
+        255
+      ]
+    }
+  ]
+}

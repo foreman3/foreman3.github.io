@@ -1,0 +1,21 @@
+{
+  "name": "Steamline Municipal Boiler",
+  "blender_version": "5.2.3 LTS",
+  "authored_via": "Blender MCP over stdio",
+  "editable_parts": 106,
+  "triangles": 26833,
+  "export_meshes": 3,
+  "material_primitives": 12,
+  "animations": [
+    "Raise pressure",
+    "Open valve"
+  ],
+  "wheel_pivot_verified": true,
+  "source": "steamline-boiler.blend",
+  "model": "steamline-boiler.glb",
+  "sprite": "boiler.png",
+  "idle_sprite": "boiler-idle.png",
+  "glb_bytes": 1076636,
+  "sprite_bytes": 199879,
+  "preview": "C:/Users/forem/.codex/visualizations/2026/10/20/01a157e0-e1c1-7123-b2cc-9516ad06a225/steamline-boiler-preview.png"
+}

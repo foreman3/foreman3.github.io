@@ -1,0 +1,25 @@
+{
+  "dimensions": [
+    512,
+    512
+  ],
+  "wheelPivotPercent": [
+    50.0,
+    61.70735
+  ],
+  "needlePivotPercent": [
+    50.0,
+    38.29271
+  ],
+  "needleRangeDegrees": [
+    -50,
+    37
+  ],
+  "runtimeLayers": 4,
+  "files": {
+    "ui-body.png": 197529,
+    "ui-hot.png": 197748,
+    "ui-wheel.png": 75531,
+    "ui-needle.png": 59861
+  }
+}

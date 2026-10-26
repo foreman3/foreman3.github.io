@@ -3,7 +3,7 @@
   const R=SteamlineRules,S=SteamlineSave,A=SteamlineArt,$=id=>document.getElementById(id),cells=[];
   let storage=null;try{storage=localStorage;}catch(_){}
   const loaded=S.read(storage);let campaign=loaded.campaign,saveTimer=null,saveOK=!!storage,pendingImport=null;
-  const state={level:1,board:[],mode:'plan',cursor:0,shape:'I',rotation:1,lift:false,undo:[],redo:[],plan:null,flow:null,index:0,progress:0,paused:false,fast:campaign.settings.fast,dirty:true,highlight:null,tests:0};
+  const state={level:1,board:[],mode:'plan',cursor:0,shape:'I',rotation:1,lift:false,undo:[],redo:[],plan:null,flow:null,index:0,progress:0,paused:false,fast:campaign.settings.fast,dirty:true,highlight:null,tests:0,blocked:false};
   let manual=false,last=0,visual=0,audio=null,returnMode='plan',ledgerReturn='plan',previousFocus=null;
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,c=()=>R.contracts[state.level-1],say=text=>{$('status').textContent=text;},editable=()=>['plan','flow'].includes(state.mode);
   function tone(f=400){if(campaign.settings.muted||!audio||audio.state!=='running')return;const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.09);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.1);}
@@ -17,7 +17,7 @@
   }
   function baseStart(level,restore=true,bypass=false){
     if(!bypass&&level>campaign.unlocked)return;
-    level=Math.max(1,Math.min(50,level));Object.assign(state,{level,board:S.hydrate(R,R.contracts[level-1],restore?campaign.drafts[level]:null),mode:'plan',cursor:R.key(R.contracts[level-1].route[1]),lift:false,undo:[],redo:[],flow:null,index:0,progress:0,paused:false,dirty:true,highlight:null,tests:0});
+    level=Math.max(1,Math.min(50,level));Object.assign(state,{level,board:S.hydrate(R,R.contracts[level-1],restore?campaign.drafts[level]:null),mode:'plan',cursor:R.key(R.contracts[level-1].route[1]),lift:false,undo:[],redo:[],flow:null,index:0,progress:0,paused:false,dirty:true,highlight:null,tests:0,blocked:false});
     for(const el of document.querySelectorAll('.modal'))el.classList.remove('is-visible');
     state.plan=R.trace(c(),state.board);say(c().lesson);render();cells[state.cursor].focus({preventScroll:true});
   }
@@ -26,7 +26,7 @@
   function editStart(){if(!editable())return false;if(state.mode==='flow')stopTest(false);return true;}
   function changed(before,message){
     state.undo.push(before);if(state.undo.length>60)state.undo.shift();state.redo=[];
-    state.plan=R.trace(c(),state.board);state.highlight=null;state.dirty=true;say(message);persist();render();
+    state.plan=R.trace(c(),state.board);state.highlight=null;state.blocked=false;state.dirty=true;say(message);persist();render();
   }
   function shape(kind){if(!editable())return;state.shape=kind;state.lift=false;state.dirty=true;render();}
   function rotate(){if(!editable())return;state.rotation=(state.rotation+1)%4;state.lift=false;state.dirty=true;render();tone(320);}
@@ -50,17 +50,17 @@
   }
   function undo(redo=false){
     if(!editStart())return;const from=redo?state.redo:state.undo,to=redo?state.undo:state.redo;
-    if(!from.length)return;to.push(snapshot());state.board=S.hydrate(R,c(),from.pop());state.plan=R.trace(c(),state.board);state.highlight=null;state.dirty=true;persist();say(redo?'Edit restored.':'Edit undone. Take your time.');render();
+    if(!from.length)return;to.push(snapshot());state.board=S.hydrate(R,c(),from.pop());state.plan=R.trace(c(),state.board);state.highlight=null;state.blocked=false;state.dirty=true;persist();say(redo?'Edit restored.':'Edit undone. Take your time.');render();
   }
   function reset(){
     const blocked=!editable(),oldMode=state.mode;if(!blocked)stopTest(false);const before=snapshot();state.board=R.initial(c());state.undo.push(before);state.redo=[];
-    state.plan=R.trace(c(),state.board);state.highlight=null;state.dirty=true;if(blocked){state.mode=oldMode;returnMode='plan';}else state.mode='plan';
+    state.plan=R.trace(c(),state.board);state.highlight=null;state.flow=null;state.blocked=false;state.index=0;state.progress=0;state.paused=false;state.dirty=true;if(blocked){state.mode=oldMode;returnMode='plan';}else state.mode='plan';
     persist();say('Current board reset. Undo restores your fittings; campaign progress is kept.');render();
   }
-  function stopTest(message=true){state.mode='plan';state.flow=null;state.index=0;state.progress=0;state.paused=false;state.dirty=true;if(message)say('Back at the workbench. Every fitting is kept.');render();}
+  function stopTest(message=true){state.mode='plan';state.flow=null;state.index=0;state.progress=0;state.paused=false;state.blocked=false;state.dirty=true;if(message)say('Back at the workbench. Every fitting is kept.');render();}
   function launch(){
     if(!editable())return;wake();if(state.mode==='flow'){stopTest();return;}
-    state.plan=R.trace(c(),state.board);state.flow=state.plan;state.index=0;state.progress=0;state.paused=false;state.mode='flow';state.highlight=null;state.tests++;state.dirty=true;
+    state.plan=R.trace(c(),state.board);state.flow=state.plan;state.index=0;state.progress=0;state.paused=false;state.blocked=false;state.mode='flow';state.highlight=null;state.tests++;state.dirty=true;
     say('Testing your route · return to the plan at any time.');persist();render();
   }
   function success(){
@@ -76,12 +76,12 @@
     if(state.mode!=='flow'||state.paused)return;state.progress+=dt*(state.fast?3:1)/.42;
     while(state.progress>=1&&state.mode==='flow'){
       state.progress--;state.index++;state.dirty=true;
-      if(state.index>=state.flow.steps.length){if(state.flow.ok)success();else{const failure=state.flow;stopTest(false);state.highlight=failure.at;state.dirty=true;say('Test stopped · '+failure.message+' Your board is kept.');render();tone(140);}}
+      if(state.index>=state.flow.steps.length){if(state.flow.ok)success();else{const failure=state.flow;stopTest(false);state.blocked=true;state.highlight=failure.at;state.dirty=true;say('Test stopped · '+failure.message+' Your board is kept.');render();tone(140);}}
     }
   }
   function inspect(){if(!editable())return;state.highlight=state.plan.ok?null:state.plan.at;state.dirty=true;say(state.plan.ok?'Route connected. Test the flow to deliver heat and unlock the next contract.':state.plan.message+' '+c().lesson);render();}
   function guide(){
-    const features=['Plan without a clock. Minimum '+c().minimum+' distinct pipe squares, including fixed fittings.'];
+    const features=['Plan without a clock. Minimum '+c().minimum+' distinct pipe squares, including fixed fittings.','The workshop boiler follows Test Flow. Its wheel and lights show flow; on heat puzzles its gauge follows remaining heat.'];
     if(c().goals.some(g=>g.type==='ring'))features.push(c().ordered?'Numbered rings must be visited 1 → 2 → 3.':'Visit every numbered service ring in any order.');
     if(c().goals.some(g=>g.type==='valve'))features.push('Every arrow valve must be visited from its tail.');
     if(c().budget)features.push('Stock: '+c().budget.I+' straights, '+c().budget.L+' elbows. Lifting refunds stock.');
@@ -120,6 +120,24 @@
     }
   }
   function label(el,html){if(el.dataset.label===html)return;el.dataset.label=html;el.innerHTML=html;}
+  function renderBoiler(){
+    // Presentation follows the visited square, never time remaining or a new rule.
+    // Keep the reading and wheel still behind help, the ledger, or a paused test.
+    const live=!!state.flow,complete=live&&state.flow.ok&&state.index>=state.flow.steps.length,
+      stopped=live&&!complete&&(state.paused||state.mode!=='flow'),
+      visit=live?state.flow.steps[Math.min(state.index,state.flow.steps.length-1)]:null,
+      heat=visit?.heat??0,thermal=!!c().capacity,
+      fraction=live?(thermal?Math.max(0,Math.min(1,heat/c().capacity)):.68):0,
+      status=complete?'complete':stopped?'paused':live?'running':state.blocked?'blocked':'idle',
+      names={idle:'VALVE CLOSED',running:'FLOWING',paused:'FLOW HELD',complete:'HEAT DELIVERED',blocked:'TEST STOPPED'},
+      boiler=$('boiler');
+    boiler.dataset.state=status;boiler.dataset.heat=live&&thermal?String(heat):'';
+    boiler.style.setProperty('--needle-angle',(-50+87*fraction).toFixed(2)+'deg');
+    $('boiler-state').textContent=names[status];
+    $('boiler-note').textContent=live?(thermal?'HEAT '+heat+' / '+c().capacity:'GAUGE SHOWS FLOW · NO TIMER'):'NO COUNTDOWN · TEST WHEN READY';
+    $('route-check').textContent=complete?'A warmer city. Well planned.':stopped?'Your test is paused.':live?'Following your route.':state.blocked?'Edit the highlighted square and try again.':state.plan.ok?'Route connected. Ready to test.':'Take your time. Build a good route.';
+    $('route-check').classList.toggle('ready',state.plan.ok);
+  }
   function render(){
     if(!state.dirty)return;const plan=state.plan,flowing=state.mode==='flow',completed=(flowing||state.mode==='result')&&state.flow?state.flow.steps.slice(0,state.index+1):[],wet=new Map();
     for(const visit of completed)wet.set(visit.k,(wet.get(visit.k)||0)|(visit.axis===null?3:visit.axis===0?1:2));
@@ -143,8 +161,7 @@
     $('level').textContent=String(state.level).padStart(2,'0')+' / 50';$('length').textContent=(flowing?new Set(completed.map(s=>s.k)).size:plan.unique.length)+' / '+c().minimum;$('checks').textContent=done.length+' / '+c().goals.length;
     $('heat-label').textContent=c().capacity?(flowing?'HEAT / CAPACITY':'HEAT AT ROUTE END'):'CITY STARS';$('heat').textContent=c().capacity?(flowing?(head?.heat||0):plan.heat)+' / '+c().capacity:starsTotal();
     $('district').textContent=c().name;$('lesson').textContent=c().lesson;$('contract-name').textContent=c().ordered?'DELIVER IN NUMERICAL ORDER':'PLAN · CONNECT · TEST';
-    $('stock').textContent=c().budget?'Stock limited · lifting refunds':'Stock unlimited';$('route-check').textContent=flowing?'Delivering heat through your route.':plan.ok?'Route connected. Ready to test.':c().minimum+' squares · '+c().goals.length+' deliveries';
-    $('route-check').classList.toggle('ready',plan.ok);document.querySelector('.city').classList.toggle('warm',flowing&&done.length>0||state.mode==='result');
+    $('stock').textContent=c().budget?'Stock limited · lifting refunds':'Stock unlimited';renderBoiler();
     $('lift').setAttribute('aria-pressed',String(state.lift));$('undo').disabled=!state.undo.length||!editable();$('sound').textContent=campaign.settings.muted?'Sound off':'Sound on';$('pause').textContent=state.paused?'Resume':'Pause';$('pause').disabled=!flowing;
     $('speed').textContent='FLOW ×'+(state.fast?3:1);$('speed').setAttribute('aria-pressed',String(state.fast));label($('launch'),flowing?'BACK TO PLAN <span>EVERY FITTING IS KEPT</span>':'TEST FLOW <span>NO COUNTDOWN</span>');$('launch').disabled=!editable();
     $('pressure-label').textContent=flowing?(state.paused?'FLOW PAUSED':'TESTING FLOW'):'UNHURRIED PLANNING';$('pressure-fill').style.width=(flowing?100*(state.index+state.progress)/Math.max(1,state.flow.steps.length):0)+'%';state.dirty=false;
