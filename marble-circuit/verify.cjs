@@ -17,7 +17,7 @@ async function main(){
  fs.mkdirSync(out,{recursive:true});const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',args:['--no-sandbox']});
  const report={},errors=[],watch=p=>{p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error')errors.push(m.text());});};
  try{
-  const page=await browser.newPage({viewport:{width:1440,height:900}});watch(page);await page.goto(base+'/marble-circuit/?test=1');
+  const page=await browser.newPage({viewport:{width:1440,height:900}});watch(page);await page.goto(base+'/marble-circuit/?test=1');await page.waitForFunction(()=>MarbleArt.assetStatus.ready);assert.equal(await page.evaluate(()=>MarbleArt.assetStatus.sprites),22);report.assets=await page.evaluate(()=>({...MarbleArt.assetStatus}));
   const frozen=await page.evaluate(()=>__marbleTest.state.elapsed);await page.waitForTimeout(180);assert.equal(await page.evaluate(()=>__marbleTest.state.elapsed),frozen);await page.locator('#instruction-close').focus();await page.keyboard.press('Space');await page.evaluate(()=>__marbleTest.manual(true));await page.evaluate(source=>window.pilot=eval('('+source+')'),pilot.toString());
   report.safe=await page.evaluate(()=>Array.from({length:7},(_,i)=>pilot(i+1)));report.fast=await page.evaluate(()=>Array.from({length:7},(_,i)=>pilot(i+1,{route:'fast',delay:.1})));report.recovery=await page.evaluate(()=>pilot(5,{forced:2}));
   console.log('safe',JSON.stringify(report.safe));console.log('fast',JSON.stringify(report.fast));console.log('recovery',JSON.stringify(report.recovery));
