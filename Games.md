@@ -40,6 +40,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Dune Patrol](dune-patrol/) - Jump desert fissures, blast rocks and aircraft, and drive seven mesa crossings.
 - [Bramble Guard](bramble-guard/) - Ride a fox's cable lift, pop wolf balloons, and protect the pantry through seven woodland watches.
 - [Steamline](steamline/) - Solve fifty untimed pipe puzzles with bridges, tunnels, gates, heat deliveries, and saved campaign progress.
 - [Harbor Bastion](harbor-bastion/) - Build one persistent castle, unlock five upgrades, and defend thirteen sieges with fitted walls and cannon fire.
