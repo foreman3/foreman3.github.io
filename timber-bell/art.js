@@ -3,6 +3,13 @@
   'use strict';
   const W=960,H=600,bg=document.createElement('canvas');bg.width=W;bg.height=H;
   const c=bg.getContext('2d'),reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  // One lossless atlas contains actual Blender renders. Procedural artwork
+  // remains available while it loads or if the file cannot be decoded.
+  const atlas=new Image();let spritesReady=false;
+  atlas.onload=()=>{spritesReady=true;window.dispatchEvent(new Event('timber:art-ready'));};
+  atlas.src='assets/timber-sprites.webp';
+  const sprites={plain:[304,334,160,100],knot:[560,334,160,100],cracked:[816,334,160,100],bell:[48,590,160,100],branch:[307,598,194,68],stump:[542,574,197,131]};
+  function sprite(g,rect,x,y,w,h){g.drawImage(atlas,...rect,x,y,w,h);}
   function shape(g,pts,fill,stroke){g.beginPath();pts.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fillStyle=fill;g.fill();if(stroke){g.strokeStyle=stroke;g.stroke();}}
   function ellipse(g,x,y,rx,ry,fill){g.fillStyle=fill;g.beginPath();g.ellipse(x,y,rx,ry,0,0,Math.PI*2);g.fill();}
   function line(g,x,y,x2,y2,color,width=2){g.strokeStyle=color;g.lineWidth=width;g.beginPath();g.moveTo(x,y);g.lineTo(x2,y2);g.stroke();}
@@ -30,7 +37,15 @@
   for(let i=0;i<15;i++){const x=34+(i*193)%890,y=468+(i*31)%62;line(c,x,y,x-3,y-13,'#466746',2);ellipse(c,x-3,y-15,3,4,'#d3ba7e');ellipse(c,x-6,y-12,3,3,'#d3ba7e');}
   for(let i=0;i<4;i++){const x=710+i*27;line(c,x,411,x+17,411,'#cfb47c',2);line(c,x+3,415,x+20,415,'#cfb47c',1);}
   function bell(g,x,y){g.save();g.translate(x,y);shape(g,[[-6,-8],[6,-8],[8,3],[12,7],[-12,7],[-8,3]],'#e2c16a','#644e30');ellipse(g,0,9,3,3,'#644e30');g.restore();}
-  function wood(g,a,y,index){const x=427,w=106,h=65;g.fillStyle=index%2?'#a57649':'#af8050';g.fillRect(x,y,w,h);g.fillStyle='#6b4a31';g.fillRect(x,y,8,h);g.fillRect(x+w-8,y,8,h);line(g,x+8,y,x+w-8,y,'#d9b27a',3);line(g,x+6,y+h-2,x+w-6,y+h-2,'#624630',3);
+  function wood(g,a,y,index){const x=427,w=106,h=65;
+    if(spritesReady){
+      if(a.branch){g.save();g.translate(a.branch<0?x+7:x+w-7,y+9);g.scale(a.branch,1);sprite(g,sprites.branch,0,0,124,44);g.restore();}
+      const key=a.knot>1?'knot':a.originalKnot?'cracked':a.bell?'bell':'plain';sprite(g,sprites[key],x,y,w,h);
+      if(a.knot>1)text(g,'II',480,y+43,13,'#fff3ce','system-ui');
+      if(a.bell&&(a.knot>1||a.originalKnot)){g.save();g.translate(25,-14);bell(g,480,y+31);g.restore();}
+      return;
+    }
+    g.fillStyle=index%2?'#a57649':'#af8050';g.fillRect(x,y,w,h);g.fillStyle='#6b4a31';g.fillRect(x,y,8,h);g.fillRect(x+w-8,y,8,h);line(g,x+8,y,x+w-8,y,'#d9b27a',3);line(g,x+6,y+h-2,x+w-6,y+h-2,'#624630',3);
     for(let i=0;i<5;i++){const xx=x+17+i*17+Math.sin(a.id+i)*5;line(g,xx,y+8,xx+Math.sin(a.id+i*2)*7,y+53,'#805734',1);line(g,xx+3,y+18,xx+5,y+42,'#c39861',1);}
     if(a.branch){g.save();g.translate(a.branch<0?x+6:x+w-6,y+24);g.scale(a.branch,1);shape(g,[[0,-4],[72,-18],[115,-49],[123,-40],[88,-8],[125,1],[124,14],[64,9],[0,17]],'#765333','#523f2c');line(g,20,0,80,-7,'#ba955d',3);for(let i=0;i<3;i++){ellipse(g,86+i*12,-32-i*6,18,8,'#3d6042');}g.restore();}
     if(a.knot>1){ellipse(g,480,y+32,22,16,'#61412e');ellipse(g,480,y+32,16,11,'#d7b47a');ellipse(g,480,y+32,9,6,'#815232');text(g,'II',480,y+37,13,'#f8ebc7','system-ui');}
@@ -38,6 +53,7 @@
     if(a.bell){g.strokeStyle='#e6cc83';g.lineWidth=2;g.strokeRect(459,y+12,42,39);bell(g,480,y+31);}
   }
   function worker(g,s){const side=s.side,x=480+side*109,y=511;g.save();g.translate(x,y);g.scale(-side,1);const swing=reduced?0:Math.sin(s.swing/.18*Math.PI);ellipse(g,0,28,39,9,'#46543b55');
+    if(spritesReady){const frame=Math.max(0,Math.min(4,Math.round(swing*4)));sprite(g,[(frame%4)*256,Math.floor(frame/4)*256,256,256],-69,-123,175,175);g.restore();return;}
     shape(g,[[-21,3],[-2,3],[-4,25],[-23,25]],'#394d44');shape(g,[[3,3],[21,3],[25,25],[7,25]],'#394d44');g.fillStyle='#382f2a';g.fillRect(-26,21,24,9);g.fillRect(6,21,25,9);
     shape(g,[[-23,-42],[18,-42],[27,3],[-26,3]],'#b84f43','#713a31');for(let i=0;i<4;i++){line(g,-20,-34+i*10,22,-34+i*10,'#803f35',2);}line(g,-10,-40,-10,2,'#e5b482',3);line(g,12,-40,12,2,'#e5b482',3);g.fillStyle='#d4b77d';g.fillRect(-25,-4,51,6);g.fillStyle='#f4ddb0';g.fillRect(-14,-29,7,4);g.fillRect(9,-29,7,4);
     ellipse(g,-1,-59,18,20,'#e9bd8c');shape(g,[[-17,-54],[-7,-45],[13,-52],[9,-34],[-9,-36]],'#694736');ellipse(g,8,-61,2,2,'#243c31');g.fillStyle='#a43e36';g.fillRect(-21,-78,41,15);ellipse(g,-1,-78,19,8,'#b84f43');g.fillStyle='#d3ae7d';g.fillRect(-22,-67,46,6);
@@ -45,8 +61,8 @@
   }
   function draw(g,s,p){g.drawImage(bg,0,0);if(!s.logs)return;const off=reduced?0:s.drop*65;
     // Stack clipped above the target lane; labels stay fixed for legibility.
-    g.save();g.beginPath();g.rect(272,0,416,494);g.clip();for(let i=8;i>=0;i--){const a=s.logs[i];if(a)wood(g,a,428-i*65-off,i);}g.restore();
-    ellipse(g,480,518,76,17,'#4b4b30');g.fillStyle='#7b5838';g.fillRect(416,490,128,24);ellipse(g,480,492,64,16,'#d2ad72');ellipse(g,480,492,46,10,'#a58151');ellipse(g,480,492,27,6,'#c49c63');
+    g.save();g.beginPath();g.rect(272,0,416,494);g.clip();if(spritesReady){g.fillStyle='#392416';g.fillRect(429,-65,102,558-off);}for(let i=8;i>=0;i--){const a=s.logs[i];if(a)wood(g,a,428-i*65-off,i);}g.restore();
+    ellipse(g,480,518,76,17,'#4b4b30');if(spritesReady)sprite(g,sprites.stump,412,478,136,59);else{g.fillStyle='#7b5838';g.fillRect(416,490,128,24);ellipse(g,480,492,64,16,'#d2ad72');ellipse(g,480,492,46,10,'#a58151');ellipse(g,480,492,27,6,'#c49c63');}
     // The frame identifies exactly which segment an input acts on.
     g.strokeStyle='#f7edcf';g.lineWidth=3;g.strokeRect(420,425,120,66);for(let side of[-1,1]){line(g,480+side*68,432,480+side*78,432,'#f7edcf',3);line(g,480+side*78,432,480+side*78,485,'#f7edcf',3);}
     worker(g,s);if(s.guard>0){g.strokeStyle='#f7df9d';g.lineWidth=3;g.beginPath();g.ellipse(480+s.side*109,500,40,51,0,0,Math.PI*2);g.stroke();}if(!reduced)for(const q of s.particles){g.fillStyle='#e6c388';g.fillRect(q.x,q.y,8,4);}
@@ -56,5 +72,5 @@
     if(s.flash>0){g.fillStyle=`rgba(157,55,42,${s.flash*.35})`;g.fillRect(0,0,W,H);}if(s.bonus>0)text(g,'+1 SECOND',650,405,24,'#fff2c4');
     if(s.mode==='paused'){g.fillStyle='#142d28b8';g.fillRect(0,0,W,H);text(g,'THE WOOD CAN WAIT',480,278,37);text(g,'P / Resume to continue',480,319,19);}
   }
-  window.TimberArt={draw};
+  window.TimberArt={draw,get spritesReady(){return spritesReady;}};
 })();

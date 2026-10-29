@@ -47,6 +47,12 @@ Use `node timber-bell/serve.cjs`, then run `node timber-bell/verify.cjs` with `N
 
 Artifact directory: `C:/Users/forem/.codex/visualizations/2026/10/29/01a1863c-6fa1-7740-a3ac-ba222254f8ea/`. It contains baseline/pass1/final traces, seven heat captures, all required viewport captures, normal-page and live smoke reports, and the active heat-5 `timber-bell-gameplay.png`.
 
+## Blender sprite upgrade — 2026-10-29
+
+The configured Blender MCP server was initialized and used against an isolated factory-startup Blender 5.2.3 instance. Authored an editable 168-object lumberjack, articulated axe, bark, knots, bell, fir bough and stump; reopened the saved `.blend` and rendered it with no missing external files. Eleven transparent 256×256 renders were packed into a lossless WebP atlas, with nonempty alpha, no clipping, and exact lossless decode verified. The renderer uses five 3D axe poses, mirrored branch sprites and separate knot/cracked/bell variants. Runtime Canvas drawing and the original procedural fallback remain local and self-contained.
+
+Focused browser tests passed atlas decoding, visibly distinct branch directions, knot/cracked/bell variants and five axe poses; delayed image delivery preserved exact simulation state, and an aborted image request left the fallback playable. The complete seven-heat regression, real keyboard/touch controls, sessions, pause/help, restart and desktop/landscape/portrait layouts passed again. Controller curve results match the original release, since no gameplay logic changed. New desktop/mobile active-game captures, source round-trip render and verification JSON are in `C:/Users/forem/.codex/visualizations/2026/10/29/01a1863c-6fa1-7740-a3ac-ba222254f8ea/timber-3d/`. Physical-phone performance and human visual/readability feedback remain unmeasured.
+
 ## Scope exception
 
 The user's explicit restriction permits only the new directory, Games.md, and index.html. It overrides the standards' offline-assets.js regeneration requirement. The read-only `node scripts/build-offline.cjs --check` reports stale inventory (54 games / 307 runtime files / 16.6 MiB), and no inventory was written. Installed/offline clients will omit this game until a separately authorized inventory regeneration. Online release is verified independently. Initial remote fetch matched main; final synchronization and safe publishing are recorded in the scheduled release result.
