@@ -8,6 +8,7 @@
   const s={level:1,phase:'battle',mode:'intro',supplies:16,score:0,walls:new Set(),rubble:new Set(),buildings:[],hand:[0,1,2],deck:3,patches:3,tool:'wall',slot:0,rotation:0,cursor:{x:2,y:6},aim:{x:760,y:300},muted:false,ships:[],shots:[],shells:[],fx:[]};
   let checkpoint=null,history=[],manual=false,held=new Set(),pointerFire=false,keyFire=false,buttonFire=false,firePointer=null,last=0,acc=0,dirty=true,fortDirty=true,hudWait=0,inputWait=0,toastTime=0,fireGap=0,exposedUntil=0,previousMode='playing',campaignReturn='plans',audio=null;
   const fort=document.createElement('canvas');fort.width=1000;fort.height=640;const fc=fort.getContext('2d');
+  A.onSpritesReady(()=>{fortDirty=true;dirty=true;});
   const keep=()=>s.buildings.find(b=>b.type==='keep'),aliveAll=type=>s.buildings.filter(b=>b.type===type&&b.hp>0);
   const manualReload=()=>.8**aliveAll('workshop').length;
   const center=b=>({x:(b.x+b.w/2)*R.C,y:(b.y+b.h/2)*R.C});

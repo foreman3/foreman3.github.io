@@ -5,7 +5,7 @@ async function main(){
  const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',args:['--no-sandbox']});globalThis.browser=browser;fs.mkdirSync(out,{recursive:true});
  const report={},errors=[],watch=p=>{p.on('pageerror',e=>errors.push(e.message));p.on('console',e=>{if(e.type()==='error')errors.push(e.text());});};
  const page=await browser.newPage({viewport:{width:1440,height:900}});watch(page);await page.goto(base+'/harbor-bastion/?test=1');
- await page.waitForTimeout(200);assert.deepEqual(errors,[]);assert.equal(await page.locator('#instruction-modal').isVisible(),true);const time=await page.evaluate(()=>__harborTest.state.time);await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__harborTest.state.time),time);
+ await page.waitForFunction(()=>HarborArt.sprites.complete&&HarborArt.sprites.naturalWidth===1024);assert.deepEqual(errors,[]);assert.equal(await page.locator('#instruction-modal').isVisible(),true);const time=await page.evaluate(()=>__harborTest.state.time);await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>__harborTest.state.time),time);
  assert.equal(await page.locator('#touch-fire').isVisible(),false);
  await page.locator('#instruction-close').focus();await page.keyboard.press('Space');await page.waitForFunction(()=>__harborTest.state.mode==='playing');await page.evaluate(()=>__harborTest.manual(true));
  await page.evaluate(()=>{

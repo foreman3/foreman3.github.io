@@ -82,6 +82,12 @@ Full suite passes:
 
 ## Reproduce and evidence
 
+Blender asset refresh, 2026-10-30:
+
+- Replaced the former hand-drawn ship, cannon, wall and building artwork with a local transparent 1024 × 1024 sprite sheet rendered by Blender 5.2. The source scene generator is `assets/build_sprites.py`, which makes the four ship classes, manual/captain cannon variants, masonry/rubble, and the keep, battery, magician, captain and workshop structures before composing the 4 × 4 sheet.
+- The canvas renderer waits for the image, redraws its cached fort layer when it arrives, and retains vector fallbacks while the sheet is loading. The sheet is loaded locally, so the game remains self-contained and offline compatible.
+- An isolated active-level-13 browser capture verifies all Blender sheet variants load at their expected resolution with no console errors. The full game suite also asserts the sheet is ready before continuing its normal desktop/mobile, campaign, save and control coverage. Evidence is in the `blender-assets/` output directory.
+
 Confirmed campaign restart follow-up, 2026-10-09:
 
 - NEW CAMPAIGN is available at the bottom of Plans. It opens a separate confirmation dialog explaining that level, castle, upgrades, supplies and score will restart. The results screen's existing NEW CAMPAIGN action uses the same confirmation.
