@@ -88,6 +88,12 @@ Blender asset refresh, 2026-10-30:
 - The canvas renderer waits for the image, redraws its cached fort layer when it arrives, and retains vector fallbacks while the sheet is loading. The sheet is loaded locally, so the game remains self-contained and offline compatible.
 - An isolated active-level-13 browser capture verifies all Blender sheet variants load at their expected resolution with no console errors. The full game suite also asserts the sheet is ready before continuing its normal desktop/mobile, campaign, save and control coverage. Evidence is in the `blender-assets/` output directory.
 
+Directional ships and seamless masonry refinement, 2026-10-30:
+
+- Re-rendered the four ship sprites from a near-top-down Blender camera with clear bows and deck sails, so they can rotate cleanly on the Canvas. Each ship now follows a restrained curved course, carries its real horizontal/vertical velocity and turns its bow into that heading. The cannon lead calculation and browser controller use that two-axis velocity. The sweep is visible without erasing the level-13 recovery margin.
+- Rebuilt the wall frame as an edge-to-edge, staggered masonry tile with an opaque mortar bed. Neighboring wall placements now share a continuous stone surface with no transparent gaps or isolated brick piles. Rubble remains a separate detailed sprite.
+- Full Chrome regression passed all thirteen levels after the movement change. The level-13 controller cleared with six forced misses and 16/16 keep health; active ship test verifies position changes on both axes and heading changes over three seconds. Desktop/touch p95 frame measurements and screenshots are in the `moving-ships/` evidence directory.
+
 Confirmed campaign restart follow-up, 2026-10-09:
 
 - NEW CAMPAIGN is available at the bottom of Plans. It opens a separate confirmation dialog explaining that level, castle, upgrades, supplies and score will restart. The results screen's existing NEW CAMPAIGN action uses the same confirmation.

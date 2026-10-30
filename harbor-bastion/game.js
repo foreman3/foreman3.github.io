@@ -118,8 +118,8 @@
   function fire(){if(!active()||s.phase!=='battle'||fireGap>0)return false;const g=guns().filter(g=>!g.auto&&g.b.cooldown<=0)[0];if(!g)return false;shoot(g,s.aim);fireGap=.14*manualReload();return true;}
   function spawn(){
     const id=s.spawned++,type=s.level>=6&&id%5===4?'galleon':s.level>=4&&id%3===2?'armor':s.level>=8&&id%4===1?'cutter':'sloop';
-    const baseX=680+(id%3)*115,y=90+(id*137%450);
-    s.ships.push({id,type,baseX,x:baseX,y,dir:id%2?1:-1,hp:type==='galleon'?3:type==='armor'?2:1,speed:cfg().speed*(type==='cutter'?1.25:type==='galleon'?.8:1),fire:cfg().first+(id%3)*.25,vx:0});
+    const baseX=680+(id%3)*115,y=90+(id*137%450),speed=cfg().speed*(type==='cutter'?1.25:type==='galleon'?.8:1),course=id*.9,curve=.30+speed*.002,weave=Math.min(40,14+speed*.24);
+    const dir=id%2?1:-1,x=Math.max(650,Math.min(955,baseX+Math.sin(s.elapsed*curve+course)*weave));s.ships.push({id,type,baseX,x,y,dir,hp:type==='galleon'?3:type==='armor'?2:1,speed,fire:cfg().first+(id%3)*.25,vx:Math.cos(s.elapsed*curve+course)*weave*curve,vy:dir*speed,heading:Math.atan2(dir*speed,Math.cos(s.elapsed*curve+course)*weave*curve),course});
   }
   function enemyFire(ship){
     const targets=s.buildings.filter(b=>b.hp>0&&b.type==='tower'),target=ship.type==='armor'&&targets.length?targets[ship.id%targets.length]:keep(),end=center(target);
@@ -172,15 +172,16 @@
     if(pointerFire||keyFire||buttonFire)fire();
     s.spawnTime-=dt;if(s.spawned<cfg().ships&&s.spawnTime<=0){spawn();s.spawnTime=cfg().interval;}
     for(const ship of s.ships){
-      const oldX=ship.x;ship.y+=ship.dir*ship.speed*dt;if(ship.y>555){ship.y=555;ship.dir=-1;}if(ship.y<85){ship.y=85;ship.dir=1;}
-      if(s.level>=12)ship.x=ship.baseX+Math.sin(s.elapsed*.65+ship.id)*20;ship.vx=(ship.x-oldX)/dt;
+      const oldX=ship.x,oldY=ship.y,curve=.30+ship.speed*.002,weave=Math.min(40,14+ship.speed*.24),phase=s.elapsed*curve+(ship.course??ship.id*.9),baseX=ship.baseX??ship.x;
+      ship.y+=ship.dir*ship.speed*dt;if(ship.y>555){ship.y=555;ship.dir=-1;}if(ship.y<85){ship.y=85;ship.dir=1;}
+      ship.x=Math.max(650,Math.min(955,baseX+Math.sin(phase)*weave));ship.vx=(ship.x-oldX)/dt;ship.vy=(ship.y-oldY)/dt;ship.heading=Math.atan2(ship.vy,ship.vx);
       ship.fire-=dt;if(ship.fire<=0){enemyFire(ship);ship.fire=cfg().fire;}
     }
     for(const auto of guns().filter(g=>g.auto&&g.b.cooldown<=0)){
       const target=s.ships.filter(v=>s.shots.filter(q=>q.targetId===v.id).length<v.hp).sort((a,b)=>a.fire-b.fire)[0];if(!target)continue;
       const travel=Math.hypot(target.x-auto.x,target.y-auto.y)/620;
-      let y=target.y+target.dir*target.speed*travel*.88;if(y>555)y=1110-y;if(y<85)y=170-y;
-      shoot(auto,{x:target.x,y:y+Math.sin(s.elapsed*1.3)*9,targetId:target.id},true);
+      let y=target.y+(target.vy??target.dir*target.speed)*travel*.88,x=Math.max(630,Math.min(980,target.x+(target.vx||0)*travel*.88));if(y>555)y=1110-y;if(y<85)y=170-y;
+      shoot(auto,{x,y:y+Math.sin(s.elapsed*1.3)*9,targetId:target.id},true);
     }
     for(const mage of aliveAll('mage')){
       if(mage.cooldown>0)continue;const c=center(mage),q=s.shells.filter(q=>q.delay<=0&&Math.hypot(q.x-c.x,q.y-c.y)<=190).sort((a,b)=>a.x-b.x)[0];

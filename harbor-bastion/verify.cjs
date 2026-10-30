@@ -61,7 +61,7 @@ async function main(){
    while(s.mode==='playing'&&elapsed<105){
     if(think<=0){think=delay;const g=t.guns().find(g=>!g.auto&&g.b.cooldown<=0),target=[...s.ships].filter(v=>s.shots.filter(q=>q.targetId===v.id).length<v.hp).sort((a,b)=>a.fire-b.fire)[0];
      if(g&&target){let y=target.y,x=target.x;
-      if(policy==='lead')for(let k=0;k<4;k++){const travel=Math.hypot(x-g.x,y-g.y)/620;y=target.y+target.dir*target.speed*travel;x=target.x+target.vx*travel;if(y>555)y=1110-y;if(y<85)y=170-y;}
+      if(policy==='lead')for(let k=0;k<4;k++){const travel=Math.hypot(x-g.x,y-g.y)/620;y=target.y+(target.vy??target.dir*target.speed)*travel;x=target.x+(target.vx||0)*travel;if(y>555)y=1110-y;if(y<85)y=170-y;}
       const miss=failed>0||(missEvery>0&&++attempt%missEvery===0);if(miss){y+=170;failed--;}
       t.aim(x,y);if(t.fire()&&!miss)s.shots.at(-1).targetId=target.id;
      }

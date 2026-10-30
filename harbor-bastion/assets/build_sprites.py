@@ -124,37 +124,47 @@ def mast(x, z=1.3, height=3.2, sail=CREAM, flag=RED, offset=0):
     cube("signal pennant", (x + .35, offset, z + height / 2 - .08), (.62, .035, .35), flag, .025)
 
 
+def deck_sail(x, y, z, sail, trim):
+    """A broad canvas panel visible from the dedicated top-down ship render."""
+    cube("billowing deck sail", (x, y, z), (1.15, .92, .06), sail, .09)
+    cube("sail seam", (x, y, z + .04), (1.05, .055, .035), trim, .01)
+    cube("sail seam", (x, y + .27, z + .04), (1.05, .055, .035), trim, .01)
+
+
 def ship(kind):
-    shadow(4.2, 3.2)
     if kind == "cutter":
         hull = cube("fast cutter hull", (0, 0, .35), (3.8, 1.05, .66), TEAL, .32)
+        bow = cone("cutter pointed bow", (2.15, 0, .43), .58, 0, 1.15, TEAL);bow.rotation_euler[1] = math.pi / 2
         cube("cutter copper stripe", (0, -.55, .47), (3.3, .055, .12), BRASS)
         cube("raised deck", (-.15, 0, .7), (2.9, .82, .24), DECK, .08)
-        mast(-.2, 1.35, 3.0, RED, CREAM)
-        cone("sharp bowsprit", (2.15, 0, .65), .18, 0, 1.5, OAK).rotation_euler[1] = math.pi / 2
+        mast(-.2, 1.35, 3.0, RED, CREAM);deck_sail(-.18, 0, 1.02, RED, CREAM)
+        spar = cone("sharp bowsprit", (2.15, 0, .65), .18, 0, 1.5, OAK);spar.rotation_euler[1] = math.pi / 2
         return
     if kind == "galleon":
         cube("galleon hull", (0, 0, .42), (3.45, 1.7, .95), OAK, .38)
+        bow = cone("galleon carved bow", (1.98, 0, .5), .84, 0, 1.2, OAK);bow.rotation_euler[1] = math.pi / 2
         cube("gold gun deck", (0, 0, .84), (3.0, 1.38, .34), DECK, .1)
         cube("stern castle", (-1.12, 0, 1.25), (.75, 1.35, .8), SAND, .1)
         roof((-1.12, 0, 1.6), .72, 1, .55, RED)
-        mast(-.5, 1.6, 3.3, CREAM, RED)
-        mast(.75, 1.5, 3.0, RED, CREAM)
+        mast(-.5, 1.6, 3.3, CREAM, RED);deck_sail(-.5, 0, 1.25, CREAM, RED)
+        mast(.75, 1.5, 3.0, RED, CREAM);deck_sail(.75, 0, 1.18, RED, CREAM)
         for x in (-1.1, -.45, .25, .95):
             cylinder("broadside", (x, -.88, .75), .12, .35, IRON, 12, (math.pi / 2, 0, 0))
         return
     if kind == "armor":
         cube("armored hull", (0, 0, .4), (3.3, 1.55, .88), STEEL, .28)
+        bow = cone("armored ram bow", (1.88, 0, .47), .78, 0, 1.15, STEEL);bow.rotation_euler[1] = math.pi / 2
         cube("steel deck", (0, 0, .82), (2.9, 1.28, .32), IRON, .08)
         for x in (-1.1, -.55, 0, .55, 1.1):
             plate = cube("riveted armor plate", (x, -.82, .56), (.44, .06, .48), STEEL, .04)
             sphere("rivet", (x, -.87, .68), .055, BRASS)
-        mast(0, 1.45, 2.7, BLUE, RED)
+        mast(0, 1.45, 2.7, BLUE, RED);deck_sail(0, 0, 1.14, BLUE, RED)
         return
     cube("sloop hull", (0, 0, .35), (3.25, 1.35, .8), OAK, .34)
+    bow = cone("sloop curved bow", (1.88, 0, .42), .68, 0, 1.08, OAK);bow.rotation_euler[1] = math.pi / 2
     cube("sloop deck", (0, 0, .76), (2.8, 1.1, .28), DECK, .08)
     cube("painted stripe", (0, -.69, .5), (2.85, .04, .15), TEAL)
-    mast(0, 1.45, 3.05, CREAM, RED)
+    mast(0, 1.45, 3.05, CREAM, RED);deck_sail(0, 0, 1.14, CREAM, RED)
     cylinder("bow lantern", (1.55, -.4, 1.05), .11, .14, BRASS, 12)
 
 
@@ -172,17 +182,19 @@ def cannon(auto=False):
 
 
 def wall(rubble=False):
-    shadow(3.5, 2.5)
     if rubble:
+        shadow(3.5, 2.5)
         for i, (x, y, z, angle) in enumerate(((-.9, -.1, .16, .2), (-.35, .35, .2, -.55), (.2, -.2, .16, .4), (.82, .2, .24, -.3), (1.2, -.25, .14, .6))):
             block = cube("fallen stone", (x, y, z), (.7, .55, .32), LIME if i % 2 else SAND, .08)
             block.rotation_euler[2] = angle
         return
-    for row in range(2):
-        for col in range(3):
-            cube("masonry block", ((col - 1) * 1.04 + (row % 2) * .48, 0, .32 + row * .62), (.98, .72, .58), LIME if (col + row) % 2 else SAND, .075)
-    for x in (-1.45, 0, 1.45):
-        cube("crenellation", (x, 0, 1.66), (.62, .72, .42), LIME, .06)
+    # This is a true tile, not a freestanding prop: its base fills the entire
+    # render frame and staggered stones run beyond each edge for seamless joins.
+    cube("continuous mortar bed", (0, 0, .10), (6.08, 6.08, .24), MORTAR)
+    for row in range(5):
+        offset = -.48 if row % 2 else 0
+        for col in range(5):
+            cube("edge-to-edge masonry", (-2.4 + col * 1.2 + offset, -2.4 + row * 1.2, .30), (1.16, 1.16, .23), LIME if (row + col) % 3 else SAND, .045)
 
 
 def keep():
@@ -235,6 +247,12 @@ def workshop():
 FACTORIES = [lambda: ship("sloop"), lambda: ship("armor"), lambda: ship("cutter"), lambda: ship("galleon"), lambda: cannon(False), lambda: cannon(True), lambda: wall(False), lambda: wall(True), keep, tower, mage, captain, workshop, lambda: None, lambda: None, lambda: None]
 
 
+def set_view(camera, location, target, scale):
+    camera.location = location
+    camera.data.ortho_scale = scale
+    track(camera, target)
+
+
 def setup_renderer():
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE"
@@ -250,10 +268,9 @@ def setup_renderer():
     bpy.ops.object.camera_add(location=(6.7, -8.7, 6.2))
     camera = bpy.context.object
     camera.data.type = "ORTHO"
-    camera.data.ortho_scale = 6.0
     scene.camera = camera
-    track(camera, (0, 0, 1.15))
-    for loc, energy, color, size in (((4, -5, 8), 1200, (1.0, .62, .31), 5), ((-5, -3, 5), 900, (.26, .58, .80), 4)):
+    set_view(camera, (6.7, -8.7, 6.2), (0, 0, 1.15), 6.0)
+    for loc, energy, color, size in (((4, -5, 8), 1200, (1.0, .62, .31), 5), ((-5, -3, 5), 900, (.26, .58, .80), 4), ((0, 0, 11), 1100, (1.0, .84, .56), 5)):
         bpy.ops.object.light_add(type="AREA", location=loc)
         light = bpy.context.object
         light.data.energy = energy
@@ -261,6 +278,7 @@ def setup_renderer():
         light.data.shape = "DISK"
         light.data.size = size
         track(light, (0, 0, .8))
+    return camera
 
 
 def track(obj, point):
@@ -303,10 +321,17 @@ def main():
     shutil.rmtree(WORK, ignore_errors=True)
     os.makedirs(WORK, exist_ok=True)
     clear_scene()
-    setup_renderer()
+    camera = setup_renderer()
     paths = []
     for index, factory in enumerate(FACTORIES):
         wipe_models()
+        if index < 4:
+            # Nearly top-down produces a rotation-neutral silhouette: bow is +X.
+            set_view(camera, (0, -0.75, 10.6), (0, 0, .55), 6.3)
+        elif index in (6, 7):
+            set_view(camera, (0, 0, 10.4), (0, 0, .20), 6.0)
+        else:
+            set_view(camera, (6.7, -8.7, 6.2), (0, 0, 1.15), 6.0)
         factory()
         if index > 12:
             paths.append(None)
