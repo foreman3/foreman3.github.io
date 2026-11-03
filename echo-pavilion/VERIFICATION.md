@@ -1,41 +1,25 @@
-# Echo Pavilion
+# Echo Pavilion — endless memory
 
-A Simon-style musical memory arcade, rendered with a small DOM/CSS scene. Four enamel pads have distinct names, shapes, notes and keyboard positions. No external art, font, audio or library dependency. Direct taps are the natural mobile input, so no joystick or action rail is needed. Portrait is supported.
+## Rules
 
-## Challenge
+Start with one note. After each complete, correct response, append exactly one randomly chosen note to the end of the existing sequence. Replay the entire sequence from the beginning at a constant 700ms per note. There are no acts, fixed endpoint, extra listens, response countdowns or speed increases. Players may wait indefinitely before or between input taps. One wrong tap ends the run. The score is the length of the longest fully completed sequence, excluding any partial final response. New game starts a fresh one-note sequence. A guarded local-storage record preserves the device's best completed length.
 
-Each act contains three independently generated phrases. Correct notes need no musical rhythm. The deadline resets on every correct note. A mistake costs a chance and automatically replays the same phrase; it does not regenerate the answer or award points. Hear again spends a listen and restarts the current phrase. Chances/listens refill each act. Retrying an act restores its starting score. All rules are introduced in act 1.
+The user's requested endless/untimed rules supersede the original scheduled task's seven-act difficulty requirement. Memory length is the only growing challenge. The four pads retain names, shapes, optional tones and keyboard positions. Direct touch is the natural input; no joystick is needed. All assets are local DOM/CSS.
 
-| Act | Phrase lengths | Note interval | Seconds per response | Chances | Extra listens |
-| --- | --- | --- | --- | --- | --- |
-| 1 | 3 / 4 / 5 | .76 | 6 | 4 | 3 |
-| 2 | 4 / 5 / 6 | .70 | 5.5 | 4 | 3 |
-| 3 | 5 / 6 / 7 | .64 | 5 | 4 | 3 |
-| 4 | 6 / 7 / 8 | .58 | 4.5 | 3 | 2 |
-| 5 | 7 / 8 / 9 | .52 | 4 | 3 | 2 |
-| 6 | 9 / 10 / 11 | .43 | 2.8 | 2 | 1 |
-| 7 | 12 / 13 / 14 | .35 | 1.8 | 1 | 0 |
+## Verification
 
-The explicit scheduled-task curve supersedes the older repository wording that puts mastery at level 5: act 5 permits two mistakes and two requested replays, act 6 starts mastery, and act 7 demands a flawless encore.
+Start the repository server with `node echo-pavilion/serve.cjs`. Set `NODE_PATH` to installed Playwright, then run `node echo-pavilion/verify.cjs` and `node echo-pavilion/focused.cjs`. `ECHO_URL` overrides the origin and `ECHO_OUT` selects the evidence directory. Chrome uses its standard Windows executable path. Test state and manual stepping exist only with `?test`; ordinary pages have no test API.
 
-## Browser verification, 2026-11-03
+- Full suite naturally advances through 32 completed lengths using real keyboard events. Each new sequence is exactly one note longer and its entire prefix equals the prior sequence. No act transitions or sequence resets occur. Length 33 remains playable after completing 32.
+- At every tested length, a simulated 24-hour wait in input changes no gameplay state, including before and between notes. Playback/celebration clocks animate presentation only; input does not consume time. First-load instructions and help freeze simulation.
+- Wrong input ends the run and reports the last fully completed length. New game, R and shared mobile Reset all return to one note and zero completed, preserving the personal best. Best persists across reload. Blocked storage still permits normal play. Partial responses never earn completion credit.
+- Keyboard Q/W/A/S and number keys, direct pointer/touch, pointer capture/cancel/release, context-menu suppression, pause/help/return, mute/unmute, modal keyboard focus, returning mobile launch and fullscreen refusal are covered. Gameplay ignores taps during playback and celebration.
+- Real-time normal-page test observes lights visually, reproduces five growing sequences with real keyboard events, and verifies exact prefixes without debug hooks. It waits 6.5 seconds in input, then completes the phrase. Help freezes presentation, restart resets the run and best remains five.
+- Touch emulation completes lengths 1–6 in each viewport and checks prefix growth. Layout checks cover 1440×900 desktop, 667×375, 740×390, 844×390 landscape and 390×844 portrait. All pads and Pause remain visible, thumb-sized and separate from the readout. Desktop-only menu/help are hidden on touch. Long sequences use at most 24 progress dots with a moving window, so the display does not overflow.
+- Canonical start-page card is unique, loads this directory and describes the endless sequence. Games.md matches. Game and arcade console/page errors are checked. Syntax and whitespace checks apply to all changed files.
 
-Run `node echo-pavilion/serve.cjs`, then `node echo-pavilion/verify.cjs` and `node echo-pavilion/focused.cjs` with installed Playwright on `NODE_PATH`. Chrome is configured at its standard Windows location. `ECHO_OUT` overrides the screenshot/report directory, `ECHO_PASS` labels the full regression, and `ECHO_URL` overrides the full suite's origin. Test hooks exist only with `?test`; ordinary pages have no test API. Manual stepping is opt-in and does not alter normal simulation.
+Evidence is saved under `C:/Users/forem/.codex/visualizations/2026/11/03/01a1a07a-b34c-7070-b244-ee8c59e17797/endless/`: full verification JSON, normal/live smoke JSON, active gameplay and all viewport screenshots. These are mechanical browser tests, not human memory or enjoyment studies. Physical-phone performance is not measured.
 
-- Initial functional build plus **two additional whole-game passes**, each followed by the full Chrome suite and visual review of desktop, all required landscape sizes, portrait, opening, later acts, game-over and restart. Baseline fixes corrected missing flyout classes and the shared returning-mobile help hook.
-- Pass 1: added enamel highlights, brass machining and cabinet lighting; fit the entire desktop cabinet/footer; styled the flyout; preserved earlier-act points on retry. Reviewed all seven acts, outcomes, controls and all layouts.
-- Pass 2: added a current-note marker during playback and distinct recovery/success readout styling; improved portrait action sizing; trapped modal keyboard focus; made result/help/return restore the result correctly. Fresh review found the four-pad scene already readable and visually coherent; no extra moving decoration was needed. Repeated all seven acts, complete controls, restart/results and layouts.
-- Real keyboard events solved every phrase in acts 1–7 after jumping to each act. Acts 1–4 and 6 cleared after an intentional mistake. Act 5 cleared after **two wrong notes and both extra listens**, with one chance remaining. Act 7 immediately failed after one wrong note, then cleared all three phrases on retry. Score and next-act progression were checked.
-- These are mechanical feasibility and recovery tests with access to the sequence, **not a human memory, enjoyment or difficulty study**. Human feedback should focus on the longer phrases in acts 4–7.
-- A separate ordinary page observed visible playback lights in real time and reproduced the opening using real keyboard input, without hooks. First-load instructions froze simulation. Help, blur, pause/resume, sound toggle, timeout, loss, final victory, same-act retry, banked score, new run and restart were exercised. Numeric keys, Q/W/A/S and native Enter on a pad were covered. Keyboard focus cycles inside the modal.
-- Touch emulation: three opening phrases, actual Next and act-2 tapping; CDP touch down, movement beyond the pad, cancellation and release; context-menu suppression; shared reset; returning-session Play; rejected fullscreen fallback. Pads are the playfield itself, so controls cover no separate game scene. Desktop-only help/navigation are hidden on touch layouts.
-- Visually inspected 1440×900, 667×375, 740×390, 844×390 and 390×844. No horizontal overflow; all pads remain visible, over 44px and separate from the readout/actions. Short-screen instructions scroll and their launch button is reachable. Desktop cabinet/footer fit on screen.
-- Arcade card is unique, under In Work, and opens the game. Games.md uses the same valid directory link. Flyout opens and its home link is visible. Game and arcade console/page errors: **none**.
-- Final desktop frame sampling: mean 16.67ms, p95 17ms in headless Chrome. This is desktop emulation, not measured physical-phone performance. Scene has four actors, capped note audio, delta-time simulation, no growing effects, no external resources and reduced-motion support.
-- Syntax and whitespace checks passed. Only this directory, Games.md and index.html belong to this release. No existing game or shared runtime changed.
+## Release scope
 
-Evidence: `C:/Users/forem/.codex/visualizations/2026/11/03/01a1a07a-b34c-7070-b244-ee8c59e17797/`. Baseline/pass1/final JSON reports, all-act and all-layout screenshots, focused report, and `echo-pavilion-gameplay.png` (active act 5, four of seven notes entered).
-
-## Scope exception
-
-The user's explicit outside-directory restriction permits only Games.md and index.html. It overrides the standard's offline-inventory regeneration requirement. `node scripts/build-offline.cjs --check` correctly reports a stale inventory (55 games, 313 runtime files, 17.3 MiB). `offline-assets.js` is intentionally unchanged: new online sessions can load this game, but installed offline clients require a separately authorized inventory refresh. Shared flyout entries also remain unchanged under the same restriction; the canonical start-page card and Games.md entry are present.
+Only Echo Pavilion and its Games.md/index.html descriptions are changed. The original explicit outside-directory scope still excludes offline-assets.js and sidebar.html. The shared offline inventory remains stale from initial creation; installed offline clients need a separately authorized inventory refresh. Online canonical start-page and Games.md links remain available. No cache, service-worker, saved-game or other game's files are changed.
