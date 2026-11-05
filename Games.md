@@ -40,6 +40,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Pearl Pop](pearl-pop/) - Bank colorful pearls, pop matching shoals, and drop hanging clusters through seven midnight reefs.
 - [Echo Pavilion](echo-pavilion/) - Repeat an ever-growing musical sequence, take your time, and beat your longest melody.
 - [Timber Bell](timber-bell/) - Read the branches, split knotted logs, and ring the bell through seven woodland chopping heats.
 - [Dune Patrol](dune-patrol/) - Jump desert fissures, blast rocks and aircraft, and drive seven mesa crossings.
