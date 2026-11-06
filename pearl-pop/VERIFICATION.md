@@ -1,5 +1,11 @@
 # Pearl Pop release verification
 
+## Nine-reef follow-up
+
+Added Moonlit Trench and a new final reef, with 21 and 22 shots respectively. The prior seventh reef retains its 16-shot challenge. The existing exact-state browser controller cleared reef 8 in 16 shots and reef 9 in 21; those results demonstrate mechanical feasibility, not human difficulty. The full Chrome regression cleared all nine and checked progression, restart, controls, and the desktop/mobile viewports. The landing marker is shown only in reefs 1–2; the guide remains full through reef 3, shortens to 200 logical pixels at reef 4, and to 110 at reef 5 and later. A dedicated canvas check verifies all nine guide states. The 110-pixel guide leaves several visible dots above the launcher.
+
+The shell launcher is a real Blender model in `assets/launcher.blend`, built reproducibly by `assets/build_launcher.py` and rendered to `assets/launcher.png` and `assets/barrel.png`; the rotating barrel sprite and pearl remain independent so they track the shot direction. Browser evidence is in `C:/Users/forem/.codex/visualizations/2026/11/05/01a1aa84-6863-74d1-b41a-1776fc792a24/revision/`. The original release findings below describe the previous seven-reef version.
+
 Verified 2026-11-05 in installed Chrome, served over local HTTP. Puzzle Bobble-style hex-grid bubble shooting is absent from the prior canonical game list, arcade cards, and root directories. It differs from Prism Panic's bouncing-orb splitting and Kiln Cascade's gravity-driven falling columns. Canvas suits the moving projectile, match bursts, falling clusters, and hex-grid scenery. Background and five pearl illustrations are cached; the simulation uses capped delta time, bounded effects, and skips rendering while idle or blocked. No external assets or libraries are needed to play.
 
 ## Challenge curve

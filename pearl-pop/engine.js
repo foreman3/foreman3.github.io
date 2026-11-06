@@ -9,7 +9,9 @@
     {name:'Blue grotto',rows:6,colors:4,shots:21,tide:5},
     {name:'The pearl garden',rows:7,colors:5,shots:19,tide:5},
     {name:'Abyssal crown',rows:8,colors:5,shots:17,tide:4},
-    {name:'The last reef',rows:9,colors:5,shots:16,tide:3}
+    {name:'The twilight reef',rows:9,colors:5,shots:16,tide:3},
+    {name:'Moonlit trench',rows:9,colors:5,shots:21,tide:4},
+    {name:'The last reef',rows:9,colors:5,shots:22,tide:3}
   ];
   const key=(r,c)=>r+','+c;
   const xy=(r,c,drop=0)=>({x:66+c*P+(r%2)*P/2,y:62+r*DY+drop});
