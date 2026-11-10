@@ -40,6 +40,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Ribbon Racers](ribbon-racers/) - Cut off rival light-cycles, brake through tight spaces, and outlast seven ribbon-racing grids.
 - [Pearl Pop](pearl-pop/) - Bank colorful pearls, pop matching shoals, and drop hanging clusters through nine midnight reefs.
 - [Echo Pavilion](echo-pavilion/) - Repeat an ever-growing musical sequence, take your time, and beat your longest melody.
 - [Timber Bell](timber-bell/) - Read the branches, split knotted logs, and ring the bell through seven woodland chopping heats.
