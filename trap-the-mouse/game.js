@@ -1,4 +1,4 @@
-import {cells, burrow, escapeRoute, gardens, wildGarden} from './gardens.js';
+import {createBoard, gardens, wildGarden} from './gardens.js';
 import {svg, stamp, center, preparePlate} from './illustrations.js';
 
 const $ = id => document.getElementById(id);
@@ -6,7 +6,9 @@ const board = $('board'), modal = $('instruction-modal');
 const seenKey = 'vibecade-instructions-trap-the-mouse';
 function read(store, key) { try { return window[store].getItem(key); } catch { return null; } }
 function save(store, key, value) { try { window[store].setItem(key, value); } catch { /* Play without storage. */ } }
-const recordKey = i => 'vibecade-mouse-garden-best-' + i;
+// The old five gardens had different layouts and move records.
+const recordKey = i => 'vibecade-mouse-nine-gardens-best-' + i;
+const legacyWild = [0,1,2,3,4].every(i => Number(read('localStorage','vibecade-mouse-garden-best-'+i)) > 0);
 const best = gardens.map((_,i) => {
   const v = Number(read('localStorage',recordKey(i)));
   return Number.isSafeInteger(v) && v > 0 ? v : null;
@@ -16,6 +18,7 @@ function unlocked() {
   return next < 0 ? gardens.length : next;
 }
 let stage = unlocked(), wildLayout = [], hedges, mouse, route, outcome, history, selected, face = 1;
+let gardenBoard, cells, escapeRoute, boardWidth;
 let guardedUntil = 0, sound = read('localStorage','vibecade-mouse-sound') === 'on', audio;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const portrait = matchMedia('(max-width:640px) and (orientation:portrait)');
@@ -41,7 +44,19 @@ function chime(notes) {
   } catch { /* Sound is optional. */ }
 }
 
-function makePlots() {
+function makePlots(width) {
+  if (width === boardWidth) return;
+  boardWidth = width;
+  gardenBoard = createBoard(width);
+  ({cells,escapeRoute} = gardenBoard);
+  $('plots').replaceChildren();
+  figures.length = plots.length = 0;
+  const centers = cells.map(center);
+  const xs = centers.map(p=>p.x), ys = centers.map(p=>p.y);
+  const midX = (Math.min(...xs)+Math.max(...xs))/2, midY = (Math.min(...ys)+Math.max(...ys))/2;
+  // Let bigger gardens fill the plate, while keeping the final plots easy to tap.
+  const scale = (7.75 + (width-7)*.2)/width;
+  $('planting-bed').setAttribute('transform',`translate(340 231) scale(${scale}) translate(${-midX} ${-midY})`);
   for (const cell of cells) {
     const {x,y} = center(cell);
     const plot = svg('g',{class:'cell',transform:`translate(${x} ${y})`,role:'button','data-cell':cell.id});
@@ -79,7 +94,7 @@ function drawBoard(previous = mouse) {
     figures[c.id].setAttribute('visibility',occupied?'visible':'hidden');
     const trailIndex = route?.indexOf(c.id) ?? -1;
     const description = occupied ? 'hedge' : here ? 'mouse' : trailIndex >= 0 ? 'mouse trail, step '+(trailIndex+1) : 'empty';
-    plots[c.id].setAttribute('aria-label',`Row ${c.r+5}, plot ${c.q-Math.max(-4,-c.r-4)+1}, ${description}${c.edge?', exit':''}`);
+    plots[c.id].setAttribute('aria-label',`Row ${c.row}, plot ${c.column}, ${description}${c.edge?', exit':''}`);
     plots[c.id].setAttribute('aria-disabled',String(occupied || here || !!outcome));
     plots[c.id].setAttribute('tabindex',c.id === selected && !outcome ? '0':'-1');
   }
@@ -102,14 +117,15 @@ function drawBoard(previous = mouse) {
 function drawChapters() {
   const trail = $('trail');
   trail.replaceChildren();
-  for (let i=0; i < gardens.length + Number(unlocked()===gardens.length); i++) {
+  const progress = unlocked();
+  for (let i=0; i < gardens.length + Number(legacyWild || progress===gardens.length); i++) {
     const b = document.createElement('button');
     b.textContent = i===gardens.length ? '✤' : String(i+1);
     let name = gardens[i]?.name || 'Wild garden';
     if (best[i]) name += `, best ${best[i]} moves`;
     b.title = name; b.setAttribute('aria-label',name);
     if (i===stage) b.setAttribute('aria-current','step');
-    b.disabled = i > unlocked();
+    b.disabled = i < gardens.length && i > progress;
     b.addEventListener('click',()=>{ if (stage!==i) begin(i,true); });
     trail.append(b);
   }
@@ -122,11 +138,13 @@ function begin(i, fresh = false) {
   endScout();
   stage = i;
   const garden = gardens[i];
-  if (!garden && (fresh || !wildLayout.length)) wildLayout = wildGarden();
+  makePlots(garden?.width ?? 9);
+  if (!garden && (fresh || !wildLayout.length)) wildLayout = wildGarden(gardenBoard);
   hedges = new Set(garden?.hedges || wildLayout);
-  history = []; mouse = burrow; outcome = ''; face = 1; guardedUntil = 0;
+  history = []; mouse = gardenBoard.burrow; outcome = ''; face = 1; guardedUntil = 0;
   route = escapeRoute(mouse,hedges); selected = route[0];
-  $('garden-number').textContent = garden ? `Garden ${pad(i+1)} / 05` : 'Endless gardens';
+  $('garden-number').textContent = garden ? `Garden ${pad(i+1)} / ${pad(gardens.length)}` : 'Endless gardens';
+  $('garden-size').textContent = `${cells.length} plots · ${hedges.size} starting shrubs`;
   $('garden-name').textContent = garden?.name || 'The Wild Garden';
   board.style.setProperty('--bloom',garden?.bloom || '#c7a15f');
   $('result').hidden = true;
@@ -306,5 +324,5 @@ $('reset-button').addEventListener('click',()=>{ if (!modal.open) begin(stage); 
 $('undo').addEventListener('click',undoMove);
 function frame() { board.setAttribute('viewBox', portrait.matches ? '105 25 470 412' : '0 0 680 462'); }
 portrait.addEventListener('change',frame);
-preparePlate(); makePlots(); frame(); begin(stage); syncSound();
+preparePlate(); frame(); begin(stage); syncSound();
 if (read('sessionStorage',seenKey)!=='1') openHelp();

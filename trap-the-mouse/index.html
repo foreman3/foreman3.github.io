@@ -32,16 +32,18 @@
     <div class="spread">
       <section class="play" aria-labelledby="garden-name">
         <div class="map-head">
-          <div><span id="garden-number" class="label"></span><h2 id="garden-name"></h2></div>
+          <div><span id="garden-number" class="label"></span><h2 id="garden-name"></h2><span id="garden-size"></span></div>
           <div class="moves"><span class="label">Moves</span><strong id="move-count">00</strong></div>
         </div>
         <div class="map">
           <svg id="board" viewBox="0 0 680 462" aria-label="Garden board" role="group">
             <defs id="symbols"></defs><g id="engraving" aria-hidden="true"></g>
+            <g id="planting-bed">
             <g id="plots" role="group" aria-label="Planting plots"></g>
             <g id="tracks" aria-hidden="true" pointer-events="none"></g>
             <g id="runner" aria-hidden="true" pointer-events="none"><g id="hop"><use href="#field-mouse"></use></g></g>
             <g id="forecast" aria-hidden="true" pointer-events="none"></g>
+            </g>
           </svg>
           <div id="result" hidden><div class="result-card"><span class="label" id="result-label"></span><h2 id="result-title"></h2><p id="result-detail"></p><button class="primary" id="advance"></button></div></div>
         </div>
@@ -64,7 +66,7 @@
       <img src="woodmouse.webp" alt="" width="640" height="640">
       <div class="cover-copy"><span class="label">Garden field guide</span>
         <h2 id="cover-title">Trap <em>the</em> Mouse</h2>
-        <p>Plant a hedge on an empty plot. The mouse takes one step toward the edge.</p>
+        <p>Plant a hedge. The mouse takes one step toward the edge. Each of the nine gardens is smaller and starts with fewer shrubs.</p>
         <p>Follow its tracks and close every way out. Hold a plot to scout your move. Lift to cancel.</p>
         <p class="keyboard">Use the arrows to choose a plot, hold P to scout, and press Enter to plant. U undoes a move.</p>
         <button class="primary" id="instruction-close" autofocus>Enter the garden <span aria-hidden="true">→</span></button>
