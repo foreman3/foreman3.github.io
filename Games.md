@@ -13,7 +13,7 @@ This repository hosts simple arcade-style video games.
 - [Clockwork Blast](clockwork-blast/) - Wind charges, kick them through lanes, and outwit seven rooms of tin robots.
 - [Copper Spire](copper-spire/) - Rotate around twelve spokes, silence climbing machines, and defend the rim through seven observatory depths.
 - [Deep Core](deep-core/) - Dig tactical tunnels, pressure-pop threats, and weaponize falling boulders.
-- [Flappy](flappy/) - Navigate obstacles and collect coins.
+- [Flappy Air Mail](flappy/) - Thread beacon gates, collect postage, and deliver the mail across seven coastal routes.
 - [Fuse Catch](fuse-catch/) - Read arcing bomb paths, route between double drops, and survive seven rooftop shifts.
 - [Galactic Wing](galactic-wing/) - Break alien formations, intercept diving squadrons, and chase precision chains.
 - [Ink Claim](ink-claim/) - Draw claim lines, dodge ink moths, and finish seven printed posters.
@@ -28,7 +28,7 @@ This repository hosts simple arcade-style video games.
 - [Neon River Run](river-run/) - Cross traffic, ride a living river, and claim five shifting home bays.
 - [Orchard Watch](orchard-watch/) - Chase apple-stealing marmots, spare the gardeners, and protect five autumn harvests.
 - [Paper Route Rush](paper-route-rush/) - Dodge morning hazards and land newspapers at marked mailboxes.
-- [Qbert Clone](qbert/) - Hop across pyramids and change block colors.
+- [Qbert Clockwork](qbert/) - Light seven clockwork pyramids, read the winders’ next move, and rewind a mistimed hop.
 - [Space Invaders](space-invaders/) - Battle waves of alien foes.
 - [Space Invaders Command](space-invaders-command/) - Fusion of invaders and exploding missiles.
 - [Tanks](tanks/) - Duel enemy armor in top-down combat.
