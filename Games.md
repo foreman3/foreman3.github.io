@@ -40,6 +40,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Copper Glide](copper-glide/) - Bank air-hockey shots, defend your goal, and outplay seven tabletop rivals.
 - [Cloudlift](cloudlift/) - Fly a four-seat rescue helicopter, evacuate mountain pads, and bring every hiker home through seven valleys.
 - [Ribbon Racers](ribbon-racers/) - Cut off rival light-cycles, brake through tight spaces, and outlast seven ribbon-racing grids.
 - [Pearl Pop](pearl-pop/) - Bank colorful pearls, pop matching shoals, and drop hanging clusters through nine midnight reefs.
