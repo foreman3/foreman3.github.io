@@ -107,7 +107,7 @@ for p in mesh.polygons:p.use_smooth=True;z=sum(mesh.vertices[i].co.z for i in p.
 pid=1
 for row in range(4):
  for j in range(row+1):
-  o=bpy.data.objects.new('Pin_%02d'%pid,mesh);scene.collection.objects.link(o);o.location=((j-row/2)*.35,16.5+row*.62,.012);pid+=1
+  o=bpy.data.objects.new('Pin_%02d'%pid,mesh);scene.collection.objects.link(o);o.location=((j-row/2)*.76,16.5+row*.66,.012);pid+=1
 
 palette=[('straight',(.055,.27,.30),(.15,.54,.55)),('gentle',(.12,.22,.52),(.35,.57,.88)),('hook',(.55,.12,.045),(.94,.46,.095)),('snap',(.30,.065,.37),(.75,.24,.65))]
 ball_objects=[]

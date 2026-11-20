@@ -4,7 +4,7 @@ Agent Yoda, 2026-11-19 (local). This rebuild replaces the former seven-league ga
 
 ## What changed
 
-One complete ten-frame game, standard ten-pin scoring and the usual tenth-frame bonus balls. There are no league targets, unlocks, timed releases or progression levels. A new game selects Easy, Medium or Hard lane complexity and an initial ball. Players may change balls between rolls, adjust starting position, aim and speed, and choose left/right-handed hook.
+One complete ten-frame game, standard ten-pin scoring and the usual tenth-frame bonus balls. There are no league targets, unlocks or progression levels. A new game selects Easy, Medium or Hard lane complexity and an initial ball. Players may change balls between rolls, adjust starting position, aim and speed, and choose left/right-handed hook.
 
 The four balls are Straight (plastic), Gentle Curve (smooth arc), Strong Hook (strong continuous reaction), and Late Snap (delayed, sharp back-end reaction). Their friction responses are separate physical profiles. Speed changes the time available to grip and turn. Pins use bounded arcade impulse/carry physics with animated three-dimensional falls; this is not a full rigid-body bowling simulator.
 
@@ -12,7 +12,7 @@ The four balls are Straight (plastic), Gentle Curve (smooth arc), Strong Hook (s
 
 Every new game uses a fresh random seed to generate one oil distribution. That distribution stays unchanged throughout all ten frames. Easy uses forgiving center-heavy house conditions; Medium broadens length, crown and offset variation; Hard includes flatter sport-style conditions, greater asymmetry, longer/shorter patterns and stronger local variation.
 
-Oil controls sliding versus grip at the ball's current lane position. No oil tint, heat map, breakpoint, boundary, pattern name or predicted hook path is shown. The brass aiming ring shows only the initial direction. The bowling hall itself is identical across random patterns. A browser check compares the actual canvas images for two different seeds and confirms exact equality before the shot.
+Oil controls sliding versus grip at the ball's current lane position. No oil tint, heat map, breakpoint, boundary, pattern name or predicted hook path is shown. The brass ring marks the fixed aim focus; a smaller bright ring and a timing bar show the live release angle around that focus. The bowling hall itself is identical across random patterns. A browser check compares two seeded lanes at the same initial launched-ball position and confirms identical canvas images before any travel. The moving aim may have a different phase, but it reveals no oil information.
 
 ## Blender assets and rendering
 
@@ -24,13 +24,13 @@ Editable source: `assets/pocket-lanes.blend`. Rebuild with:
 
 The script produces packed maple artwork, the full GLB, a self-contained `scene.json` containing the same GLB bytes, and four transparent rendered ball portraits. Runtime loads the JSON envelope so the existing offline collector can discover the model data without a shared script change. The GLB and .blend remain editable/downloadable sources. Three.js 0.180.0 and its GLTFLoader/BufferGeometryUtils are vendored locally with their MIT license; gameplay has no CDN dependency.
 
-A live perspective camera follows the ball toward the pin deck and returns to the approach for the next shot. Reduced-motion preference keeps the camera stationary. Shadows, physically based materials and warm/cool lighting provide depth. Static scene meshes are merged by material. The active scene uses about 38 render calls, 103,000 triangles and 20 geometries; the mobile profile caps pixel ratio at 1 and uses smaller shadow maps.
+A live perspective camera follows the ball toward the pin deck and returns to the approach for the next shot. Reduced-motion preference keeps the camera stationary. Shadows, physically based materials and warm/cool lighting provide depth. Static scene meshes are merged by material. The active scene uses about 39 render calls, 103,000 triangles and 20 geometries; the mobile profile caps pixel ratio at 1 and uses smaller shadow maps.
 
 ## Verification
 
 `engine.test.cjs` covers perfect 300, all-five-pin-spare 150, nine/miss 90, gutters 0, tenth-frame 0/10/10 = 20, and X/X/7 = 27. Each fixture checks both scoring and actual frame/rack transitions. It also checks pending strike bonuses, spare/strike marks, 40 random patterns per complexity, bounds and determinism, four distinct measured trajectories, seed-dependent hook differences and 90 seeded random complete games with finite physics and scores within 0–300.
 
-`verify.cjs` bowls three complete physical games through browser controls using one unchanged coarse policy: Easy 258, Medium 300 and Hard 246 for seed 23. All four ball types, strikes, spare recovery and tenth-frame fills are exercised. Across 24 further seeds per complexity, the same policy averages 270 / 259 / 240, with ranges 208–300 / 228–300 / 190–300. These are mechanical regression results, not human difficulty or enjoyment measurements; a favorable random Medium pattern can be easier for a particular line than an Easy pattern.
+`verify.cjs` bowls three complete physical games through browser controls using one unchanged coarse policy: Easy 146, Medium 111 and Hard 115 for seed 23. All four ball types, strikes, spare recovery and tenth-frame fills are exercised. Across 24 further seeds per complexity, the same policy averages 103 / 109 / 101, with ranges 82–153 / 81–143 / 82–139. These are mechanical regression results, not human difficulty or enjoyment measurements; a favorable random Medium pattern can be easier for a particular line than an Easy pattern.
 
 The browser suite also checks instruction/setup gates, actual equipment/difficulty selection, hidden oil, keyboard controls, exact help freeze, sound, hand reversal, scorecard review, new-game/reset/cancel, touch aiming/capture/slide/cancel, native speed sliders, captured Roll activation, fullscreen refusal, returning mobile launch, ten score cells, no horizontal overflow or control overlap, and a normal-page realtime roll without test hooks.
 
@@ -38,10 +38,19 @@ Reviewed sizes: 1440×900, 667×375, 740×390, 844×390 and 390×844. Mobile con
 
 `focused.cjs` checks range-key shortcuts, preserving a game when cancelling setup, 3D ray-based mouse aiming, blur/input release, modal focus loop, desktop flyout, realtime mouse-only opening, camera freeze while paused, pointer cancellation/outside release on Roll, mobile sound, storage denial and canonical arcade-card navigation. All console/page-error checks pass. The normal page exposes no test API; deterministic hooks exist only on `?test` and omit oil distribution data.
 
-Final local Chrome timing is approximately 18 ms per frame (p95 about 18.5 ms) during active play. This is a desktop/headless emulation measurement; physical-phone performance and human bowling feel remain unmeasured.
+Fresh isolated Chrome checks measured 17.68 ms mean / 18.3 ms p95 / 18.5 ms maximum during fast aim animation and 17.62 / 18.4 / 18.6 ms while rolling. The full multi-context suite also observed one 477 ms scheduling stall (p95 remained 18.3 ms). This is a desktop/headless emulation measurement; physical-phone performance and human bowling feel remain unmeasured.
 
 ## Reproduce
 
-Run `node pocket-lanes/engine.test.cjs`. Serve the repository with `node pocket-lanes/serve.cjs` (localhost port 8784). Put an installed Playwright package on `NODE_PATH`, then run `node pocket-lanes/verify.cjs <absolute evidence directory>` and `node pocket-lanes/focused.cjs <absolute evidence directory>`. `LANES_URL` can select the published origin. `pilot.cjs` prints the physical full-game routes; `layout.cjs` captures the five responsive layouts.
+Run `node pocket-lanes/engine.test.cjs`. Serve the repository with `node pocket-lanes/serve.cjs` (localhost port 8784). Put an installed Playwright package on `NODE_PATH`, then run `node pocket-lanes/verify.cjs <absolute evidence directory>` and `node pocket-lanes/focused.cjs <absolute evidence directory>`. `release-check.cjs` measures isolated ready/rolling timing and captures the release guide. `LANES_URL` can select the published origin. `pilot.cjs` prints the physical full-game routes; `layout.cjs` captures the five responsive layouts.
 
 The rebuild preserved unrelated Flappy changes, their QA files and existing offline inventory edits. Only Pocket Lanes and its own canonical registration descriptions belong to this change. Shared offline/sidebar refresh remains outside the explicitly retained scope; the online game loads its own local runtime and scene assets normally.
+
+
+## Wider rack and timed release follow-up
+
+The pin-center spacing is now 76 lane units instead of 35, with a 33-unit row pitch. The outside edges of the back-row pin bodies occupy about 85% of the usable lane, leaving clearance to both gutters. The Blender source/export and simulation agree. Fallen-pin contact reach grows from 28 to 36 units as a pin tips, preserving physical strike carry across the wider rack without enlarging the standing-pin hit boxes or changing ball mass. A measured strike remains possible.
+
+FOCUS sets a fixed center direction. The visible release cursor oscillates around that focus with a smooth speed trade-off: at minimum speed, ±0.34° over a 4.55-second cycle; at maximum speed, ±4.35° over a 1.06-second cycle. The sweep phase runs continuously through unpaused play and is never reset by a new rack. ROLL captures the displayed angle on pointer release or Space keydown; it does not steer the ball after launch. Help, setup and hidden-page pause freeze both phase and marker. The timing bar remains visible under reduced-motion preference because this motion is gameplay information.
+
+New tests check stable focus, speed-dependent sweep width/rate, exact mouse/touch/keyboard capture, latched ball direction, pause gating, gutter clearance, strike feasibility and timing-dependent pinfall. Twelve otherwise identical fast shots released at 0.1-second intervals knock down 9/9/4/4/9/6/4/1/2/2/2/6 pins. The same preset no longer guarantees repeated strikes. Full ten-frame scoring and hidden oil are preserved.
