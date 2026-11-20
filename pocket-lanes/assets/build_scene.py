@@ -6,6 +6,7 @@ import numpy as np
 from mathutils import Vector
 from pathlib import Path
 OUT=Path(__file__).resolve().parent
+ACTOR_SCALE=1.3
 random.seed(1964)
 bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete(use_global=False)
 scene=bpy.context.scene
@@ -107,7 +108,7 @@ for p in mesh.polygons:p.use_smooth=True;z=sum(mesh.vertices[i].co.z for i in p.
 pid=1
 for row in range(4):
  for j in range(row+1):
-  o=bpy.data.objects.new('Pin_%02d'%pid,mesh);scene.collection.objects.link(o);o.location=((j-row/2)*.76,16.5+row*.66,.012);pid+=1
+  o=bpy.data.objects.new('Pin_%02d'%pid,mesh);scene.collection.objects.link(o);o.location=((j-row/2)*.76,16.5+row*.66,.012);o.scale=(ACTOR_SCALE,)*3;pid+=1
 
 palette=[('straight',(.055,.27,.30),(.15,.54,.55)),('gentle',(.12,.22,.52),(.35,.57,.88)),('hook',(.55,.12,.045),(.94,.46,.095)),('snap',(.30,.065,.37),(.75,.24,.65))]
 ball_objects=[]
@@ -123,9 +124,10 @@ for idx,(name,col,accent) in enumerate(palette):
  for dx,dz in [(-.035,.075),(.035,.075),(0,.008)]:
   direction=Vector((dx,-.12,dz)).normalized();loc=o.location+direction*.153
   bpy.ops.mesh.primitive_cylinder_add(vertices=20,radius=.018,depth=.09,location=loc);cut=bpy.context.object;cut.rotation_euler=direction.to_track_quat('Z','Y').to_euler();bpy.context.view_layer.objects.active=o;mod=o.modifiers.new('Finger well','BOOLEAN');mod.operation='DIFFERENCE';mod.object=cut;bpy.ops.object.modifier_apply(modifier=mod.name);bpy.data.objects.remove(cut,do_unlink=True)
+ o.scale=(ACTOR_SCALE,)*3;o.location.z=.16*ACTOR_SCALE
  ball_objects.append(o)
  # Separate static rack ball, sharing the actual authored mesh.
- rack=bpy.data.objects.new('Return_'+name,o.data);scene.collection.objects.link(rack);rack.location=(2.65,-1.65+idx*.43,1.0);static.append(rack)
+ rack=bpy.data.objects.new('Return_'+name,o.data);scene.collection.objects.link(rack);rack.location=(2.65,-1.65+idx*.43,1.0+.16*(ACTOR_SCALE-1));rack.scale=(ACTOR_SCALE,)*3;static.append(rack)
 # Aiming markers are also Blender geometry, moved by the game.
 bpy.ops.mesh.primitive_torus_add(major_radius=.205,minor_radius=.009,major_segments=48,minor_segments=8,location=(0,1,.025));target=bpy.context.object;target.name='Aim_target';target.data.materials.append(brass)
 # Merge static objects by material to keep draw calls bounded on phones.
@@ -150,7 +152,7 @@ bpy.ops.export_scene.gltf(filepath=str(OUT/'scene.glb'),export_format='GLB',expo
 data=(OUT/'scene.glb').read_bytes();(OUT/'scene.json').write_text(json.dumps({'generator':'Blender '+bpy.app.version_string,'source':'pocket-lanes.blend','glb':base64.b64encode(data).decode('ascii')},separators=(',',':')))
 # Portraits of all four authored balls: same geometry as live gameplay.
 for obj in scene.objects:obj.hide_render=obj not in ball_objects and obj.type not in {'LIGHT','CAMERA'}
-cam.location=(.44,-.66,.45);cam.rotation_euler=(Vector((0,0,.16))-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.type='ORTHO';cam.data.ortho_scale=.44
+cam.location=(.44*ACTOR_SCALE,-.66*ACTOR_SCALE,.45*ACTOR_SCALE);cam.rotation_euler=(Vector((0,0,.16*ACTOR_SCALE))-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.type='ORTHO';cam.data.ortho_scale=.44*ACTOR_SCALE
 scene.render.resolution_x=scene.render.resolution_y=192;scene.render.film_transparent=True;scene.render.image_settings.file_format='PNG';scene.render.image_settings.color_mode='RGBA';scene.cycles.samples=24
 for o,(name,_,_) in zip(ball_objects,palette):
  for p in ball_objects:p.hide_render=p!=o

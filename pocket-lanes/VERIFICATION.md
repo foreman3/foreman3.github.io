@@ -30,7 +30,7 @@ A live perspective camera follows the ball toward the pin deck and returns to th
 
 `engine.test.cjs` covers perfect 300, all-five-pin-spare 150, nine/miss 90, gutters 0, tenth-frame 0/10/10 = 20, and X/X/7 = 27. Each fixture checks both scoring and actual frame/rack transitions. It also checks pending strike bonuses, spare/strike marks, 40 random patterns per complexity, bounds and determinism, four distinct measured trajectories, seed-dependent hook differences and 90 seeded random complete games with finite physics and scores within 0–300.
 
-`verify.cjs` bowls three complete physical games through browser controls using one unchanged coarse policy: Easy 146, Medium 111 and Hard 115 for seed 23. All four ball types, strikes, spare recovery and tenth-frame fills are exercised. Across 24 further seeds per complexity, the same policy averages 103 / 109 / 101, with ranges 82–153 / 81–143 / 82–139. These are mechanical regression results, not human difficulty or enjoyment measurements; a favorable random Medium pattern can be easier for a particular line than an Easy pattern.
+`verify.cjs` bowls three complete physical games through browser controls using one unchanged coarse policy: Easy 181, Medium 158 and Hard 185 for seed 23. All four ball types, strikes, spare recovery and tenth-frame fills are exercised. Across 24 further seeds per complexity, the same policy averages 204 / 205 / 192, with ranges 164–264 / 141–264 / 146–243. These are mechanical regression results, not human difficulty or enjoyment measurements; a favorable random Medium pattern can be easier for a particular line than an Easy pattern.
 
 The browser suite also checks instruction/setup gates, actual equipment/difficulty selection, hidden oil, keyboard controls, exact help freeze, sound, hand reversal, scorecard review, new-game/reset/cancel, touch aiming/capture/slide/cancel, native speed sliders, captured Roll activation, fullscreen refusal, returning mobile launch, ten score cells, no horizontal overflow or control overlap, and a normal-page realtime roll without test hooks.
 
@@ -44,7 +44,7 @@ Fresh isolated Chrome checks measured 17.68 ms mean / 18.3 ms p95 / 18.5 ms maxi
 
 Run `node pocket-lanes/engine.test.cjs`. Serve the repository with `node pocket-lanes/serve.cjs` (localhost port 8784). Put an installed Playwright package on `NODE_PATH`, then run `node pocket-lanes/verify.cjs <absolute evidence directory>` and `node pocket-lanes/focused.cjs <absolute evidence directory>`. `release-check.cjs` measures isolated ready/rolling timing and captures the release guide. `LANES_URL` can select the published origin. `pilot.cjs` prints the physical full-game routes; `layout.cjs` captures the five responsive layouts.
 
-The rebuild preserved unrelated Flappy changes, their QA files and existing offline inventory edits. Only Pocket Lanes and its own canonical registration descriptions belong to this change. Shared offline/sidebar refresh remains outside the explicitly retained scope; the online game loads its own local runtime and scene assets normally.
+Unrelated Flappy changes and existing offline inventory edits are preserved. For the size revision, the updated repository standard is satisfied by regenerating sidebar/offline outputs from a clean release snapshot containing only the intended Pocket Lanes changes. The generated release inventory is checked in that snapshot; unrelated worktree edits are not included or overwritten.
 
 
 ## Wider rack and timed release follow-up
@@ -54,3 +54,10 @@ The pin-center spacing is now 76 lane units instead of 35, with a 33-unit row pi
 FOCUS sets a fixed center direction. The visible release cursor oscillates around that focus with a smooth speed trade-off: at minimum speed, ±0.34° over a 4.55-second cycle; at maximum speed, ±4.35° over a 1.06-second cycle. The sweep phase runs continuously through unpaused play and is never reset by a new rack. ROLL captures the displayed angle on pointer release or Space keydown; it does not steer the ball after launch. Help, setup and hidden-page pause freeze both phase and marker. The timing bar remains visible under reduced-motion preference because this motion is gameplay information.
 
 New tests check stable focus, speed-dependent sweep width/rate, exact mouse/touch/keyboard capture, latched ball direction, pause gating, gutter clearance, strike feasibility and timing-dependent pinfall. Twelve otherwise identical fast shots released at 0.1-second intervals knock down 9/9/4/4/9/6/4/1/2/2/2/6 pins. The same preset no longer guarantees repeated strikes. Full ten-frame scoring and hidden oil are preserved.
+
+
+## 30% larger actors follow-up
+
+All ten pin centers retain their 76-unit horizontal and 33-unit row pitch. Every Blender pin and all four bowling-ball models are uniformly scaled to 1.3. Lane geometry, camera, aim focus/sweep, oil and ball reaction profiles are unchanged. Standing pins remain clear of the gutters. The ball stays seated on the lane and fallen-pin contact height follows its larger geometry. Collision radii and ball rotation radius use the same 1.3 scale; no mass, launch-speed or timing changes were introduced. The ball-rack centers retain their horizontal spacing, with a small height correction for the larger radius. Ball-selection portraits remain unchanged.
+
+Verified all exported pin translations are byte-identical in value to the previous release, and all actor scale vectors are 1.3. Standard scoring fixtures, 90 random games, release capture and complete browser games pass. The same preset no longer has the earlier pinfall values because the contact surfaces are now larger; the current timing sample yields 10/10/6/6/10/10/6/9/3/6/6/10 pins.

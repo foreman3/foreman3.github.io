@@ -1,4 +1,4 @@
-import {BowlingView} from './art.js?v=timed-release-3';
+import {BowlingView} from './art.js?v=larger-actors-4';
 const E=window.PocketEngine,$=id=>document.getElementById(id),canvas=document.querySelector('canvas');
 let s=E.create(),view,loaded=false,paused=true,started=false,manual=false,last=performance.now(),accumulator=0,paint=true,sound=false,audio=null,keys=new Set(),drag=null,rollPointer=null,returnOverlay=null;
 const seen={get(){try{return sessionStorage.getItem('pocket-lanes-tenframes-v3-release');}catch{return null;}},set(){try{sessionStorage.setItem('pocket-lanes-tenframes-v3-release','seen');}catch{}}};
