@@ -27,8 +27,11 @@ This repository hosts simple arcade-style video games.
 - [Neon Flight](neon-flight/) - Dodge wireframe skyscrapers in a glowing city.
 - [Neon River Run](river-run/) - Cross traffic, ride a living river, and claim five shifting home bays.
 - [Orchard Watch](orchard-watch/) - Chase apple-stealing marmots, spare the gardeners, and protect five autumn harvests.
+- [Pac-Man](pacman/) - Eat pellets and avoid ghosts.
 - [Paper Route Rush](paper-route-rush/) - Dodge morning hazards and land newspapers at marked mailboxes.
+- [Pitfall](pitfall/) - Run, jump, and avoid pits.
 - [Qbert Clockwork](qbert/) - Light seven clockwork pyramids, read the winders’ next move, and rewind a mistimed hop.
+- [Soda Shift](soda-shift/) - Serve packed counters, catch empties, and survive the supper rush.
 - [Space Invaders](space-invaders/) - Battle waves of alien foes.
 - [Space Invaders Command](space-invaders-command/) - Fusion of invaders and exploding missiles.
 - [Tanks](tanks/) - Duel enemy armor in top-down combat.
@@ -40,7 +43,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
-- [Pocket Lanes](pocket-lanes/) - Bowl ten frames with four distinct ball reactions and hidden random oil on Easy, Medium, or Hard lanes.
+- [Pocket Lanes (Bowling)](pocket-lanes/) - Bowl ten frames with four distinct ball reactions and hidden random oil on Easy, Medium, or Hard lanes.
 - [Copper Glide](copper-glide/) - Bank air-hockey shots, defend your goal, and outplay seven tabletop rivals.
 - [Cloudlift](cloudlift/) - Fly a four-seat rescue helicopter, evacuate mountain pads, and bring every hiker home through seven valleys.
 - [Ribbon Racers](ribbon-racers/) - Cut off rival light-cycles, brake through tight spaces, and outlast seven ribbon-racing grids.
@@ -63,10 +66,7 @@ This repository hosts simple arcade-style video games.
 - [Frostline](frostline/) - Slide ice blocks, recover survey pennants, and outmaneuver prowling frostlings.
 - [Joust](joust/) - Fly and defeat rival knights.
 - [Number Munchers](number-munchers/) - Devour correct answers while dodging Troggles.
-- [Pac-Man](pacman/) - Eat pellets and avoid ghosts.
 - [Periscope Pursuit](periscope-pursuit/) - Lead rising torpedoes into hostile ships and intercept incoming depth charges.
 - [Pinball](pinball/) - A treasure hunt pinball adventure with mini-tables and unlocks.
-- [Pitfall](pitfall/) - Run, jump, and avoid pits.
 - [Pole Position](pole/) - Steer and dodge rival racers.
 - [Scorched Skies](scorched-earth/) - Artillery duels in the clouds.
-- [Soda Shift](soda-shift/) - Serve packed counters, catch empties, and survive the supper rush.

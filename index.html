@@ -158,6 +158,10 @@
       transform: translateY(0) scale(1.01);
     }
 
+    .card[hidden] {
+      display: none;
+    }
+
     .card:focus-visible,
     .recent-card:focus-visible,
     .filter-chip:focus-visible,
@@ -728,7 +732,7 @@
       <div class="section-title"><span>In Work</span><span class="section-count" data-section-count>25</span></div>
       <div class="grid">
         <a class="card" data-icon="🎳" style="--delay: 0.05s" href="pocket-lanes/">
-          <div class="card-title">Pocket Lanes</div>
+          <div class="card-title">Pocket Lanes (Bowling)</div>
           <div class="card-meta">Ten frames. Four balls. Read the lane and chase your score.</div>
         </a>
         <a class="card" data-icon="🏒" style="--delay: 0.05s" href="copper-glide/">

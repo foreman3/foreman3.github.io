@@ -12,6 +12,8 @@ const inventoryContext = { self: {} };
 vm.runInNewContext(fs.readFileSync(path.join(root, 'offline-assets.js'), 'utf8'), inventoryContext);
 const inventory = inventoryContext.self.VIBECADE_OFFLINE;
 const games = inventory.assets.filter(asset => /^[a-z0-9-]+\/index\.html$/.test(asset));
+const catalog = [...fs.readFileSync(path.join(root, 'Games.md'), 'utf8').matchAll(/^- \[[^\]]+\]\(([^)]+)\)/gm)]
+  .map(([, href]) => href);
 let failingAsset = null;
 let updateVersion = false;
 const server = http.createServer((req, res) => {
@@ -36,6 +38,7 @@ const server = http.createServer((req, res) => {
   try {
     for (const prefix of ['/', '/arcade/']) {
       const base = origin + prefix;
+      const catalogURLs = catalog.map(href => new URL(href, base).href).sort();
       const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
       const page = await context.newPage();
       const errors = [];
@@ -114,6 +117,16 @@ const server = http.createServer((req, res) => {
       }
       await page.goto(base);
       assert.match(await page.locator('#offline-status').textContent(), /games ready offline/);
+      const homeCards = page.locator('.game-section a.card');
+      assert.deepEqual(await homeCards.evaluateAll(cards => cards.map(card => card.href).sort()), catalogURLs);
+      await page.locator('#game-search').fill('bowling');
+      const bowlingCard = page.locator('.game-section a.card:visible');
+      assert.equal(await bowlingCard.count(), 1);
+      assert.equal(await bowlingCard.getAttribute('href'), 'pocket-lanes/');
+      await bowlingCard.click();
+      await page.waitForURL(base + 'pocket-lanes/');
+      assert.match(await page.title(), /Pocket Lanes/);
+
       await page.goto(base + 'not-a-cached-page/');
       assert.match(await page.locator('h1').textContent(), /isn’t saved yet/);
       await page.waitForFunction(base => document.getElementById('arcade-link').href === base, base);
@@ -122,6 +135,23 @@ const server = http.createServer((req, res) => {
       assert.deepEqual(failed, []);
       await context.close();
       console.log(`PASS: install choices, responsive menu, all ${games.length} games offline and offline fallback at ${prefix}`);
+
+      const desktop = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      const menuPage = await desktop.newPage();
+      await menuPage.goto(base);
+      await menuPage.waitForFunction(() => navigator.serviceWorker.controller);
+      await desktop.setOffline(true);
+
+      await menuPage.goto(base + 'canopy-caper/');
+      await menuPage.locator('#instruction-close').click();
+      await menuPage.locator('#flyout-nav.is-ready .flyout-toggle').click();
+      const flyoutLinks = menuPage.locator('#flyout-panel #sidebar li a');
+      assert.deepEqual(await flyoutLinks.evaluateAll(links => links.map(link => link.href).sort()), catalogURLs);
+      await flyoutLinks.getByText('Pocket Lanes (Bowling)', { exact: true }).click();
+      await menuPage.waitForURL(base + 'pocket-lanes/');
+      assert.match(await menuPage.title(), /Pocket Lanes/);
+      await desktop.close();
+      console.log(`PASS: all ${catalog.length} catalog links and offline bowling launch from both menus at ${prefix}`);
     }
 
     // Interrupted first download must offer recovery. A failed later release
