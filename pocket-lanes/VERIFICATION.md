@@ -61,3 +61,19 @@ New tests check stable focus, speed-dependent sweep width/rate, exact mouse/touc
 All ten pin centers retain their 76-unit horizontal and 33-unit row pitch. Every Blender pin and all four bowling-ball models are uniformly scaled to 1.3. Lane geometry, camera, aim focus/sweep, oil and ball reaction profiles are unchanged. Standing pins remain clear of the gutters. The ball stays seated on the lane and fallen-pin contact height follows its larger geometry. Collision radii and ball rotation radius use the same 1.3 scale; no mass, launch-speed or timing changes were introduced. The ball-rack centers retain their horizontal spacing, with a small height correction for the larger radius. Ball-selection portraits remain unchanged.
 
 Verified all exported pin translations are byte-identical in value to the previous release, and all actor scale vectors are 1.3. Standard scoring fixtures, 90 random games, release capture and complete browser games pass. The same preset no longer has the earlier pinfall values because the contact surfaces are now larger; the current timing sample yields 10/10/6/6/10/10/6/9/3/6/6/10 pins.
+
+
+## Compact opening, handedness and stronger timing penalty
+
+Agent Yoda, 2026-11-20 (UTC). Intro copy is reduced to two short paragraphs and a compact keyboard reference, with its primary button above the instructions. Setup places Start beside the heading, keeps lane options in one row, and exposes ball and bowling hand together. Both opening cards fit without scrolling at 1440×900, 667×375, 740×390, 844×390 and 390×844. Same-session returns skip the intro after the existing mobile fullscreen launch gate; new games still require an intentional Start.
+
+The explicit Right handed / Left handed setup selector reverses every ball's hook. Right hooks left, Left hooks right. The in-game hand button and H shortcut continue to switch between rolls. The chosen hand is remembered locally and reused for the next game; unavailable browser storage remains a supported fallback.
+
+Meter width, sweep frequency, focus, lane geometry and the 1.3 actor scale are unchanged. The captured release angle is now focus plus twice the meter's timing offset. The bright lane ring previews that actual launch direction. A centered release keeps the chosen line; timing errors grow continuously without a hidden random penalty or forced gutter threshold. Maximum-speed release-angle deviation is now ±8.71°, and minimum-speed deviation is ±0.69°.
+
+The engine suite checks all four mirrored reactions on symmetric oil, doubled release steering, exact center capture, scoring and 90 complete random games. On one fixed Easy line at maximum speed, centered timing knocked down 10 pins, a small timing miss knocked down 6 without a gutter, and the wide miss guttered before the rack for 0. Twelve otherwise identical fast releases now produce 10/6/3/1/6/10/9/1/0/1/6/10. These supersede prior release-timing samples.
+
+`opening.cjs` captures both opening cards at all five sizes, bowls actual setup-selected left and right hooks, checks hand persistence, cancel behavior, paused repeat launch and clean console. Run alongside `engine.test.cjs`, `focused.cjs`, `verify.cjs` and `release-check.cjs` using the documented local server and Playwright environment.
+
+
+All browser suites passed with no console/page errors. The unchanged coarse shot policy now scores 123 / 143 / 155 on seed 23 for Easy / Medium / Hard respectively; these are the current full-game regression values after doubling timing impact. Isolated Chrome timing measured 17.68 ms mean / 18.3 ms p95 during maximum-speed ready animation and 17.67 / 18.3 ms while rolling. The multi-context suite recorded one 463 ms scheduling stall with p95 18.4 ms. Physical-phone performance remains unmeasured. The refreshed `gameplay.png` shows an actual rolling shot at pin impact.
