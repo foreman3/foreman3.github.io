@@ -1,31 +1,28 @@
 (function(root){
- 'use strict';
- const levels=[
-  {name:'House shoes',target:16,hook:0,assist:8,sway:0,period:4,bumpers:true},
-  {name:'Find the pocket',target:18,hook:.35,assist:7,sway:.006,period:3.8},
-  {name:'Read the oil',target:20,hook:.55,assist:6,sway:.012,period:3.6},
-  {name:'League night',target:22,hook:.75,assist:5,sway:.022,period:3.3},
-  {name:'The house final',target:24,hook:1,assist:4,sway:.03,period:3.1},
-  {name:'Scratch league',target:27,hook:1.2,assist:2,sway:.065,period:2.7},
-  {name:'Almost perfect',target:29,hook:1.4,assist:0,sway:.09,period:2.3}
- ];
- const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
- function pins(){const a=[];let id=1;for(let row=0;row<4;row++)for(let j=0;j<=row;j++)a.push({id:id++,x:(j-row/2)*35,y:825+row*31,vx:0,vy:0,down:false,removed:false,angle:0});return a;}
- function create(level=1){return{level:clamp(level,1,7),rack:1,shot:1,total:0,score:0,history:[],phase:'ready',pins:pins(),ball:null,time:0,clock:0,pos:0,aim:0,spin:0,power:.75,last:'Aim just beside the head pin. Ten pins, two rolls.',events:[],first:0,gutter:false};}
- function oil(s){return s.level<3?{name:'EVEN',factor:1,dry:520}:{name:['LONG','SHORT','MEDIUM'][s.rack-1],factor:[.72,1.2,.95][s.rack-1],dry:[640,420,540][s.rack-1]};}
- function release(s){const c=levels[s.level-1];return s.aim+Math.sin(s.time*Math.PI*2/c.period+s.rack*.85+s.shot*.4)*c.sway;}
- function launch(s){if(s.phase!=='ready')return false;const angle=release(s);s.phase='rolling';s.clock=0;s.gutter=false;s.ball={x:s.pos,y:38,vx:angle*(520+s.power*190),vy:520+s.power*190,spin:s.spin};s.events.push('roll');s.last='Watch the pocket. Spares count just as much as strikes.';return true;}
- function knock(s,p,vx,vy){if(p.down||p.removed)return;p.down=true;p.vx=vx*.5;p.vy=vy*.5;p.angle=Math.atan2(vy,vx);s.events.push('pin');}
- function step(s,dt){if(['clear','over'].includes(s.phase))return;s.time+=dt;if(s.phase!=='rolling')return;s.clock+=dt;const b=s.ball,c=levels[s.level-1],o=oil(s);
-  if(b&&b.y<1090){if(!s.gutter){const dry=b.y>o.dry?1:.16;b.vx+=b.spin*c.hook*o.factor*83*dry*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;if(Math.abs(b.x)>148){if(c.bumpers){b.x=clamp(b.x,-147,147);b.vx*=-.72;s.events.push('bumper');}else{s.gutter=true;b.x=Math.sign(b.x)*168;s.last='Gutter. Adjust your line; the spare is still yours.';}}}else b.y+=b.vy*dt;
-   if(!s.gutter)for(const p of s.pins){if(p.removed||p.down)continue;const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<(25+c.assist)**2){const ang=Math.atan2(dy,dx),speed=Math.hypot(b.vx,b.vy);knock(s,p,Math.cos(ang)*speed*.65+b.vx*.4,Math.sin(ang)*speed*.65+b.vy*.22);b.vx-=Math.cos(ang)*28;b.vy*=.97;}}
-  }
-  for(const p of s.pins){if(!p.down||p.removed)continue;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.exp(-1.65*dt);p.vy*=Math.exp(-1.65*dt);if(p.y>1010){p.y=1010;p.vy=-Math.abs(p.vy)*.25;}if(Math.abs(p.x)>151){p.x=clamp(p.x,-151,151);p.vx=-p.vx*.38;}for(const q of s.pins){if(q===p||q.down||q.removed)continue;const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy),speed=Math.hypot(p.vx,p.vy);if(d<27&&speed>35){knock(s,q,p.vx*.65+dx*2,p.vy*.65+dy*2);p.vx*=.58;p.vy*=.58;}}}
-  if(s.clock>3.1){const fallen=s.pins.filter(p=>p.down&&!p.removed).length;s.total+=fallen;s.score+=fallen*100;for(const p of s.pins)if(p.down)p.removed=true;s.ball=null;
-   if(s.shot===1&&fallen<10){s.first=fallen;s.shot=2;s.phase='ready';s.last=fallen+' down. '+(10-fallen)+' left: move your starting point for the spare.';s.events.push('ready');}
-   else{const tally=s.shot===1?10:s.first+fallen,mark=s.shot===1?'X':tally===10?'/':String(tally);s.history.push({rack:s.rack,pins:tally,mark});if(tally===10)s.score+=s.shot===1?250:100;s.last=mark==='X'?'STRIKE! All ten, one beautiful line.':mark==='/'?'SPARE! A well-earned recovery.':tally+' pins banked. Every pin helps.';s.phase=s.rack===3?(s.total>=c.target?'clear':'over'):'between';s.events.push(mark==='X'?'strike':'ready');}
-  }
- }
- function next(s){if(s.phase!=='between')return false;s.rack++;s.shot=1;s.pins=pins();s.first=0;s.ball=null;s.phase='ready';s.last='Fresh rack. Read the oil strip, then choose your line.';return true;}
- const api={levels,create,launch,step,next,oil,release,clamp};if(typeof module!=='undefined')module.exports=api;root.PocketEngine=api;
+'use strict';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const balls=[
+ {id:'straight',name:'Straight',subtitle:'Plastic · holds its line',gain:1.4,late:false},
+ {id:'gentle',name:'Gentle Curve',subtitle:'Smooth · easy to read',gain:36,late:false},
+ {id:'hook',name:'Strong Hook',subtitle:'Reactive · a sweeping arc',gain:82,late:false},
+ {id:'snap',name:'Late Snap',subtitle:'Pearl · a sharp back end',gain:190,late:true}
+];
+function random(seed){let n=seed>>>0;return()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296;};}
+function pattern(complexity,seed){const r=random(seed),c=['easy','medium','hard'].includes(complexity)?complexity:'easy';const ranges={easy:[480,620,.70,.93,.48,.68],medium:[440,720,.57,.91,.18,.44],hard:[390,790,.43,.93,.0,.18]}[c];return{length:ranges[0]+r()*(ranges[1]-ranges[0]),volume:ranges[2]+r()*(ranges[3]-ranges[2]),crown:ranges[4]+r()*(ranges[5]-ranges[4]),offset:(r()-.5)*(c==='easy'?10:c==='medium'?40:80),slope:(r()-.5)*(c==='easy'?.04:c==='medium'?.18:.4),bands:[r(),r(),r(),r()],complexity:c};}
+function oilAt(o,x,y){const board=clamp((x-o.offset)/150,-1,1),front=1/(1+Math.exp((y-o.length)/30)),crown=1-o.crown*Math.pow(Math.abs(board),1.5),uneven=(Math.sin(board*7+o.bands[0]*6)*o.bands[1]+Math.sin(y*.018+o.bands[2]*6)*o.bands[3])*(o.complexity==='hard'?.09:o.complexity==='medium'?.035:.01);return clamp((o.volume*crown+board*o.slope+uneven)*front,.015,.98);}
+function pins(){let id=1;const a=[];for(let row=0;row<4;row++)for(let j=0;j<=row;j++)a.push({id:id++,x:(j-row/2)*35,y:825+row*31,vx:0,vy:0,down:false,removed:false,fall:0,angle:0});return a;}
+function create(complexity='easy',seed=1){return{complexity,seed:seed>>>0,oil:pattern(complexity,seed),frame:1,frames:Array.from({length:10},()=>({rolls:[],complete:false})),phase:'ready',pins:pins(),ball:null,ballId:'straight',pos:0,aim:0,speed:.65,hand:-1,clock:0,time:0,settle:0,gutter:false,events:[],last:'Ten frames. Find your line and make it yours.'};}
+function score(frames){const flat=frames.flatMap(f=>f.rolls),totals=[],frameScores=[];let cursor=0,total=0,pending=false;for(let i=0;i<10;i++){const f=frames[i],r=f.rolls;let n=null;if(i===9){if(f.complete)n=r.reduce((a,b)=>a+b,0);}else if(r[0]===10){if(flat.length>cursor+2)n=10+flat[cursor+1]+flat[cursor+2];}else if(r.length>=2){if(r[0]+r[1]===10){if(flat.length>cursor+2)n=10+flat[cursor+2];}else n=r[0]+r[1];}cursor+=r.length;frameScores.push(n);if(n===null)pending=true;if(n!==null)total+=n;totals.push(!pending&&n!==null?total:null);}return{total,totals,frameScores,pending:frames.some((f,i)=>f.rolls.length>0&&frameScores[i]===null)};}
+function standing(s){return s.pins.filter(p=>!p.removed&&!p.down).length;}
+function fresh(s){s.pins=pins();s.ball=null;s.gutter=false;}
+function record(s,n){const f=s.frames[s.frame-1];if(s.phase!=='rolling')return;const available=standing(s)+s.pins.filter(p=>p.down&&!p.removed).length;if(!Number.isInteger(n)||n<0||n>available)throw Error('Invalid pinfall');f.rolls.push(n);s.ball=null;for(const p of s.pins)if(p.down)p.removed=true;let complete=false,reset=false;if(s.frame<10){complete=f.rolls.length===2||n===10;}else{const r=f.rolls;if(r.length===1&&n===10)reset=true;else if(r.length===2){if(r[0]<10&&r[0]+r[1]<10)complete=true;else if(r[0]<10||r[1]===10)reset=true;}else if(r.length===3)complete=true;}f.complete=complete;const strike=n===10,spare=!strike&&f.rolls.length>=2&&f.rolls.at(-2)+n===10;s.last=strike?'Strike. Beautiful line.':spare?'Spare. Nicely recovered.':n===0?'Gutter or miss. Take a moment and adjust.':n+' down. '+standing(s)+' standing.';s.events.push(strike?'strike':spare?'spare':'ready');if(complete){s.phase=s.frame===10?'complete':'between';if(s.phase==='complete')s.last='Game complete · '+score(s.frames).total+' / 300';}else{s.phase='ready';if(reset)fresh(s);}}
+function launch(s){if(s.phase!=='ready')return false;s.phase='rolling';s.clock=0;s.settle=0;s.gutter=false;const v=300+s.speed*150;s.ball={x:s.pos,y:28,vx:s.aim*v,vy:v,rotation:0,trail:[],traveled:0};s.events.push('roll');s.last=balls.find(b=>b.id===s.ballId).name+' · watch the reaction and read the lane.';return true;}
+function knock(s,p,vx,vy){if(p.down||p.removed)return;p.down=true;p.vx=vx*.52;p.vy=vy*.52;p.angle=Math.atan2(vx,vy);s.events.push('pin');}
+function step(s,dt){if(s.phase!=='rolling')return;s.time+=dt;s.clock+=dt;const b=s.ball,profile=balls.find(v=>v.id===s.ballId);if(b.y<1080){const oil=oilAt(s.oil,b.x,b.y),grip=.04+.96*(1-oil),late=profile.late?1/(1+Math.exp(-(b.y-s.oil.length-82)/24)):1;if(!s.gutter){b.vx+=s.hand*profile.gain*grip*late*dt;b.vy*=Math.exp(-.04*grip*dt);b.x+=b.vx*dt;if(Math.abs(b.x)>148){s.gutter=true;b.x=Math.sign(b.x)*168;b.vx=0;s.events.push('gutter');s.last='In the gutter. Adjust your start or use a straighter ball.';}}b.y+=b.vy*dt;b.rotation+=b.vy*dt/16;if(!s.gutter)for(const p of s.pins){if(p.down||p.removed)continue;const dx=p.x-b.x,dy=p.y-b.y;if(dx*dx+dy*dy<27*27){const a=Math.atan2(dy,dx),v=Math.hypot(b.vx,b.vy);knock(s,p,(Math.cos(a)*v*.65+b.vx*.4)*1.55,(Math.sin(a)*v*.65+b.vy*.22)*1.55);b.vx-=Math.cos(a)*22;b.vy*=.97;}}}else s.settle+=dt;
+for(const p of s.pins){if(!p.down||p.removed)continue;p.fall=Math.min(1,p.fall+dt*4.5);p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.exp(-1.7*dt);p.vy*=Math.exp(-1.7*dt);if(Math.abs(p.x)>155){p.x=clamp(p.x,-155,155);p.vx=-p.vx*.3;}if(p.y>1000){p.y=1000;p.vy=-Math.abs(p.vy)*.22;}for(const q of s.pins){if(q.down||q.removed||q===p)continue;const dx=q.x-p.x,dy=q.y-p.y;if(dx*dx+dy*dy<28*28&&Math.hypot(p.vx,p.vy)>32){knock(s,q,p.vx*.68+dx*2,p.vy*.68+dy*2);p.vx*=.6;p.vy*=.6;}}}
+if(s.settle>.9||s.clock>6)record(s,s.pins.filter(p=>p.down&&!p.removed).length);
+}
+function next(s){if(s.phase!=='between')return false;s.frame++;s.phase='ready';fresh(s);s.last='Frame '+s.frame+' · same lane, a fresh rack.';return true;}
+function marks(f,i){const r=f.rolls;return r.map((n,j)=>j>0&&n+r[j-1]===10&&r[j-1]!==10?'/':n===10?'X':n===0?'–':String(n));}
+const api={balls,clamp,random,pattern,oilAt,create,score,standing,record,launch,step,next,marks};if(typeof module!=='undefined')module.exports=api;root.PocketEngine=api;
 })(typeof window==='undefined'?globalThis:window);

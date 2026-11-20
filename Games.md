@@ -40,7 +40,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
-- [Pocket Lanes](pocket-lanes/) - Find the pocket, pick up spares, and read changing oil through seven ten-pin bowling leagues.
+- [Pocket Lanes](pocket-lanes/) - Bowl ten frames with four distinct ball reactions and hidden random oil on Easy, Medium, or Hard lanes.
 - [Copper Glide](copper-glide/) - Bank air-hockey shots, defend your goal, and outplay seven tabletop rivals.
 - [Cloudlift](cloudlift/) - Fly a four-seat rescue helicopter, evacuate mountain pads, and bring every hiker home through seven valleys.
 - [Ribbon Racers](ribbon-racers/) - Cut off rival light-cycles, brake through tight spaces, and outlast seven ribbon-racing grids.
