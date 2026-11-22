@@ -1,0 +1,247 @@
+[
+  {
+    "width": 1440,
+    "height": 900,
+    "geometry": {
+      "canvas": {
+        "x": 58.59375,
+        "y": 37,
+        "width": 1322.796875,
+        "height": 825.984375
+      },
+      "controls": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        }
+      ],
+      "width": 1440,
+      "height": 900
+    },
+    "medianFrameMs": 17.59999999999991,
+    "p95FrameMs": 18.200000000000045,
+    "errors": []
+  },
+  {
+    "width": 667,
+    "height": 375,
+    "geometry": {
+      "canvas": {
+        "x": 138,
+        "y": 65.6875,
+        "width": 391,
+        "height": 243.625
+      },
+      "controls": [
+        {
+          "x": 12,
+          "y": 126,
+          "width": 100,
+          "height": 58
+        },
+        {
+          "x": 12,
+          "y": 191,
+          "width": 100,
+          "height": 58
+        },
+        {
+          "x": 555,
+          "y": 92.5,
+          "width": 100,
+          "height": 40
+        },
+        {
+          "x": 555,
+          "y": 139.5,
+          "width": 100,
+          "height": 40
+        },
+        {
+          "x": 555,
+          "y": 186.5,
+          "width": 100,
+          "height": 96
+        }
+      ],
+      "width": 667,
+      "height": 375
+    },
+    "medianFrameMs": 17.799999999999727,
+    "p95FrameMs": 18.299999999999727,
+    "errors": []
+  },
+  {
+    "width": 740,
+    "height": 390,
+    "geometry": {
+      "canvas": {
+        "x": 149,
+        "y": 57.25,
+        "width": 442,
+        "height": 275.5
+      },
+      "controls": [
+        {
+          "x": 12,
+          "y": 124,
+          "width": 112,
+          "height": 66
+        },
+        {
+          "x": 12,
+          "y": 200,
+          "width": 112,
+          "height": 66
+        },
+        {
+          "x": 616,
+          "y": 83,
+          "width": 112,
+          "height": 46
+        },
+        {
+          "x": 616,
+          "y": 139,
+          "width": 112,
+          "height": 46
+        },
+        {
+          "x": 616,
+          "y": 195,
+          "width": 112,
+          "height": 112
+        }
+      ],
+      "width": 740,
+      "height": 390
+    },
+    "medianFrameMs": 17.59999999999991,
+    "p95FrameMs": 18.300000000000182,
+    "errors": []
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "geometry": {
+      "canvas": {
+        "x": 149,
+        "y": 24.75,
+        "width": 546,
+        "height": 340.5
+      },
+      "controls": [
+        {
+          "x": 12,
+          "y": 124,
+          "width": 112,
+          "height": 66
+        },
+        {
+          "x": 12,
+          "y": 200,
+          "width": 112,
+          "height": 66
+        },
+        {
+          "x": 720,
+          "y": 83,
+          "width": 112,
+          "height": 46
+        },
+        {
+          "x": 720,
+          "y": 139,
+          "width": 112,
+          "height": 46
+        },
+        {
+          "x": 720,
+          "y": 195,
+          "width": 112,
+          "height": 112
+        }
+      ],
+      "width": 844,
+      "height": 390
+    },
+    "medianFrameMs": 17.5,
+    "p95FrameMs": 18.300000000000182,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "geometry": {
+      "canvas": {
+        "x": 1,
+        "y": 93.828125,
+        "width": 388,
+        "height": 241.75
+      },
+      "controls": [
+        {
+          "x": 14.046875,
+          "y": 768,
+          "width": 85.796875,
+          "height": 58
+        },
+        {
+          "x": 106.84375,
+          "y": 768,
+          "width": 85.796875,
+          "height": 58
+        },
+        {
+          "x": 194.703125,
+          "y": 781,
+          "width": 55.59375,
+          "height": 45
+        },
+        {
+          "x": 257.296875,
+          "y": 781,
+          "width": 46.796875,
+          "height": 45
+        },
+        {
+          "x": 311.09375,
+          "y": 748,
+          "width": 66.90625,
+          "height": 78
+        }
+      ],
+      "width": 390,
+      "height": 844
+    },
+    "medianFrameMs": 17.699999999999818,
+    "p95FrameMs": 18.399999999999636,
+    "errors": []
+  }
+]

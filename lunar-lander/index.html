@@ -600,38 +600,111 @@
       ctx.stroke();
     }
 
+    // Agent Yoda: the presentation cache follows the existing terrain without changing it.
+    var terrainArt = null;
+    var terrainArtPoints = null;
+    function buildTerrainArt() {
+      terrainArt = document.createElement('canvas');
+      terrainArt.width = W;
+      terrainArt.height = H;
+      terrainArtPoints = state.terrain;
+      var art = terrainArt.getContext('2d');
+
+      // A quiet Earth establishes scale without competing with flight data.
+      art.save();
+      art.beginPath(); art.arc(732, 195, 36, 0, TAU); art.clip();
+      var ocean = art.createLinearGradient(696, 175, 768, 212);
+      ocean.addColorStop(0, '#b4d1d7'); ocean.addColorStop(.42, '#547c91'); ocean.addColorStop(1, '#192d41');
+      art.fillStyle = ocean; art.fillRect(694, 157, 76, 76);
+      art.fillStyle = '#91aca3';
+      art.beginPath();
+      art.moveTo(704, 170); art.lineTo(725, 166); art.lineTo(735, 176);
+      art.lineTo(724, 183); art.lineTo(730, 192); art.lineTo(719, 200);
+      art.lineTo(712, 186); art.closePath(); art.fill();
+      art.beginPath();
+      art.moveTo(740, 199); art.lineTo(753, 203); art.lineTo(750, 219);
+      art.lineTo(743, 225); art.lineTo(737, 210); art.closePath(); art.fill();
+      art.strokeStyle = 'rgba(234,244,241,.6)'; art.lineWidth = 3;
+      art.beginPath(); art.ellipse(729, 181, 33, 7, -.23, .3, 2.8); art.stroke();
+      art.beginPath(); art.ellipse(736, 205, 34, 8, -.23, 3.4, 6); art.stroke();
+      var night = art.createLinearGradient(715, 0, 757, 0);
+      night.addColorStop(0, 'rgba(5,12,20,0)'); night.addColorStop(1, 'rgba(5,12,20,.84)');
+      art.fillStyle = night; art.fillRect(694, 157, 76, 76);
+      art.restore();
+      art.strokeStyle = 'rgba(184,215,222,.38)'; art.lineWidth = 1;
+      art.beginPath(); art.arc(732, 195, 36, 0, TAU); art.stroke();
+
+      // Distant geology is subdued; the bright foreground edge is the collision surface.
+      art.fillStyle = '#17212b';
+      art.beginPath(); art.moveTo(0, 475);
+      for (var ridge = 0; ridge <= W; ridge += 32) {
+        art.lineTo(ridge, 433 - Math.sin(ridge * .009 + state.level) * 23 - Math.sin(ridge * .037) * 11);
+      }
+      art.lineTo(W, H); art.lineTo(0, H); art.closePath(); art.fill();
+      art.strokeStyle = '#283440'; art.lineWidth = 1;
+      art.beginPath(); art.moveTo(0, 475);
+      for (var crest = 0; crest <= W; crest += 32) {
+        art.lineTo(crest, 433 - Math.sin(crest * .009 + state.level) * 23 - Math.sin(crest * .037) * 11);
+      }
+      art.stroke();
+
+      // Every geological mark is clipped below the exact, unchanged terrain polygon.
+      art.save();
+      art.beginPath();
+      state.terrain.forEach(function (point, index) {
+        if (index === 0) art.moveTo(point.x, point.y); else art.lineTo(point.x, point.y);
+      });
+      art.lineTo(W, H); art.lineTo(0, H); art.closePath(); art.clip();
+      var regolith = art.createLinearGradient(0, 425, 0, H);
+      regolith.addColorStop(0, '#9a9e9d'); regolith.addColorStop(.42, '#69747b'); regolith.addColorStop(1, '#303e4a');
+      art.fillStyle = regolith; art.fillRect(0, 400, W, H - 400);
+      for (var band = 0; band < 4; band += 1) {
+        art.beginPath();
+        state.terrain.forEach(function (point, index) {
+          var y = point.y + 10 + band * 24 + Math.sin(point.x * .027 + band * 2) * (4 + band * 2);
+          if (index === 0) art.moveTo(point.x, y); else art.lineTo(point.x, y);
+        });
+        art.strokeStyle = band % 2 ? 'rgba(28,43,54,.22)' : 'rgba(217,219,207,.15)';
+        art.lineWidth = band + 1; art.stroke();
+      }
+      for (var crater = 0; crater < 16; crater += 1) {
+        var cx = (crater * 173 + state.level * 31) % W;
+        var cy = 520 + (crater * 43) % 86;
+        var radius = 8 + (crater * 7) % 29;
+        art.fillStyle = 'rgba(32,47,59,.54)';
+        art.beginPath(); art.ellipse(cx, cy, radius, radius * .35, -.12, 0, TAU); art.fill();
+        art.strokeStyle = 'rgba(216,220,210,.44)'; art.lineWidth = 2;
+        art.beginPath(); art.ellipse(cx, cy + 1, radius + 1, radius * .35, -.12, .1, 3.1); art.stroke();
+      }
+      for (var grain = 0; grain < 260; grain += 1) {
+        var gx = (grain * 137 + state.level * 17) % W;
+        var gy = 440 + (grain * 67) % 160;
+        art.fillStyle = grain % 3 ? 'rgba(222,224,215,.22)' : 'rgba(17,31,43,.4)';
+        art.fillRect(gx, gy, grain % 7 === 0 ? 3 : 1, 1);
+      }
+      art.restore();
+      art.strokeStyle = '#ccd0c7'; art.lineWidth = 2;
+      art.beginPath();
+      state.terrain.forEach(function (point, index) {
+        if (index === 0) art.moveTo(point.x, point.y); else art.lineTo(point.x, point.y);
+      });
+      art.stroke();
+    }
+
     function drawTerrain() {
       var cfg = missions[state.level - 1];
-      ctx.save();
-      ctx.strokeStyle = '#c69245';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      state.terrain.forEach(function (point, index) {
-        if (index === 0) ctx.moveTo(point.x, point.y);
-        else ctx.lineTo(point.x, point.y);
-      });
-      ctx.stroke();
-      ctx.lineTo(W, H);
-      ctx.lineTo(0, H);
-      ctx.closePath();
-      ctx.fillStyle = '#101315';
-      ctx.fill();
-
-      ctx.strokeStyle = '#ffe19a';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(state.padX, state.padY);
-      ctx.lineTo(state.padX + cfg.pad, state.padY);
-      ctx.stroke();
+      if (terrainArtPoints !== state.terrain) buildTerrainArt();
+      ctx.save(); ctx.drawImage(terrainArt, 0, 0);
+      // The landing deck and stripes retain their original coordinates and width.
+      ctx.fillStyle = '#18242d'; ctx.fillRect(state.padX, state.padY + 1, cfg.pad, 12);
+      ctx.strokeStyle = '#ffe19a'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(state.padX, state.padY); ctx.lineTo(state.padX + cfg.pad, state.padY); ctx.stroke();
       ctx.fillStyle = '#f3bd5c';
       for (var x = state.padX + 5; x < state.padX + cfg.pad - 5; x += 14) {
         ctx.fillRect(x, state.padY + 5, 7, 3);
       }
-      ctx.font = '700 11px Courier New';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#f3bd5c';
-      ctx.fillText('LAND ' + state.level, state.padX + cfg.pad / 2, state.padY + 23);
-
+      ctx.font = '700 15px Courier New'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffe3a1';
+      ctx.fillText('LAND ' + state.level, state.padX + cfg.pad / 2, state.padY + 29);
       if (state.mode === 'playing') {
         var pulse = reducedMotion ? .65 : .38 + Math.sin(state.elapsed * 4) * .18;
         ctx.globalAlpha = pulse;
@@ -642,39 +715,35 @@
     }
 
     function drawLander() {
-      ctx.save();
-      ctx.translate(state.x, state.y);
-      ctx.rotate(state.angle);
-      ctx.strokeStyle = state.flash > 0 ? '#ff765f' : '#ffe3a1';
-      ctx.fillStyle = '#121619';
-      ctx.lineWidth = 2;
+      ctx.save(); ctx.translate(state.x, state.y); ctx.rotate(state.angle);
+      ctx.strokeStyle = state.flash > 0 ? '#ff765f' : '#e5e6d8';
+      ctx.fillStyle = '#bfc8c9'; ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(-11, -13);
-      ctx.lineTo(11, -13);
-      ctx.lineTo(15, 5);
-      ctx.lineTo(8, 12);
-      ctx.lineTo(-8, 12);
-      ctx.lineTo(-15, 5);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#f3bd5c';
-      ctx.fillRect(-5, -6, 10, 7);
-      line(-8, 11, -17, 20, '#ffe3a1', 2);
-      line(8, 11, 17, 20, '#ffe3a1', 2);
-      line(-22, 20, -12, 20, '#ffe3a1', 2);
-      line(12, 20, 22, 20, '#ffe3a1', 2);
-      line(-13, 2, -22, 6, '#a87939', 1);
-      line(13, 2, 22, 6, '#a87939', 1);
+      ctx.moveTo(-11, -13); ctx.lineTo(11, -13); ctx.lineTo(15, 5);
+      ctx.lineTo(8, 12); ctx.lineTo(-8, 12); ctx.lineTo(-15, 5); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ecede0';
+      ctx.beginPath(); ctx.moveTo(-11, -12); ctx.lineTo(10, -12);
+      ctx.lineTo(6, -3); ctx.lineTo(-12, 1); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#687f89';
+      ctx.beginPath(); ctx.moveTo(10, -11); ctx.lineTo(14, 5);
+      ctx.lineTo(7, 10); ctx.lineTo(6, -3); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#c99545';
+      ctx.beginPath(); ctx.moveTo(-12, 4); ctx.lineTo(12, 4);
+      ctx.lineTo(7, 11); ctx.lineTo(-7, 11); ctx.closePath(); ctx.fill();
+      line(-8, 5, -3, 10, '#f0cf82', 1); line(-1, 5, 4, 10, '#f0cf82', 1);
+      ctx.fillStyle = '#142b3c'; ctx.fillRect(-5, -6, 10, 7);
+      line(-4, -5, 3, -5, '#b5dfdf', 1); line(-4, -3, 0, -3, '#648fa0', 1);
+      line(-8, 11, -17, 20, '#e5e6d8', 2); line(8, 11, 17, 20, '#e5e6d8', 2);
+      line(-22, 20, -12, 20, '#e5e6d8', 2); line(12, 20, 22, 20, '#e5e6d8', 2);
+      line(-13, 2, -22, 6, '#a8bac2', 1); line(13, 2, 22, 6, '#a8bac2', 1);
+      line(-12, 13, -7, 17, '#8b9aa1', 1); line(12, 13, 7, 17, '#8b9aa1', 1);
+      ctx.fillStyle = '#243743'; ctx.fillRect(-5, 11, 10, 2);
       if (controls.thrust && state.fuel > 0 && state.mode === 'playing') {
         var flame = reducedMotion ? 24 : 20 + Math.random() * 10;
         ctx.fillStyle = '#ff9a55';
-        ctx.beginPath();
-        ctx.moveTo(-6, 13);
-        ctx.lineTo(0, flame);
-        ctx.lineTo(6, 13);
-        ctx.closePath();
-        ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-6, 13); ctx.lineTo(0, flame); ctx.lineTo(6, 13); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#fff2c2';
+        ctx.beginPath(); ctx.moveTo(-3, 13); ctx.lineTo(0, flame - 4); ctx.lineTo(3, 13); ctx.closePath(); ctx.fill();
       }
       ctx.restore();
     }
@@ -688,35 +757,35 @@
       var aSafe = angleDeg <= cfg.safeA;
       ctx.save();
       ctx.textBaseline = 'top';
-      ctx.font = '700 15px Courier New';
+      ctx.font = '700 24px Courier New';
       ctx.fillStyle = '#f3bd5c';
       ctx.fillText('MISSION ' + state.level + '/5  ' + cfg.label, 22, 35);
       ctx.textAlign = 'right';
       ctx.fillText('SCORE ' + String(state.score).padStart(6, '0') + '  BEST ' + String(state.best).padStart(6, '0'), W - 22, 35);
       line(22, 59, W - 22, 59, 'rgba(243,189,92,.3)', 1);
 
-      ctx.font = '700 13px Courier New';
+      ctx.font = '700 22px Courier New';
       ctx.textAlign = 'left';
       ctx.fillStyle = state.fuel < 20 ? '#ff765f' : '#e9c47d';
       ctx.fillText('FUEL ' + Math.ceil(state.fuel) + '%', 22, 70);
       ctx.fillStyle = '#caa260';
-      ctx.fillText('HULL ' + '◆'.repeat(state.hull) + '◇'.repeat(3 - state.hull), 22, 91);
+      ctx.fillText('HULL ' + '◆'.repeat(state.hull) + '◇'.repeat(3 - state.hull), 22, 97);
 
       ctx.textAlign = 'right';
       ctx.fillStyle = '#caa260';
       ctx.fillText('ALT ' + String(altitude).padStart(3, '0') + 'm', W - 22, 70);
       ctx.fillStyle = xSafe ? '#aee6a5' : '#ff765f';
-      ctx.fillText('DRIFT ' + Math.abs(state.vx).toFixed(1) + '/' + cfg.safeX, W - 22, 91);
+      ctx.fillText('DRIFT ' + Math.abs(state.vx).toFixed(1) + '/' + cfg.safeX, W - 22, 97);
       ctx.fillStyle = ySafe ? '#aee6a5' : '#ff765f';
-      ctx.fillText('DROP ' + Math.abs(state.vy).toFixed(1) + '/' + cfg.safeY, W - 22, 112);
+      ctx.fillText('DROP ' + Math.abs(state.vy).toFixed(1) + '/' + cfg.safeY, W - 22, 124);
       ctx.fillStyle = aSafe ? '#aee6a5' : '#ff765f';
-      ctx.fillText('TILT ' + angleDeg + '°/' + cfg.safeA + '°', W - 22, 133);
+      ctx.fillText('TILT ' + angleDeg + '°/' + cfg.safeA + '°', W - 22, 151);
 
       if (state.level > 1) {
         ctx.textAlign = 'left';
         ctx.fillStyle = '#a87939';
         var windValue = Math.sin(state.windPhase) * cfg.wind + (state.level === 5 ? Math.sin(state.windPhase * 2.7) * 1.35 : 0);
-        ctx.fillText('DUST VECTOR ' + (windValue >= 0 ? '→' : '←') + ' ' + Math.abs(windValue).toFixed(1), 22, 112);
+        ctx.fillText('DUST VECTOR ' + (windValue >= 0 ? '→' : '←') + ' ' + Math.abs(windValue).toFixed(1), 22, 124);
       }
       ctx.restore();
     }
@@ -746,11 +815,11 @@
     function render() {
       ctx.save();
       if (state.shake > 0 && !reducedMotion) ctx.translate((Math.random() - .5) * 8, (Math.random() - .5) * 8);
-      ctx.fillStyle = '#080b0d';
+      ctx.fillStyle = '#080e15';
       ctx.fillRect(-10, -10, W + 20, H + 20);
       stars.forEach(function (star) {
         ctx.globalAlpha = star.a;
-        ctx.fillStyle = '#efd19a';
+        ctx.fillStyle = '#d6e0dd';
         ctx.fillRect(star.x, star.y, 1.5, 1.5);
       });
       ctx.globalAlpha = 1;
