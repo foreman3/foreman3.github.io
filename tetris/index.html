@@ -274,6 +274,7 @@
   <link rel="stylesheet" href="../sidebar.css" />
   <link rel="stylesheet" href="../flyout.css" />
   <script src="../flyout.js" defer></script>
+  <link rel="stylesheet" href="presentation.css" />
 </head>
 <body>
   <div id="flyout-nav" class="flyout-nav" aria-hidden="true">
@@ -476,23 +477,74 @@
     }
 
     function drawCell(x,y,color) {
-      ctx.fillStyle = color;
-      ctx.fillRect(x*BLOCK, y*BLOCK, BLOCK-1, BLOCK-1);
+      ctx.drawImage(paintedTile(BLOCK,color), x*BLOCK, y*BLOCK);
+    }
+
+    // Presentation-only caches. No random numbers, clocks, or game-state writes.
+    const tileArt = new Map();
+    const paints = {cyan:'#52bfd0',blue:'#436bc4',orange:'#e6973d',yellow:'#e7ca50',green:'#5b9c65',purple:'#a070b4',red:'#ce6457','#fff':'#fff5d9'};
+    function paintedTile(size,color) {
+      const key = size + ':' + color;
+      if (tileArt.has(key)) return tileArt.get(key);
+      const tile = document.createElement('canvas');
+      tile.width = tile.height = size-1;
+      const pen = tile.getContext('2d');
+      const edge = size-1;
+      pen.fillStyle = paints[color] || color;
+      pen.fillRect(0,0,edge,edge);
+      const bevel = Math.max(1,Math.floor(size/10));
+      pen.fillStyle = 'rgba(255,250,220,.38)';
+      pen.beginPath();pen.moveTo(0,0);pen.lineTo(edge,0);pen.lineTo(edge-bevel,bevel);pen.lineTo(bevel,bevel);pen.lineTo(bevel,edge-bevel);pen.lineTo(0,edge);pen.fill();
+      pen.fillStyle = 'rgba(25,36,29,.32)';
+      pen.beginPath();pen.moveTo(edge,0);pen.lineTo(edge,edge);pen.lineTo(0,edge);pen.lineTo(bevel,edge-bevel);pen.lineTo(edge-bevel,edge-bevel);pen.lineTo(edge-bevel,bevel);pen.fill();
+      pen.strokeStyle = 'rgba(255,250,220,.12)';
+      pen.lineWidth = 1;
+      for(let row=bevel+3;row<edge-bevel;row+=Math.max(4,Math.floor(size/5))) {
+        pen.beginPath();pen.moveTo(bevel+2,row+.5);pen.lineTo(edge-bevel-2,row-.5);pen.stroke();
+      }
+      tileArt.set(key,tile);
+      return tile;
+    }
+
+    let wellArt;
+    function drawWell() {
+      if (!wellArt || wellArt.width !== canvas.width || wellArt.height !== canvas.height) {
+        wellArt = document.createElement('canvas');
+        wellArt.width = canvas.width;wellArt.height = canvas.height;
+        const pen = wellArt.getContext('2d');
+        pen.fillStyle = '#1e3835';pen.fillRect(0,0,wellArt.width,wellArt.height);
+        pen.fillStyle = 'rgba(235,222,179,.045)';
+        for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++) {
+          if((x+y)%2===0)pen.fillRect(x*BLOCK,y*BLOCK,BLOCK-1,BLOCK-1);
+        }
+        pen.strokeStyle = 'rgba(226,223,190,.11)';pen.lineWidth = 1;
+        pen.beginPath();
+        for(let x=1;x<COLS;x++){pen.moveTo(x*BLOCK-.5,0);pen.lineTo(x*BLOCK-.5,wellArt.height);}
+        for(let y=1;y<ROWS;y++){pen.moveTo(0,y*BLOCK-.5);pen.lineTo(wellArt.width,y*BLOCK-.5);}
+        pen.stroke();
+        const shade = pen.createLinearGradient(0,0,wellArt.width,0);
+        shade.addColorStop(0,'rgba(0,12,10,.2)');shade.addColorStop(.12,'transparent');shade.addColorStop(.88,'transparent');shade.addColorStop(1,'rgba(0,12,10,.2)');
+        pen.fillStyle=shade;pen.fillRect(0,0,wellArt.width,wellArt.height);
+      }
+      ctx.drawImage(wellArt,0,0);
     }
 
     function drawNextPiece() {
       if (nextType === undefined) return;
-      nextCtx.fillStyle = '#111';
+      nextCtx.fillStyle = '#1e3835';
       nextCtx.fillRect(0,0,nextCanvas.width,nextCanvas.height);
-      SHAPES[nextType][0].forEach(([x,y]) => {
-        nextCtx.fillStyle = COLORS[nextType];
-        nextCtx.fillRect(x*PREVIEW_BLOCK, y*PREVIEW_BLOCK, PREVIEW_BLOCK-1, PREVIEW_BLOCK-1);
+      const shape = SHAPES[nextType][0];
+      const xs = shape.map(([x])=>x), ys = shape.map(([,y])=>y);
+      const left = Math.min(...xs), top = Math.min(...ys);
+      const offsetX = Math.floor((nextCanvas.width-(Math.max(...xs)-left+1)*PREVIEW_BLOCK)/2);
+      const offsetY = Math.floor((nextCanvas.height-(Math.max(...ys)-top+1)*PREVIEW_BLOCK)/2);
+      shape.forEach(([x,y]) => {
+        nextCtx.drawImage(paintedTile(PREVIEW_BLOCK,COLORS[nextType]),offsetX+(x-left)*PREVIEW_BLOCK,offsetY+(y-top)*PREVIEW_BLOCK);
       });
     }
 
     function draw() {
-      ctx.fillStyle = '#111';
-      ctx.fillRect(0,0,canvas.width,canvas.height);
+      drawWell();
       for (let y=0; y<ROWS; y++) {
         for (let x=0; x<COLS; x++) {
           if (board[y][x]) {

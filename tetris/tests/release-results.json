@@ -1,0 +1,33 @@
+{
+  "agent": "Agent Yoda",
+  "time": "2026-11-22T22:44:52.312Z",
+  "run": "TT-20261122T0105Z-YODA",
+  "baseCommit": "c6d6a239514d454fde377b0b1eff4215dce9cfba",
+  "sourceParity": true,
+  "build": "60 games, 373 files, 24.9 MiB offline",
+  "offlineCheck": true,
+  "baselinePaths": 372,
+  "releasePaths": 373,
+  "added": [
+    "tetris/presentation.css"
+  ],
+  "missing": [],
+  "releaseInventoryVersion": "8496185f4e3074b1",
+  "preservedUnrelatedFiles": 13,
+  "releaseBrowserSmoke": [
+    {
+      "width": 1440,
+      "height": 900,
+      "mobile": false,
+      "errors": [],
+      "smoke": true
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "mobile": true,
+      "errors": [],
+      "smoke": true
+    }
+  ]
+}

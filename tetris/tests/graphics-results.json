@@ -1,0 +1,350 @@
+{
+  "agent": "Agent Yoda",
+  "run": "TT-20261122T0105Z-YODA",
+  "baseline": "90c920e",
+  "sourceParity": true,
+  "scenarios": [
+    "First-load instructions gate simulation",
+    "Opening gravity",
+    "Keyboard ArrowLeft",
+    "Keyboard ArrowRight",
+    "Keyboard ArrowUp",
+    "Keyboard ArrowDown",
+    "Keyboard Space",
+    "Help pause",
+    "1 line clear flash",
+    "1 line clear scoring",
+    "2 line clear flash",
+    "2 line clear scoring",
+    "3 line clear flash",
+    "3 line clear scoring",
+    "4 line clear flash",
+    "4 line clear scoring",
+    "Top out",
+    "Restart resets complete run",
+    "Existing Tetris restart regression [0,0]; five restarts schedule zero extra loops",
+    "Uninstrumented arcade link, launch, keyboard play and resource loading"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "geometry": {
+        "canvas": {
+          "x": 528,
+          "y": 68,
+          "width": 384,
+          "height": 764
+        },
+        "preview": {
+          "x": 1272,
+          "y": 64,
+          "width": 136,
+          "height": 157
+        },
+        "info": {
+          "x": 80,
+          "y": 16,
+          "width": 246.296875,
+          "height": 44
+        },
+        "buttons": [
+          {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          }
+        ]
+      },
+      "audio": {
+        "state": "running",
+        "notes": 37,
+        "tempo": 120
+      },
+      "medianFrameMs": 17.600000000000364,
+      "p95FrameMs": 18.299999999999727,
+      "errors": []
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "geometry": {
+        "canvas": {
+          "x": 251.5,
+          "y": 25.5,
+          "width": 164,
+          "height": 324
+        },
+        "preview": {
+          "x": 567,
+          "y": 64,
+          "width": 68,
+          "height": 89
+        },
+        "info": {
+          "x": 32,
+          "y": 16,
+          "width": 161.703125,
+          "height": 32
+        },
+        "buttons": [
+          {
+            "x": 22,
+            "y": 287,
+            "width": 68,
+            "height": 68
+          },
+          {
+            "x": 98,
+            "y": 287,
+            "width": 68,
+            "height": 68
+          },
+          {
+            "x": 174,
+            "y": 287,
+            "width": 68,
+            "height": 68
+          },
+          {
+            "x": 485,
+            "y": 279,
+            "width": 76,
+            "height": 76
+          },
+          {
+            "x": 569,
+            "y": 279,
+            "width": 76,
+            "height": 76
+          }
+        ]
+      },
+      "audio": {
+        "state": "running",
+        "notes": 37,
+        "tempo": 120
+      },
+      "medianFrameMs": 17.699999999999818,
+      "p95FrameMs": 18.100000000000364,
+      "errors": []
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "geometry": {
+        "canvas": {
+          "x": 288,
+          "y": 33,
+          "width": 164,
+          "height": 324
+        },
+        "preview": {
+          "x": 640,
+          "y": 64,
+          "width": 68,
+          "height": 89
+        },
+        "info": {
+          "x": 32,
+          "y": 16,
+          "width": 161.703125,
+          "height": 32
+        },
+        "buttons": [
+          {
+            "x": 22,
+            "y": 302,
+            "width": 68,
+            "height": 68
+          },
+          {
+            "x": 98,
+            "y": 302,
+            "width": 68,
+            "height": 68
+          },
+          {
+            "x": 174,
+            "y": 302,
+            "width": 68,
+            "height": 68
+          },
+          {
+            "x": 558,
+            "y": 294,
+            "width": 76,
+            "height": 76
+          },
+          {
+            "x": 642,
+            "y": 294,
+            "width": 76,
+            "height": 76
+          }
+        ]
+      },
+      "audio": {
+        "state": "running",
+        "notes": 37,
+        "tempo": 120
+      },
+      "medianFrameMs": 17.59999999999991,
+      "p95FrameMs": 18.300000000000182,
+      "errors": []
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "geometry": {
+        "canvas": {
+          "x": 340,
+          "y": 33,
+          "width": 164,
+          "height": 324
+        },
+        "preview": {
+          "x": 744,
+          "y": 64,
+          "width": 68,
+          "height": 89
+        },
+        "info": {
+          "x": 32,
+          "y": 16,
+          "width": 161.703125,
+          "height": 32
+        },
+        "buttons": [
+          {
+            "x": 22,
+            "y": 302,
+            "width": 68,
+            "height": 68
+          },
+          {
+            "x": 98,
+            "y": 302,
+            "width": 68,
+            "height": 68
+          },
+          {
+            "x": 174,
+            "y": 302,
+            "width": 68,
+            "height": 68
+          },
+          {
+            "x": 662,
+            "y": 294,
+            "width": 76,
+            "height": 76
+          },
+          {
+            "x": 746,
+            "y": 294,
+            "width": 76,
+            "height": 76
+          }
+        ]
+      },
+      "audio": {
+        "state": "running",
+        "notes": 37,
+        "tempo": 120
+      },
+      "medianFrameMs": 17.699999999999818,
+      "p95FrameMs": 18.5,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "geometry": {
+        "canvas": {
+          "x": 110,
+          "y": 254,
+          "width": 170,
+          "height": 336
+        },
+        "preview": {
+          "x": 242,
+          "y": 64,
+          "width": 116,
+          "height": 137
+        },
+        "info": {
+          "x": 32,
+          "y": 16,
+          "width": 161.703125,
+          "height": 32
+        },
+        "buttons": [
+          {
+            "x": 22,
+            "y": 770,
+            "width": 54,
+            "height": 54
+          },
+          {
+            "x": 84,
+            "y": 770,
+            "width": 54,
+            "height": 54
+          },
+          {
+            "x": 146,
+            "y": 770,
+            "width": 54,
+            "height": 54
+          },
+          {
+            "x": 236,
+            "y": 762,
+            "width": 62,
+            "height": 62
+          },
+          {
+            "x": 306,
+            "y": 762,
+            "width": 62,
+            "height": 62
+          }
+        ]
+      },
+      "audio": {
+        "state": "running",
+        "notes": 37,
+        "tempo": 120
+      },
+      "medianFrameMs": 17.59999999999991,
+      "p95FrameMs": 18.5,
+      "errors": []
+    }
+  ]
+}

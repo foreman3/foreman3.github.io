@@ -1,0 +1,92 @@
+/* Agent Yoda — painted wooden puzzle bench. All interaction code stays in index.html. */
+body {
+  color: #263e37;
+  background:
+    radial-gradient(ellipse at 45% 18%, #fff7db80, transparent 65%),
+    repeating-linear-gradient(3deg, transparent 0 6px, #69563c07 7px 8px, transparent 9px 23px),
+    linear-gradient(100deg, #c2ac87, #e6d7b6 42%, #cdb58e);
+}
+#game-container { box-sizing: border-box; }
+#game-container::before {
+  content: 'TETRIS\A THE PUZZLE BENCH';
+  position: absolute;
+  white-space: pre;
+  left: 24px;
+  top: 38%;
+  font: 800 36px/1.45 'Segoe UI', sans-serif;
+  letter-spacing: 3px;
+  color: #294c42;
+  text-shadow: 0 1px #fff7dc;
+  pointer-events: none;
+}
+#game-container::after {
+  content: 'TEN COLUMNS\A ENDLESS POSSIBILITIES';
+  position: absolute;
+  white-space: pre;
+  left: 26px;
+  top: calc(38% + 115px);
+  font: 600 11px/1.8 'Segoe UI', sans-serif;
+  letter-spacing: 2px;
+  color: #5f624e;
+  pointer-events: none;
+}
+canvas {
+  background: #1e3835;
+  border-radius: 2px;
+  border-color: #ead6a9;
+}
+#gameCanvas {
+  box-shadow: 0 0 0 3px #857250, 0 0 0 9px #c8af7f, 0 0 0 11px #8c7855,
+    0 16px 28px #3e362d50, inset 0 0 16px #0005;
+}
+#info, #next {
+  color: #f6edcf;
+  background: linear-gradient(135deg, #31574b, #24443d);
+  border-radius: 5px;
+  box-shadow: 0 2px 0 #162e2b, 0 5px 12px #3c33292b;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+@media (pointer: fine) { #info { left: 64px; } }
+#next { letter-spacing: 1.5px; text-transform: uppercase; }
+#nextCanvas { border-radius: 2px; box-shadow: 0 0 0 1px #152e28; }
+#message {
+  color: #fff3d2;
+  background: #294c42;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px #44351c30;
+}
+#message:empty { background: transparent; box-shadow: none; }
+.control-button, #help-button {
+  color: #f7eed1;
+  border-color: #d0bc8c;
+  background: linear-gradient(145deg, #527465, #284b40);
+  box-shadow: 0 3px 0 #213d32, inset 0 1px #ffffff45;
+  backdrop-filter: none;
+  font-weight: 700;
+}
+.control-button.pressed, .control-button:active,
+#help-button:hover, #help-button:focus-visible {
+  background: #6d8c67;
+  border-color: #fff3d0;
+  box-shadow: inset 0 2px 4px #213d3280;
+}
+#instruction-modal { background: #132d26bd; }
+#instruction-card {
+  background: #f4e9cc;
+  border-color: #b69b6c;
+  border-radius: 8px;
+  box-shadow: 0 0 0 5px #dfcda4, 0 20px 50px #152d2670;
+}
+#instruction-card h2 { color: #31574b; }
+#instruction-card p { color: #3d5145; }
+#instruction-close { background: #31574b; color: #fff4d6; border-radius: 4px; }
+@media (max-width: 1000px) {
+  #game-container::before, #game-container::after { display: none; }
+  #info { font-size: 12px; padding: 8px 10px; letter-spacing: .5px; }
+  #next { font-size: 12px; padding: 8px 10px; }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  /* Keep the original five touch buttons in their rails, clear of the well. */
+  #gameCanvas { max-width: calc(100vw - 224px); height: auto !important; }
+}
