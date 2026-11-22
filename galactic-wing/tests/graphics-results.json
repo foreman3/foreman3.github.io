@@ -1,0 +1,180 @@
+{
+  "agent": "Agent Yoda",
+  "run": "GW-20261122T0708Z-YODA",
+  "baseline": "cc2ed77",
+  "sourceParity": true,
+  "scenarios": [
+    "Instructions gate simulation",
+    "Opening entry and formation",
+    "Keyboard ArrowLeft",
+    "Keyboard ArrowRight",
+    "Keyboard KeyA",
+    "Keyboard KeyD",
+    "Keyboard Space",
+    "Help pauses",
+    "Wave 2 entry, dives and shots",
+    "Wave 3 entry, dives and shots",
+    "Wave 4 entry, dives and shots",
+    "Wave 5 entry, dives and shots",
+    "Wave 8 entry, dives and shots",
+    "Diving leader scoring",
+    "Death and relaunch recovery",
+    "Sound mute",
+    "Sound resume",
+    "Full restart",
+    "Wave-clear progression timer",
+    "Game over"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "geometry": {
+        "canvas": {
+          "x": 133.328125,
+          "y": 10,
+          "w": 1173.328125,
+          "h": 879.984375
+        },
+        "controls": [
+          {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          },
+          {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        ]
+      },
+      "medianFrameMs": 17.69999999999709,
+      "p95FrameMs": 18.30000000000291,
+      "audio": "running",
+      "errors": []
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "geometry": {
+        "canvas": {
+          "x": 136,
+          "y": 39.5,
+          "w": 395,
+          "h": 296
+        },
+        "controls": [
+          {
+            "x": 5,
+            "y": 124.5,
+            "w": 126,
+            "h": 126
+          },
+          {
+            "x": 548,
+            "y": 145.5,
+            "w": 88,
+            "h": 88
+          }
+        ]
+      },
+      "medianFrameMs": 17.700000000000728,
+      "p95FrameMs": 18.200000000000728,
+      "audio": "running",
+      "errors": []
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "geometry": {
+        "canvas": {
+          "x": 148,
+          "y": 28.5,
+          "w": 444,
+          "h": 333
+        },
+        "controls": [
+          {
+            "x": 11,
+            "y": 132,
+            "w": 126,
+            "h": 126
+          },
+          {
+            "x": 621,
+            "y": 153,
+            "w": 88,
+            "h": 88
+          }
+        ]
+      },
+      "medianFrameMs": 17.700000000000728,
+      "p95FrameMs": 18.5,
+      "audio": "running",
+      "errors": []
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "geometry": {
+        "canvas": {
+          "x": 167.5,
+          "y": 4,
+          "w": 509,
+          "h": 382
+        },
+        "controls": [
+          {
+            "x": 12,
+            "y": 132,
+            "w": 126,
+            "h": 126
+          },
+          {
+            "x": 725,
+            "y": 153,
+            "w": 88,
+            "h": 88
+          }
+        ]
+      },
+      "medianFrameMs": 17.700000000000728,
+      "p95FrameMs": 18.400000000001455,
+      "audio": "running",
+      "errors": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "geometry": {
+        "canvas": {
+          "x": 6,
+          "y": 280.25,
+          "w": 378,
+          "h": 283.5
+        },
+        "controls": [
+          {
+            "x": 10,
+            "y": 737.280029296875,
+            "w": 90.72000122070312,
+            "h": 90.719970703125
+          },
+          {
+            "x": 306,
+            "y": 750,
+            "w": 68,
+            "h": 68
+          }
+        ]
+      },
+      "medianFrameMs": 17.600000000000364,
+      "p95FrameMs": 18.30000000000109,
+      "audio": "running",
+      "errors": []
+    }
+  ]
+}

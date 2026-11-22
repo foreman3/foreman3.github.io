@@ -1,0 +1,12 @@
+{
+  "agent": "Agent Yoda",
+  "beforeCount": 372,
+  "afterCount": 373,
+  "games": 60,
+  "added": [
+    "galactic-wing/presentation.css"
+  ],
+  "removed": [],
+  "sidebarUnchanged": true,
+  "check": true
+}
