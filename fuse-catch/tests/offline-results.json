@@ -1,0 +1,11 @@
+{
+  "agent": "Agent Yoda",
+  "games": 60,
+  "files": 373,
+  "added": [],
+  "removed": [],
+  "unrelatedHashesPreserved": true,
+  "check": true,
+  "beforeVersion": "30057f33cc3ee5b2",
+  "afterVersion": "db8912635125f46e"
+}

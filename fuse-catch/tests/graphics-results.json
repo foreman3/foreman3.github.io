@@ -1,0 +1,195 @@
+{
+  "agent": "Agent Yoda",
+  "run": "FC-20261122T1907Z-YODA",
+  "baseline": "cc2ed77",
+  "sourceParity": true,
+  "scenarios": [
+    "First-load instruction gate",
+    "Keyboard ArrowLeft",
+    "Keyboard ArrowRight",
+    "Keyboard a",
+    "Keyboard d",
+    "Help pause",
+    "Pause",
+    "Shift 1 spawning/trajectories",
+    "Shift 2 spawning/trajectories",
+    "Shift 3 spawning/trajectories",
+    "Shift 4 spawning/trajectories",
+    "Shift 5 spawning/trajectories",
+    "Shift 6 spawning/trajectories",
+    "Shift 7 spawning/trajectories",
+    "Water sweep scoring/resources",
+    "Rim catch scoring",
+    "Miss and gameover",
+    "Retry",
+    "Mute",
+    "Unmute",
+    "Full reset"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "geometry": {
+        "board": {
+          "x": 130,
+          "y": 123.890625,
+          "w": 1180,
+          "h": 737.5
+        },
+        "controls": [],
+        "overflow": false
+      },
+      "errors": []
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "geometry": {
+        "board": {
+          "x": 147,
+          "y": 107.9375,
+          "w": 373,
+          "h": 233.125
+        },
+        "controls": [
+          {
+            "x": 5,
+            "y": 124.5,
+            "w": 126,
+            "h": 126
+          },
+          {
+            "x": 539,
+            "y": 123.5,
+            "w": 120,
+            "h": 58
+          },
+          {
+            "x": 539,
+            "y": 193.5,
+            "w": 120,
+            "h": 58
+          }
+        ],
+        "overflow": false
+      },
+      "errors": []
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "geometry": {
+        "board": {
+          "x": 147,
+          "y": 92.625,
+          "w": 446,
+          "h": 278.75
+        },
+        "controls": [
+          {
+            "x": 11,
+            "y": 132,
+            "w": 126,
+            "h": 126
+          },
+          {
+            "x": 606,
+            "y": 131,
+            "w": 120,
+            "h": 58
+          },
+          {
+            "x": 606,
+            "y": 201,
+            "w": 120,
+            "h": 58
+          }
+        ],
+        "overflow": false
+      },
+      "errors": []
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "geometry": {
+        "board": {
+          "x": 182,
+          "y": 82,
+          "w": 480,
+          "h": 300
+        },
+        "controls": [
+          {
+            "x": 12,
+            "y": 132,
+            "w": 126,
+            "h": 126
+          },
+          {
+            "x": 709,
+            "y": 131,
+            "w": 120,
+            "h": 58
+          },
+          {
+            "x": 709,
+            "y": 201,
+            "w": 120,
+            "h": 58
+          }
+        ],
+        "overflow": false
+      },
+      "errors": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "geometry": {
+        "board": {
+          "x": 8,
+          "y": 128,
+          "w": 374,
+          "h": 233.75
+        },
+        "controls": [
+          {
+            "x": 16,
+            "y": 699,
+            "w": 126,
+            "h": 126
+          },
+          {
+            "x": 254,
+            "y": 698,
+            "w": 120,
+            "h": 58
+          },
+          {
+            "x": 254,
+            "y": 768,
+            "w": 120,
+            "h": 58
+          }
+        ],
+        "overflow": false
+      },
+      "errors": []
+    }
+  ],
+  "liveDesktop": {
+    "medianMs": 17.799999999999955,
+    "p95Ms": 18.40000000000009,
+    "audio": "running",
+    "errors": []
+  },
+  "liveTouch": {
+    "medianMs": 17.59999999999991,
+    "p95Ms": 18.5,
+    "audio": "running",
+    "errors": []
+  },
+  "uninstrumentedArcadeSmoke": true
+}

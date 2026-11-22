@@ -1,0 +1,24 @@
+{
+  "agent": "Agent Yoda",
+  "time": "2026-11-22T22:35:14.846Z",
+  "baseCommit": "33dc0164bed95acf8f48ccb482382afebe056995",
+  "releasePath": "C:\\Users\\forem\\Documents\\Codex\\vibe-cade\\.graphics-fc-release-20261122\\snapshot-33dc0164",
+  "build": "60 games, 372 files, 24.9 MiB offline",
+  "offlineCheck": true,
+  "sourceParity": true,
+  "excludedWorkingTreeInventoryVersion": "8fd25263e85ed14d",
+  "releaseInventoryVersion": "66109b63b7916705",
+  "releaseAssets": 372,
+  "releaseBrowserSmoke": [
+    {
+      "mobile": false,
+      "errors": [],
+      "smoke": true
+    },
+    {
+      "mobile": true,
+      "errors": [],
+      "smoke": true
+    }
+  ]
+}
