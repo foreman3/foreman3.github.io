@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173b50">
+  <meta name="description" content="Ride a circus lion, leap through fire hoops and clear seven beautifully illustrated big-top acts.">
+  <title>Big Top Bound · VibeCade</title>
+  <link rel="icon" href="../images/app/icon-192.png">
+  <link rel="stylesheet" href="../flyout.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="../mobile-fullscreen.js" defer></script>
+  <script src="../flyout.js" defer></script>
+  <script src="engine.js" defer></script>
+  <script src="art.js" defer></script>
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <nav id="flyout-nav" class="flyout-nav" aria-label="Arcade navigation"><button class="flyout-toggle" aria-label="Open arcade menu">☰</button><div id="flyout-panel" class="flyout-panel"></div></nav>
+  <header><div class="brand"><span>THE TRAVELLING CIRCUS</span><h1>Big Top Bound</h1></div><div class="tools"><button id="sound-button" aria-label="Enable sound" aria-pressed="false">Sound off</button><button id="pause-button">Pause</button><button id="reset-button">Restart</button><button id="help-button" aria-label="Show instructions">?</button></div></header>
+  <main>
+    <section id="game-shell" aria-label="Circus playfield">
+      <div id="hud"><span id="act">ACT 1 / 7</span><span id="progress">0 / 8 cleared</span><span id="hearts">♥ ♥ ♥ ♥ ♥</span><span id="score">0</span></div>
+      <canvas id="game" width="1100" height="600" tabindex="0" aria-label="A lion and acrobat running toward fire hoops. Space to jump; hold for height. Down to slow."></canvas>
+      <div id="cue" aria-live="polite">Hold JUMP to soar. Release for a lower leap.</div>
+      <div id="result" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="result-title"><div class="paper"><p class="eyebrow" id="result-kicker">CURTAIN CALL</p><h2 id="result-title">A splendid act!</h2><p id="result-copy"></p><button id="continue-button" class="primary">Next act</button><button id="again-button">New show</button></div></div>
+    </section>
+    <p class="desktop-note">SPACE / ↑ jump · hold for height · ↓ / S reins · P pause · R restart · M sound <span>Seven acts. One magnificent leap at a time.</span></p>
+  </main>
+  <div id="touch-controls" class="touch-controls" aria-label="Touch controls"><div class="left-actions"><button id="reins-button" class="action reins" aria-label="Hold reins to slow down">REINS<span>hold to slow</span></button><button id="touch-sound" class="small-action" aria-label="Enable sound" aria-pressed="false">Sound off</button></div><div class="right-actions"><button id="jump-button" class="action jump" aria-label="Jump, hold for a higher jump">JUMP<span>hold to soar</span></button><button id="touch-pause" class="small-action">Pause</button></div></div>
+  <section id="instruction-modal" class="overlay is-visible" role="dialog" aria-modal="true" aria-labelledby="instruction-title"><div class="paper"><p class="eyebrow">STEP RIGHT UP · SEVEN ACTS</p><h2 id="instruction-title">A lion. A leap.<br>A little showmanship.</h2><button id="instruction-close" class="primary">Enter the ring</button><p>Leap through the <strong>open center of each fire hoop</strong> and over the braziers. Hold JUMP for height; release for a lower arc. REINS slows a tricky approach; its reserve refills when released.</p><p>Build an applause streak with clean jumps. Each act restores your safety hearts. Acts 1–5 leave room to recover, 6 tests mastery, and 7 allows just one mistimed approach.</p><p class="keyline"><strong>Keyboard:</strong> Space / ↑ / W jump · ↓ / S reins<br>P pause · R restart · M sound · ? help</p><p class="touch-line">On touch: JUMP and REINS sit beside the ring. Rotate for a bigger view.</p></div></section>
+</body>
+</html>

@@ -1,0 +1,306 @@
+{
+  "base": "http://127.0.0.1:53864",
+  "curve": [
+    {
+      "level": 1,
+      "state": "won",
+      "cleared": 8,
+      "total": 8,
+      "misses": 0,
+      "hearts": 5,
+      "seconds": 20.04,
+      "score": 2550,
+      "jumps": 8
+    },
+    {
+      "level": 2,
+      "state": "won",
+      "cleared": 10,
+      "total": 10,
+      "misses": 0,
+      "hearts": 5,
+      "seconds": 23.14,
+      "score": 2950,
+      "jumps": 10
+    },
+    {
+      "level": 3,
+      "state": "won",
+      "cleared": 12,
+      "total": 12,
+      "misses": 0,
+      "hearts": 5,
+      "seconds": 25.87,
+      "score": 3400,
+      "jumps": 12
+    },
+    {
+      "level": 4,
+      "state": "won",
+      "cleared": 14,
+      "total": 14,
+      "misses": 0,
+      "hearts": 5,
+      "seconds": 28.24,
+      "score": 3900,
+      "jumps": 14
+    },
+    {
+      "level": 5,
+      "state": "won",
+      "cleared": 20,
+      "total": 20,
+      "misses": 0,
+      "hearts": 4,
+      "seconds": 30.56,
+      "score": 5050,
+      "jumps": 16
+    },
+    {
+      "level": 6,
+      "state": "won",
+      "cleared": 23,
+      "total": 23,
+      "misses": 0,
+      "hearts": 3,
+      "seconds": 31.66,
+      "score": 5650,
+      "jumps": 18
+    },
+    {
+      "level": 7,
+      "state": "won",
+      "cleared": 25,
+      "total": 25,
+      "misses": 0,
+      "hearts": 2,
+      "seconds": 31.82,
+      "score": 5900,
+      "jumps": 20
+    }
+  ],
+  "layouts": [
+    {
+      "width": 1440,
+      "height": 900,
+      "desktop": true
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "board": {
+        "x": 140,
+        "y": 113.953125,
+        "w": 387,
+        "h": 211.078125
+      },
+      "jump": {
+        "x": 545,
+        "y": 113.5,
+        "w": 112,
+        "h": 92
+      },
+      "reins": {
+        "x": 10,
+        "y": 113.5,
+        "w": 112,
+        "h": 92
+      },
+      "hud": {
+        "x": 149.65625,
+        "y": 122.15625,
+        "w": 367.6875,
+        "h": 28
+      },
+      "scroll": 667,
+      "inner": 667
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "board": {
+        "x": 140,
+        "y": 101.546875,
+        "w": 460,
+        "h": 250.90625
+      },
+      "jump": {
+        "x": 618,
+        "y": 121,
+        "w": 112,
+        "h": 92
+      },
+      "reins": {
+        "x": 10,
+        "y": 121,
+        "w": 112,
+        "h": 92
+      },
+      "hud": {
+        "x": 151.109375,
+        "y": 110.953125,
+        "w": 437.78125,
+        "h": 28
+      },
+      "scroll": 740,
+      "inner": 740
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "board": {
+        "x": 140,
+        "y": 73.1875,
+        "w": 564,
+        "h": 307.625
+      },
+      "jump": {
+        "x": 722,
+        "y": 121,
+        "w": 112,
+        "h": 92
+      },
+      "reins": {
+        "x": 10,
+        "y": 121,
+        "w": 112,
+        "h": 92
+      },
+      "hud": {
+        "x": 153.1875,
+        "y": 84.28125,
+        "w": 537.625,
+        "h": 28
+      },
+      "scroll": 844,
+      "inner": 844
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "board": {
+        "x": 6,
+        "y": 174.828125,
+        "w": 378,
+        "h": 206.171875
+      },
+      "jump": {
+        "x": 256,
+        "y": 662,
+        "w": 112,
+        "h": 92
+      },
+      "reins": {
+        "x": 22,
+        "y": 662,
+        "w": 112,
+        "h": 92
+      },
+      "hud": {
+        "x": 15.46875,
+        "y": 182.890625,
+        "w": 359.0625,
+        "h": 24
+      },
+      "scroll": 390,
+      "inner": 390
+    }
+  ],
+  "errors": [],
+  "imprecise": [
+    {
+      "level": 1,
+      "state": "won",
+      "cleared": 8,
+      "total": 8,
+      "misses": 0,
+      "hearts": 5,
+      "seconds": 20.04,
+      "score": 2350,
+      "jumps": 8
+    },
+    {
+      "level": 2,
+      "state": "won",
+      "cleared": 10,
+      "total": 10,
+      "misses": 0,
+      "hearts": 5,
+      "seconds": 23.14,
+      "score": 2650,
+      "jumps": 10
+    },
+    {
+      "level": 3,
+      "state": "won",
+      "cleared": 12,
+      "total": 12,
+      "misses": 0,
+      "hearts": 5,
+      "seconds": 25.87,
+      "score": 3100,
+      "jumps": 12
+    },
+    {
+      "level": 4,
+      "state": "won",
+      "cleared": 14,
+      "total": 14,
+      "misses": 0,
+      "hearts": 5,
+      "seconds": 28.24,
+      "score": 3550,
+      "jumps": 14
+    },
+    {
+      "level": 5,
+      "state": "won",
+      "cleared": 20,
+      "total": 20,
+      "misses": 0,
+      "hearts": 4,
+      "seconds": 30.56,
+      "score": 4850,
+      "jumps": 16
+    },
+    {
+      "level": 6,
+      "state": "won",
+      "cleared": 23,
+      "total": 23,
+      "misses": 0,
+      "hearts": 3,
+      "seconds": 31.66,
+      "score": 5350,
+      "jumps": 18
+    },
+    {
+      "level": 7,
+      "state": "lost",
+      "cleared": 11,
+      "total": 25,
+      "misses": 2,
+      "hearts": 0,
+      "seconds": 15.92,
+      "score": 2050,
+      "jumps": 10
+    }
+  ],
+  "recovery": {
+    "level": 5,
+    "state": "won",
+    "cleared": 17,
+    "total": 20,
+    "misses": 3,
+    "hearts": 1,
+    "seconds": 30.56,
+    "score": 3470,
+    "jumps": 13
+  },
+  "desktopFrames": {
+    "mean": 17.63933333333333,
+    "p95": 18.200000000000273,
+    "max": 20
+  },
+  "normalOpening": "8/8 cleared · 0 missed · 5 hearts left. Score 2,550 · best 2,550"
+}

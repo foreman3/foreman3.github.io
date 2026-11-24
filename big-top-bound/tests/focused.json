@@ -1,0 +1,24 @@
+{
+  "checks": [
+    "Reins exhaust without stuttering or auto-refilling",
+    "Released reins replenish",
+    "Held jump has meaningfully more height",
+    "Real keyboard reins slow simulation",
+    "Blur clears input; help freezes pixels and timers",
+    "Game-over retry and full restart",
+    "Native two-finger touch, out-of-button capture, release",
+    "Native touch cancellation clears action",
+    "Returning mobile launch waits; fullscreen refusal remains playable",
+    "Storage denied and reduced-motion fallback"
+  ],
+  "errors": [],
+  "jumpHeights": {
+    "tap": 141.35416666666669,
+    "hold": 175.5694444444445
+  },
+  "mobileFrames": {
+    "mean": 17.72733333333333,
+    "p95": 18.299999999999955,
+    "max": 18.5
+  }
+}
