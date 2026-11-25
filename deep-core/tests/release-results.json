@@ -1,0 +1,43 @@
+{
+  "agent": "Agent Yoda",
+  "timestamp": "2026-11-25T19:48:47.660Z",
+  "sourceParity": true,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "arcadeLink": true,
+      "gate": true,
+      "movement": true,
+      "pump": true,
+      "restart": true,
+      "sound": true,
+      "help": true,
+      "errors": []
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "arcadeLink": true,
+      "gate": true,
+      "movement": true,
+      "pump": true,
+      "restart": true,
+      "sound": true,
+      "help": false,
+      "errors": []
+    }
+  ],
+  "releaseManifest": {
+    "games": 61,
+    "paths": 378,
+    "before": "7e607502e6839874",
+    "rebuiltHead": "7e607502e6839874",
+    "after": "65ed7993b52b03b9",
+    "added": [],
+    "removed": [],
+    "note": "All committed offline paths retained; Deep Core adds no runtime paths."
+  },
+  "unrelatedFilesPreserved": 246,
+  "releaseBase": "a641d747796b85ae6e5660cab12124ada8614afe"
+}

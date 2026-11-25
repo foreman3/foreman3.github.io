@@ -1,0 +1,13 @@
+68ab97e 2026-09-07T10:41:32-04:00 shooting from the hip on control toggle
+e1f50d7 2026-09-07T09:45:02-04:00 added joystick/button toggle
+16873a7 2026-09-06T21:13:49-04:00 Fix full-game restarts and Space Invaders mobile input recovery
+1e6d32d 2026-09-04T09:51:04-04:00 Tighten maze controls and buffer Burger Time turns
+8f0f412 2026-09-04T09:27:21-04:00 Reduce maze joystick dead zones
+2a3439b 2026-08-30T21:07:58-04:00 Improve mobile arcade controls and game lifecycle
+62da656 2026-08-30T13:33:06-04:00 Fit mobile playfields between control rails
+38056cb 2026-08-30T12:44:21-04:00 Optimize mobile rendering and enlarge joystick controls
+6c356b4 2026-08-30T11:34:53-04:00 Standardize mobile joystick controls across arcade games
+be2e06d 2026-08-30T11:03:43-04:00 Shrink mobile joysticks for clearer playfields
+7044380 2026-08-30T10:56:16-04:00 Add responsive drag joysticks for mobile play
+03807e1 2026-08-29T23:06:52-04:00 Optimize mobile controls across arcade
+1d9026f 2026-08-29T16:19:54-04:00 Expand arcade with rebuilt classics and new games

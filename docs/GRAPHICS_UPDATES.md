@@ -57,6 +57,8 @@ These games already received a substantive graphics upgrade or illustrated/3D re
 
 | Neon River Run | `river-run/` | Completed, first graphics pass | `RR-20261124T1316Z-YODA`, 2026-11-24; `river-run/GRAPHICS_VERIFICATION.md` | Retained luminous metro crossing: rain-dark masonry, stone drainage, quiet water/asphalt reflections, split bark and enamel/glass vehicle detail |
 
+| Deep Core | `deep-core/` | Completed, first graphics pass | `DC-20261123T0710Z-YODA`, 2026-11-23; `deep-core/GRAPHICS_VERIFICATION.md` | Geological cross-section: original terracotta/mauve/violet strata, mineral seams, chipped stone and steel survey instruments |
+
 ## Runs in this effort
 
 Reservations and completed results follow. Never mark a pass complete merely because it was attempted or scheduled.
@@ -176,3 +178,20 @@ Agent Yoda found and excluded these previously upgraded Ready to Play games duri
 Release follow-up — 2026-11-25T19:45:41.858Z — Agent Yoda
 
 The owner explicitly authorized committing and pushing Neon River Run RR-20261124T1316Z-YODA. This release contains only River Run presentation/evidence, its scoped register entry and generated sidebar/offline inventory from committed 94aff1a plus River Run. The generated files include the existing committed Big Top Bound catalog entry, repairing stale generation without changing the catalog. The original local-only run description above is historical. Source preservation, isolated offline build/check and fresh desktop/mobile browser smoke were verified; see river-run/tests/release-results.json. Unrelated pending graphics/catalog/Flappy changes remain excluded. Push confirmation and commit ID are reported in the release task result. No email.
+
+
+## Run DC-20261123T0710Z-YODA
+
+- Acting agent: Agent Yoda. Reserved: 2026-11-23T07:10:00Z. Verified: 2026-11-23T07:18:00Z. Status: completed locally; unpublished.
+- Selected: Deep Core (`deep-core/`), clean locally hosted Ready to Play game, sole worktree, no unfinished reservation. Preserve all unrelated dirty work.
+- Eligibility: full all-branch directory, followed index, assets and former `deep-core.html` / `deepcore.html` histories reviewed. Creation `1d9026f` supplies the original illustrated sprites and soil. Subsequent commits through `68ab97e` change shared/mobile controls, lifecycle and raster performance, retaining original art; no previous art pass or evidence/active edit found.
+- Direction: retain the living-moon excavation and original cyan miner/creature identities; enrich stratified terracotta, mauve and violet geology with mineral seams, chipped rock and engraved industrial instruments. SVG/Canvas/CSS suit the existing flat illustration; no Blender required.
+- Scope: presentation/evidence/register/offline only. Original endless sectors, every rule and controls preserved. Local delivery only; no commit, publication or email authorized.
+- Final: cached sediment bedding/mineral veins/grit, steel mounting rails, inset miner seams/rivets and chipped boulder faces; original soil palette, cyan miner and creature identities retained. Survey instrument frame in blue-grey/cream. Fixed mobile HUD overlap with first tunnel row, oxygen label overlap and portrait reset/options covering tunnels. Target sizes and all handlers unchanged. Canvas/SVG/CSS reproducible sources; no Blender or new runtime dependency.
+- Evidence: `deep-core/GRAPHICS_VERIFICATION.md`; `tests/graphics-check.cjs`, `graphics-results.json`, `offline-check.cjs`, `offline-results.json`, baseline/history/inventory records and reproducible `apply-art.cjs`. `screenshots/before-*` at desktop/667/portrait; `after-*`, `instructions-*`, `live-*` at all five required/supported sizes; sectors 2/5/25 at desktop/844. Later images are diagnostic fixtures, live images are uninstrumented play.
+- Preservation: all JavaScript outside board art/cache and all body/instruction markup identical to `a7d61ec` after CRLF normalization. Original actor drawing, SVG silhouette paths, tunnel geometry, effects, input/audio, simulation and endless progression retained. All 26 deterministic parity scenarios pass, including gates, countdown, nine keys, help, six sectors through25, pop/death/fall/oxygen/advance/mute/restart.
+- Browser: localhost Chrome1440×900,667×375,740×390,844×390,390×844; real touch joystick hold/slide/neutral/release, pump/reset/options/buttons, context-menu/blur, keyboard/help/audio pass; AudioContext running. HUD/control non-overlap and overflow assertions pass, six assets loaded, clean game console/runtime/resources. Uninstrumented arcade-link active play and mobile views pass. Frame medians17.5–17.7ms; mobilep9518.2–18.4ms,desktopp9534.7ms on headless host; no physical-device/speaker claim.
+- Checks: Node JS and SVG XML syntax, scoped diff whitespace, offline build/--check pass. 60games/373paths,none added/removed,sidebar unchanged. Offlinea871f8523f050746→53a89265035b955b;SHA256preserved54 unrelated dirty/untracked paths including deletion. Existing restart suite stops on obsolete whole-catalog coverage assertion; original rules untouched, output saved. Its Deep Core `[1,0,3]` expectation passes separately through real reset and parity.
+- Changed only Deep Core presentation/assets/evidence, this register, generated offline-assets.js and memory. Nothing staged, committed, pushed, published or emailed. No blocker to local completion; legacy suite limitation documented. Never select Deep Core again for this first-pass effort.
+
+- Release follow-up, 2026-11-25T19:47:52.362Z, Agent Yoda: owner explicitly authorized commit and push. Release packages only Deep Core presentation/evidence, this scoped register record and an offline inventory generated from committed HEAD plus Deep Core. Source preservation, fresh desktop/mobile browser smoke, offline build/check and unrelated-file hash checks pass. Git delivery confirmed separately after push. No email.

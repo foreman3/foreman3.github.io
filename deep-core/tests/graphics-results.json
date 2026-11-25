@@ -1,0 +1,220 @@
+{
+  "agent": "Agent Yoda",
+  "run": "DC-20261123T0710Z-YODA",
+  "scenarios": [
+    "First-load gate",
+    "Original countdown",
+    "Key ArrowLeft",
+    "Key ArrowRight",
+    "Key ArrowUp",
+    "Key ArrowDown",
+    "Key a",
+    "Key d",
+    "Key w",
+    "Key s",
+    "Key  ",
+    "Help freeze",
+    "Sector 1",
+    "Sector 2",
+    "Sector 3",
+    "Sector 5",
+    "Sector 10",
+    "Sector 25",
+    "pop",
+    "death",
+    "fall",
+    "oxygen",
+    "advance",
+    "Command m",
+    "Command m",
+    "Command r"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "field": {
+        "x": 80,
+        "y": 0,
+        "w": 1280,
+        "h": 720,
+        "right": 1360,
+        "bottom": 720
+      },
+      "joy": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "pump": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0,
+        "right": 0,
+        "bottom": 0
+      },
+      "overflow": false,
+      "sprites": "6/6",
+      "audio": "running",
+      "errors": []
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "field": {
+        "x": 136,
+        "y": 0,
+        "w": 395,
+        "h": 222,
+        "right": 531,
+        "bottom": 222
+      },
+      "joy": {
+        "x": 5,
+        "y": 124.5,
+        "w": 126,
+        "h": 126,
+        "right": 131,
+        "bottom": 250.5
+      },
+      "pump": {
+        "x": 560,
+        "y": 148.5,
+        "w": 78,
+        "h": 78,
+        "right": 638,
+        "bottom": 226.5
+      },
+      "overflow": false,
+      "sprites": "6/6",
+      "actualTouch": true,
+      "audio": "running",
+      "frames": {
+        "medianMs": 17.699999999999818,
+        "p95Ms": 18.299999999999272
+      },
+      "errors": []
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "field": {
+        "x": 148,
+        "y": 0,
+        "w": 444,
+        "h": 249,
+        "right": 592,
+        "bottom": 249
+      },
+      "joy": {
+        "x": 11,
+        "y": 132,
+        "w": 126,
+        "h": 126,
+        "right": 137,
+        "bottom": 258
+      },
+      "pump": {
+        "x": 627,
+        "y": 156,
+        "w": 78,
+        "h": 78,
+        "right": 705,
+        "bottom": 234
+      },
+      "overflow": false,
+      "sprites": "6/6",
+      "actualTouch": true,
+      "audio": "running",
+      "frames": {
+        "medianMs": 17.599999999999454,
+        "p95Ms": 18.199999999999818
+      },
+      "errors": []
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "field": {
+        "x": 150,
+        "y": 0,
+        "w": 544,
+        "h": 306,
+        "right": 694,
+        "bottom": 306
+      },
+      "joy": {
+        "x": 12,
+        "y": 132,
+        "w": 126,
+        "h": 126,
+        "right": 138,
+        "bottom": 258
+      },
+      "pump": {
+        "x": 730,
+        "y": 156,
+        "w": 78,
+        "h": 78,
+        "right": 808,
+        "bottom": 234
+      },
+      "overflow": false,
+      "sprites": "6/6",
+      "actualTouch": true,
+      "audio": "running",
+      "frames": {
+        "medianMs": 17.599999999999454,
+        "p95Ms": 18.399999999999636
+      },
+      "errors": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "field": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 219.375,
+        "right": 390,
+        "bottom": 219.375
+      },
+      "joy": {
+        "x": 14,
+        "y": 705,
+        "w": 126,
+        "h": 126,
+        "right": 140,
+        "bottom": 831
+      },
+      "pump": {
+        "x": 298,
+        "y": 753,
+        "w": 78,
+        "h": 78,
+        "right": 376,
+        "bottom": 831
+      },
+      "overflow": false,
+      "sprites": "6/6",
+      "actualTouch": true,
+      "audio": "running",
+      "frames": {
+        "medianMs": 17.5,
+        "p95Ms": 18.399999999999636
+      },
+      "errors": []
+    }
+  ],
+  "sourceParity": true,
+  "frames": {
+    "medianMs": 17.699999999999818,
+    "p95Ms": 34.69999999999982
+  },
+  "uninstrumentedArcadeLink": true
+}

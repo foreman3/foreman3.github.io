@@ -20,5 +20,11 @@
     <path fill="url(#drill)" d="M53 32l10 8-10 8z"/>
     <path fill="none" stroke="#fff0a8" d="M55 36l5 4-5 4"/>
     <circle cx="27" cy="37" r="3" fill="#eaffff"/>
+    <!-- Agent Yoda: inset suit seams and hardware; original silhouette retained. -->
+    <g fill="none" stroke-width=".7" opacity=".8">
+      <path stroke="#b8f7ef" d="M25 30h12l4 10-4 6H26l-4-7m-4-10v17M22 50h6m10 1h7M43 35l6 6"/>
+      <path stroke="#173e55" d="M24 39h7m-6 3h5M34 15h8l3 5-3 5"/>
+    </g>
+    <g fill="#d0e6dd" stroke="none"><circle cx="23" cy="30" r=".8"/><circle cx="39" cy="30" r=".8"/><circle cx="24" cy="46" r=".8"/><circle cx="38" cy="46" r=".8"/></g>
   </g>
 </svg>
