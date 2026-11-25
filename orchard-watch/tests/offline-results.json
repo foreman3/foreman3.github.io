@@ -1,0 +1,14 @@
+{
+  "agent": "Agent Yoda",
+  "run": "OW-20261123T0114Z-YODA",
+  "build": "60 games, 373 files, 24.9 MiB offline",
+  "check": "60 games, 373 files, 24.9 MiB offline",
+  "beforeVersion": "8fd25263e85ed14d",
+  "afterVersion": "a871f8523f050746",
+  "games": 60,
+  "assets": 373,
+  "missing": [],
+  "added": [],
+  "sidebarUnchanged": true,
+  "unrelatedPathsPreserved": 12
+}

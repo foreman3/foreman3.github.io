@@ -1,0 +1,89 @@
+{
+  "agent": "Agent Yoda",
+  "time": "2026-11-25T19:50:28.180Z",
+  "run": "OW-20261123T0114Z-YODA",
+  "baseCommit": "66d2bdec8c75e80eff0a246b0845c5490f2400fe",
+  "sourceParity": true,
+  "build": "61 games, 378 files, 24.9 MiB offline",
+  "offlineCheck": true,
+  "inventory": {
+    "games": 61,
+    "paths": 378,
+    "version": "7e607502e6839874",
+    "added": [],
+    "missing": []
+  },
+  "unrelatedPathsPreserved": 287,
+  "browser": {
+    "agent": "Agent Yoda",
+    "run": "OW-20261123T0114Z-YODA",
+    "layouts": [
+      {
+        "width": 1440,
+        "height": 900,
+        "allTwelveInputs": true,
+        "gate": true,
+        "pause": true,
+        "restart": true,
+        "audio": "running",
+        "errors": [],
+        "resources": [],
+        "medianMs": 16.699999999999818,
+        "p95Ms": 16.800000000000182
+      },
+      {
+        "width": 667,
+        "height": 375,
+        "allTwelveInputs": true,
+        "gate": true,
+        "pause": true,
+        "restart": true,
+        "audio": "running",
+        "errors": [],
+        "resources": [],
+        "medianMs": 16.699999999999818,
+        "p95Ms": 16.899999999999636
+      },
+      {
+        "width": 740,
+        "height": 390,
+        "allTwelveInputs": true,
+        "gate": true,
+        "pause": true,
+        "restart": true,
+        "audio": "running",
+        "errors": [],
+        "resources": [],
+        "medianMs": 16.699999999999818,
+        "p95Ms": 16.90000000000009
+      },
+      {
+        "width": 844,
+        "height": 390,
+        "allTwelveInputs": true,
+        "gate": true,
+        "pause": true,
+        "restart": true,
+        "audio": "running",
+        "errors": [],
+        "resources": [],
+        "medianMs": 16.699999999999818,
+        "p95Ms": 17
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "allTwelveInputs": true,
+        "gate": true,
+        "pause": true,
+        "restart": true,
+        "audio": "running",
+        "errors": [],
+        "resources": [],
+        "medianMs": 16.699999999999818,
+        "p95Ms": 16.90000000000009
+      }
+    ],
+    "uninstrumentedArcadeLink": true
+  }
+}

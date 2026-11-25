@@ -1,0 +1,142 @@
+{
+  "curve": [
+    {
+      "level": 1,
+      "reaction": 0.45,
+      "actionGap": 0.22,
+      "hits": 12,
+      "baskets": 6,
+      "seconds": 22.86,
+      "won": true
+    },
+    {
+      "level": 2,
+      "reaction": 0.45,
+      "actionGap": 0.22,
+      "hits": 18,
+      "baskets": 6,
+      "seconds": 17.46,
+      "won": true
+    },
+    {
+      "level": 3,
+      "reaction": 0.45,
+      "actionGap": 0.22,
+      "hits": 24,
+      "baskets": 6,
+      "seconds": 16.02,
+      "won": true
+    },
+    {
+      "level": 4,
+      "reaction": 0.45,
+      "actionGap": 0.22,
+      "hits": 32,
+      "baskets": 4,
+      "seconds": 14.9,
+      "won": true
+    },
+    {
+      "level": 5,
+      "reaction": 0.25,
+      "actionGap": 0.13,
+      "hits": 45,
+      "baskets": 3,
+      "seconds": 10.82,
+      "won": true
+    }
+  ],
+  "layouts": [
+    {
+      "width": 667,
+      "height": 375,
+      "field": {
+        "x": 0,
+        "y": 85,
+        "width": 667,
+        "height": 290,
+        "bottom": 375
+      },
+      "rows": 3,
+      "columns": 4,
+      "minTarget": 66.6875,
+      "overlap": false,
+      "overflow": false
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "field": {
+        "x": 0,
+        "y": 85,
+        "width": 740,
+        "height": 305,
+        "bottom": 390
+      },
+      "rows": 3,
+      "columns": 4,
+      "minTarget": 70.140625,
+      "overlap": false,
+      "overflow": false
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "field": {
+        "x": 0,
+        "y": 85,
+        "width": 844,
+        "height": 305,
+        "bottom": 390
+      },
+      "rows": 3,
+      "columns": 4,
+      "minTarget": 70.140625,
+      "overlap": false,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "field": {
+        "x": 0,
+        "y": 359.375,
+        "width": 390,
+        "height": 211.25,
+        "bottom": 570.625
+      },
+      "rows": 3,
+      "columns": 4,
+      "minTarget": 48.578125,
+      "overlap": false,
+      "overflow": false
+    }
+  ],
+  "errors": [],
+  "overlap": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "slowerReaction": [
+    {
+      "level": 4,
+      "hits": 32,
+      "baskets": 6,
+      "won": true
+    },
+    {
+      "level": 5,
+      "hits": 0,
+      "baskets": 0,
+      "won": false
+    }
+  ],
+  "desktopFooterBottom": 897.484375,
+  "frames": {
+    "mean": 17.720202020202024,
+    "p95": 18.400000000000034
+  }
+}

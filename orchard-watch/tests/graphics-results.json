@@ -1,0 +1,123 @@
+{
+  "agent": "Agent Yoda",
+  "run": "OW-20261123T0114Z-YODA",
+  "baseline": "a7d61ec",
+  "sourceParity": true,
+  "scenarios": [
+    "Instruction gating",
+    "Keyboard q",
+    "Keyboard w",
+    "Keyboard e",
+    "Keyboard r",
+    "Keyboard a",
+    "Keyboard s",
+    "Keyboard d",
+    "Keyboard f",
+    "Keyboard z",
+    "Keyboard x",
+    "Keyboard c",
+    "Keyboard v",
+    "Help pause",
+    "Explicit pause",
+    "Harvest 1 seeded spawn/scoring",
+    "Harvest 2 seeded spawn/scoring",
+    "Harvest 3 seeded spawn/scoring",
+    "Harvest 4 seeded spawn/scoring",
+    "Harvest 5 seeded spawn/scoring",
+    "Gardener penalty",
+    "Escaped marmot",
+    "Empty hit recovery",
+    "Timeout",
+    "Final victory",
+    "Victory restart",
+    "Sound toggles",
+    "Backspace reset"
+  ],
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "geometry": {
+        "field": {
+          "x": 64.609375,
+          "y": 145.5,
+          "width": 1310.765625,
+          "height": 709.984375,
+          "bottom": 855.484375
+        },
+        "minTarget": 163.28125,
+        "overflow": false,
+        "onscreen": true
+      },
+      "errors": []
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "geometry": {
+        "field": {
+          "x": 0,
+          "y": 85,
+          "width": 667,
+          "height": 290,
+          "bottom": 375
+        },
+        "minTarget": 66.6875,
+        "overflow": false,
+        "onscreen": true
+      },
+      "errors": []
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "geometry": {
+        "field": {
+          "x": 0,
+          "y": 85,
+          "width": 740,
+          "height": 305,
+          "bottom": 390
+        },
+        "minTarget": 70.140625,
+        "overflow": false,
+        "onscreen": true
+      },
+      "errors": []
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "geometry": {
+        "field": {
+          "x": 0,
+          "y": 85,
+          "width": 844,
+          "height": 305,
+          "bottom": 390
+        },
+        "minTarget": 70.140625,
+        "overflow": false,
+        "onscreen": true
+      },
+      "errors": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "geometry": {
+        "field": {
+          "x": 0,
+          "y": 359.375,
+          "width": 390,
+          "height": 211.25,
+          "bottom": 570.625
+        },
+        "minTarget": 48.578125,
+        "overflow": false,
+        "onscreen": true
+      },
+      "errors": []
+    }
+  ]
+}

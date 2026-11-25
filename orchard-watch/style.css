@@ -18,3 +18,14 @@
  body.touch-device #field{flex:1;height:0;aspect-ratio:auto;border-radius:0}
  body.touch-device main > footer{display:none}
 }
+/* Agent Yoda — OW-20261123T0114Z-YODA: painted co-operative stationery.
+   Original layout and every interactive target remain unchanged. */
+body{background:radial-gradient(ellipse at 50% 38%,#314e40,#203c35 75%)}
+header{background:linear-gradient(100deg,#182f29a6,#334e3e66);box-shadow:0 2px 8px #102a242b}
+.tools button{background:linear-gradient(#f5e2b51a,#bfa4750a);border-color:#d2bd896b}
+.hud small{font-size:10px;letter-spacing:.15em;color:#ddd8b6}
+.hud strong{text-shadow:0 2px 1px #10291f66}
+#field{box-shadow:0 0 0 1px #d6bc7e42,0 16px 38px #10241d66}
+.hole span{color:#fff3d0;background:#263b2cda;border:1px solid #d3be8c80;border-radius:3px;padding:1px 4px;left:44%;text-shadow:0 1px #10251c}
+.modal-card{background:radial-gradient(ellipse at 25% 12%,#fff5d8,#f7e9c6 70%)}
+body.touch-device .hud small{font-size:9px}

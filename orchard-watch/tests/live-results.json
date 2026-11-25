@@ -1,0 +1,72 @@
+{
+  "agent": "Agent Yoda",
+  "run": "OW-20261123T0114Z-YODA",
+  "layouts": [
+    {
+      "width": 1440,
+      "height": 900,
+      "allTwelveInputs": true,
+      "gate": true,
+      "pause": true,
+      "restart": true,
+      "audio": "running",
+      "errors": [],
+      "resources": [],
+      "medianMs": 17.40000000000009,
+      "p95Ms": 18.200000000000273
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "allTwelveInputs": true,
+      "gate": true,
+      "pause": true,
+      "restart": true,
+      "audio": "running",
+      "errors": [],
+      "resources": [],
+      "medianMs": 17.40000000000009,
+      "p95Ms": 18.40000000000009
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "allTwelveInputs": true,
+      "gate": true,
+      "pause": true,
+      "restart": true,
+      "audio": "running",
+      "errors": [],
+      "resources": [],
+      "medianMs": 17.699999999999818,
+      "p95Ms": 18.300000000000182
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "allTwelveInputs": true,
+      "gate": true,
+      "pause": true,
+      "restart": true,
+      "audio": "running",
+      "errors": [],
+      "resources": [],
+      "medianMs": 17.799999999999727,
+      "p95Ms": 18.300000000000182
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "allTwelveInputs": true,
+      "gate": true,
+      "pause": true,
+      "restart": true,
+      "audio": "running",
+      "errors": [],
+      "resources": [],
+      "medianMs": 17.59999999999991,
+      "p95Ms": 18.200000000000728
+    }
+  ],
+  "uninstrumentedArcadeLink": true
+}
