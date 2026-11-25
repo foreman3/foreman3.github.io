@@ -1,0 +1,37 @@
+{
+  "agent": "Agent Yoda",
+  "run": "RR-20261124T1316Z-YODA",
+  "normalization": "Whitespace, mobile-only shadow suppression, and three drawBoard loop lines split into cached tints and drawBoardMotion in 5e8043b. Those three loop lines are excluded from hashes and manually reviewed in retained history-diff.txt. Ten original drawing functions otherwise compared.",
+  "records": [
+    {
+      "sha": "16873a7a22f1a62d7981c127d35497c62c698cfd",
+      "description": "2026-09-06 21:13:49 -0400 Fix full-game restarts and Space Invaders mobile input recovery",
+      "normalizedOriginalArt": "5e216d0d4e325ab637d37efd13c793139494a8abb226d024fdece9c68457e437"
+    },
+    {
+      "sha": "5e8043b7f8b5979a5b06ed0bed8007f406aba052",
+      "description": "2026-09-05 13:19:50 -0400 Simplify arcade game implementation",
+      "normalizedOriginalArt": "5e216d0d4e325ab637d37efd13c793139494a8abb226d024fdece9c68457e437"
+    },
+    {
+      "sha": "2a3439b0ac948720db888defa7628d7f4cacedc9",
+      "description": "2026-08-30 21:07:58 -0400 Improve mobile arcade controls and game lifecycle",
+      "normalizedOriginalArt": "5e216d0d4e325ab637d37efd13c793139494a8abb226d024fdece9c68457e437"
+    },
+    {
+      "sha": "70443808d655b2cd2bc98af33d1ac6389b2db343",
+      "description": "2026-08-30 10:56:16 -0400 Add responsive drag joysticks for mobile play",
+      "normalizedOriginalArt": "5e216d0d4e325ab637d37efd13c793139494a8abb226d024fdece9c68457e437"
+    },
+    {
+      "sha": "03807e10b6bb146926dbb395ba9e2ac7b65c4af9",
+      "description": "2026-08-29 23:06:52 -0400 Optimize mobile controls across arcade",
+      "normalizedOriginalArt": "5e216d0d4e325ab637d37efd13c793139494a8abb226d024fdece9c68457e437"
+    },
+    {
+      "sha": "1d9026fde7d85f9541b94ad5bbb8d3ad3b4fdf51",
+      "description": "2026-08-29 16:19:54 -0400 Expand arcade with rebuilt classics and new games",
+      "normalizedOriginalArt": "5e216d0d4e325ab637d37efd13c793139494a8abb226d024fdece9c68457e437"
+    }
+  ]
+}

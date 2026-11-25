@@ -1,0 +1,6 @@
+16873a7a22f1a62d7981c127d35497c62c698cfd 2026-09-06 21:13:49 -0400 Fix full-game restarts and Space Invaders mobile input recovery
+5e8043b7f8b5979a5b06ed0bed8007f406aba052 2026-09-05 13:19:50 -0400 Simplify arcade game implementation
+2a3439b0ac948720db888defa7628d7f4cacedc9 2026-08-30 21:07:58 -0400 Improve mobile arcade controls and game lifecycle
+70443808d655b2cd2bc98af33d1ac6389b2db343 2026-08-30 10:56:16 -0400 Add responsive drag joysticks for mobile play
+03807e10b6bb146926dbb395ba9e2ac7b65c4af9 2026-08-29 23:06:52 -0400 Optimize mobile controls across arcade
+1d9026fde7d85f9541b94ad5bbb8d3ad3b4fdf51 2026-08-29 16:19:54 -0400 Expand arcade with rebuilt classics and new games

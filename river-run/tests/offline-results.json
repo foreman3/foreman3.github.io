@@ -1,0 +1,14 @@
+{
+  "agent": "Agent Yoda",
+  "run": "RR-20261124T1316Z-YODA",
+  "time": "2026-11-24T13:25:35.727Z",
+  "unrelatedFiles": 264,
+  "changedUnrelated": [],
+  "oldVersion": "0119a22f4964c3b7",
+  "newVersion": "db43f2884cd73012",
+  "games": 61,
+  "paths": 378,
+  "removed": [],
+  "added": [],
+  "build": "61 games, 378 files, 25.0 MiB offline"
+}

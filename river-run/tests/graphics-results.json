@@ -1,0 +1,243 @@
+{
+  "agent": "Agent Yoda",
+  "run": "RR-20261124T1316Z-YODA",
+  "scenarios": [
+    "First load gates simulation",
+    "Countdown and opening traffic",
+    "Keyboard ArrowDown",
+    "Keyboard ArrowUp",
+    "Keyboard ArrowLeft",
+    "Keyboard ArrowRight",
+    "Keyboard s",
+    "Keyboard w",
+    "Keyboard a",
+    "Keyboard d",
+    "Help pauses",
+    "District 1",
+    "District 2",
+    "District 3",
+    "District 4",
+    "District 5",
+    "District 8",
+    "District 25",
+    "home",
+    "closed",
+    "trap",
+    "drown",
+    "collision",
+    "timeout",
+    "clear",
+    "gameover",
+    "tide",
+    "drone",
+    "Command r",
+    "Command m",
+    "Command m"
+  ],
+  "viewports": [
+    {
+      "size": [
+        1440,
+        900
+      ],
+      "board": {
+        "x": 81,
+        "y": 91,
+        "right": 1359,
+        "bottom": 809,
+        "width": 1278,
+        "height": 718
+      },
+      "hud": {
+        "x": 153,
+        "y": 21,
+        "right": 1287,
+        "bottom": 81,
+        "width": 1134,
+        "height": 60
+      },
+      "controls": {
+        "x": 0,
+        "y": 0,
+        "right": 0,
+        "bottom": 0,
+        "width": 0,
+        "height": 0
+      },
+      "overflow": false,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.699999999999818,
+          "p95": 18.199999999999818
+        },
+        "errors": []
+      }
+    },
+    {
+      "size": [
+        667,
+        375
+      ],
+      "board": {
+        "x": 185,
+        "y": 56.03125,
+        "right": 654,
+        "bottom": 318.96875,
+        "width": 469,
+        "height": 262.9375
+      },
+      "hud": {
+        "x": 185,
+        "y": 9.03125,
+        "right": 654,
+        "bottom": 48.03125,
+        "width": 469,
+        "height": 39
+      },
+      "controls": {
+        "x": 8,
+        "y": 0,
+        "right": 178,
+        "bottom": 375,
+        "width": 170,
+        "height": 375
+      },
+      "overflow": false,
+      "audio": "running",
+      "actualTouch": true,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.699999999999818,
+          "p95": 18.300000000000182
+        },
+        "errors": []
+      }
+    },
+    {
+      "size": [
+        740,
+        390
+      ],
+      "board": {
+        "x": 199.21875,
+        "y": 51,
+        "right": 712.765625,
+        "bottom": 338.984375,
+        "width": 513.546875,
+        "height": 287.984375
+      },
+      "hud": {
+        "x": 199.21875,
+        "y": 4,
+        "right": 712.765625,
+        "bottom": 43,
+        "width": 513.546875,
+        "height": 39
+      },
+      "controls": {
+        "x": 8,
+        "y": 0,
+        "right": 178,
+        "bottom": 390,
+        "width": 170,
+        "height": 390
+      },
+      "overflow": false,
+      "audio": "running",
+      "actualTouch": true,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.5,
+          "p95": 18.300000000000182
+        },
+        "errors": []
+      }
+    },
+    {
+      "size": [
+        844,
+        390
+      ],
+      "board": {
+        "x": 251.21875,
+        "y": 51,
+        "right": 764.765625,
+        "bottom": 338.984375,
+        "width": 513.546875,
+        "height": 287.984375
+      },
+      "hud": {
+        "x": 251.21875,
+        "y": 4,
+        "right": 764.765625,
+        "bottom": 43,
+        "width": 513.546875,
+        "height": 39
+      },
+      "controls": {
+        "x": 8,
+        "y": 0,
+        "right": 178,
+        "bottom": 390,
+        "width": 170,
+        "height": 390
+      },
+      "overflow": false,
+      "audio": "running",
+      "actualTouch": true,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.5,
+          "p95": 18.300000000000182
+        },
+        "errors": []
+      }
+    },
+    {
+      "size": [
+        390,
+        844
+      ],
+      "board": {
+        "x": 9,
+        "y": 227.8125,
+        "right": 381,
+        "bottom": 436.1875,
+        "width": 372,
+        "height": 208.375
+      },
+      "hud": {
+        "x": 9,
+        "y": 180.8125,
+        "right": 381,
+        "bottom": 219.8125,
+        "width": 372,
+        "height": 39
+      },
+      "controls": {
+        "x": 110,
+        "y": 654,
+        "right": 280,
+        "bottom": 824,
+        "width": 170,
+        "height": 170
+      },
+      "overflow": false,
+      "audio": "running",
+      "actualTouch": true,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.599999999999454,
+          "p95": 18.5
+        },
+        "errors": []
+      }
+    }
+  ],
+  "sourceParity": true
+}

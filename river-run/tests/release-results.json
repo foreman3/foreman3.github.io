@@ -1,0 +1,114 @@
+{
+  "agent": "Agent Yoda",
+  "run": "RR-20261124T1316Z-YODA",
+  "time": "2026-11-25T19:47:00.366Z",
+  "sourcePreserved": true,
+  "build": "61 games, 378 files, 24.9 MiB offline",
+  "offline": {
+    "version": "986eb1b5b47bbe0f",
+    "games": 61,
+    "paths": 378
+  },
+  "browsers": [
+    {
+      "width": 1440,
+      "height": 900,
+      "keyboard": true,
+      "touch": false,
+      "gate": true,
+      "reset": true,
+      "sound": true,
+      "geometry": {
+        "board": {
+          "x": 81,
+          "y": 91,
+          "right": 1359,
+          "bottom": 809
+        },
+        "hud": {
+          "x": 153,
+          "y": 21,
+          "right": 1287,
+          "bottom": 81
+        },
+        "buttons": [
+          {
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          {
+            "x": 0,
+            "y": 0,
+            "right": 0,
+            "bottom": 0
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "width": 667,
+      "height": 375,
+      "keyboard": false,
+      "touch": true,
+      "gate": true,
+      "reset": true,
+      "sound": true,
+      "geometry": {
+        "board": {
+          "x": 185,
+          "y": 56.03125,
+          "right": 654,
+          "bottom": 318.96875
+        },
+        "hud": {
+          "x": 185,
+          "y": 9.03125,
+          "right": 654,
+          "bottom": 48.03125
+        },
+        "buttons": [
+          {
+            "x": 66,
+            "y": 102.5,
+            "right": 120,
+            "bottom": 156.5
+          },
+          {
+            "x": 8,
+            "y": 160.5,
+            "right": 62,
+            "bottom": 214.5
+          },
+          {
+            "x": 66,
+            "y": 218.5,
+            "right": 120,
+            "bottom": 272.5
+          },
+          {
+            "x": 124,
+            "y": 160.5,
+            "right": 178,
+            "bottom": 214.5
+          }
+        ]
+      },
+      "errors": []
+    }
+  ]
+}

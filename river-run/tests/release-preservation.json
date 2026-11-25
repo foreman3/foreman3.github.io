@@ -1,0 +1,25 @@
+{
+  "agent": "Agent Yoda",
+  "run": "RR-20261124T1316Z-YODA",
+  "time": "2026-11-25T19:48:04.202Z",
+  "unrelatedFiles": 322,
+  "changedUnrelated": [],
+  "workingOfflineHash": "4f749d2c21e0c8ba3ff3eaaf45e66d98c13cf4037d68b47ee60beba39df8446f",
+  "releaseInventory": {
+    "agent": "Agent Yoda",
+    "baseline": "94aff1af35d2b3b654cc33d6a803234a95b72f6d",
+    "dest": "C:\\Users\\forem\\.codex\\visualizations\\2026\\11\\24\\01a20db0-a191-7e12-9de5-0c00fc118a7e\\river-run-release",
+    "oldPaths": 373,
+    "newPaths": 378,
+    "games": 61,
+    "version": "986eb1b5b47bbe0f",
+    "added": [
+      "big-top-bound/art.js",
+      "big-top-bound/engine.js",
+      "big-top-bound/game.js",
+      "big-top-bound/index.html",
+      "big-top-bound/style.css"
+    ],
+    "sidebar": "Adds only already-committed Big Top Bound catalog entry"
+  }
+}

@@ -14,6 +14,28 @@
     .modal{position:fixed;z-index:80;inset:0;display:none;place-items:center;padding:22px;background:rgba(1,3,13,.8);backdrop-filter:blur(10px)}.modal.is-visible{display:grid}.modal-card{width:min(610px,94vw);padding:28px;border:1px solid rgba(91,237,255,.31);border-radius:22px;background:linear-gradient(145deg,#0c1d3c,#080b1c);box-shadow:0 26px 80px #000}.modal h2{margin:0 0 12px;color:#ffe26a;font-size:30px}.modal p{color:#d8ebff;line-height:1.55}.controls-grid{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;margin:18px 0 22px}.controls-grid strong{color:#70f1ff}.modal button{width:100%;padding:13px;border:0;border-radius:999px;background:linear-gradient(90deg,#4beaff,#9f65ff,#ff5397);color:#061020;font-weight:1000;letter-spacing:.08em;cursor:pointer}
     .touch-controls{display:none;position:fixed;z-index:38;inset:auto 14px 13px;pointer-events:none}.dpad{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px);gap:4px}.touch-button{pointer-events:auto;border:1px solid rgba(255,255,255,.24);border-radius:50%;background:rgba(7,15,38,.56);color:#fff;font-size:21px;font-weight:950;backdrop-filter:blur(8px)}.touch-button.pressed{background:rgba(74,231,255,.35);transform:scale(.95)}.touch-button.up{grid-column:2;grid-row:1}.touch-button.left{grid-column:1;grid-row:2}.touch-button.down{grid-column:2;grid-row:3}.touch-button.right{grid-column:3;grid-row:2}
     @media(max-width:760px),(pointer:coarse){#game-shell{width:100vw;border-radius:0}.hud{inset:6px 6px auto;grid-template-columns:repeat(4,1fr);gap:4px}.card{padding:5px;backdrop-filter:none}.touch-button{backdrop-filter:none}.card span{font-size:6px}.card strong{font-size:12px}.card.district{display:none}.touch-controls{display:flex}#help-button,.menu-toggle{display:none}}
+
+    /* Agent Yoda: rain-polished metropolitan riverfront; original input targets retained. */
+    html,body{height:100%;min-height:100dvh}body{height:100dvh;display:flex;align-items:center;justify-content:center}
+    #game-shell{overflow:visible;border-radius:14px;border-color:#679ca2;box-shadow:0 20px 70px #0009,0 0 0 4px #112b3b}
+    canvas{border-radius:inherit}.hud{top:auto;bottom:calc(100% + 10px);inset-inline:72px;gap:8px}
+    .card{border-radius:6px;background:linear-gradient(160deg,#173441f5,#0b1a2af5);border-color:#5c919d88;box-shadow:inset 0 1px #b9dfdf33,0 3px 12px #0004;backdrop-filter:none}
+    .card:before{width:2px;box-shadow:none;background:#80c9c5}.card span{font-size:10px;color:#b3dfdf;text-shadow:none;letter-spacing:.13em}
+    .card strong{font-variant-numeric:tabular-nums}.card.timer{background:linear-gradient(160deg,#34382b,#141f26);border-color:#b4a66b}.card.timer:before{box-shadow:none;background:#e8cd86}
+    .modal{overflow:auto}.modal-card{max-height:calc(100dvh - 28px);overflow-y:auto}
+    @media(max-width:760px),(pointer:coarse){
+      #game-shell{width:min(calc(100vw - 196px),calc((100dvh - 100px)*1.77777778));max-height:none;margin:0 12px 0 184px;border-radius:6px}
+      .hud{inset-inline:0;bottom:calc(100% + 8px);grid-template-columns:repeat(4,1fr);gap:4px}
+      .card{padding:4px 6px;min-width:0}.card span{font-size:8px;letter-spacing:.03em}.card strong{font-size:12px;margin-top:1px}
+      .touch-controls{inset:0 auto 0 8px;width:170px;align-items:center}
+      .vibecade-mobile-restart{right:auto!important;left:70px!important}
+      .modal{padding:14px}.modal-card{padding:18px}.modal h2{font-size:26px}.modal p{font-size:12px;line-height:1.4}.controls-grid{font-size:12px;gap:6px 12px;margin:12px 0}
+    }
+    @media(orientation:portrait) and (max-width:760px){
+      #game-shell{width:calc(100vw - 16px);margin:0 8px 180px}
+      .touch-controls{inset:auto auto 20px 50%;transform:translateX(-50%);height:170px}
+      .vibecade-mobile-restart{left:auto!important;right:8px!important}
+    }
   </style>
 </head>
 <body>
@@ -95,6 +117,10 @@
       for(var s=0;s<56;s++){var sx=(s*233+47)%W,sy=7+(s*97)%88,twinkle=.28+.5*(.5+.5*Math.sin((state.clock||0)*1.8+s*2.1));ctx.fillStyle='rgba(210,246,255,'+twinkle+')';ctx.beginPath();ctx.arc(sx,sy,s%9===0?1.7:.75,0,Math.PI*2);ctx.fill()}
       ctx.save();ctx.shadowColor=pal.moon;ctx.shadowBlur=mobileProfile?0:(28);ctx.fillStyle=pal.moon;ctx.beginPath();ctx.arc(W-90,63,25,0,Math.PI*2);ctx.fill();ctx.shadowBlur=mobileProfile?0:(0);ctx.fillStyle=pal.sky;ctx.beginPath();ctx.arc(W-79,53,23,0,Math.PI*2);ctx.fill();ctx.restore();
       for(var b=0;b<24;b++){var bx=b*57-8,bw=42+(b%3)*7,bh=27+((b*31)%54),by=TOP-bh;ctx.fillStyle=b%4===0?'#09142d':'#050b1d';ctx.fillRect(bx,by,bw,bh);ctx.fillStyle=b%3===0?pal.accent:pal.haze;for(var wy=by+11;wy<TOP-6;wy+=14)for(var wx=bx+9;wx<bx+bw-5;wx+=14)if((wx+wy+b)%4!==0){ctx.globalAlpha=.22+((wx+wy)%3)*.13;ctx.fillRect(wx,wy,3,5)}ctx.globalAlpha=1}
+
+      // Rain-dark masonry and roof coping, baked into the existing district cache.
+      ctx.fillStyle='#b6d5d51c';for(var roof=0;roof<24;roof++){var rx=roof*57-8,rw=42+(roof%3)*7,rh=27+((roof*31)%54),ry=TOP-rh;ctx.fillRect(rx,ry,rw,2);ctx.fillRect(rx+rw-3,ry+3,2,rh-3);ctx.fillStyle=pal.haze+'12';ctx.fillRect(rx+4,ry+6,2,rh-8);ctx.fillStyle='#b6d5d51c'}
+      ctx.fillStyle='#142d3b';ctx.fillRect(0,TOP-5,W,5);ctx.fillStyle=pal.foam+'55';ctx.fillRect(0,TOP-5,W,1);
       var horizon=ctx.createLinearGradient(0,TOP-8,0,TOP+12);horizon.addColorStop(0,'rgba(0,0,0,0)');horizon.addColorStop(.55,pal.haze+'45');horizon.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=horizon;ctx.fillRect(0,TOP-10,W,25);
     }
     function drawBoard(){
@@ -107,9 +133,17 @@
       var asphalt=ctx.createLinearGradient(0,roadTop,0,roadBottom);asphalt.addColorStop(0,pal.roadEdge);asphalt.addColorStop(.05,pal.road);asphalt.addColorStop(.94,pal.road);asphalt.addColorStop(1,pal.roadEdge);ctx.fillStyle=asphalt;ctx.fillRect(0,roadTop,W,roadBottom-roadTop);
       for(var grain=0;grain<180;grain++){var gx=(grain*71+13)%W,gy=roadTop+((grain*43)%Math.floor(roadBottom-roadTop));ctx.fillStyle=grain%3?'rgba(255,255,255,.025)':'rgba(0,0,0,.12)';ctx.fillRect(gx,gy,grain%5===0?7:3,1)}
       for(var rr=7;rr<=11;rr++){ctx.fillStyle=rr%2?'rgba(9,12,29,.13)':'rgba(71,96,130,.035)';ctx.fillRect(0,TOP+rr*LANE_H,W,LANE_H)}
+
+      // Quiet reflected windows stay below the original moving current lines.
+      for(var reflection=0;reflection<52;reflection++){var fx=(reflection*137+23)%W,fy=waterTop+8+(reflection*43)%(LANE_H*5-15);ctx.fillStyle=reflection%3?pal.foam+'0b':pal.haze+'13';ctx.fillRect(fx,fy,12+(reflection%5)*9,1);ctx.fillRect(fx+7,fy+4,5+(reflection%3)*8,1)}
+      // Rain-polished asphalt with restrained broken reflections, never hazard outlines.
+      for(var wet=0;wet<55;wet++){var wetX=(wet*173+21)%W,wetY=roadTop+7+(wet*31)%(LANE_H*5-14);ctx.fillStyle=wet%4?'#a7cad809':'#f4c7970d';ctx.fillRect(wetX,wetY,18+(wet%4)*17,1)}
       drawCurb(waterTop,pal.foam);drawCurb(waterBottom,pal.accent);drawCurb(roadTop,pal.accent);drawCurb(roadBottom,pal.foam);
       var startBank=ctx.createLinearGradient(0,roadBottom,0,roadBottom+LANE_H);startBank.addColorStop(0,'#071921');startBank.addColorStop(.18,pal.safe);startBank.addColorStop(1,pal.grass);ctx.fillStyle=startBank;ctx.fillRect(0,roadBottom,W,LANE_H);for(var tile=0;tile<W;tile+=64){ctx.strokeStyle='rgba(140,255,239,.09)';ctx.strokeRect(tile,roadBottom+7,52,31)}
 
+
+      // Setts and drainage details on the safe banks, within their unchanged bounds.
+      for(var bankY of [TOP,waterBottom,roadBottom]){ctx.strokeStyle='#b5ddd918';ctx.lineWidth=1;for(var stone=0;stone<W;stone+=44){ctx.strokeRect(stone+2,bankY+5,40,16);ctx.strokeRect(stone-20,bankY+24,40,16)}ctx.fillStyle='#061b20';for(var drain=40;drain<W;drain+=210){ctx.fillRect(drain,bankY+LANE_H-9,26,5);ctx.fillStyle='#8fbdbb44';for(var slit=0;slit<5;slit++)ctx.fillRect(drain+3+slit*5,bankY+LANE_H-8,1,3);ctx.fillStyle='#061b20'}}
       ctx.strokeStyle=pal.accent;ctx.lineWidth=2.5;ctx.shadowColor=pal.accent;ctx.shadowBlur=mobileProfile?0:(10);ctx.strokeRect(1,TOP,W-2,LANE_H*(START_ROW+1));ctx.shadowBlur=mobileProfile?0:(0);
     }
     function drawBoardMotion(){var pal=palettes[(state.stage-1)%palettes.length];
@@ -140,6 +174,9 @@
       ctx.fillStyle='#5b2527';ctx.strokeStyle='#d47a4f';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(14,0,12,14,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.ellipse(w-14,0,12,14,0,0,Math.PI*2);ctx.fill();ctx.stroke();
       ctx.strokeStyle='rgba(255,190,112,.48)';ctx.lineWidth=1.5;for(var ring=4;ring<=9;ring+=3){ctx.beginPath();ctx.arc(14,0,ring,-1.25,1.25);ctx.stroke();ctx.beginPath();ctx.arc(w-14,0,ring,1.9,4.35);ctx.stroke()}
       ctx.strokeStyle='rgba(255,211,139,.34)';for(var bark=32;bark<w-26;bark+=45){ctx.beginPath();ctx.moveTo(bark,-10);ctx.bezierCurveTo(bark+10,-4,bark-5,5,bark+16,10);ctx.stroke()}
+
+      // Split bark and quiet growth lines; original log/support extents unchanged.
+      ctx.strokeStyle='#3f22294d';ctx.lineWidth=1;for(var grain=30;grain<w-27;grain+=25){ctx.beginPath();ctx.moveTo(grain,-8);ctx.bezierCurveTo(grain+12,-12,grain+9,0,grain+19,4);ctx.stroke();ctx.beginPath();ctx.moveTo(grain-2,10);ctx.lineTo(grain+13,8);ctx.stroke()}ctx.fillStyle='#ffe0a050';for(var fleck=31;fleck<w-25;fleck+=38)ctx.fillRect(fleck,-12,9,1);
       ctx.fillStyle='rgba(92,218,133,.72)';for(var moss=38;moss<w-35;moss+=72){ctx.beginPath();ctx.ellipse(moss,-14,18,4,-.08,0,Math.PI*2);ctx.fill()}
     }
     function drawTurtles(lane,o){
@@ -155,6 +192,12 @@
       var body=ctx.createLinearGradient(0,-h/2,0,h/2);body.addColorStop(0,'rgba(255,255,255,.82)');body.addColorStop(.16,lane.color);body.addColorStop(.82,lane.color);body.addColorStop(1,'rgba(20,16,45,.8)');ctx.fillStyle=body;ctx.strokeStyle=lane.variant==='turbo'?'#fff17d':'rgba(232,251,255,.8)';ctx.lineWidth=2;roundRect(0,-h/2,w,h,9);
       if(lane.type==='truck'){ctx.strokeStyle='rgba(20,34,58,.6)';ctx.beginPath();ctx.moveTo(w-52,-h/2+2);ctx.lineTo(w-52,h/2-2);ctx.stroke();ctx.fillStyle='#aeefff';ctx.beginPath();ctx.roundRect(w-45,-11,32,22,5);ctx.fill();ctx.fillStyle='rgba(5,22,43,.8)';ctx.fillRect(w-41,-8,22,16);ctx.fillStyle='rgba(255,255,255,.2)';for(var rib=18;rib<w-62;rib+=28)ctx.fillRect(rib,-h/2+5,3,h-10)}
       else{ctx.fillStyle='#baf4ff';ctx.beginPath();ctx.roundRect(w*.42,-11,w*.32,22,7);ctx.fill();ctx.fillStyle='#132542';ctx.beginPath();ctx.roundRect(w*.46,-8,w*.23,16,5);ctx.fill();ctx.fillStyle='rgba(255,255,255,.32)';ctx.fillRect(20,-h/2+5,w*.22,3)}
+
+      // Enamel panel seams, glass reflection and small hardware inside original shells.
+      ctx.strokeStyle='#192b4659';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(12,-h/2+4);ctx.lineTo(w-10,-h/2+4);ctx.moveTo(12,h/2-4);ctx.lineTo(w-10,h/2-4);ctx.stroke();
+      ctx.fillStyle='#f1ffff70';ctx.fillRect(w-36,-7,2,9);ctx.fillStyle='#1a263f77';ctx.fillRect(w-17,-3,4,6);
+      if(lane.type==='truck'){ctx.fillStyle='#23334444';ctx.fillRect(15,-8,34,16);ctx.fillStyle='#fff1bc88';ctx.fillRect(20,-4,22,2);ctx.fillRect(20,1,14,2);ctx.fillStyle='#f7e3bd99';for(var rivet=14;rivet<w-57;rivet+=28){ctx.fillRect(rivet,-h/2+3,2,2);ctx.fillRect(rivet,h/2-5,2,2)}}
+      else{ctx.strokeStyle='#22374d66';ctx.beginPath();ctx.moveTo(w*.39,-10);ctx.lineTo(w*.39,10);ctx.moveTo(w*.78,-10);ctx.lineTo(w*.78,10);ctx.stroke();ctx.fillStyle='#e9f9ffbb';ctx.fillRect(w*.55,-6,2,8);ctx.fillRect(w*.35,10,6,1)}
       ctx.fillStyle='#fff4a4';ctx.shadowColor='#fff3a2';ctx.shadowBlur=mobileProfile?0:(10);ctx.fillRect(w-5,-11,5,7);ctx.fillRect(w-5,4,5,7);ctx.shadowBlur=mobileProfile?0:(0);ctx.fillStyle='#ff315f';ctx.fillRect(0,-11,4,7);ctx.fillRect(0,4,4,7);
       if(lane.variant==='turbo'){ctx.fillStyle='#160d2e';ctx.font='1000 14px Segoe UI';ctx.textAlign='center';ctx.fillText('TURBO',w*.42,5)}ctx.restore();
     }
@@ -191,6 +234,9 @@
       var body=ctx.createRadialGradient(-7,-7,2,0,2,24);body.addColorStop(0,'#c8ff8d');body.addColorStop(.4,'#5fe887');body.addColorStop(1,'#15926f');ctx.fillStyle=body;ctx.strokeStyle='#bdffd1';ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(0,1,20,19,0,0,Math.PI*2);ctx.fill();ctx.stroke();
       ctx.fillStyle='#79f39a';ctx.beginPath();ctx.ellipse(0,-12,21,15,0,0,Math.PI*2);ctx.fill();ctx.stroke();
       ctx.fillStyle='#effff1';ctx.beginPath();ctx.arc(-10,-21,8,0,Math.PI*2);ctx.arc(10,-21,8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#091826';ctx.beginPath();ctx.arc(-9,-23,3.4,0,Math.PI*2);ctx.arc(9,-23,3.4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#d9ffff';ctx.beginPath();ctx.arc(-8,-24,1.2,0,Math.PI*2);ctx.arc(10,-24,1.2,0,Math.PI*2);ctx.fill();
+
+      // Subtle amphibian markings remain inside the original body silhouette.
+      ctx.fillStyle='#146d5c60';for(var spot=0;spot<6;spot++){var spotX=spot%2?-12:12,spotY=-8+Math.floor(spot/2)*6;ctx.beginPath();ctx.ellipse(spotX,spotY,2.2,1.4,0,0,Math.PI*2);ctx.fill()}ctx.strokeStyle='#d9ffc466';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-5,7);ctx.quadraticCurveTo(0,13,5,7);ctx.stroke();
       ctx.strokeStyle='#0b674e';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-9,8,.15,Math.PI-.15);ctx.stroke();ctx.fillStyle='#ffe36d';ctx.beginPath();ctx.moveTo(-5,0);ctx.lineTo(0,-5);ctx.lineTo(5,0);ctx.lineTo(0,5);ctx.closePath();ctx.fill();ctx.shadowBlur=mobileProfile?0:(0);ctx.restore();
     }
     function drawEffects(){for(var i=0;i<particles.length;i++){var p=particles[i];ctx.save();ctx.globalAlpha=clamp(p.life,0,1);ctx.shadowColor=p.color;ctx.shadowBlur=mobileProfile?0:(p.size*2.2);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();ctx.restore()}ctx.font='1000 20px Segoe UI';ctx.textAlign='center';for(var j=0;j<floaters.length;j++){var f=floaters[j];ctx.save();ctx.globalAlpha=clamp(f.life,0,1);ctx.fillStyle=f.color;ctx.shadowColor=f.color;ctx.shadowBlur=mobileProfile?0:(12);ctx.fillText(f.text,f.x,f.y);ctx.restore()}}
