@@ -59,6 +59,8 @@ These games already received a substantive graphics upgrade or illustrated/3D re
 
 | Deep Core | `deep-core/` | Completed, first graphics pass | `DC-20261123T0710Z-YODA`, 2026-11-23; `deep-core/GRAPHICS_VERIFICATION.md` | Geological cross-section: original terracotta/mauve/violet strata, mineral seams, chipped stone and steel survey instruments |
 
+| Mushroom Moon | `mushroom-moon/` | Completed, first graphics pass | `MM-20261124T0112Z-YODA`, 2026-11-24; `mushroom-moon/GRAPHICS_VERIFICATION.md` | Retained violet lunar botany: cap/gill/chitin detail, cratered moon, stippled ground and quiet botanical margin |
+
 ## Runs in this effort
 
 Reservations and completed results follow. Never mark a pass complete merely because it was attempted or scheduled.
@@ -195,3 +197,21 @@ The owner explicitly authorized committing and pushing Neon River Run RR-2026112
 - Changed only Deep Core presentation/assets/evidence, this register, generated offline-assets.js and memory. Nothing staged, committed, pushed, published or emailed. No blocker to local completion; legacy suite limitation documented. Never select Deep Core again for this first-pass effort.
 
 - Release follow-up, 2026-11-25T19:47:52.362Z, Agent Yoda: owner explicitly authorized commit and push. Release packages only Deep Core presentation/evidence, this scoped register record and an offline inventory generated from committed HEAD plus Deep Core. Source preservation, fresh desktop/mobile browser smoke, offline build/check and unrelated-file hash checks pass. Git delivery confirmed separately after push. No email.
+
+
+## Run MM-20261124T0112Z-YODA
+
+- Acting agent: Agent Yoda. Reserved: 2026-11-24T01:09:50.759Z. Verified: 2026-11-24T01:20:22.899Z. Status: completed locally; unpublished.
+- Selected Mushroom Moon (`mushroom-moon/`), clean locally hosted Ready to Play game in sole worktree; no unfinished reservation. All-branch directory/follow and former root mushroom-moon.html/mushroommoon.html/centipede.html histories inspected. Original 1d9026f artwork remains unchanged across all subsequent control/lifecycle commits; evidence in tests/history-art.json. No prior art assets or verification record found.
+- Direction: retain violet lunar garden, lime/amber/magenta mushrooms, gold/green worms and cyan defender. Add organic cap/gill/chitin detail and quiet painted lunar scenery; improve HUD legibility. Canvas/CSS suit this existing vector art; no Blender required. Preserve all simulation/input/audio, endless waves and original silhouettes. Local delivery only; no commit, push or email authority.
+
+- Final: cap highlights/gills, shaded stems, chitin bands, carapace detail, defender canopy/seams, cratered moon, stippled soil/quiet ridge and side-margin botany. Original violet/lime/gold/cyan/magenta identities and silhouettes retained. One 1280×H backdrop, three48px mushroom and four64px worm caches. No new animation, randomness, dependency or runtime file; reproducible Canvas/CSS/apply-art source, no Blender needed.
+- Fixed desktop menu/HUD overlap, tiny labels (9→10px desktop/6→8px touch), top-aligned mobile board and Pulse meter crossing defender area. Original world/canvas/control sizes and handlers unchanged; meter moved below field, portrait included.
+- Preservation: all source outside CSS and five background/actor drawing functions identical to a7d61ec afterCRLF normalization. DOM/instructions, simulation, movement, physics, collision/hitboxes, enemies, score, timers, resources, audio, inputs/touch and endless waves intact. Thirty seeded deterministic parity scenarios pass through wave25; repeated draw leaves state unchanged. No production hooks.
+- Browser: localhost Chrome1440×900,667×375,740×390,844×390,390×844 active play and instructions. Actual CDPtouch hold/diagonal slide/neutral/release, heldFire/Pulse/reset/options/buttons/context-menu/blur pass. Keyboard/help/gate/session/currentReadyCard and uninstrumented sound/reset pass; AudioContext running, game errors/resources clean. Controls onscreen/outside board; meter below field. Framesmedian17.4–17.7ms,p9518.0–18.4ms; Canvas submissionmedian0.3→0.2msdesktop/0.2→0.1ms667. Headless host, no physical-device/listening claim.
+- Evidence: mushroom-moon/GRAPHICS_VERIFICATION.md; tests/graphics-check.cjs/results, performance-results, apply-art, baseline, fullhistory/art-hashes, browser-output, existing-restart-output, offline-check/results and initialhash/inventory. Beforedesktop/667/portrait; after/instructions/liveall5sizes; later2/5/25desktop+844. Fixtures diagnostic;live images ordinary loop.
+- Existing restart suite unchanged: obsolete whole-catalog coverage assertion fails before game execution; output saved. Focused parity and actual keyboard/touch reset verify original[1,0,3]. No regression rules changed; no blocker tolocalpass.
+- Checks: JSsyntax/inlineparsing/scopedwhitespace/offlinebuild/--check pass;60games/373paths,noneadded/removed,sidebarunchanged. Offline092c8cc0f984cc66→d6eb3eb501f017da;SHA256preserves182 unrelateddirty/untrackedpaths including deletion. Changedonlyselectedpresentation/evidence,thisregister,offline-assets.js andmemory. Nothingstaged,committed,pushed,publishedoremailed. Never select Mushroom Moon again during this first-pass effort.
+
+
+- Release follow-up, 2026-11-25T19:54:01.450Z, Agent Yoda: owner explicitly authorized commit and push of Mushroom Moon MM-20261124T0112Z-YODA. Scoped release contains Mushroom Moon presentation/evidence, its register entry and offline inventory generated from committed 68af8ab plus this game. Build/--check, source preservation and fresh isolated desktop1440×900/mobile667×375 arcade-link/instruction/control/help/reset browser checks pass; no game errors. Release 61games/378paths, all baseline paths retained; version38807942cac50699. Unrelated pending games/catalog/sidebar/mixed working offline inventory preserved. Evidence:mushroom-moon/tests/release-results.json. Git delivery is confirmed in the task result; no email.

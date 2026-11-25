@@ -1,0 +1,324 @@
+{
+  "agent": "Agent Yoda",
+  "run": "MM-20261124T0112Z-YODA",
+  "scenarios": [
+    "First-load gate",
+    "Countdown/start",
+    "Key ArrowRight",
+    "Key ArrowUp",
+    "Key ArrowLeft",
+    "Key ArrowDown",
+    "Key d",
+    "Key w",
+    "Key a",
+    "Key s",
+    "Key  ",
+    "Help pause",
+    "Endless wave 1",
+    "Endless wave 2",
+    "Endless wave 3",
+    "Endless wave 5",
+    "Endless wave 10",
+    "Endless wave 25",
+    "mushroom",
+    "segment",
+    "specials",
+    "pulse",
+    "damage",
+    "gameover",
+    "advance",
+    "poison",
+    "Command Shift",
+    "Command m",
+    "Command m",
+    "Command r"
+  ],
+  "viewports": [
+    {
+      "size": [
+        1440,
+        900
+      ],
+      "board": {
+        "x": 1,
+        "y": 1,
+        "right": 1439,
+        "bottom": 899,
+        "width": 1438,
+        "height": 898
+      },
+      "hud": {
+        "x": 81,
+        "y": 15,
+        "right": 1359,
+        "bottom": 75,
+        "width": 1278,
+        "height": 60
+      },
+      "meter": {
+        "x": 515,
+        "y": 854,
+        "right": 925,
+        "bottom": 882,
+        "width": 410,
+        "height": 28
+      },
+      "joy": {
+        "x": 0,
+        "y": 0,
+        "right": 0,
+        "bottom": 0,
+        "width": 0,
+        "height": 0
+      },
+      "actions": {
+        "x": 0,
+        "y": 0,
+        "right": 0,
+        "bottom": 0,
+        "width": 0,
+        "height": 0
+      },
+      "overflow": false,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.400000000000546,
+          "p95": 18.300000000000182
+        },
+        "audio": "running",
+        "errors": []
+      }
+    },
+    {
+      "size": [
+        667,
+        375
+      ],
+      "board": {
+        "x": 137,
+        "y": 77.5,
+        "right": 530,
+        "bottom": 297.5,
+        "width": 393,
+        "height": 220
+      },
+      "hud": {
+        "x": 141,
+        "y": 79.5,
+        "right": 526,
+        "bottom": 113.5,
+        "width": 385,
+        "height": 34
+      },
+      "meter": {
+        "x": 231.3203125,
+        "y": 299.5,
+        "right": 435.6796875,
+        "bottom": 321.5,
+        "width": 204.359375,
+        "height": 22
+      },
+      "joy": {
+        "x": 5,
+        "y": 124.5,
+        "right": 131,
+        "bottom": 250.5,
+        "width": 126,
+        "height": 126
+      },
+      "actions": {
+        "x": 563,
+        "y": 111.5,
+        "right": 635,
+        "bottom": 263.5,
+        "width": 72,
+        "height": 152
+      },
+      "overflow": false,
+      "actualTouch": true,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.5,
+          "p95": 18.400000000000546
+        },
+        "audio": "running",
+        "errors": []
+      }
+    },
+    {
+      "size": [
+        740,
+        390
+      ],
+      "board": {
+        "x": 149,
+        "y": 71.5,
+        "right": 591,
+        "bottom": 318.5,
+        "width": 442,
+        "height": 247
+      },
+      "hud": {
+        "x": 153,
+        "y": 73.5,
+        "right": 587,
+        "bottom": 107.5,
+        "width": 434,
+        "height": 34
+      },
+      "meter": {
+        "x": 255.0859375,
+        "y": 320.5,
+        "right": 484.9140625,
+        "bottom": 342.5,
+        "width": 229.828125,
+        "height": 22
+      },
+      "joy": {
+        "x": 11,
+        "y": 132,
+        "right": 137,
+        "bottom": 258,
+        "width": 126,
+        "height": 126
+      },
+      "actions": {
+        "x": 630,
+        "y": 119,
+        "right": 702,
+        "bottom": 271,
+        "width": 72,
+        "height": 152
+      },
+      "overflow": false,
+      "actualTouch": true,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.599999999999454,
+          "p95": 18.100000000000364
+        },
+        "audio": "running",
+        "errors": []
+      }
+    },
+    {
+      "size": [
+        844,
+        390
+      ],
+      "board": {
+        "x": 151,
+        "y": 43,
+        "right": 693,
+        "bottom": 347,
+        "width": 542,
+        "height": 304
+      },
+      "hud": {
+        "x": 155,
+        "y": 45,
+        "right": 689,
+        "bottom": 79,
+        "width": 534,
+        "height": 34
+      },
+      "meter": {
+        "x": 281.0859375,
+        "y": 349,
+        "right": 562.9140625,
+        "bottom": 371,
+        "width": 281.828125,
+        "height": 22
+      },
+      "joy": {
+        "x": 12,
+        "y": 132,
+        "right": 138,
+        "bottom": 258,
+        "width": 126,
+        "height": 126
+      },
+      "actions": {
+        "x": 733,
+        "y": 119,
+        "right": 805,
+        "bottom": 271,
+        "width": 72,
+        "height": 152
+      },
+      "overflow": false,
+      "actualTouch": true,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.699999999999818,
+          "p95": 18.300000000000182
+        },
+        "audio": "running",
+        "errors": []
+      }
+    },
+    {
+      "size": [
+        390,
+        844
+      ],
+      "board": {
+        "x": 1,
+        "y": 313.3125,
+        "right": 389,
+        "bottom": 530.6875,
+        "width": 388,
+        "height": 217.375
+      },
+      "hud": {
+        "x": 5,
+        "y": 315.3125,
+        "right": 385,
+        "bottom": 349.3125,
+        "width": 380,
+        "height": 34
+      },
+      "meter": {
+        "x": 94.125,
+        "y": 532.6875,
+        "right": 295.875,
+        "bottom": 554.6875,
+        "width": 201.75,
+        "height": 22
+      },
+      "joy": {
+        "x": 14,
+        "y": 705,
+        "right": 140,
+        "bottom": 831,
+        "width": 126,
+        "height": 126
+      },
+      "actions": {
+        "x": 224,
+        "y": 705,
+        "right": 376,
+        "bottom": 831,
+        "width": 152,
+        "height": 126
+      },
+      "overflow": false,
+      "actualTouch": true,
+      "errors": [],
+      "live": {
+        "frames": {
+          "median": 17.400000000000546,
+          "p95": 18
+        },
+        "audio": "running",
+        "errors": []
+      }
+    }
+  ],
+  "sourceParity": true,
+  "rendererPure": true
+}

@@ -1,0 +1,45 @@
+{
+  "agent": "Agent Yoda",
+  "releaseOnly": "Mushroom Moon",
+  "views": [
+    {
+      "size": [
+        1440,
+        900
+      ],
+      "uninstrumented": true,
+      "arcadeLink": true,
+      "instructionGate": true,
+      "keyboardOrTouch": true,
+      "restart": true,
+      "errors": []
+    },
+    {
+      "size": [
+        667,
+        375
+      ],
+      "uninstrumented": true,
+      "arcadeLink": true,
+      "instructionGate": true,
+      "keyboardOrTouch": true,
+      "restart": true,
+      "errors": []
+    }
+  ],
+  "sourcePreserved": true,
+  "releaseAt": "2026-11-25T19:54:01.450Z",
+  "baseCommit": "68af8ab823e7c6e2abc39849a1714e2950989f63",
+  "offline": {
+    "games": 61,
+    "paths": 378,
+    "version": "38807942cac50699",
+    "build": true,
+    "check": true,
+    "added": [],
+    "removed": [],
+    "sidebarUnchanged": true
+  },
+  "unrelatedFilesPreserved": 203,
+  "note": "Concurrent authorized releases completed before this snapshot; browser checks exercised identical Mushroom Moon and shared runtime."
+}

@@ -1,0 +1,12 @@
+{
+  "agent": "Agent Yoda",
+  "run": "MM-20261124T0112Z-YODA",
+  "games": 60,
+  "paths": 373,
+  "before": "092c8cc0f984cc66",
+  "after": "d6eb3eb501f017da",
+  "added": [],
+  "removed": [],
+  "sidebarUnchanged": true,
+  "unrelatedFilesPreserved": 182
+}
