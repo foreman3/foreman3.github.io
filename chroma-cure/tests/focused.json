@@ -1,0 +1,90 @@
+{
+  "checks": [
+    "Space activates first-load modal button",
+    "Resume returns focus; Space drops rather than re-pausing",
+    "Bottle warning and lab-5 overflow recover via a rewind"
+  ],
+  "timed": [
+    {
+      "think": 1.2,
+      "command": 0.09,
+      "level": 1,
+      "phase": "won",
+      "doses": 4,
+      "cleared": 6,
+      "automatic": 0,
+      "seconds": 6.74
+    },
+    {
+      "think": 1.2,
+      "command": 0.09,
+      "level": 2,
+      "phase": "won",
+      "doses": 10,
+      "cleared": 10,
+      "automatic": 0,
+      "seconds": 17.53
+    },
+    {
+      "think": 1.2,
+      "command": 0.09,
+      "level": 3,
+      "phase": "won",
+      "doses": 20,
+      "cleared": 14,
+      "automatic": 0,
+      "seconds": 36.49
+    },
+    {
+      "think": 1.2,
+      "command": 0.09,
+      "level": 4,
+      "phase": "won",
+      "doses": 21,
+      "cleared": 18,
+      "automatic": 0,
+      "seconds": 38.47
+    },
+    {
+      "think": 1.2,
+      "command": 0.09,
+      "level": 5,
+      "phase": "won",
+      "doses": 38,
+      "cleared": 22,
+      "automatic": 0,
+      "seconds": 65.43
+    },
+    {
+      "think": 0.7,
+      "command": 0.06,
+      "level": 6,
+      "phase": "won",
+      "doses": 48,
+      "cleared": 26,
+      "automatic": 0,
+      "seconds": 54.03
+    },
+    {
+      "think": 0.15,
+      "command": 0.03,
+      "level": 7,
+      "phase": "won",
+      "doses": 66,
+      "cleared": 30,
+      "automatic": 0,
+      "seconds": 31.92
+    },
+    {
+      "think": 1.6,
+      "command": 0.1,
+      "level": 7,
+      "phase": "lost",
+      "doses": 5,
+      "cleared": 0,
+      "automatic": 2,
+      "seconds": 3.25
+    }
+  ],
+  "errors": []
+}

@@ -43,6 +43,7 @@ This repository hosts simple arcade-style video games.
 
 ## In Work
 
+- [Chroma Cure](chroma-cure/) - Rotate paired capsules, match four symbols, and clear microbes through seven cheerful laboratory puzzles.
 - [Big Top Bound](big-top-bound/) - Ride a circus lion, leap through fire hoops, and build applause through seven big-top acts.
 - [Pocket Lanes (Bowling)](pocket-lanes/) - Bowl ten frames with four distinct ball reactions and hidden random oil on Easy, Medium, or Hard lanes.
 - [Copper Glide](copper-glide/) - Bank air-hockey shots, defend your goal, and outplay seven tabletop rivals.

@@ -1,0 +1,258 @@
+{
+  "curve": [
+    {
+      "level": 1,
+      "phase": "won",
+      "doses": 4,
+      "cleared": 6,
+      "total": 6,
+      "rewinds": 3,
+      "seconds": 1.3083333333333311,
+      "score": 1320
+    },
+    {
+      "level": 2,
+      "phase": "won",
+      "doses": 10,
+      "cleared": 10,
+      "total": 10,
+      "rewinds": 3,
+      "seconds": 3.2833333333333243,
+      "score": 2300
+    },
+    {
+      "level": 3,
+      "phase": "won",
+      "doses": 20,
+      "cleared": 14,
+      "total": 14,
+      "rewinds": 3,
+      "seconds": 6.908333333333466,
+      "score": 3460
+    },
+    {
+      "level": 4,
+      "phase": "won",
+      "doses": 21,
+      "cleared": 18,
+      "total": 18,
+      "rewinds": 3,
+      "seconds": 8.141666666666845,
+      "score": 4280
+    },
+    {
+      "level": 5,
+      "phase": "won",
+      "doses": 38,
+      "cleared": 22,
+      "total": 22,
+      "rewinds": 0,
+      "seconds": 11.824999999999969,
+      "score": 6100
+    },
+    {
+      "level": 6,
+      "phase": "won",
+      "doses": 48,
+      "cleared": 26,
+      "total": 26,
+      "rewinds": 1,
+      "seconds": 13.291666666666552,
+      "score": 7520
+    },
+    {
+      "level": 7,
+      "phase": "won",
+      "doses": 66,
+      "cleared": 30,
+      "total": 30,
+      "rewinds": 0,
+      "seconds": 16.324999999999715,
+      "score": 8120
+    }
+  ],
+  "layouts": [
+    {
+      "width": 667,
+      "height": 375,
+      "board": {
+        "x": 265.359375,
+        "y": 102,
+        "w": 136.28125,
+        "h": 243
+      },
+      "rotate": {
+        "x": 561,
+        "y": 135.390625,
+        "w": 80,
+        "h": 72
+      },
+      "drop": {
+        "x": 561,
+        "y": 215.390625,
+        "w": 80,
+        "h": 72
+      },
+      "hold": {
+        "x": 13.5,
+        "y": 174,
+        "w": 105,
+        "h": 37
+      },
+      "undo": {
+        "x": 13.5,
+        "y": 219,
+        "w": 105,
+        "h": 37
+      },
+      "cue": {
+        "x": 228.875,
+        "y": 351,
+        "w": 209.234375,
+        "h": 18
+      },
+      "scroll": 667
+    },
+    {
+      "width": 740,
+      "height": 390,
+      "board": {
+        "x": 297.578125,
+        "y": 102,
+        "w": 144.84375,
+        "h": 258
+      },
+      "rotate": {
+        "x": 634,
+        "y": 142.890625,
+        "w": 80,
+        "h": 72
+      },
+      "drop": {
+        "x": 634,
+        "y": 222.890625,
+        "w": 80,
+        "h": 72
+      },
+      "hold": {
+        "x": 13.5,
+        "y": 181.5,
+        "w": 105,
+        "h": 37
+      },
+      "undo": {
+        "x": 13.5,
+        "y": 226.5,
+        "w": 105,
+        "h": 37
+      },
+      "cue": {
+        "x": 265.375,
+        "y": 366,
+        "w": 209.234375,
+        "h": 18
+      },
+      "scroll": 740
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "board": {
+        "x": 349.578125,
+        "y": 102,
+        "w": 144.84375,
+        "h": 258
+      },
+      "rotate": {
+        "x": 738,
+        "y": 142.890625,
+        "w": 80,
+        "h": 72
+      },
+      "drop": {
+        "x": 738,
+        "y": 222.890625,
+        "w": 80,
+        "h": 72
+      },
+      "hold": {
+        "x": 13.5,
+        "y": 181.5,
+        "w": 105,
+        "h": 37
+      },
+      "undo": {
+        "x": 13.5,
+        "y": 226.5,
+        "w": 105,
+        "h": 37
+      },
+      "cue": {
+        "x": 317.375,
+        "y": 366,
+        "w": 209.234375,
+        "h": 18
+      },
+      "scroll": 844
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "board": {
+        "x": 32.28125,
+        "y": 108,
+        "w": 325.421875,
+        "h": 574
+      },
+      "rotate": {
+        "x": 201,
+        "y": 717.5,
+        "w": 85.5,
+        "h": 63
+      },
+      "drop": {
+        "x": 292.5,
+        "y": 717.5,
+        "w": 85.5,
+        "h": 63
+      },
+      "hold": {
+        "x": 103.5,
+        "y": 722.25,
+        "w": 85.5,
+        "h": 44
+      },
+      "undo": {
+        "x": 12,
+        "y": 782.75,
+        "w": 85.5,
+        "h": 44
+      },
+      "cue": {
+        "x": 67.125,
+        "y": 688,
+        "w": 255.734375,
+        "h": 18
+      },
+      "scroll": 390
+    }
+  ],
+  "checks": [
+    "Instructions freeze state; keyboard move, rotate, soft-drop, reserve, help, pause and sound",
+    "Seven-lab victory, overflow, retry, banked score, reset and blur input clearing",
+    "Native touch aim/slide outside/cancel, rotation/drop, reserve/rewind, sound, pause, restart, returning fullscreen-refusal gate; four mobile layouts",
+    "Normal-clock opening without test API; next lab; session gate; storage denied/reduced motion; arcade console"
+  ],
+  "errors": [],
+  "desktopFrames": {
+    "mean": 17.748333333333335,
+    "p95": 18.299999999999272,
+    "max": 18.80000000000109
+  },
+  "mobileFrames": {
+    "mean": 17.6975,
+    "p95": 18.40000000000009,
+    "max": 18.700000000000273
+  },
+  "normalOpening": "6 microbes cleared in 4 doses. The next laboratory is ready."
+}

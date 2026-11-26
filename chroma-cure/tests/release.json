@@ -1,0 +1,9 @@
+{
+  "base": "http://127.0.0.1:62706",
+  "checks": [
+    "Unique In Work card, link/title/session gate, desktop controls, five exact runtime/screenshot responses",
+    "Touch-only opening victory, scrollable result, next lab and restart at 667×375",
+    "Touch-only opening victory, scrollable result, next lab and restart at 390×844"
+  ],
+  "errors": []
+}
